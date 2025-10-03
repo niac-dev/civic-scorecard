@@ -20,7 +20,7 @@ function partyLabel(p?: string) {
     .join(" ");
 }
 
-function inferChamber(meta: Meta, col: string): "HOUSE" | "SENATE" | "" {
+function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
@@ -405,7 +405,7 @@ function Header({
   dir,
 }: {
   col: string;
-  meta: Meta;
+  meta?: Meta;
   onSort?: () => void;
   active?: boolean;
   dir?: "GOOD_FIRST" | "BAD_FIRST";
