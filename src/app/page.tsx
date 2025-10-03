@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
-import type { Row, Meta, Chamber } from "@/lib/types";
+import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 
 function partyLabel(p?: string) {
