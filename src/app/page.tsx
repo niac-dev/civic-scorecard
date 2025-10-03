@@ -8,14 +8,15 @@ import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 
 function partyLabel(p?: string) {
-  const s = (p || "").trim().toLowerCase();
-  if (!s) return "";
+  const raw = (p ?? "").trim();
+  if (!raw) return "";
+  const s = raw.toLowerCase();
   // normalize any form of Democratic/Democrat -> "Democrat"
   if (s.startsWith("democ")) return "Democrat";
-  // leave Republican/Independent/etc. as-is but capitalize first letter of each word
-  return p
-    .split(" ")
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+  // Capitalize each word for other parties (e.g., "republican" -> "Republican")
+  return raw
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 }
 
