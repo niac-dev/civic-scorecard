@@ -1,9 +1,32 @@
-node_modules
-.next
-out
-.vercel
-.DS_Store
-.env*
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+coverage/
 npm-debug.log*
-yarn-error.log
-pnpm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.venv/
+venv/
+
+# Logs & misc
+*.log
+.DS_Store
+
+# Env files (keep only an example)
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# VSCode & IDE settings
+.vscode/
+.idea/

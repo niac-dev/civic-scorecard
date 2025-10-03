@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
-import type { Row } from "@/lib/types";
+import type { Row, Meta, Chamber } from "@/lib/types";
 import clsx from "clsx";
 
 function partyLabel(p?: string) {
@@ -17,7 +17,7 @@ function partyLabel(p?: string) {
     .join(" ");
 }
 
-function inferChamber(meta: any, col: string): "HOUSE" | "SENATE" | "" {
+function inferChamber(meta: Meta, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
@@ -51,7 +51,7 @@ function gradeRank(g?: string): number {
 export default function Page() {
   const [rows, setRows] = useState<Row[]>([]);
   const [cols, setCols] = useState<string[]>([]);
-  const [metaByCol, setMeta] = useState<Map<string, any>>(new Map());
+  const [metaByCol, setMeta] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => { (async () => {
@@ -103,12 +103,12 @@ export default function Page() {
     if (sortCol === "Grade") {
       const goodFirst = sortDir === "GOOD_FIRST"; // best grades first
       return [...filtered].sort((a, b) => {
-        const ra = gradeRank(String((a as any).Grade));
-        const rb = gradeRank(String((b as any).Grade));
+        const ra = gradeRank(String(a.Grade || ""));
+        const rb = gradeRank(String(b.Grade || ""));
         if (ra !== rb) return goodFirst ? ra - rb : rb - ra;
         // tie-break by Percent (higher first when goodFirst)
-        const pa = Number((a as any).Percent || 0);
-        const pb = Number((b as any).Percent || 0);
+        const pa = Number(a.Percent || 0);
+        const pb = Number(b.Percent || 0);
         if (pa !== pb) return goodFirst ? pb - pa : pa - pb;
         // final tie-break by name
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
@@ -119,7 +119,7 @@ export default function Page() {
     const goodFirst = sortDir === "GOOD_FIRST";
 
     const rankFor = (r: Row) => {
-      const val = Number((r as any)[sortCol] ?? 0);
+      const val = Number((r as Record<string, unknown>)[sortCol] ?? 0);
       const notApplicable = colCh && colCh !== r.chamber;
       if (notApplicable) return 2; // always last
       const good = val > 0;
@@ -131,15 +131,14 @@ export default function Page() {
       const ra = rankFor(a), rb = rankFor(b);
       if (ra !== rb) return ra - rb;
       // tie-break by numeric value in the column (desc for GOOD_FIRST, asc for BAD_FIRST)
-      const va = Number((a as any)[sortCol] ?? 0);
-      const vb = Number((b as any)[sortCol] ?? 0);
+      const va = Number((a as Record<string, unknown>)[sortCol] ?? 0);
+      const vb = Number((b as Record<string, unknown>)[sortCol] ?? 0);
       if (va !== vb) return goodFirst ? vb - va : va - vb;
       // final tie-break by name
       return String(a.full_name || "").localeCompare(String(b.full_name || ""));
     });
   }, [filtered, sortCol, sortDir, metaByCol]);
 
-  const identity = ["full_name","party","state","chamber","bioguide_id","photo_url","Total","Max_Possible","Percent","Grade"];
   const billCols = useMemo(() => {
     // If no chamber filter, show all bill/action columns
     if (!f.chamber) return cols;
@@ -156,7 +155,7 @@ export default function Page() {
     const billsPart = billCols.map(() => "140px").join(" ");
     // member col + grade col + dynamic bill cols + totals
     return `280px 80px ${billsPart} 160px 120px 100px`;
-  }, [billCols.length]);
+  }, [billCols]);
 
   return (
     <div className="space-y-4">
@@ -318,7 +317,7 @@ export default function Page() {
 
               {/* bill columns -> binary check / x / N/A for other chamber */}
               {billCols.map((c) => {
-                const valRaw = (r as any)[c];
+                const valRaw = (r as Record<string, unknown>)[c];
                 const val = Number(valRaw ?? 0);
                 const meta = metaByCol.get(c);
 
@@ -403,7 +402,7 @@ function Header({
   dir,
 }: {
   col: string;
-  meta: any;
+  meta: Meta;
   onSort?: () => void;
   active?: boolean;
   dir?: "GOOD_FIRST" | "BAD_FIRST";
