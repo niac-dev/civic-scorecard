@@ -431,8 +431,10 @@ function Header({
         </span>
       )}
       {meta && (
-        <div className="invisible group-hover:visible absolute left-0 bottom-full mb-2 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
-          <div className="text-sm font-medium">{meta.short_title || meta.bill_number || col}</div>
+        <div className="invisible group-hover:visible absolute left-0 top-full mt-2 z-50 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
+          <div className={meta.short_title ? "text-base font-bold" : "text-sm font-semibold"}>
+            {meta.short_title || meta.bill_number || col}
+          </div>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{meta.position_to_score}</div>
           {meta.notes && <div className="text-xs mt-2">{meta.notes}</div>}
           {meta.sponsor && <div className="text-xs mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
