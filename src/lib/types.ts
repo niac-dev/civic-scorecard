@@ -30,7 +30,7 @@ export type Row = {
   Percent?: number | string;
   Grade?: string;
   // dynamic bill/action columns:
-  [key: string]: string | number | undefined;
+  [billOrManual: string]: string | number | undefined;
 };
 
 // If other files still import ColumnMeta, keep this alias for backwards-compat:

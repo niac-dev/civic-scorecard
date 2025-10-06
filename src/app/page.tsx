@@ -5,7 +5,44 @@ import { useEffect, useMemo, useState } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
+
 import clsx from "clsx";
+
+// --- States helper (dropdown + normalization) ---
+const STATES: { code: string; name: string }[] = [
+  { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" }, { code: "DC", name: "District of Columbia" },
+  { code: "FL", name: "Florida" }, { code: "GA", name: "Georgia" }, { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" }, { code: "IL", name: "Illinois" }, { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" }, { code: "KS", name: "Kansas" }, { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" }, { code: "ME", name: "Maine" }, { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" }, { code: "MI", name: "Michigan" }, { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" }, { code: "MO", name: "Missouri" }, { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" }, { code: "NV", name: "Nevada" }, { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" }, { code: "NM", name: "New Mexico" }, { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" }, { code: "ND", name: "North Dakota" }, { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" }, { code: "OR", name: "Oregon" }, { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" }, { code: "SC", name: "South Carolina" }, { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" }, { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" }, { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" }, { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" },
+];
+
+const NAME_TO_CODE: Record<string, string> = Object.fromEntries(
+  STATES.flatMap(({ code, name }) => [
+    [name.toLowerCase(), code],
+    [code.toLowerCase(), code],
+  ])
+);
+
+// Normalize whatever is in the CSV to a 2-letter code when possible
+function stateCodeOf(s: string | undefined): string {
+  const raw = (s ?? "").trim();
+  if (!raw) return "";
+  const hit = NAME_TO_CODE[raw.toLowerCase()];
+  return hit ?? raw.toUpperCase(); // fall back to original
+}
 
 function partyLabel(p?: string) {
   const raw = (p ?? "").trim();
@@ -51,6 +88,42 @@ function gradeRank(g?: string): number {
   return idx === -1 ? order.length : idx; // unknown grades go to the end
 }
 
+function chamberColor(ch?: string): string {
+  switch (ch) {
+    case "HOUSE":
+      return "#b2c74a"; // blue-ish for House
+    case "SENATE":
+      return "#857eab"; // violet for Senate
+    default:
+      return "#94A3B8"; // slate fallback
+  }
+}
+
+
+function partyDotColor(p?: string): string {
+  const label = partyLabel(p);
+  if (!label) return "#94A3B8"; // slate-400 fallback
+  const s = label.toLowerCase();
+  if (s.startsWith("rep")) return "#EF4444";     // red for Republican
+  if (s.startsWith("dem")) return "#3B82F6";     // blue for Democrat
+  if (s.startsWith("ind")) return "#10B981";     // green for Independent
+  return "#94A3B8";                               // fallback
+}
+
+function partyBadgeStyle(p?: string) {
+  const label = partyLabel(p).toLowerCase();
+  const base =
+    label.startsWith("rep") ? "#EF4444" : // red
+    label.startsWith("dem") ? "#3B82F6" : // blue
+    label.startsWith("ind") ? "#10B981" : // green
+    "#94A3B8";                            // slate fallback
+  return {
+    color: base,
+    backgroundColor: `${base}1A`, // ~10% alpha
+    borderColor: `${base}66`,     // ~40% alpha
+  };
+}
+
 export default function Page() {
   const [rows, setRows] = useState<Row[]>([]);
   const [cols, setCols] = useState<string[]>([]);
@@ -71,23 +144,23 @@ export default function Page() {
     let out = rows;
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
     if (f.party) out = out.filter(r => r.party === f.party);
-    if (f.state) out = out.filter(r => r.state === f.state);
+    if (f.state) out = out.filter(r => stateCodeOf(r.state) === f.state);
     if (f.search) {
       const q = f.search.toLowerCase();
       out = out.filter(r => (r.full_name||"").toLowerCase().includes(q));
     }
-    if (f.categories.size) {
-      const wanted = new Set(Array.from(f.categories));
-      const hasColInCats = (r: Row) =>
-        cols.some(c => {
-          const m = metaByCol.get(c);
-          if (!m) return false;
-          const cats = (m.categories || "").split(";").map((s:string)=>s.trim()).filter(Boolean);
-          if (!cats.length) return false;
-          return cats.some((cc:string)=>wanted.has(cc) && Number(r[c]) > 0);
-        });
-      out = out.filter(hasColInCats);
-    }
+    // if (f.categories.size) {
+    //   const wanted = new Set(Array.from(f.categories));
+    //   const hasColInCats = (r: Row) =>
+    //     cols.some(c => {
+    //       const m = metaByCol.get(c);
+    //       if (!m) return false;
+    //       const cats = (m.categories || "").split(";").map((s:string)=>s.trim()).filter(Boolean);
+    //       if (!cats.length) return false;
+    //       return cats.some((cc:string)=>wanted.has(cc) && Number(r[c]) > 0);
+    //     });
+    //   out = out.filter(hasColInCats);
+    // }
     return out;
   }, [rows, cols, f, metaByCol]);
 
@@ -143,15 +216,33 @@ export default function Page() {
   }, [filtered, sortCol, sortDir, metaByCol]);
 
   const billCols = useMemo(() => {
-    // If no chamber filter, show all bill/action columns
-    if (!f.chamber) return cols;
-    // Otherwise only keep columns that belong to the selected chamber
-    return cols.filter((c) => {
-      const meta = metaByCol.get(c);
-      const ch = inferChamber(meta, c);
-      return ch === f.chamber;
-    });
-  }, [cols, metaByCol, f.chamber]);
+    let out = cols;
+
+    // Chamber filter: keep only bills for the selected chamber
+    if (f.chamber) {
+      out = out.filter((c) => {
+        const meta = metaByCol.get(c);
+        const ch = inferChamber(meta, c);
+        return ch === f.chamber;
+      });
+    }
+
+    // Category filter: keep only bills whose meta.categories intersects selected chips
+    if (f.categories.size) {
+      const wanted = new Set(Array.from(f.categories));
+      out = out.filter((c) => {
+        const m = metaByCol.get(c);
+        if (!m) return false;
+        const cats = String(m.categories || "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        return cats.some((cc) => wanted.has(cc));
+      });
+    }
+
+    return out;
+  }, [cols, metaByCol, f.chamber, f.categories]);
 
   const gridTemplate = useMemo(() => {
     // Fixed widths per column so the header background spans the full scroll width
@@ -291,11 +382,16 @@ export default function Page() {
           {sorted.map((r, i) => (
             <div
               key={i}
-              className="grid min-w-max hover:bg-slate-50 dark:hover:bg-white/5 transition"
+              className={clsx(
+                "grid min-w-max transition",
+                "hover:bg-slate-50 dark:hover:bg-white/5"
+              )}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {/* member + photo */}
-              <div className="td pl-4 flex items-center gap-3 sticky left-0 z-20 bg-white dark:bg-slate-900">
+              <div
+                className="td pl-4 flex items-center gap-3 sticky left-0 z-20 bg-white dark:bg-slate-900"
+              >
                 {r.photo_url ? (
                   <img
                     src={String(r.photo_url)}
@@ -309,8 +405,32 @@ export default function Page() {
                   <div className="font-normal text-[15px] leading-5 text-slate-800 dark:text-slate-200">
                     {r.full_name}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {r.chamber === "HOUSE" ? "House" : r.chamber === "SENATE" ? "Senate" : (r.chamber || "")} • {partyLabel(r.party)} • {r.state}
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    {/* Chamber first, solid background (purple for Senate, green for House) */}
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                      style={{
+                        color: '#64748b',
+                        backgroundColor: `${chamberColor(r.chamber)}20`,
+                      }}
+                    >
+                      {r.chamber === "HOUSE"
+                        ? "House"
+                        : r.chamber === "SENATE"
+                        ? "Senate"
+                        : (r.chamber || "")}
+                    </span>
+
+                    {/* Party badge next, colored outline/bg by party */}
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                      style={partyBadgeStyle(r.party)}
+                    >
+                      {partyLabel(r.party)}
+                    </span>
+
+                    {/* State last */}
+                    <span>{stateCodeOf(r.state)}</span>
                   </div>
                 </div>
               </div>
@@ -382,13 +502,48 @@ function Filters({ categories }: { categories: string[] }) {
         <option value="">All parties</option>
         <option>Democratic</option><option>Republican</option><option>Independent</option>
       </select>
-      <input placeholder="State (e.g., WA)" className="input" onChange={e=>f.set({state:e.target.value.toUpperCase()})}/>
-      <div className="flex flex-wrap gap-2">
-        {categories.slice(0,12).map(c=>(
-          <button key={c}
-            className={clsx("chip", f.categories.has(c) && "ring-2 ring-[#4B8CFB]")}
-            onClick={()=>f.toggleCategory(c)}>{c}</button>
+      <select
+        className="select"
+        value={f.state || ""}
+        onChange={(e) => f.set({ state: e.target.value })}
+      >
+        <option value="">All states</option>
+        {STATES.map((s) => (
+          <option key={s.code} value={s.code}>
+            {s.name} ({s.code})
+          </option>
         ))}
+      </select>
+      <div className="flex flex-wrap gap-2">
+        <button
+          key="__all__"
+          className={clsx(
+            "chip",
+            f.categories.size === 0 && "ring-2 ring-[#4B8CFB]"
+          )}
+          onClick={() => f.set({ categories: new Set() })}
+          title="Show all bills/actions"
+        >
+          All
+        </button>
+        {categories.map((c) => {
+          const active = f.categories.has(c);
+          return (
+            <button
+              key={c}
+              className={clsx("chip", active && "ring-2 ring-[#4B8CFB]")}
+              onClick={() => {
+                const next = new Set(f.categories);
+                if (next.has(c)) next.delete(c);
+                else next.add(c);
+                f.set({ categories: next });
+              }}
+              title={active ? "Remove from filter" : "Filter by this category"}
+            >
+              {c}
+            </button>
+          );
+        })}
       </div>
       <div className="ml-auto">
         <input placeholder="Search members…" className="input" onChange={e=>f.set({search:e.target.value})}/>
@@ -419,8 +574,12 @@ function Header({
       onClick={onSort}
       title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
     >
-      <span className="flex flex-col">
-        <span>{meta ? (meta.bill_number || col) : col}</span>
+      <span className="flex flex-col max-w-[14rem]">
+        <span
+          className="line-clamp-3"
+          title={meta ? (meta.short_title || meta.bill_number) : col}
+        >
+        {meta ? (meta.short_title || meta.bill_number) : col}</span>
         {meta && meta.position_to_score && (
           <span className="text-xs text-slate-500 dark:text-slate-400">{meta.position_to_score}</span>
         )}
@@ -433,8 +592,9 @@ function Header({
       {meta && (
         <div className="invisible group-hover:visible absolute left-0 top-full mt-2 z-50 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
           <div className={meta.short_title ? "text-base font-bold" : "text-sm font-semibold"}>
-            {meta.short_title || meta.bill_number || col}
+            {meta.bill_number || meta.short_title || col}
           </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{meta.short_title}</div>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{meta.position_to_score}</div>
           {meta.notes && <div className="text-xs mt-2">{meta.notes}</div>}
           {meta.sponsor && <div className="text-xs mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}

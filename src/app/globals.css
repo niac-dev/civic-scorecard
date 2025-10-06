@@ -13,7 +13,7 @@ body { @apply bg-[#F7F8FA] text-[#0B1220] antialiased; }
 .td { @apply px-3 py-3 text-sm text-slate-800 dark:text-slate-800 border-b border-[#E7ECF2] dark:border-white/10; }
 .select { @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 px-3 text-sm; }
 .input { @apply h-9 w-64 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 px-3 text-sm; }
-.chip { @apply h-8 px-3 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-sm text-slate-700 dark:text-slate-200 hover:bg-[#dae2ec] dark:hover:bg-white/15; }
+.chip { @apply h-8 px-3 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-sm text-slate-700 dark:text-slate-500 hover:bg-[#dae2ec] dark:hover:bg-white/15; }
 .chip-outline { @apply h-8 px-3 rounded-full border border-[#E7ECF2] dark:border-white/15 text-sm hover:bg-white dark:hover:bg-white/5; }
 .chip-xs { @apply px-2 py-0.5 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-[11px] text-slate-700 dark:text-slate-200; }
 

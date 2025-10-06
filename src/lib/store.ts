@@ -1,23 +1,49 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-
 import { create } from "zustand";
 
-type Filters = {
-  chamber: "" | "HOUSE" | "SENATE";
-  party: "" | "Democratic" | "Republican" | "Independent";
-  state: string;
-  categories: Set<string>;
-  search: string;
+export type Chamber = "" | "HOUSE" | "SENATE";
+
+type FiltersState = {
+  chamber: Chamber;        // "" = Both
+  party: string;           // e.g. "Democrat", "Republican", "Independent"
+  state: string;           // e.g. "WA"
+  search: string;          // free-text member search
+  categories: Set<string>; // selected category names
+
+  set: (
+    patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories">>
+  ) => void;
+
   toggleCategory: (c: string) => void;
-  set: (partial: Partial<Omit<Filters,"toggleCategory">>) => void;
+  clearCategories: () => void;
 };
 
-export const useFilters = create<Filters>((set, get) => ({
-  chamber: "", party: "", state: "", categories: new Set(), search: "",
-  set: (partial) => set(partial),
-  toggleCategory: (c) => {
-    const s = new Set(get().categories);
-    s.has(c) ? s.delete(c) : s.add(c);
-    set({ categories: s });
-  },
+export const useFilters = create<FiltersState>((set) => ({
+  chamber: "",
+  party: "",
+  state: "",
+  search: "",
+  categories: new Set<string>(),
+
+  set: (patch) =>
+    set((prev) => ({
+      ...prev,
+      ...patch,
+      // tiny normalizations
+      party: typeof patch.party === "string" ? patch.party.trim() : prev.party,
+      state:
+        typeof patch.state === "string"
+          ? patch.state.trim().toUpperCase()
+          : prev.state,
+      search: typeof patch.search === "string" ? patch.search : prev.search,
+    })),
+
+  toggleCategory: (c) =>
+    set((prev) => {
+      const next = new Set(prev.categories);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return { ...prev, categories: next };
+    }),
+
+  clearCategories: () => set((prev) => ({ ...prev, categories: new Set() })),
 }));
