@@ -88,6 +88,10 @@ function gradeRank(g?: string): number {
   return idx === -1 ? order.length : idx; // unknown grades go to the end
 }
 
+function isTrue(v: unknown): boolean {
+  return String(v).toLowerCase() === "true";
+}
+
 function chamberColor(ch?: string): string {
   switch (ch) {
     case "HOUSE":
@@ -457,12 +461,13 @@ export default function Page() {
                 // Tooltip text
                 // --- NEW: dash if this is the lesser item in a preferred pair and member hit the preferred one ---
                 const showDashForPreferredPair = (() => {
-                  if (!meta?.pair_key || meta.preferred || val > 0 || notApplicable) return false;
-                  // find any other column in the same pair that is marked preferred and the member scored on it
+                  const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+                  if (!meta?.pair_key || isPreferred || val > 0 || notApplicable) return false;
+                  // find any other column in the same pair that is marked preferred (preferred===true) and the member scored on it
                   for (const other of billCols) {
                     if (other === c) continue;
                     const m2 = metaByCol.get(other);
-                    if (m2?.pair_key === meta.pair_key && m2.preferred) {
+                    if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
                       const v2 = Number((r as any)[other] ?? 0);
                       if (v2 > 0) return true; // got the preferred one → show dash here
                     }
@@ -744,12 +749,29 @@ const items = billCols
     const meta = metaByCol.get(col);
     const inferred = inferChamber(meta, col);
     const na = inferred && inferred !== row.chamber;
-    const val = Number((row as Record<string, unknown>)[col] ?? 0);
+    const raw = (row as any)[col];
+    const val = Number(raw ?? 0);
+
+    // preferred-pair waiver: this item is the lesser one, and the preferred item was supported
+    let waiver = false;
+    const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+    if (!na && meta?.pair_key && !isPreferred && !(val > 0)) {
+      for (const other of billCols) {
+        if (other === col) continue;
+        const m2 = metaByCol.get(other);
+        if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
+          const v2 = Number((row as any)[other] ?? 0);
+          if (v2 > 0) { waiver = true; break; }
+        }
+      }
+    }
+
     return {
       col,
       meta,
       na,
       ok: !na && val > 0,
+      waiver,
       label: meta?.short_title || meta?.bill_number || col,
       stance: meta?.position_to_score || "",
     };
@@ -825,10 +847,14 @@ const items = billCols
         <div className="p-4 overflow-auto flex-1 min-h-0">
           <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
           <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-            {items.map(({ col, meta, na, ok, label, stance }) => (
+            {items.map(({ col, meta, na, ok, waiver, label, stance }) => (
               <div key={col} className="py-2 flex items-start gap-3">
                 <div className="mt-0.5">
+                  {waiver ? (
+                    <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                  ) : (
                     <VoteIcon ok={ok} />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
