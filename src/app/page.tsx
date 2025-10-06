@@ -140,6 +140,8 @@ export default function Page() {
   const [sortCol, setSortCol] = useState<string>("");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
 
+  const [selected, setSelected] = useState<Row | null>(null); // for member cards
+
   const filtered = useMemo(() => {
     let out = rows;
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
@@ -390,7 +392,9 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-4 flex items-center gap-3 sticky left-0 z-20 bg-white dark:bg-slate-900"
+                className="td pl-4 flex items-center gap-3 sticky left-0 z-20 bg-white dark:bg-slate-900 cursor-pointer"
+                onClick={() => setSelected(r)}
+                title="Click to view details"
               >
                 {r.photo_url ? (
                   <img
@@ -485,6 +489,14 @@ export default function Page() {
           ))}
         </div>
       </div>
+      {selected && (
+        <LawmakerCard
+          row={selected}
+          billCols={billCols}
+          metaByCol={metaByCol}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }
@@ -581,7 +593,7 @@ function Header({
         >
         {meta ? (meta.short_title || meta.bill_number) : col}</span>
         {meta && meta.position_to_score && (
-          <span className="text-xs text-slate-500 dark:text-slate-400">{meta.position_to_score}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-300">{meta.position_to_score}</span>
         )}
       </span>
       {active && (
@@ -594,8 +606,8 @@ function Header({
           <div className={meta.short_title ? "text-base font-bold" : "text-sm font-semibold"}>
             {meta.bill_number || meta.short_title || col}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{meta.short_title}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{meta.position_to_score}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.short_title}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.position_to_score}</div>
           {meta.notes && <div className="text-xs mt-2">{meta.notes}</div>}
           {meta.sponsor && <div className="text-xs mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           <div className="mt-2 flex flex-wrap gap-1">
@@ -622,7 +634,7 @@ function Segmented({
   return (
     <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
       {options.map((opt) => {
-        const optValue = opt === "Both" ? "Both" : opt.toUpperCase(); // "Both" | "HOUSE" | "SENATE"
+        const optValue = opt === "Both" ? "Both" : opt.toUpperCase();
         const isActive = current === optValue;
         return (
           <button
@@ -691,5 +703,146 @@ function VoteIcon({ ok }: { ok: boolean }) {
         fill="#F97066"
       />
     </svg>
+  );
+}
+
+
+function LawmakerCard({
+  row,
+  billCols,
+  metaByCol,
+  onClose,
+}: {
+  row: Row;
+  billCols: string[];
+  metaByCol: Map<string, Meta>;
+  onClose: () => void;
+}) {
+  const chamberTag =
+    row.chamber === "HOUSE" ? "House" : row.chamber === "SENATE" ? "Senate" : (row.chamber || "");
+
+const items = billCols
+  .map((col) => {
+    const meta = metaByCol.get(col);
+    const inferred = inferChamber(meta, col);
+    const na = inferred && inferred !== row.chamber;
+    const val = Number((row as Record<string, unknown>)[col] ?? 0);
+    return {
+      col,
+      meta,
+      na,
+      ok: !na && val > 0,
+      label: meta?.short_title || meta?.bill_number || col,
+      stance: meta?.position_to_score || "",
+    };
+  })
+  .filter((it) => !it.na);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* backdrop */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      {/* card */}
+      <div className="relative w-[min(900px,95vw)] max-h-[85vh] rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl flex flex-col">
+        {/* header */}
+        <div className="flex items-center gap-3 p-4 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-900">
+          {row.photo_url ? (
+            <img
+              src={String(row.photo_url)}
+              alt=""
+              className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+            />
+          ) : (
+            <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
+          )}
+          <div className="flex-1">
+            <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+              {/* Chamber pill */}
+              <span
+                className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                style={{
+                  color: "#475569",
+                  backgroundColor: `${chamberColor(row.chamber)}20`,
+                }}
+                title="Chamber"
+              >
+                {chamberTag}
+              </span>
+              {/* Party badge */}
+              <span
+                className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                style={partyBadgeStyle(row.party)}
+                title="Party"
+              >
+                {partyLabel(row.party)}
+              </span>
+              {/* State */}
+              <span title="State">{(row as any).state}</span>
+            </div>
+          </div>
+
+          {/* Grade */}
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
+              <div>Total</div>
+              <div className="tabular font-medium text-slate-700 dark:text-slate-200">
+                {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+              </div>
+            </div>
+            <GradeChip grade={String(row.Grade || "N/A")} />
+          </div>
+
+          <button
+            className="ml-3 chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+          >
+            Close
+          </button>
+        </div>
+
+        {/* content */}
+        <div className="p-4 overflow-auto flex-1 min-h-0">
+          <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
+          <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+            {items.map(({ col, meta, na, ok, label, stance }) => (
+              <div key={col} className="py-2 flex items-start gap-3">
+                <div className="mt-0.5">
+                    <VoteIcon ok={ok} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
+                    {label}
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-300">
+                    {na ? "Not applicable (different chamber)" : stance || ""}
+                  </div>
+                  {meta?.notes && (
+                    <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
+                  )}
+                  {/* categories */}
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {(meta?.categories || "")
+                      .split(";")
+                      .map((c) => c.trim())
+                      .filter(Boolean)
+                      .map((c) => (
+                        <span key={c} className="chip-xs">{c}</span>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!items.length && (
+              <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                No relevant bills/actions for current filters.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
