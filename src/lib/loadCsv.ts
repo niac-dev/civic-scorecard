@@ -58,8 +58,14 @@ export async function loadData(): Promise<{
   const columns = Object.keys(rows[0] || {}).filter((c) => !identity.includes(c));
 
   // Map metadata by column for quick lookups
-  const metaByCol = new Map<string, ColumnMeta>(meta.map((m) => [m.column, m]));
-
+const metaByCol = new Map(meta.map((m: any) => [
+  m.column,
+  {
+    ...m,
+    preferred: String(m.preferred || "").toLowerCase() === "true",
+    pair_key: m.pair_key || "",
+  },
+]));
   // Unique, sorted list of categories extracted from metadata
   const catSet = new Set<string>();
   meta.forEach((m) => {

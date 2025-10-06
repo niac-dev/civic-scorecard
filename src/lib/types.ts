@@ -15,6 +15,8 @@ export type Meta = {
   column: string;
   /** optional type tag if you use it ("BILL" | "MANUAL") */
   type?: "BILL" | "MANUAL";
+  preferred?: boolean | number | string; // tolerate csv typing
+  pair_key?: string;
 };
 
 /** One member row from scores_wide.csv */
@@ -34,4 +36,17 @@ export type Row = {
 };
 
 // If other files still import ColumnMeta, keep this alias for backwards-compat:
-export type ColumnMeta = Meta;
+export type ColumnMeta = {
+  column: string;
+  type: "BILL" | "MANUAL";
+  bill_number: string;
+  categories: string;
+  short_title: string;
+  notes: string;
+  sponsor: string;
+  position_to_score: string;
+  /** same string for all items in the group (e.g. the two similar measures) */
+  pair_key?: string;
+  /** mark the “better” one in the pair */
+  preferred?: boolean;
+};

@@ -455,13 +455,29 @@ export default function Page() {
                 const notApplicable = inferredChamber && inferredChamber !== r.chamber;
 
                 // Tooltip text
+                // --- NEW: dash if this is the lesser item in a preferred pair and member hit the preferred one ---
+                const showDashForPreferredPair = (() => {
+                  if (!meta?.pair_key || meta.preferred || val > 0 || notApplicable) return false;
+                  // find any other column in the same pair that is marked preferred and the member scored on it
+                  for (const other of billCols) {
+                    if (other === c) continue;
+                    const m2 = metaByCol.get(other);
+                    if (m2?.pair_key === meta.pair_key && m2.preferred) {
+                      const v2 = Number((r as any)[other] ?? 0);
+                      if (v2 > 0) return true; // got the preferred one → show dash here
+                    }
+                  }
+                  return false;
+                })();
+
                 let title: string;
                 if (notApplicable) {
                   title = "Not applicable (different chamber)";
+                } else if (showDashForPreferredPair) {
+                  title = "Not penalized: preferred item supported";
                 } else if (val > 0) {
                   title = "Aligned with our stance (earned points)";
                 } else {
-                  // For same-chamber entries with no points, treat as not aligned
                   title = "Not aligned with our stance (no points)";
                 }
 
@@ -469,6 +485,8 @@ export default function Page() {
                   <div key={c} className="td pr-0 flex items-center justify-center" title={title}>
                     {notApplicable ? (
                       <span className="text-xs text-slate-400">N/A</span>
+                    ) : showDashForPreferredPair ? (
+                      <span className="text-lg leading-none text-slate-400">—</span>
                     ) : (
                       <VoteIcon ok={val > 0} />
                     )}
@@ -588,7 +606,7 @@ function Header({
     >
       <span className="flex flex-col max-w-[14rem]">
         <span
-          className="line-clamp-3"
+          className="line-clamp-2"
           title={meta ? (meta.short_title || meta.bill_number) : col}
         >
         {meta ? (meta.short_title || meta.bill_number) : col}</span>
@@ -602,7 +620,7 @@ function Header({
         </span>
       )}
       {meta && (
-        <div className="invisible group-hover:visible absolute left-0 top-full mt-2 z-50 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
+        <div className="invisible group-hover:visible absolute left-0 bottom-full mb-2 z-50 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
           <div className={meta.short_title ? "text-base font-bold" : "text-sm font-semibold"}>
             {meta.bill_number || meta.short_title || col}
           </div>
