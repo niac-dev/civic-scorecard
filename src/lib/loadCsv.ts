@@ -1,46 +1,41 @@
+// src/lib/loadCsv.ts
 import Papa from "papaparse";
-import type { Row, ColumnMeta } from "./types";
+import type { Row, Meta } from "./types";
 
-/**
- * Fetch and parse a CSV file into typed rows.
- */
-export async function fetchCSV<T = unknown>(path: string): Promise<T[]> {
+async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
   const res = await fetch(path, { cache: "no-store" });
   const text = await res.text();
-  const { data } = Papa.parse<T>(text, { header: true, skipEmptyLines: true });
-  return data as T[];
+  const parsed = Papa.parse<T>(text, { header: true, skipEmptyLines: true });
+  return (parsed.data as T[]) || [];
 }
 
-/**
- * Load score rows and column metadata, coerce numeric fields, and
- * build helper structures for the UI.
- */
 export async function loadData(): Promise<{
   rows: Row[];
   columns: string[];
-  metaByCol: Map<string, ColumnMeta>;
+  metaByCol: Map<string, Meta>;
   categories: string[];
 }> {
-  const [rows, meta] = await Promise.all([
+  const [rowsRaw, meta] = await Promise.all([
     fetchCSV<Row>("/data/scores_wide.csv"),
-    fetchCSV<ColumnMeta>("/data/scores_columns_meta.csv"),
+    fetchCSV<Meta>("/data/scores_columns_meta.csv"),
   ]);
 
-  // Coerce numerics (totals/percent plus any uppercase header bill/action columns)
-  const numericCols = new Set(["Total", "Max_Possible", "Percent"]);
-  rows.forEach((r) => {
-    const rec = r as unknown as Record<string, number | string>;
-    for (const k of Object.keys(rec)) {
-      if (numericCols.has(k) || /^[A-Z]/.test(k)) {
-        const maybe = Number(rec[k] as string | number);
-        if (!Number.isNaN(maybe)) {
-          rec[k] = maybe;
-        }
+  // Coerce numerics on a copy
+  const rows: Row[] = rowsRaw.map((r) => {
+    const out: Record<string, unknown> = { ...r };
+    const numericCols = new Set(["Total", "Max_Possible", "Percent"]);
+    for (const k of Object.keys(out)) {
+      const v = out[k] as unknown;
+      const looksBillCol = /^[A-Z]/.test(k); // bill/action cols start with a letter
+      if (numericCols.has(k) || looksBillCol) {
+        const n = Number(v as number | string);
+        if (!Number.isNaN(n)) out[k] = n;
       }
     }
+    return out as Row;
   });
 
-  // Identity columns we don't want to treat as bill/action columns
+  // Identity vs bill/action columns
   const identity = [
     "full_name",
     "party",
@@ -53,27 +48,19 @@ export async function loadData(): Promise<{
     "Percent",
     "Grade",
   ];
+  const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c));
 
-  // All other columns are bill/action columns
-  const columns = Object.keys(rows[0] || {}).filter((c) => !identity.includes(c));
+  // Map column -> metadata
+  const metaByCol = new Map<string, Meta>(meta.map((m) => [m.column, m]));
 
-  // Map metadata by column for quick lookups
-const metaByCol = new Map(meta.map((m: any) => [
-  m.column,
-  {
-    ...m,
-    preferred: String(m.preferred || "").toLowerCase() === "true",
-    pair_key: m.pair_key || "",
-  },
-]));
-  // Unique, sorted list of categories extracted from metadata
+  // Categories list
   const catSet = new Set<string>();
   meta.forEach((m) => {
-    (m.categories || "")
+    const cats = (m.categories ?? "")
       .split(";")
       .map((s) => s.trim())
-      .filter(Boolean)
-      .forEach((c) => catSet.add(c));
+      .filter(Boolean);
+    cats.forEach((c) => catSet.add(c));
   });
   const categories = Array.from(catSet).sort();
 
