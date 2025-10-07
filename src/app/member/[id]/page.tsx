@@ -12,7 +12,7 @@ function isTrue(v: unknown): boolean {
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
-  if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
+  if (explicit === "HOUSE" || explicit === "SENATE") return explicit as "HOUSE" | "SENATE";
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
   return "";

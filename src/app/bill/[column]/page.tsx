@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 
@@ -65,7 +65,6 @@ function partyBadgeStyle(p?: string) {
 
 export default function BillPage() {
   const params = useParams();
-  const router = useRouter();
   const column = decodeURIComponent(params.column as string);
 
   const [meta, setMeta] = useState<Meta | null>(null);
