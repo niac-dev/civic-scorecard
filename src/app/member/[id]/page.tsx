@@ -326,7 +326,7 @@ export default function MemberPage() {
             <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
             <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
               {items.map(({ col, meta, na, ok, waiver, label, stance }) => (
-                <div key={col} className="py-2 flex items-start gap-3">
+                <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
                   <div className="mt-0.5">
                     {waiver ? (
                       <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
@@ -335,7 +335,7 @@ export default function MemberPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
+                    <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
                       {label}
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-300">
