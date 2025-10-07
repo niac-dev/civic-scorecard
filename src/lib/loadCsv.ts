@@ -27,7 +27,9 @@ export async function loadData(): Promise<{
     for (const k of Object.keys(out)) {
       const v = out[k] as unknown;
       const looksBillCol = /^[A-Z]/.test(k); // bill/action cols start with a letter
-      if (numericCols.has(k) || looksBillCol) {
+      const isGradeCol = k === "Grade" || k.startsWith("Grade_"); // Grade columns should stay as strings
+      const isCategoryNumeric = k.startsWith("Total_") || k.startsWith("Max_Possible_") || k.startsWith("Percent_");
+      if ((numericCols.has(k) || looksBillCol || isCategoryNumeric) && !isGradeCol) {
         const n = Number(v as number | string);
         if (!Number.isNaN(n)) out[k] = n;
       }
@@ -47,6 +49,18 @@ export async function loadData(): Promise<{
     "Max_Possible",
     "Percent",
     "Grade",
+    "Total_Civil_Rights_Immigration",
+    "Max_Possible_Civil_Rights_Immigration",
+    "Percent_Civil_Rights_Immigration",
+    "Grade_Civil_Rights_Immigration",
+    "Total_Iran",
+    "Max_Possible_Iran",
+    "Percent_Iran",
+    "Grade_Iran",
+    "Total_Israel_Gaza",
+    "Max_Possible_Israel_Gaza",
+    "Percent_Israel_Gaza",
+    "Grade_Israel_Gaza",
   ];
   const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c));
 

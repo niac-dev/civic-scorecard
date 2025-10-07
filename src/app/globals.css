@@ -33,3 +33,28 @@ th {
 .dark .col-sticky {
   @apply bg-white text-slate-800; /* keep white even in dark mode */
 }
+
+/* Print styles */
+@media print {
+  /* Hide print and back buttons */
+  button {
+    display: none !important;
+  }
+
+  /* Remove backgrounds and borders */
+  .card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Force light mode for printing */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Remove page margins */
+  @page {
+    margin: 0.5in;
+  }
+}

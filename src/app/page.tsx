@@ -133,6 +133,7 @@ export default function Page() {
   const [cols, setCols] = useState<string[]>([]);
   const [metaByCol, setMeta] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
+  const [selected, setSelected] = useState<Row | null>(null);
 
   useEffect(() => { (async () => {
     const { rows, columns, metaByCol, categories } = await loadData();
@@ -143,8 +144,6 @@ export default function Page() {
 
   const [sortCol, setSortCol] = useState<string>("");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
-
-  const [selected, setSelected] = useState<Row | null>(null); // for member cards
 
   const filtered = useMemo(() => {
     let out = rows;
@@ -182,11 +181,14 @@ export default function Page() {
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
       });
     }
-    if (sortCol === "Grade") {
+    // Check if sorting by any grade column
+    if (sortCol.startsWith("Grade")) {
       const goodFirst = sortDir === "GOOD_FIRST"; // best grades first
+      const gradeField = sortCol as keyof Row;
+
       return [...filtered].sort((a, b) => {
-        const ra = gradeRank(String(a.Grade || ""));
-        const rb = gradeRank(String(b.Grade || ""));
+        const ra = gradeRank(String(a[gradeField] || ""));
+        const rb = gradeRank(String(b[gradeField] || ""));
         if (ra !== rb) return goodFirst ? ra - rb : rb - ra;
         // tie-break by Percent (higher first when goodFirst)
         const pa = Number(a.Percent || 0);
@@ -221,7 +223,8 @@ export default function Page() {
     });
   }, [filtered, sortCol, sortDir, metaByCol]);
 
-  const billCols = useMemo(() => {
+  // All columns for the member card (chamber-filtered only, not category-filtered)
+  const allBillCols = useMemo(() => {
     let out = cols;
 
     // Chamber filter: keep only bills for the selected chamber
@@ -232,6 +235,13 @@ export default function Page() {
         return ch === f.chamber;
       });
     }
+
+    return out;
+  }, [cols, metaByCol, f.chamber]);
+
+  // Filtered columns for the main table view (chamber + category filtered)
+  const billCols = useMemo(() => {
+    let out = allBillCols;
 
     // Category filter: keep only bills whose meta.categories intersects selected chips
     if (f.categories.size) {
@@ -248,27 +258,65 @@ export default function Page() {
     }
 
     return out;
-  }, [cols, metaByCol, f.chamber, f.categories]);
+  }, [allBillCols, metaByCol, f.categories]);
+
+  // Determine which grade columns to show based on selected category
+  const gradeColumns = useMemo(() => {
+    // If exactly one category is selected, show only that category's grade
+    if (f.categories.size === 1) {
+      const category = Array.from(f.categories)[0];
+      // Replace special chars with underscores to match CSV column naming
+      const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+      return [
+        {
+          header: category,
+          field: `Grade_${fieldSuffix}` as keyof Row
+        }
+      ];
+    }
+    // Otherwise show only total grade
+    return [
+      { header: "Total", field: "Grade" as keyof Row }
+    ];
+  }, [f.categories]);
+
+  // Determine which total/max/percent fields to show based on selected category
+  const scoreSuffix = useMemo(() => {
+    if (f.categories.size === 1) {
+      const category = Array.from(f.categories)[0];
+      return category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+    }
+    return ""; // Empty suffix means overall (Total, Max_Possible, Percent)
+  }, [f.categories]);
 
   const gridTemplate = useMemo(() => {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "140px").join(" ");
-    // member col + grade col + dynamic bill cols + totals
-    return `280px 80px ${billsPart} 160px 120px 100px`;
-  }, [billCols]);
+    const gradesPart = gradeColumns.map(() => "120px").join(" ");
+    // member col + grade cols + dynamic bill cols + totals
+    return `280px ${gradesPart} ${billsPart} 160px 120px 100px`;
+  }, [billCols, gradeColumns]);
 
   return (
     <div className="space-y-4">
       <Filters categories={categories} />
-      <div className="card overflow-hidden">
+      {selected && (
+        <LawmakerCard
+          row={selected}
+          billCols={allBillCols}
+          metaByCol={metaByCol}
+          onClose={() => setSelected(null)}
+        />
+      )}
+      <div className="card overflow-visible">
         <div className="overflow-auto max-h-[70vh]">
           {/* Header */}
           <div
-            className="grid min-w-max sticky top-0 z-30 bg-[#F7F8FA]/95 dark:bg-slate-900/85 backdrop-blur border-b border-[#E7ECF2] dark:border-white/10"
+            className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
             style={{ gridTemplateColumns: gridTemplate }}
           >
             <div
-              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer relative"
+              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer"
               onClick={() => {
                 if (sortCol === "__member") {
                   setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
@@ -286,25 +334,31 @@ export default function Page() {
                 </span>
               )}
             </div>
-            <div
-              className="th text-right pr-3 cursor-pointer relative"
-              title="Click to sort by Grade (toggle best→worst / worst→best)"
-              onClick={() => {
-                if (sortCol === "Grade") {
-                  setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                } else {
-                  setSortCol("Grade");
-                  setSortDir("GOOD_FIRST");
-                }
-              }}
-            >
-              Grade
-              {sortCol === "Grade" && (
-                <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              )}
-            </div>
+            {gradeColumns.map((gradeCol, idx) => (
+              <div
+                key={gradeCol.field}
+                className={clsx(
+                  "th text-right pr-3 cursor-pointer relative",
+                  idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
+                )}
+                title={`Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`}
+                onClick={() => {
+                  if (sortCol === String(gradeCol.field)) {
+                    setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                  } else {
+                    setSortCol(String(gradeCol.field));
+                    setSortDir("GOOD_FIRST");
+                  }
+                }}
+              >
+                {gradeCol.header}
+                {sortCol === String(gradeCol.field) && (
+                  <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                  </span>
+                )}
+              </div>
+            ))}
             {billCols.map((c) => (
               <Header
                 key={c}
@@ -327,16 +381,17 @@ export default function Page() {
               className="th text-right pr-3 cursor-pointer relative"
               title="Click to sort by Total (toggle high→low / low→high)"
               onClick={() => {
-                if (sortCol === "Total") {
+                const col = scoreSuffix ? `Total_${scoreSuffix}` : "Total";
+                if (sortCol === col) {
                   setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
                 } else {
-                  setSortCol("Total");
+                  setSortCol(col);
                   setSortDir("GOOD_FIRST");
                 }
               }}
             >
               Total
-              {sortCol === "Total" && (
+              {sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") && (
                 <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                 </span>
@@ -347,16 +402,17 @@ export default function Page() {
               className="th text-right pr-3 cursor-pointer relative"
               title="Click to sort by Max (toggle high→low / low→high)"
               onClick={() => {
-                if (sortCol === "Max_Possible") {
+                const col = scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible";
+                if (sortCol === col) {
                   setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
                 } else {
-                  setSortCol("Max_Possible");
+                  setSortCol(col);
                   setSortDir("GOOD_FIRST");
                 }
               }}
             >
               Max
-              {sortCol === "Max_Possible" && (
+              {sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") && (
                 <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                 </span>
@@ -367,16 +423,17 @@ export default function Page() {
               className="th text-right pr-3 cursor-pointer relative"
               title="Click to sort by Percent (toggle high→low / low→high)"
               onClick={() => {
-                if (sortCol === "Percent") {
+                const col = scoreSuffix ? `Percent_${scoreSuffix}` : "Percent";
+                if (sortCol === col) {
                   setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
                 } else {
-                  setSortCol("Percent");
+                  setSortCol(col);
                   setSortDir("GOOD_FIRST");
                 }
               }}
             >
               Percent
-              {sortCol === "Percent" && (
+              {sortCol === (scoreSuffix ? `Percent_${scoreSuffix}` : "Percent") && (
                 <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                 </span>
@@ -442,9 +499,17 @@ export default function Page() {
                   </div>
                 </div>
               </div>
-              <div className="td text-right pr-3">
-                <GradeChip grade={String(r.Grade || "N/A")} />
-              </div>
+              {gradeColumns.map((gradeCol, idx) => (
+                <div
+                  key={gradeCol.field}
+                  className={clsx(
+                    "td text-right pr-3",
+                    idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
+                  )}
+                >
+                  <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
+                </div>
+              ))}
 
               {/* bill columns -> binary check / x / N/A for other chamber */}
               {billCols.map((c) => {
@@ -500,26 +565,18 @@ export default function Page() {
               })}
 
               <div className="td tabular text-right pr-3 font-medium">
-                {Number(r.Total || 0).toFixed(0)}
+                {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
               </div>
               <div className="td tabular text-right pr-3">
-                {Number(r.Max_Possible || 0).toFixed(0)}
+                {Number(r[scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible"] || 0).toFixed(0)}
               </div>
               <div className="td tabular text-right pr-3">
-                <Progress value={Number(r.Percent || 0)} />
+                <Progress value={Number(r[scoreSuffix ? `Percent_${scoreSuffix}` : "Percent"] || 0)} />
               </div>
             </div>
           ))}
         </div>
       </div>
-      {selected && (
-        <LawmakerCard
-          row={selected}
-          billCols={billCols}
-          metaByCol={metaByCol}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
   );
 }
@@ -557,7 +614,7 @@ function Filters({ categories }: { categories: string[] }) {
             f.categories.size === 0 && "ring-2 ring-[#4B8CFB]"
           )}
           onClick={() => f.set({ categories: new Set() })}
-          title="Show all bills/actions"
+          title="Show all categories"
         >
           All
         </button>
@@ -568,12 +625,14 @@ function Filters({ categories }: { categories: string[] }) {
               key={c}
               className={clsx("chip", active && "ring-2 ring-[#4B8CFB]")}
               onClick={() => {
-                const next = new Set(f.categories);
-                if (next.has(c)) next.delete(c);
-                else next.add(c);
-                f.set({ categories: next });
+                // Only allow one category at a time
+                if (active) {
+                  f.set({ categories: new Set() }); // Deselect
+                } else {
+                  f.set({ categories: new Set([c]) }); // Select only this one
+                }
               }}
-              title={active ? "Remove from filter" : "Filter by this category"}
+              title={active ? "Show all categories" : `Filter by ${c}`}
             >
               {c}
             </button>
@@ -601,38 +660,53 @@ function Header({
   dir?: "GOOD_FIRST" | "BAD_FIRST";
 }) {
   return (
-    <div
-      className={clsx(
-        "th group relative select-none",
-        onSort ? "cursor-pointer" : "cursor-default"
-      )}
-      onClick={onSort}
-      title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
-    >
-      <span className="flex flex-col max-w-[14rem]">
-        <span
-          className="line-clamp-2"
-          title={meta ? (meta.short_title || meta.bill_number) : col}
-        >
-        {meta ? (meta.short_title || meta.bill_number) : col}</span>
-        {meta && meta.position_to_score && (
-          <span className="text-xs text-slate-500 dark:text-slate-300">{meta.position_to_score}</span>
-        )}
+    <div className="th group relative select-none flex flex-col max-w-[14rem]">
+      {/* Bill title - clickable to view details */}
+      <span
+        className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+        title={meta ? (meta.short_title || meta.bill_number) : col}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (meta) {
+            window.open(`/bill/${encodeURIComponent(col)}`, '_blank');
+          }
+        }}
+      >
+        {meta ? (meta.short_title || meta.bill_number) : col}
       </span>
-      {active && (
-        <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-          {dir === "GOOD_FIRST" ? "▲" : "▼"}
+
+      {/* Position - sortable */}
+      {meta && meta.position_to_score && (
+        <span
+          className={clsx(
+            "text-xs text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1",
+            onSort && "cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+          )}
+          onClick={onSort}
+          title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
+        >
+          {meta.position_to_score}
+          {active && (
+            <span className="text-[10px]">
+              {dir === "GOOD_FIRST" ? "▲" : "▼"}
+            </span>
+          )}
         </span>
       )}
+
+      {/* Tooltip */}
       {meta && (
-        <div className="invisible group-hover:visible absolute left-0 bottom-full mb-2 z-50 w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-zinc-900 p-3 shadow-xl">
-          <div className={meta.short_title ? "text-base font-bold" : "text-sm font-semibold"}>
+        <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
+          <div className={clsx(
+            meta.short_title ? "text-base font-bold" : "text-sm font-semibold",
+            "text-slate-900 dark:text-slate-100"
+          )}>
             {meta.bill_number || meta.short_title || col}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.short_title}</div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.position_to_score}</div>
-          {meta.notes && <div className="text-xs mt-2">{meta.notes}</div>}
-          {meta.sponsor && <div className="text-xs mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
+          {meta.notes && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.notes}</div>}
+          {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           <div className="mt-2 flex flex-wrap gap-1">
             {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
               <span key={c} className="chip-xs">{c}</span>
@@ -680,7 +754,7 @@ function Segmented({
 
 function Progress({ value }:{ value:number }) {
   return (
-    <div className="h-2 w-full rounded-full bg-[#E7ECF2] dark:bg-white/10 overflow-hidden">
+    <div className="h-2 w-full rounded-full bg-[#E7ECF2] overflow-hidden">
       <div className="h-2 rounded-full" style={{ width: `${(value*100).toFixed(0)}%`, background: "#0FDDAA" }} />
     </div>
   );
@@ -729,7 +803,6 @@ function VoteIcon({ ok }: { ok: boolean }) {
   );
 }
 
-
 function LawmakerCard({
   row,
   billCols,
@@ -741,152 +814,229 @@ function LawmakerCard({
   metaByCol: Map<string, Meta>;
   onClose: () => void;
 }) {
-  const chamberTag =
-    row.chamber === "HOUSE" ? "House" : row.chamber === "SENATE" ? "Senate" : (row.chamber || "");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-const items = billCols
-  .map((col) => {
-    const meta = metaByCol.get(col);
-    const inferred = inferChamber(meta, col);
-    const na = inferred && inferred !== row.chamber;
-    const raw = (row as any)[col];
-    const val = Number(raw ?? 0);
+  // Build list of items: each bill or manual action gets an entry
+  const allItems = useMemo(() => {
+    return billCols
+      .map((c) => {
+        const meta = metaByCol.get(c);
+        const inferredChamber = inferChamber(meta, c);
+        const notApplicable = inferredChamber && inferredChamber !== row.chamber;
+        const val = Number((row as any)[c] ?? 0);
+        const categories = (meta?.categories || "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
-    // preferred-pair waiver: this item is the lesser one, and the preferred item was supported
-    let waiver = false;
-    const isPreferred = meta ? isTrue((meta as any).preferred) : false;
-    if (!na && meta?.pair_key && !isPreferred && !(val > 0)) {
-      for (const other of billCols) {
-        if (other === col) continue;
-        const m2 = metaByCol.get(other);
-        if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
-          const v2 = Number((row as any)[other] ?? 0);
-          if (v2 > 0) { waiver = true; break; }
+        // Check for preferred pair waiver
+        const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+        let waiver = false;
+        if (!notApplicable && meta?.pair_key && !isPreferred && !(val > 0)) {
+          for (const other of billCols) {
+            if (other === c) continue;
+            const m2 = metaByCol.get(other);
+            if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
+              const v2 = Number((row as any)[other] ?? 0);
+              if (v2 > 0) { waiver = true; break; }
+            }
+          }
         }
-      }
-    }
 
-    return {
-      col,
-      meta,
-      na,
-      ok: !na && val > 0,
-      waiver,
-      label: meta?.short_title || meta?.bill_number || col,
-      stance: meta?.position_to_score || "",
-    };
-  })
-  .filter((it) => !it.na);
+        return {
+          col: c,
+          meta,
+          val,
+          categories,
+          notApplicable,
+          waiver,
+          ok: !notApplicable && val > 0,
+        };
+      })
+      .filter((it) => it.meta && !it.notApplicable);
+  }, [billCols, metaByCol, row]);
+
+  // Filter items based on selected category
+  const items = selectedCategory
+    ? allItems.filter((it) => it.categories.some((c) => c === selectedCategory))
+    : allItems;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* card */}
-      <div className="relative w-[min(900px,95vw)] max-h-[85vh] rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-900 shadow-xl flex flex-col">
-        {/* header */}
-        <div className="flex items-center gap-3 p-4 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-900">
-          {row.photo_url ? (
-            <img
-              src={String(row.photo_url)}
-              alt=""
-              className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-            />
-          ) : (
-            <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
-          )}
-          <div className="flex-1">
-            <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
-            <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
-              {/* Chamber pill */}
-              <span
-                className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                style={{
-                  color: "#475569",
-                  backgroundColor: `${chamberColor(row.chamber)}20`,
-                }}
-                title="Chamber"
-              >
-                {chamberTag}
-              </span>
-              {/* Party badge */}
-              <span
-                className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
-                style={partyBadgeStyle(row.party)}
-                title="Party"
-              >
-                {partyLabel(row.party)}
-              </span>
-              {/* State */}
-              <span title="State">{(row as any).state}</span>
-            </div>
-          </div>
-
-          {/* Grade */}
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
-              <div>Total</div>
-              <div className="tabular font-medium text-slate-700 dark:text-slate-200">
-                {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/20 dark:bg-black/50 z-[100]"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
+        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 z-10 bg-white/70 dark:bg-[#0B1220]/80 backdrop-blur-xl">
+            {row.photo_url ? (
+              <img
+                src={String(row.photo_url)}
+                alt=""
+                className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+              />
+            ) : (
+              <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
+            )}
+            <div className="flex-1">
+              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
+              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
+                <span
+                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                  style={{
+                    color: "#64748b",
+                    backgroundColor: `${chamberColor(row.chamber)}20`,
+                  }}
+                >
+                  {row.chamber === "HOUSE"
+                    ? "House"
+                    : row.chamber === "SENATE"
+                    ? "Senate"
+                    : row.chamber || ""}
+                </span>
+                <span
+                  className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                  style={partyBadgeStyle(row.party)}
+                >
+                  {partyLabel(row.party)}
+                </span>
+                <span>{stateCodeOf(row.state)}</span>
               </div>
             </div>
-            <GradeChip grade={String(row.Grade || "N/A")} />
+
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
+                <div>Overall</div>
+                <div className="tabular font-medium text-slate-700 dark:text-slate-200">
+                  {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+                </div>
+              </div>
+              <GradeChip grade={String(row.Grade || "N/A")} />
+            </div>
+
+            <button
+              className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+              onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+              title="Open in new tab"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </button>
+            <button
+              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+              onClick={onClose}
+            >
+              Close
+            </button>
           </div>
 
-          <button
-            className="ml-3 chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-          >
-            Close
-          </button>
-        </div>
+          {/* Content */}
+          <div className="p-6">
+            {/* Category Grades */}
+            <div className="mb-6">
+              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setSelectedCategory(selectedCategory === "Civil Rights & Immigration" ? null : "Civil Rights & Immigration")}
+                  className={clsx(
+                    "rounded-lg border p-3 text-left transition cursor-pointer",
+                    selectedCategory === "Civil Rights & Immigration"
+                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                  )}
+                >
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Civil Rights & Immigration</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      {Number(row.Total_Civil_Rights_Immigration || 0).toFixed(0)} / {Number(row.Max_Possible_Civil_Rights_Immigration || 0).toFixed(0)}
+                    </div>
+                    <GradeChip grade={String(row.Grade_Civil_Rights_Immigration || "N/A")} />
+                  </div>
+                </button>
 
-        {/* content */}
-        <div className="p-4 overflow-auto flex-1 min-h-0">
-          <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
-          <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-            {items.map(({ col, meta, na, ok, waiver, label, stance }) => (
-              <div key={col} className="py-2 flex items-start gap-3">
-                <div className="mt-0.5">
-                  {waiver ? (
-                    <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                  ) : (
-                    <VoteIcon ok={ok} />
+                <button
+                  onClick={() => setSelectedCategory(selectedCategory === "Iran" ? null : "Iran")}
+                  className={clsx(
+                    "rounded-lg border p-3 text-left transition cursor-pointer",
+                    selectedCategory === "Iran"
+                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
-                    {label}
+                >
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Iran</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      {Number(row.Total_Iran || 0).toFixed(0)} / {Number(row.Max_Possible_Iran || 0).toFixed(0)}
+                    </div>
+                    <GradeChip grade={String(row.Grade_Iran || "N/A")} />
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-300">
-                    {na ? "Not applicable (different chamber)" : stance || ""}
-                  </div>
-                  {meta?.notes && (
-                    <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
+                </button>
+
+                <button
+                  onClick={() => setSelectedCategory(selectedCategory === "Israel-Gaza" ? null : "Israel-Gaza")}
+                  className={clsx(
+                    "rounded-lg border p-3 text-left transition cursor-pointer",
+                    selectedCategory === "Israel-Gaza"
+                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
-                  {/* categories */}
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {(meta?.categories || "")
-                      .split(";")
-                      .map((c) => c.trim())
-                      .filter(Boolean)
-                      .map((c) => (
+                >
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Israel/Gaza</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      {Number(row.Total_Israel_Gaza || 0).toFixed(0)} / {Number(row.Max_Possible_Israel_Gaza || 0).toFixed(0)}
+                    </div>
+                    <GradeChip grade={String(row.Grade_Israel_Gaza || "N/A")} />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Votes & Actions */}
+            <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
+            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10 max-h-[50vh] overflow-auto">
+              {items.map((it) => (
+                <div key={it.col} className="py-2 flex items-start gap-3">
+                  <div className="mt-0.5">
+                    {it.waiver ? (
+                      <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                    ) : (
+                      <VoteIcon ok={it.ok} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
+                      {it.meta?.short_title || it.meta?.bill_number || it.col}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                      {it.meta?.position_to_score || ""}
+                    </div>
+                    {it.meta?.notes && (
+                      <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{it.meta.notes}</div>
+                    )}
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {it.categories.map((c) => (
                         <span key={c} className="chip-xs">{c}</span>
                       ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {!items.length && (
-              <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                No relevant bills/actions for current filters.
-              </div>
-            )}
+              ))}
+              {!items.length && (
+                <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                  No relevant bills/actions for current filters.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
+

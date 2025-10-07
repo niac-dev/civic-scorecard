@@ -31,6 +31,19 @@ export type Row = {
   Max_Possible?: number | string;
   Percent?: number | string;
   Grade?: string;
+  // per-category grades (dynamically generated):
+  Total_Civil_Rights_Immigration?: number | string;
+  Max_Possible_Civil_Rights_Immigration?: number | string;
+  Percent_Civil_Rights_Immigration?: number | string;
+  Grade_Civil_Rights_Immigration?: string;
+  Total_Iran?: number | string;
+  Max_Possible_Iran?: number | string;
+  Percent_Iran?: number | string;
+  Grade_Iran?: string;
+  Total_Israel_Gaza?: number | string;
+  Max_Possible_Israel_Gaza?: number | string;
+  Percent_Israel_Gaza?: number | string;
+  Grade_Israel_Gaza?: string;
   // dynamic bill/action columns:
   [billOrManual: string]: string | number | undefined;
 };
