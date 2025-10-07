@@ -312,8 +312,10 @@ export default function Page() {
         <div className="overflow-auto max-h-[70vh]">
           {/* Header */}
           <div
-            className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
-            style={{ gridTemplateColumns: gridTemplate }}
+            className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
+            style={{
+              gridTemplateColumns: gridTemplate,
+            }}
           >
             <div
               className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer"
