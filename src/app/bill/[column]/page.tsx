@@ -89,7 +89,7 @@ export default function BillPage() {
       const oppose: Row[] = [];
 
       rows.forEach((row) => {
-        const val = Number((row as any)[column] ?? 0);
+        const val = Number((row as Record<string, unknown>)[column] ?? 0);
         if (val > 0) {
           support.push(row);
         } else if (val === 0) {

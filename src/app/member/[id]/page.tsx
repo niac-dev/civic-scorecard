@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
@@ -115,7 +115,6 @@ function VoteIcon({ ok }: { ok: boolean }) {
 
 export default function MemberPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
   const [row, setRow] = useState<Row | null>(null);
@@ -160,17 +159,17 @@ export default function MemberPage() {
       const meta = metaByCol.get(col);
       const inferred = inferChamber(meta, col);
       const na = inferred && inferred !== row.chamber;
-      const raw = (row as any)[col];
+      const raw = (row as Record<string, unknown>)[col];
       const val = Number(raw ?? 0);
 
       let waiver = false;
-      const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+      const isPreferred = meta ? isTrue((meta as Record<string, unknown>).preferred) : false;
       if (!na && meta?.pair_key && !isPreferred && !(val > 0)) {
         for (const other of billCols) {
           if (other === col) continue;
           const m2 = metaByCol.get(other);
-          if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
-            const v2 = Number((row as any)[other] ?? 0);
+          if (m2?.pair_key === meta.pair_key && isTrue((m2 as Record<string, unknown>).preferred)) {
+            const v2 = Number((row as Record<string, unknown>)[other] ?? 0);
             if (v2 > 0) { waiver = true; break; }
           }
         }

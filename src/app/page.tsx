@@ -104,16 +104,6 @@ function chamberColor(ch?: string): string {
 }
 
 
-function partyDotColor(p?: string): string {
-  const label = partyLabel(p);
-  if (!label) return "#94A3B8"; // slate-400 fallback
-  const s = label.toLowerCase();
-  if (s.startsWith("rep")) return "#EF4444";     // red for Republican
-  if (s.startsWith("dem")) return "#3B82F6";     // blue for Democrat
-  if (s.startsWith("ind")) return "#10B981";     // green for Independent
-  return "#94A3B8";                               // fallback
-}
-
 function partyBadgeStyle(p?: string) {
   const label = partyLabel(p).toLowerCase();
   const base =
