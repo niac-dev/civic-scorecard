@@ -186,7 +186,8 @@ export default function BillPage() {
               {supporters.map((member) => (
                 <div
                   key={member.bioguide_id}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5"
+                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                  onClick={() => window.open(`/member/${member.bioguide_id}`, '_blank')}
                 >
                   {member.photo_url ? (
                     <img
@@ -230,7 +231,8 @@ export default function BillPage() {
               {opposers.map((member) => (
                 <div
                   key={member.bioguide_id}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5"
+                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                  onClick={() => window.open(`/member/${member.bioguide_id}`, '_blank')}
                 >
                   {member.photo_url ? (
                     <img
