@@ -696,7 +696,7 @@ function Header({
             {meta.bill_number || meta.short_title || col}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.short_title}</div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.position_to_score}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}</div>
           {meta.notes && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.notes}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           <div className="mt-2 flex flex-wrap gap-1">
@@ -1006,7 +1006,7 @@ function LawmakerCard({
                       {it.meta?.short_title || it.meta?.bill_number || it.col}
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                      {it.meta?.position_to_score || ""}
+                      <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
                     </div>
                     {it.meta?.notes && (
                       <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{it.meta.notes}</div>

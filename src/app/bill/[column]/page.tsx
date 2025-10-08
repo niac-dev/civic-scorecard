@@ -128,7 +128,7 @@ export default function BillPage() {
                   {meta.short_title}
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                  <span className="font-medium">Position:</span> {meta.position_to_score}
+                  <span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}
                 </div>
                 {meta.sponsor && (
                   <div className="text-sm text-slate-600 dark:text-slate-300">
