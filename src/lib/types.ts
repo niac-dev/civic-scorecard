@@ -27,6 +27,12 @@ export type Row = {
   chamber: Chamber;
   bioguide_id?: string;
   photo_url?: string;
+  district?: string;
+  office_phone?: string;
+  office_address?: string;
+  district_offices?: string;
+  aipac_supported?: string | number | boolean;
+  dmfi_supported?: string | number | boolean;
   Total?: number | string;
   Max_Possible?: number | string;
   Percent?: number | string;
@@ -45,7 +51,7 @@ export type Row = {
   Percent_Israel_Gaza?: number | string;
   Grade_Israel_Gaza?: string;
   // dynamic bill/action columns:
-  [billOrManual: string]: string | number | undefined;
+  [billOrManual: string]: string | number | undefined | boolean;
 };
 
 // If other files still import ColumnMeta, keep this alias for backwards-compat:

@@ -92,6 +92,16 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
+function getAIPACEndorsement(row: Row): string {
+  const aipac = row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported);
+  const dmfi = row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported);
+
+  if (aipac && dmfi) return "AIPAC+DMFI";
+  if (aipac) return "AIPAC";
+  if (dmfi) return "DMFI";
+  return "";
+}
+
 function chamberColor(ch?: string): string {
   switch (ch) {
     case "HOUSE":
@@ -231,6 +241,11 @@ export default function Page() {
 
   // Filtered columns for the main table view (chamber + category filtered)
   const billCols = useMemo(() => {
+    // In summary mode, show no bill columns
+    if (f.viewMode === "summary") {
+      return [];
+    }
+
     let out = allBillCols;
 
     // Category filter: keep only bills whose meta.categories intersects selected chips
@@ -248,10 +263,24 @@ export default function Page() {
     }
 
     return out;
-  }, [allBillCols, metaByCol, f.categories]);
+  }, [allBillCols, metaByCol, f.categories, f.viewMode]);
 
   // Determine which grade columns to show based on selected category
   const gradeColumns = useMemo(() => {
+    // In summary mode, show all category grades
+    if (f.viewMode === "summary") {
+      const categoryGrades = categories.map(cat => {
+        const fieldSuffix = cat.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+        return {
+          header: cat,
+          field: `Grade_${fieldSuffix}` as keyof Row
+        };
+      });
+      return [
+        { header: "Overall Grade", field: "Grade" as keyof Row },
+        ...categoryGrades
+      ];
+    }
     // If exactly one category is selected, show only that category's grade
     if (f.categories.size === 1) {
       const category = Array.from(f.categories)[0];
@@ -259,16 +288,16 @@ export default function Page() {
       const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
       return [
         {
-          header: category,
+          header: `${category} Grade`,
           field: `Grade_${fieldSuffix}` as keyof Row
         }
       ];
     }
     // Otherwise show only total grade
     return [
-      { header: "Total", field: "Grade" as keyof Row }
+      { header: "Overall Grade", field: "Grade" as keyof Row }
     ];
-  }, [f.categories]);
+  }, [f.categories, f.viewMode, categories]);
 
   // Determine which total/max/percent fields to show based on selected category
   const scoreSuffix = useMemo(() => {
@@ -283,9 +312,13 @@ export default function Page() {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "140px").join(" ");
     const gradesPart = gradeColumns.map(() => "120px").join(" ");
-    // member col + grade cols + dynamic bill cols + totals
-    return `280px ${gradesPart} ${billsPart} 160px 120px 100px`;
-  }, [billCols, gradeColumns]);
+    // In summary mode: member col + grade cols + endorsements col + total/max/percent
+    if (f.viewMode === "summary") {
+      return `280px ${gradesPart} 140px 160px 120px 100px`;
+    }
+    // member col + grade cols + dynamic bill cols + endorsements col + totals
+    return `280px ${gradesPart} ${billsPart} 140px 160px 120px 100px`;
+  }, [billCols, gradeColumns, f.viewMode]);
 
   return (
     <div className="space-y-4">
@@ -295,6 +328,7 @@ export default function Page() {
           row={selected}
           billCols={allBillCols}
           metaByCol={metaByCol}
+          categories={categories}
           onClose={() => setSelected(null)}
         />
       )}
@@ -368,6 +402,9 @@ export default function Page() {
                 }}
               />
             ))}
+            <div className="th text-center border-r border-[#E7ECF2] dark:border-white/10">
+              Endorsements
+            </div>
             {/* Sortable score headers */}
             <div
               className="th text-right pr-3 cursor-pointer relative"
@@ -382,7 +419,7 @@ export default function Page() {
                 }
               }}
             >
-              Total
+              Total Points
               {sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") && (
                 <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
@@ -403,7 +440,7 @@ export default function Page() {
                 }
               }}
             >
-              Max
+              Max Points
               {sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") && (
                 <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
@@ -491,6 +528,7 @@ export default function Page() {
                   </div>
                 </div>
               </div>
+
               {gradeColumns.map((gradeCol, idx) => (
                 <div
                   key={gradeCol.field}
@@ -556,6 +594,51 @@ export default function Page() {
                 );
               })}
 
+              {/* Endorsements column */}
+              <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+                {(() => {
+                  const aipac = r.aipac_supported === 1 || r.aipac_supported === '1' || isTrue(r.aipac_supported);
+                  const dmfi = r.dmfi_supported === 1 || r.dmfi_supported === '1' || isTrue(r.dmfi_supported);
+
+                  if (aipac && dmfi) {
+                    return (
+                      <div className="flex items-center gap-1">
+                        <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-800">Endorsed by AIPAC and DMFI</span>
+                      </div>
+                    );
+                  }
+
+                  if (aipac || dmfi) {
+                    return (
+                      <div className="space-y-0.5">
+                        {aipac && (
+                          <div className="flex items-center gap-1">
+                            <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                              <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                            </svg>
+                            <span className="text-xs text-slate-800">Endorsed by AIPAC</span>
+                          </div>
+                        )}
+                        {dmfi && (
+                          <div className="flex items-center gap-1">
+                            <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                              <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                            </svg>
+                            <span className="text-xs text-slate-800">Endorsed by DMFI</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
+              </div>
+
+              {/* Total/Max/Percent */}
               <div className="td tabular text-right pr-3 font-medium">
                 {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
               </div>
@@ -600,12 +683,23 @@ function Filters({ categories }: { categories: string[] }) {
       </select>
       <div className="flex flex-wrap gap-2">
         <button
+          key="__summary__"
+          className={clsx(
+            "chip",
+            f.viewMode === "summary" && "ring-2 ring-[#4B8CFB]"
+          )}
+          onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
+          title="Show summary view with category grades"
+        >
+          Summary
+        </button>
+        <button
           key="__all__"
           className={clsx(
             "chip",
-            f.categories.size === 0 && "ring-2 ring-[#4B8CFB]"
+            f.viewMode === "all" && f.categories.size === 0 && "ring-2 ring-[#4B8CFB]"
           )}
-          onClick={() => f.set({ categories: new Set() })}
+          onClick={() => f.set({ viewMode: "all", categories: new Set() })}
           title="Show all categories"
         >
           All
@@ -619,9 +713,9 @@ function Filters({ categories }: { categories: string[] }) {
               onClick={() => {
                 // Only allow one category at a time
                 if (active) {
-                  f.set({ categories: new Set() }); // Deselect
+                  f.set({ viewMode: "all", categories: new Set() }); // Deselect
                 } else {
-                  f.set({ categories: new Set([c]) }); // Select only this one
+                  f.set({ viewMode: "category", categories: new Set([c]) }); // Select only this one
                 }
               }}
               title={active ? "Show all categories" : `Filter by ${c}`}
@@ -799,11 +893,13 @@ function LawmakerCard({
   row,
   billCols,
   metaByCol,
+  categories,
   onClose,
 }: {
   row: Row;
   billCols: string[];
   metaByCol: Map<string, Meta>;
+  categories: string[];
   onClose: () => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -862,9 +958,9 @@ function LawmakerCard({
       />
       {/* Modal */}
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 z-10 bg-white/70 dark:bg-[#0B1220]/80 backdrop-blur-xl">
+        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+          {/* Header - Sticky */}
+          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
             {row.photo_url ? (
               <img
                 src={String(row.photo_url)}
@@ -896,8 +992,29 @@ function LawmakerCard({
                 >
                   {partyLabel(row.party)}
                 </span>
-                <span>{stateCodeOf(row.state)}</span>
+                <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
               </div>
+              {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported) ||
+                row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                <div className="mt-2 space-y-1">
+                  {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                    <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
+                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                      </svg>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by AIPAC</span>
+                    </div>
+                  )}
+                  {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    <div className="flex items-center gap-1.5">
+                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                      </svg>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by Democratic Majority For Israel</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -927,71 +1044,78 @@ function LawmakerCard({
             </button>
           </div>
 
-          {/* Content */}
-          <div className="p-6">
-            {/* Category Grades */}
-            <div className="mb-6">
-              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+          {/* Category Grades - Sticky */}
+          <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
+            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Civil Rights & Immigration" ? null : "Civil Rights & Immigration")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Civil Rights & Immigration"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Civil Rights & Immigration</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Civil_Rights_Immigration || 0).toFixed(0)} / {Number(row.Max_Possible_Civil_Rights_Immigration || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Civil_Rights_Immigration || "N/A")} />
-                  </div>
-                </button>
+                {categories.map((category) => {
+                  const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+                  const totalField = `Total_${fieldSuffix}` as keyof Row;
+                  const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
+                  const gradeField = `Grade_${fieldSuffix}` as keyof Row;
 
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Iran" ? null : "Iran")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Iran"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Iran</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Iran || 0).toFixed(0)} / {Number(row.Max_Possible_Iran || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Iran || "N/A")} />
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Israel-Gaza" ? null : "Israel-Gaza")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Israel-Gaza"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Israel/Gaza</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Israel_Gaza || 0).toFixed(0)} / {Number(row.Max_Possible_Israel_Gaza || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Israel_Gaza || "N/A")} />
-                  </div>
-                </button>
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                      className={clsx(
+                        "rounded-lg border p-3 text-left transition cursor-pointer",
+                        selectedCategory === category
+                          ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                          : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                      )}
+                    >
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                          {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
+                        </div>
+                        <GradeChip grade={String(row[gradeField] || "N/A")} />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 p-6">
+            {/* Contact Information */}
+            {(row.office_phone || row.office_address || row.district_offices) && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Contact Information</div>
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4 space-y-3">
+                  {row.office_phone && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                  {row.district_offices && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">District Offices</div>
+                      <div className="text-slate-700 dark:text-slate-200 space-y-2">
+                        {row.district_offices.split(";").map((office, idx) => (
+                          <div key={idx} className="pl-0">
+                            {office.trim()}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Votes & Actions */}
             <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
-            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10 max-h-[50vh] overflow-auto">
+            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
               {items.map((it) => (
                 <div key={it.col} className="py-2 flex items-start gap-3">
                   <div className="mt-0.5">

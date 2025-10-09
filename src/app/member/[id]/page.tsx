@@ -9,6 +9,16 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
+function getAIPACEndorsement(row: Row): string {
+  const aipac = row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported);
+  const dmfi = row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported);
+
+  if (aipac && dmfi) return "AIPAC+DMFI";
+  if (aipac) return "AIPAC";
+  if (dmfi) return "DMFI";
+  return "";
+}
+
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
@@ -225,8 +235,29 @@ export default function MemberPage() {
                 >
                   {partyLabel(row.party)}
                 </span>
-                <span>{stateCodeOf(row.state)}</span>
+                <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
               </div>
+              {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported) ||
+                row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                <div className="mt-2 space-y-1">
+                  {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                    <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
+                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                      </svg>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by AIPAC</span>
+                    </div>
+                  )}
+                  {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    <div className="flex items-center gap-1.5">
+                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                      </svg>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by Democratic Majority For Israel</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -321,6 +352,39 @@ export default function MemberPage() {
                 </button>
               </div>
             </div>
+
+            {/* Contact Information */}
+            {(row.office_phone || row.office_address || row.district_offices) && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Contact Information</div>
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4 space-y-3">
+                  {row.office_phone && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                  {row.district_offices && (
+                    <div className="text-xs">
+                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">District Offices</div>
+                      <div className="text-slate-700 dark:text-slate-200 space-y-2">
+                        {row.district_offices.split(";").map((office, idx) => (
+                          <div key={idx} className="pl-0">
+                            {office.trim()}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Votes & Actions */}
             <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
