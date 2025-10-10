@@ -403,7 +403,7 @@ export default function Page() {
               />
             ))}
             <div className="th text-center border-r border-[#E7ECF2] dark:border-white/10">
-              Endorsements
+              Endorsements from AIPAC or aligned PACs
             </div>
             {/* Sortable score headers */}
             <div
@@ -533,7 +533,7 @@ export default function Page() {
                 <div
                   key={gradeCol.field}
                   className={clsx(
-                    "td text-right pr-3",
+                    "td text-right pr-3 flex items-center justify-end",
                     idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
                   )}
                 >
@@ -595,7 +595,7 @@ export default function Page() {
               })}
 
               {/* Endorsements column */}
-              <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+              <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
                 {(() => {
                   const aipac = r.aipac_supported === 1 || r.aipac_supported === '1' || isTrue(r.aipac_supported);
                   const dmfi = r.dmfi_supported === 1 || r.dmfi_supported === '1' || isTrue(r.dmfi_supported);
@@ -639,13 +639,13 @@ export default function Page() {
               </div>
 
               {/* Total/Max/Percent */}
-              <div className="td tabular text-right pr-3 font-medium">
+              <div className="td tabular text-right pr-3 font-medium flex items-center justify-end">
                 {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
               </div>
-              <div className="td tabular text-right pr-3">
+              <div className="td tabular text-right pr-3 flex items-center justify-end">
                 {Number(r[scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible"] || 0).toFixed(0)}
               </div>
-              <div className="td tabular text-right pr-3">
+              <div className="td tabular text-right pr-3 flex items-center justify-end">
                 <Progress value={Number(r[scoreSuffix ? `Percent_${scoreSuffix}` : "Percent"] || 0)} />
               </div>
             </div>
@@ -839,9 +839,13 @@ function Segmented({
 }
 
 function Progress({ value }:{ value:number }) {
+  const percent = (value * 100).toFixed(0);
   return (
-    <div className="h-2 w-full rounded-full bg-[#E7ECF2] overflow-hidden">
-      <div className="h-2 rounded-full" style={{ width: `${(value*100).toFixed(0)}%`, background: "#0FDDAA" }} />
+    <div className="flex items-center gap-2 w-full">
+      <div className="flex-1 h-2 rounded-full bg-[#E7ECF2] overflow-hidden">
+        <div className="h-2 rounded-full" style={{ width: `${percent}%`, background: "#0FDDAA" }} />
+      </div>
+      <span className="text-xs tabular text-slate-800 min-w-[32px]">{percent}%</span>
     </div>
   );
 }
@@ -852,7 +856,7 @@ function GradeChip({ grade }:{ grade:string }) {
     : grade.startsWith("C") ? "#F59E0B"
     : grade.startsWith("D") ? "#F97316"
     : "#F97066";
-  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium"
+  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
     style={{ background: `${color}22`, color }}>{grade}</span>;
 }
 
@@ -994,38 +998,25 @@ function LawmakerCard({
                 </span>
                 <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
               </div>
-              {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported) ||
-                row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
-                <div className="mt-2 space-y-1">
-                  {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
-                    <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
-                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                      </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by AIPAC</span>
-                    </div>
-                  )}
-                  {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                      </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by Democratic Majority For Israel</span>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
-                <div>Overall</div>
-                <div className="tabular font-medium text-slate-700 dark:text-slate-200">
-                  {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
-                </div>
+            {/* Contact Information */}
+            {(row.office_phone || row.office_address) && (
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                {row.office_phone && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Phone</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                  </div>
+                )}
+                {row.office_address && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Address</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                  </div>
+                )}
               </div>
-              <GradeChip grade={String(row.Grade || "N/A")} />
-            </div>
+            )}
 
             <button
               className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -1048,6 +1039,17 @@ function LawmakerCard({
           <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
             <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Overall Grade card */}
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+                    </div>
+                    <GradeChip grade={String(row.Grade || "N/A")} />
+                  </div>
+                </div>
+
                 {categories.map((category) => {
                   const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                   const totalField = `Total_${fieldSuffix}` as keyof Row;
@@ -1075,40 +1077,50 @@ function LawmakerCard({
                     </button>
                   );
                 })}
+
+                {/* Endorsements card */}
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
+                  <div className="space-y-1">
+                    {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                      <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
+                      </div>
+                    )}
+                    {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
+                      </div>
+                    )}
+                    {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
+                     !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                      <div className="text-xs text-slate-500 dark:text-slate-400">None</div>
+                    )}
+                  </div>
+                </div>
               </div>
           </div>
 
           {/* Scrollable Content */}
           <div className="overflow-y-auto flex-1 p-6">
-            {/* Contact Information */}
-            {(row.office_phone || row.office_address || row.district_offices) && (
+            {/* District Offices */}
+            {row.district_offices && (
               <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Contact Information</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4 space-y-3">
-                  {row.office_phone && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Phone</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                    </div>
-                  )}
-                  {row.office_address && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Address</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                    </div>
-                  )}
-                  {row.district_offices && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">District Offices</div>
-                      <div className="text-slate-700 dark:text-slate-200 space-y-2">
-                        {row.district_offices.split(";").map((office, idx) => (
-                          <div key={idx} className="pl-0">
-                            {office.trim()}
-                          </div>
-                        ))}
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                    {row.district_offices.split(";").map((office, idx) => (
+                      <div key={idx}>
+                        {office.trim()}
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

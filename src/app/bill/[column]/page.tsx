@@ -96,7 +96,7 @@ function GradeChip({ grade }: { grade: string }) {
     : "#F97066";
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium"
+      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
       style={{ background: `${color}22`, color }}
     >
       {grade}
@@ -129,12 +129,14 @@ export default function BillPage() {
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
   const [allColumns, setAllColumns] = useState<string[]>([]);
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { rows, columns, metaByCol } = await loadData();
+      const { rows, columns, metaByCol, categories } = await loadData();
       setAllColumns(columns);
       setMetaByCol(metaByCol);
+      setCategories(categories);
       const billMeta = metaByCol.get(column);
 
       if (!billMeta) {
@@ -336,6 +338,7 @@ export default function BillPage() {
           row={selectedMember}
           billCols={allColumns}
           metaByCol={metaByCol}
+          categories={categories}
           onClose={() => setSelectedMember(null)}
         />
       )}
@@ -344,18 +347,67 @@ export default function BillPage() {
   );
 }
 
-// Simplified Member Modal Component
+// Full-featured Member Modal Component
 function MemberModal({
   row,
   billCols,
   metaByCol,
+  categories,
   onClose,
 }: {
   row: Row;
   billCols: string[];
   metaByCol: Map<string, Meta>;
+  categories: string[];
   onClose: () => void;
 }) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Build list of items: each bill or manual action gets an entry
+  const allItems = useMemo(() => {
+    return billCols
+      .map((c) => {
+        const meta = metaByCol.get(c);
+        const inferredChamber = inferChamber(meta, c);
+        const notApplicable = inferredChamber && inferredChamber !== row.chamber;
+        const val = Number((row as any)[c] ?? 0);
+        const categories = (meta?.categories || "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        // Check for preferred pair waiver
+        const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+        let waiver = false;
+        if (!notApplicable && meta?.pair_key && !isPreferred && !(val > 0)) {
+          for (const other of billCols) {
+            if (other === c) continue;
+            const m2 = metaByCol.get(other);
+            if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
+              const v2 = Number((row as any)[other] ?? 0);
+              if (v2 > 0) { waiver = true; break; }
+            }
+          }
+        }
+
+        return {
+          col: c,
+          meta,
+          val,
+          categories,
+          notApplicable,
+          waiver,
+          ok: !notApplicable && val > 0,
+        };
+      })
+      .filter((it) => it.meta && !it.notApplicable);
+  }, [billCols, metaByCol, row]);
+
+  // Filter items based on selected category
+  const items = selectedCategory
+    ? allItems.filter((it) => it.categories.some((c) => c === selectedCategory))
+    : allItems;
+
   return (
     <>
       {/* Backdrop */}
@@ -403,15 +455,23 @@ function MemberModal({
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
-                <div>Overall</div>
-                <div className="tabular font-medium text-slate-700 dark:text-slate-200">
-                  {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
-                </div>
+            {/* Contact Information */}
+            {(row.office_phone || row.office_address) && (
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                {row.office_phone && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Phone</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                  </div>
+                )}
+                {row.office_address && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Address</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                  </div>
+                )}
               </div>
-              <GradeChip grade={String(row.Grade || "N/A")} />
-            </div>
+            )}
 
             <button
               className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -430,39 +490,147 @@ function MemberModal({
             </button>
           </div>
 
-          {/* Contact Information - Scrollable */}
-          <div className="overflow-y-auto flex-1 p-6">
-            {(row.office_phone || row.office_address || row.district_offices) && (
-              <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Contact Information</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4 space-y-3">
-                  {row.office_phone && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Phone</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+          {/* Category Grades - Sticky */}
+          <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
+            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Overall Grade card */}
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                     </div>
-                  )}
-                  {row.office_address && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Address</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                    </div>
-                  )}
-                  {row.district_offices && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">District Offices</div>
-                      <div className="text-slate-700 dark:text-slate-200 space-y-2">
-                        {row.district_offices.split(";").map((office, idx) => (
-                          <div key={idx} className="pl-0">
-                            {office.trim()}
-                          </div>
-                        ))}
+                    <GradeChip grade={String(row.Grade || "N/A")} />
+                  </div>
+                </div>
+
+                {categories.map((category) => {
+                  const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+                  const totalField = `Total_${fieldSuffix}` as keyof Row;
+                  const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
+                  const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                      className={clsx(
+                        "rounded-lg border p-3 text-left transition cursor-pointer",
+                        selectedCategory === category
+                          ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                          : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                      )}
+                    >
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                          {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
+                        </div>
+                        <GradeChip grade={String(row[gradeField] || "N/A")} />
                       </div>
-                    </div>
-                  )}
+                    </button>
+                  );
+                })}
+
+                {/* Endorsements card */}
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
+                  <div className="space-y-1">
+                    {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                      <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
+                      </div>
+                    )}
+                    {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
+                      </div>
+                    )}
+                    {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
+                     !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                      <div className="text-xs text-slate-500 dark:text-slate-400">None</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 p-6">
+            {/* District Offices */}
+            {row.district_offices && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                    {row.district_offices.split(";").map((office, idx) => (
+                      <div key={idx}>
+                        {office.trim()}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Votes & Actions */}
+            <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
+            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+              {items.length === 0 && (
+                <div className="py-4 text-sm text-slate-500 dark:text-slate-400">
+                  {selectedCategory ? `No votes/actions for ${selectedCategory}` : "No votes/actions found"}
+                </div>
+              )}
+              {items.map((it) => {
+                const pos = (it.meta?.position_to_score || "").toLowerCase();
+                const posLabel = pos === "support" ? "Support" : pos === "oppose" ? "Oppose" : "";
+
+                return (
+                  <div key={it.col} className="py-4">
+                    <div className="flex items-start gap-3">
+                      <VoteIcon ok={it.ok} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-1">
+                          {it.meta?.short_title || it.col}
+                        </div>
+                        {it.meta?.notes && (
+                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 mb-2">
+                            {it.meta.notes}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <span className="chip-xs">
+                            {it.meta?.bill_number || "Manual Action"}
+                          </span>
+                          {posLabel && (
+                            <span className="chip-xs">
+                              Position: {posLabel}
+                            </span>
+                          )}
+                          {it.categories.length > 0 && (
+                            <span className="chip-xs">
+                              {it.categories.join(", ")}
+                            </span>
+                          )}
+                          {it.waiver && (
+                            <span className="chip-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                              Waiver: Preferred option supported
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -104,7 +104,7 @@ function GradeChip({ grade }: { grade: string }) {
     : grade.startsWith("C") ? "#F59E0B"
     : grade.startsWith("D") ? "#F97316"
     : "#F97066";
-  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium"
+  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
     style={{ background: `${color}22`, color }}>{grade}</span>;
 }
 
@@ -130,11 +130,12 @@ export default function MemberPage() {
   const [row, setRow] = useState<Row | null>(null);
   const [billCols, setBillCols] = useState<string[]>([]);
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
+  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { rows, columns, metaByCol: meta } = await loadData();
+      const { rows, columns, metaByCol: meta, categories: cats } = await loadData();
 
       // Find the member by bioguide_id
       const member = rows.find((r) => r.bioguide_id === id);
@@ -145,6 +146,7 @@ export default function MemberPage() {
 
       setRow(member);
       setMetaByCol(meta);
+      setCategories(cats);
 
       // Filter columns by chamber (don't filter by category for member page)
       const filtered = columns.filter((c) => {
@@ -207,7 +209,7 @@ export default function MemberPage() {
       <div className="max-w-5xl mx-auto">
         <div className="card">
           {/* Header */}
-          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10">
+          <div className="flex items-start gap-4 p-6 border-b border-[#E7ECF2] dark:border-white/10">
             {row.photo_url ? (
               <img
                 src={String(row.photo_url)}
@@ -217,7 +219,7 @@ export default function MemberPage() {
             ) : (
               <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
             )}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
               <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
                 <span
@@ -237,15 +239,103 @@ export default function MemberPage() {
                 </span>
                 <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
               </div>
-              {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported) ||
-                row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
-                <div className="mt-2 space-y-1">
+            </div>
+
+            {/* Contact Information */}
+            {(row.office_phone || row.office_address) && (
+              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                {row.office_phone && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Phone</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                  </div>
+                )}
+                {row.office_address && (
+                  <div>
+                    <div className="font-medium mb-0.5">Washington Office Address</div>
+                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={() => window.print()}
+              >
+                Print
+              </button>
+              <button
+                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={() => {
+                  // Try to close the window (works if opened via window.open)
+                  // If that fails, navigate back to home
+                  window.close();
+                  setTimeout(() => {
+                    window.location.href = '/';
+                  }, 100);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          {/* Category Grades - Sticky */}
+          <div className="sticky top-0 z-10 bg-white dark:bg-[#0B1220] border-b border-[#E7ECF2] dark:border-white/10 p-6">
+            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Overall Grade card */}
+              <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                    {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+                  </div>
+                  <GradeChip grade={String(row.Grade || "N/A")} />
+                </div>
+              </div>
+
+              {/* Dynamic category cards */}
+              {categories.map((category) => {
+                const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+                const totalField = `Total_${fieldSuffix}` as keyof Row;
+                const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
+                const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                    className={clsx(
+                      "rounded-lg border p-3 text-left transition cursor-pointer",
+                      selectedCategory === category
+                        ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                        : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                    )}
+                  >
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                        {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
+                      </div>
+                      <GradeChip grade={String(row[gradeField] || "N/A")} />
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Endorsements card */}
+              <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
+                <div className="space-y-1">
                   {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
                     <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
                       <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                       </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by AIPAC</span>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
                     </div>
                   )}
                   {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
@@ -253,135 +343,32 @@ export default function MemberPage() {
                       <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                       </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Endorsed by Democratic Majority For Israel</span>
+                      <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-slate-600 dark:text-slate-300 text-right">
-                <div>Overall</div>
-                <div className="tabular font-medium text-slate-700 dark:text-slate-200">
-                  {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+                  {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
+                   !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    <div className="text-xs text-slate-500 dark:text-slate-500">None</div>
+                  )}
                 </div>
               </div>
-              <GradeChip grade={String(row.Grade || "N/A")} />
             </div>
-
-            <button
-              className="ml-3 chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={() => window.print()}
-            >
-              Print
-            </button>
-            <button
-              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={() => {
-                // Try to close the window (works if opened via window.open)
-                // If that fails, navigate back to home
-                window.close();
-                setTimeout(() => {
-                  window.location.href = '/';
-                }, 100);
-              }}
-            >
-              Close
-            </button>
           </div>
 
           {/* Content */}
           <div className="p-6">
-            {/* Category Grades */}
-            <div className="mb-6">
-              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Civil Rights & Immigration" ? null : "Civil Rights & Immigration")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Civil Rights & Immigration"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Civil Rights & Immigration</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Civil_Rights_Immigration || 0).toFixed(0)} / {Number(row.Max_Possible_Civil_Rights_Immigration || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Civil_Rights_Immigration || "N/A")} />
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Iran" ? null : "Iran")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Iran"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Iran</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Iran || 0).toFixed(0)} / {Number(row.Max_Possible_Iran || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Iran || "N/A")} />
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setSelectedCategory(selectedCategory === "Israel-Gaza" ? null : "Israel-Gaza")}
-                  className={clsx(
-                    "rounded-lg border p-3 text-left transition cursor-pointer",
-                    selectedCategory === "Israel-Gaza"
-                      ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                  )}
-                >
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Israel/Gaza</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total_Israel_Gaza || 0).toFixed(0)} / {Number(row.Max_Possible_Israel_Gaza || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade_Israel_Gaza || "N/A")} />
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            {(row.office_phone || row.office_address || row.district_offices) && (
+            {/* District Offices */}
+            {row.district_offices && (
               <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Contact Information</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4 space-y-3">
-                  {row.office_phone && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Phone</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                    </div>
-                  )}
-                  {row.office_address && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">Washington Office Address</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                    </div>
-                  )}
-                  {row.district_offices && (
-                    <div className="text-xs">
-                      <div className="font-medium text-slate-600 dark:text-slate-400 mb-1">District Offices</div>
-                      <div className="text-slate-700 dark:text-slate-200 space-y-2">
-                        {row.district_offices.split(";").map((office, idx) => (
-                          <div key={idx} className="pl-0">
-                            {office.trim()}
-                          </div>
-                        ))}
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
+                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                    {row.district_offices.split(";").map((office, idx) => (
+                      <div key={idx} className="pl-0">
+                        {office.trim()}
                       </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
