@@ -370,21 +370,21 @@ function MemberModal({
         const meta = metaByCol.get(c);
         const inferredChamber = inferChamber(meta, c);
         const notApplicable = inferredChamber && inferredChamber !== row.chamber;
-        const val = Number((row as any)[c] ?? 0);
+        const val = Number((row as Record<string, unknown>)[c] ?? 0);
         const categories = (meta?.categories || "")
           .split(";")
           .map((s) => s.trim())
           .filter(Boolean);
 
         // Check for preferred pair waiver
-        const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+        const isPreferred = meta ? isTrue((meta as Record<string, unknown>).preferred) : false;
         let waiver = false;
         if (!notApplicable && meta?.pair_key && !isPreferred && !(val > 0)) {
           for (const other of billCols) {
             if (other === c) continue;
             const m2 = metaByCol.get(other);
-            if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
-              const v2 = Number((row as any)[other] ?? 0);
+            if (m2?.pair_key === meta.pair_key && isTrue((m2 as Record<string, unknown>).preferred)) {
+              const v2 = Number((row as Record<string, unknown>)[other] ?? 0);
               if (v2 > 0) { waiver = true; break; }
             }
           }

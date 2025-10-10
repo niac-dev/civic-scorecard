@@ -9,16 +9,6 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
-function getAIPACEndorsement(row: Row): string {
-  const aipac = row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported);
-  const dmfi = row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported);
-
-  if (aipac && dmfi) return "AIPAC+DMFI";
-  if (aipac) return "AIPAC";
-  if (dmfi) return "DMFI";
-  return "";
-}
-
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
