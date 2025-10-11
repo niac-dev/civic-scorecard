@@ -35,9 +35,10 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
     return config;
   };
 
-  const handleStateClick = (event: any) => {
+  const handleStateClick = (event: React.MouseEvent<SVGElement>) => {
     // react-usa-map passes the state code in event.target.dataset.name
-    const stateCode = event.target.dataset.name;
+    const target = event.target as SVGElement & { dataset: { name?: string } };
+    const stateCode = target.dataset.name;
     if (stateCode) {
       onStateClick(stateCode.toUpperCase());
     }
@@ -132,15 +133,6 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
       });
     });
   }, [stateColors]);
-
-  // Helper function to darken a hex color
-  const darkenColor = (hex: string, amount: number): string => {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const r = Math.max(0, (num >> 16) - Math.round(255 * amount));
-    const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(255 * amount));
-    const b = Math.max(0, (num & 0x0000FF) - Math.round(255 * amount));
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-  };
 
   return (
     <div className="w-full max-w-6xl mx-auto">

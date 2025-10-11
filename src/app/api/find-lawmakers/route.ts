@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const lawmakers: Array<{ name: string; office: string; chamber: string }> = [];
 
     if (data && data.results && Array.isArray(data.results)) {
-      data.results.forEach((official: any) => {
+      data.results.forEach((official: { name: string; district?: string; state: string }) => {
         const apiName = official.name; // e.g., "Adam Schiff"
         const district = official.district;
         const state = official.state;

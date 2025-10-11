@@ -217,7 +217,7 @@ export default function BillPage() {
   }
 
   // Determine section labels based on action type and position
-  const actionType = (meta as any).action_types || '';
+  const actionType = (meta as { action_types?: string }).action_types || '';
   const isVote = actionType.includes('vote');
   const isCosponsor = actionType.includes('cosponsor');
   const position = (meta.position_to_score || '').toUpperCase();
@@ -225,8 +225,8 @@ export default function BillPage() {
 
   // Always show affirmative action first (cosponsored/voted for)
   // Swap arrays if we oppose the bill (since val>0 means they did the opposite)
-  let firstSection = isSupport ? supporters : opposers;
-  let secondSection = isSupport ? opposers : supporters;
+  const firstSection = isSupport ? supporters : opposers;
+  const secondSection = isSupport ? opposers : supporters;
 
   let firstLabel = '';
   let secondLabel = '';
@@ -275,10 +275,10 @@ export default function BillPage() {
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}
                 </div>
-                {(meta as any).action_types && (
+                {(meta as { action_types?: string }).action_types && (
                   <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                     <span className="font-medium">Scoring:</span>{' '}
-                    {(meta as any).action_types.includes('vote') ? 'Vote' : 'Cosponsorship'}
+                    {(meta as { action_types?: string }).action_types?.includes('vote') ? 'Vote' : 'Cosponsorship'}
                   </div>
                 )}
               </div>

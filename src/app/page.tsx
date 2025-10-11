@@ -918,7 +918,7 @@ function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
       } else {
         setError('No lawmakers found for this address');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to find lawmakers');
     } finally {
       setLoading(false);
