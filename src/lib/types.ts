@@ -9,7 +9,10 @@ export type Meta = {
   short_title?: string;
   notes?: string;
   sponsor?: string;
+  sponsor_bioguide_id?: string;
+  sponsor_name?: string;
   categories?: string; // semicolon-delimited: "Iran; War Powers"
+  action_types?: string;
   chamber?: Chamber;   // optional explicit chamber override
   /** original column key in scores_wide.csv (optional but handy) */
   column: string;
@@ -31,6 +34,7 @@ export type Row = {
   office_phone?: string;
   office_address?: string;
   district_offices?: string;
+  committees?: string;
   aipac_supported?: string | number | boolean;
   dmfi_supported?: string | number | boolean;
   Total?: number | string;

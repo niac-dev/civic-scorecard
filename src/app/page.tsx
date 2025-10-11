@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
+import USMap from "@/components/USMap";
 
 import clsx from "clsx";
 
@@ -27,6 +28,9 @@ const STATES: { code: string; name: string }[] = [
   { code: "TN", name: "Tennessee" }, { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" },
   { code: "VT", name: "Vermont" }, { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" },
   { code: "WV", name: "West Virginia" }, { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" },
+  { code: "AS", name: "American Samoa" }, { code: "GU", name: "Guam" },
+  { code: "MP", name: "Northern Mariana Islands" }, { code: "PR", name: "Puerto Rico" },
+  { code: "VI", name: "U.S. Virgin Islands" },
 ];
 
 const NAME_TO_CODE: Record<string, string> = Object.fromEntries(
@@ -92,6 +96,17 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
+function isTruthy(v: unknown): boolean {
+  if (v === 1 || v === '1' || v === true) return true;
+  if (typeof v === 'number' && v > 0) return true;
+  if (typeof v === 'string') {
+    if (v.toLowerCase() === "true") return true;
+    const num = parseFloat(v);
+    if (!isNaN(num) && num > 0) return true;
+  }
+  return false;
+}
+
 function chamberColor(ch?: string): string {
   switch (ch) {
     case "HOUSE":
@@ -132,7 +147,7 @@ export default function Page() {
 
   const f = useFilters();
 
-  const [sortCol, setSortCol] = useState<string>("");
+  const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
 
   const filtered = useMemo(() => {
@@ -143,6 +158,18 @@ export default function Page() {
     if (f.search) {
       const q = f.search.toLowerCase();
       out = out.filter(r => (r.full_name||"").toLowerCase().includes(q));
+    }
+    if (f.myLawmakers.length > 0) {
+      // Fuzzy match by last name - handles middle names/initials
+      out = out.filter(r => {
+        const dbName = (r.full_name as string) || '';
+        return f.myLawmakers.some(apiName => {
+          // Extract last name from both (before the comma)
+          const dbLast = dbName.split(',')[0]?.trim().toLowerCase();
+          const apiLast = apiName.split(',')[0]?.trim().toLowerCase();
+          return dbLast === apiLast;
+        });
+      });
     }
     // if (f.categories.size) {
     //   const wanted = new Set(Array.from(f.categories));
@@ -310,9 +337,52 @@ export default function Page() {
     return `280px ${gradesPart} ${billsPart} 140px 160px 120px 100px`;
   }, [billCols, gradeColumns, f.viewMode]);
 
+  // Calculate average grades per state for map coloring
+  const stateColors = useMemo(() => {
+    const colors: Record<string, string> = {};
+
+    // Group members by state
+    const byState: Record<string, Row[]> = {};
+    rows.forEach((r) => {
+      const state = stateCodeOf(r.state);
+      if (!state) return;
+      if (!byState[state]) byState[state] = [];
+      byState[state].push(r);
+    });
+
+    // Calculate average grade for each state
+    Object.entries(byState).forEach(([state, members]) => {
+      const grades = members
+        .map(m => gradeRank(String(m.Grade || "")))
+        .filter(g => g !== 13); // exclude unknown grades
+
+      if (grades.length === 0) {
+        colors[state] = "#E5E7EB"; // gray for no data
+        return;
+      }
+
+      const avgRank = grades.reduce((a, b) => a + b, 0) / grades.length;
+
+      // Map average grade rank to color (dark navy = A, light grey = F)
+      if (avgRank <= 2) { // A+ to A-
+        colors[state] = "#050a30"; // dark navy blue
+      } else if (avgRank <= 5) { // B+ to B-
+        colors[state] = "#30558d"; // medium blue
+      } else if (avgRank <= 8) { // C+ to C-
+        colors[state] = "#93c5fd"; // light blue
+      } else if (avgRank <= 11) { // D+ to D-
+        colors[state] = "#d1d5db"; // medium grey
+      } else { // F
+        colors[state] = "#f3f4f6"; // very light grey
+      }
+    });
+
+    return colors;
+  }, [rows]);
+
   return (
     <div className="space-y-4">
-      <Filters categories={categories} />
+      <Filters categories={categories} filteredCount={sorted.length} />
       {selected && (
         <LawmakerCard
           row={selected}
@@ -322,17 +392,32 @@ export default function Page() {
           onClose={() => setSelected(null)}
         />
       )}
-      <div className="card overflow-visible">
-        <div className="overflow-auto max-h-[70vh]">
-          {/* Header */}
-          <div
-            className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
-            style={{
-              gridTemplateColumns: gridTemplate,
+
+      {/* Map View */}
+      {f.viewMode === "map" && (
+        <div className="card p-6">
+          <USMap
+            stateColors={stateColors}
+            onStateClick={(stateCode) => {
+              f.set({ state: stateCode, viewMode: "summary" });
             }}
-          >
+          />
+        </div>
+      )}
+
+      {/* Table View */}
+      {f.viewMode !== "map" && (
+        <div className="card overflow-visible">
+          <div className="overflow-auto max-h-[70vh]">
+            {/* Header */}
             <div
-              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer"
+              className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
+              style={{
+                gridTemplateColumns: gridTemplate,
+              }}
+            >
+            <div
+              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer group"
               onClick={() => {
                 if (sortCol === "__member") {
                   setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
@@ -344,17 +429,18 @@ export default function Page() {
               title="Click to sort by member (toggle A→Z / Z→A)"
             >
               Member
-              {sortCol === "__member" && (
-                <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              )}
+              <span className={clsx(
+                "absolute right-2 top-1.5 text-[10px]",
+                sortCol === "__member" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+              )}>
+                {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+              </span>
             </div>
             {gradeColumns.map((gradeCol, idx) => (
               <div
                 key={gradeCol.field}
                 className={clsx(
-                  "th text-right pr-3 cursor-pointer relative",
+                  "th text-center cursor-pointer relative group",
                   idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
                 )}
                 title={`Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`}
@@ -368,11 +454,12 @@ export default function Page() {
                 }}
               >
                 {gradeCol.header}
-                {sortCol === String(gradeCol.field) && (
-                  <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                  </span>
-                )}
+                <span className={clsx(
+                  "absolute right-2 top-1.5 text-[10px]",
+                  sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                )}>
+                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                </span>
               </div>
             ))}
             {billCols.map((c) => (
@@ -397,7 +484,7 @@ export default function Page() {
             </div>
             {/* Sortable score headers */}
             <div
-              className="th text-right pr-3 cursor-pointer relative"
+              className="th text-right pr-3 cursor-pointer relative group"
               title="Click to sort by Total (toggle high→low / low→high)"
               onClick={() => {
                 const col = scoreSuffix ? `Total_${scoreSuffix}` : "Total";
@@ -410,15 +497,16 @@ export default function Page() {
               }}
             >
               Total Points
-              {sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") && (
-                <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              )}
+              <span className={clsx(
+                "absolute right-2 top-1.5 text-[10px]",
+                sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+              )}>
+                {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+              </span>
             </div>
 
             <div
-              className="th text-right pr-3 cursor-pointer relative"
+              className="th text-right pr-3 cursor-pointer relative group"
               title="Click to sort by Max (toggle high→low / low→high)"
               onClick={() => {
                 const col = scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible";
@@ -431,15 +519,16 @@ export default function Page() {
               }}
             >
               Max Points
-              {sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") && (
-                <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              )}
+              <span className={clsx(
+                "absolute right-2 top-1.5 text-[10px]",
+                sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+              )}>
+                {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+              </span>
             </div>
 
             <div
-              className="th text-right pr-3 cursor-pointer relative"
+              className="th text-right pr-3 cursor-pointer relative group"
               title="Click to sort by Percent (toggle high→low / low→high)"
               onClick={() => {
                 const col = scoreSuffix ? `Percent_${scoreSuffix}` : "Percent";
@@ -452,11 +541,12 @@ export default function Page() {
               }}
             >
               Percent
-              {sortCol === (scoreSuffix ? `Percent_${scoreSuffix}` : "Percent") && (
-                <span className="absolute right-2 top-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              )}
+              <span className={clsx(
+                "absolute right-2 top-1.5 text-[10px]",
+                sortCol === (scoreSuffix ? `Percent_${scoreSuffix}` : "Percent") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+              )}>
+                {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+              </span>
             </div>
           </div>
 
@@ -480,14 +570,34 @@ export default function Page() {
                   <img
                     src={String(r.photo_url)}
                     alt=""
-                    className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                    className="h-[68px] w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
+                  <div className="h-[68px] w-[68px] rounded-full bg-slate-300 dark:bg-white/10" />
                 )}
-                <div>
-                  <div className="font-normal text-[15px] leading-5 text-slate-800 dark:text-slate-200">
-                    {r.full_name}
+                <div className="flex flex-col justify-center">
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
+                    {(() => {
+                      if (r.chamber === "SENATE") return "Senator";
+                      if (r.chamber === "HOUSE") {
+                        const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
+                        const state = stateCodeOf(r.state);
+                        return delegateStates.includes(state) ? "Delegate" : "Representative";
+                      }
+                      return "";
+                    })()}
+                  </div>
+                  <div className="font-bold text-[16px] leading-5 text-slate-800 dark:text-slate-200 mb-1">
+                    {(() => {
+                      const fullName = String(r.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                     {/* Chamber first, solid background (purple for Senate, green for House) */}
@@ -523,11 +633,11 @@ export default function Page() {
                 <div
                   key={gradeCol.field}
                   className={clsx(
-                    "td text-right pr-3 flex items-center justify-end",
+                    "td flex items-center justify-center",
                     idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
                   )}
                 >
-                  <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
+                  <GradeChip grade={String(r[gradeCol.field] || "N/A")} isOverall={idx === 0} />
                 </div>
               ))}
 
@@ -587,8 +697,8 @@ export default function Page() {
               {/* Endorsements column */}
               <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
                 {(() => {
-                  const aipac = r.aipac_supported === 1 || r.aipac_supported === '1' || isTrue(r.aipac_supported);
-                  const dmfi = r.dmfi_supported === 1 || r.dmfi_supported === '1' || isTrue(r.dmfi_supported);
+                  const aipac = isTruthy(r.aipac_supported);
+                  const dmfi = isTruthy(r.dmfi_supported);
 
                   if (aipac && dmfi) {
                     return (
@@ -642,82 +752,310 @@ export default function Page() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
 
-function Filters({ categories }: { categories: string[] }) {
+function Filters({ filteredCount }: { categories: string[]; filteredCount: number }) {
   const f = useFilters();
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  // Territories without senators
+  const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
+
   return (
-    <div className="mb-1 flex flex-wrap items-center gap-2">
-      <Segmented
-        options={["Both","House","Senate"]}
-        value={f.chamber || "Both"}
-        onChange={(v)=>f.set({ chamber: v==="Both" ? "" : (v as any) })}
-      />
-      <select className="select" onChange={e=>f.set({party:e.target.value as any})}>
-        <option value="">All parties</option>
-        <option>Democratic</option><option>Republican</option><option>Independent</option>
-      </select>
-      <select
-        className="select"
-        value={f.state || ""}
-        onChange={(e) => f.set({ state: e.target.value })}
-      >
-        <option value="">All states</option>
-        {STATES.map((s) => (
-          <option key={s.code} value={s.code}>
-            {s.name} ({s.code})
-          </option>
-        ))}
-      </select>
-      <div className="flex flex-wrap gap-2">
-        <button
-          key="__summary__"
-          className={clsx(
-            "chip",
-            f.viewMode === "summary" && "ring-2 ring-[#4B8CFB]"
-          )}
-          onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
-          title="Show summary view with category grades"
-        >
-          Summary
-        </button>
-        <button
-          key="__all__"
-          className={clsx(
-            "chip",
-            f.viewMode === "all" && f.categories.size === 0 && "ring-2 ring-[#4B8CFB]"
-          )}
-          onClick={() => f.set({ viewMode: "all", categories: new Set() })}
-          title="Show all categories"
-        >
-          All
-        </button>
-        {categories.map((c) => {
-          const active = f.categories.has(c);
-          return (
-            <button
-              key={c}
-              className={clsx("chip", active && "ring-2 ring-[#4B8CFB]")}
-              onClick={() => {
-                // Only allow one category at a time
-                if (active) {
-                  f.set({ viewMode: "all", categories: new Set() }); // Deselect
-                } else {
-                  f.set({ viewMode: "category", categories: new Set([c]) }); // Select only this one
-                }
-              }}
-              title={active ? "Show all categories" : `Filter by ${c}`}
+    <div className="mb-1 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+          <button
+            onClick={() => f.set({ viewMode: "map", categories: new Set() })}
+            className={clsx(
+              "px-3 h-9 rounded-md text-sm",
+              f.viewMode === "map"
+                ? "bg-[#4B8CFB] text-white"
+                : "hover:bg-slate-50 dark:hover:bg-white/10"
+            )}
+          >
+            Map
+          </button>
+          <button
+            onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
+            className={clsx(
+              "px-3 h-9 rounded-md text-sm",
+              f.viewMode === "summary"
+                ? "bg-[#4B8CFB] text-white"
+                : "hover:bg-slate-50 dark:hover:bg-white/10"
+            )}
+          >
+            Summary
+          </button>
+          <select
+            className={clsx(
+              "px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
+              f.viewMode === "all" || f.viewMode === "category"
+                ? "bg-[#4B8CFB] text-white"
+                : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
+            )}
+            value={
+              f.viewMode === "all" && f.categories.size === 0
+                ? "All"
+                : f.categories.size > 0
+                ? Array.from(f.categories)[0]
+                : ""
+            }
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "" || value === "All") {
+                f.set({ viewMode: "all", categories: new Set() });
+              } else {
+                f.set({ viewMode: "category", categories: new Set([value]) });
+              }
+            }}
+          >
+            <option value="">Issues</option>
+            <option value="All">All</option>
+            <option value="Civil Rights">Civil Rights</option>
+            <option value="Iran">Iran</option>
+            <option value="Israel-Gaza">Israel-Gaza</option>
+            <option value="Travel & Immigration">Travel & Immigration</option>
+          </select>
+        </div>
+        <div className="ml-auto">
+          <UnifiedSearch filteredCount={filteredCount} />
+        </div>
+        <div className="basis-full">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+          >
+            <svg
+              className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              {c}
-            </button>
-          );
-        })}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Filters
+            {(f.chamber || f.party || f.state) && (
+              <span className="text-xs text-slate-500">
+                ({[
+                  f.chamber && f.chamber,
+                  f.party && f.party,
+                  f.state && f.state
+                ].filter(Boolean).join(", ")})
+              </span>
+            )}
+          </button>
+          {filtersExpanded && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Segmented
+                options={["Both","House","Senate"]}
+                value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "Both"}
+                onChange={(v)=>f.set({ chamber: v==="Both" ? "" : v.toUpperCase() as any })}
+              />
+              <select className="select" onChange={e=>f.set({party:e.target.value as any})}>
+                <option value="">All parties</option>
+                <option>Democratic</option><option>Republican</option><option>Independent</option>
+              </select>
+              <select
+                className="select"
+                value={f.state || ""}
+                onChange={(e) => {
+                  const selectedState = e.target.value;
+                  // If selecting a territory without senate, automatically switch to House
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
+                }}
+              >
+                <option value="">All states</option>
+                {STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name} ({s.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="ml-auto">
-        <input placeholder="Search members…" className="input" onChange={e=>f.set({search:e.target.value})}/>
-      </div>
+    </div>
+  );
+}
+
+function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
+  const f = useFilters();
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">("zip");
+  const [searchValue, setSearchValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleZipSearch = async () => {
+    if (!searchValue.trim()) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/find-lawmakers?address=${encodeURIComponent(searchValue)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to find lawmakers');
+        return;
+      }
+
+      if (data.lawmakers && data.lawmakers.length > 0) {
+        const names = data.lawmakers.map((l: any) => l.name);
+        f.set({ myLawmakers: names });
+        setSearchValue("");
+        setIsOpen(false);
+      } else {
+        setError('No lawmakers found for this address');
+      }
+    } catch (err) {
+      setError('Failed to find lawmakers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    if (searchType === "zip") {
+      handleZipSearch();
+    } else if (searchType === "name") {
+      f.set({ search: searchValue });
+      setIsOpen(false);
+    }
+    // "legislation" search will be implemented later
+  };
+
+  const handleClear = () => {
+    f.set({ myLawmakers: [], search: "" });
+    setSearchValue("");
+    setError("");
+  };
+
+  const getPlaceholder = () => {
+    if (searchType === "zip") return "Enter zip code…";
+    if (searchType === "name") return "Enter lawmaker name…";
+    return "Enter bill name…";
+  };
+
+  const isActive = f.myLawmakers.length > 0 || f.search.length > 0;
+
+  return (
+    <div className="relative">
+      {isActive ? (
+        <button
+          className="chip bg-[#4B8CFB] text-white hover:bg-[#3B7CEB]"
+          onClick={handleClear}
+          title="Clear search"
+        >
+          {f.myLawmakers.length > 0 ? `Showing ${filteredCount} ✕` : `Searching "${f.search}" ✕`}
+        </button>
+      ) : (
+        <button
+          className="chip-outline flex items-center gap-1"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Search...
+        </button>
+      )}
+
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-white/10 rounded-lg shadow-lg p-4 min-w-[300px]">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium mb-1 text-slate-700 dark:text-slate-300">
+                Search by:
+              </label>
+              <div className="flex gap-2">
+                <button
+                  className={clsx(
+                    "px-3 py-1.5 text-xs rounded-md",
+                    searchType === "zip"
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  )}
+                  onClick={() => setSearchType("zip")}
+                >
+                  Location
+                </button>
+                <button
+                  className={clsx(
+                    "px-3 py-1.5 text-xs rounded-md",
+                    searchType === "name"
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  )}
+                  onClick={() => setSearchType("name")}
+                >
+                  Lawmaker
+                </button>
+                <button
+                  className={clsx(
+                    "px-3 py-1.5 text-xs rounded-md",
+                    searchType === "legislation"
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  )}
+                  onClick={() => setSearchType("legislation")}
+                >
+                  Bill
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                placeholder={getPlaceholder()}
+                className="input !w-full"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-2 py-1">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                className="flex-1 px-3 py-1.5 text-sm bg-[#4B8CFB] text-white rounded-md hover:bg-[#3B7CEB] disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSearch}
+                disabled={loading || !searchValue.trim()}
+              >
+                {loading ? "Searching..." : "Search"}
+              </button>
+              <button
+                className="px-3 py-1.5 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
+                onClick={() => {
+                  setIsOpen(false);
+                  setSearchValue("");
+                  setError("");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -736,11 +1074,10 @@ function Header({
   dir?: "GOOD_FIRST" | "BAD_FIRST";
 }) {
   return (
-    <div className="th group relative select-none flex flex-col max-w-[14rem]">
+    <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
       {/* Bill title - clickable to view details */}
       <span
         className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
-        title={meta ? (meta.short_title || meta.bill_number) : col}
         onClick={(e) => {
           e.stopPropagation();
           if (meta) {
@@ -762,8 +1099,11 @@ function Header({
           title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
         >
           {meta.position_to_score}
-          {active && (
-            <span className="text-[10px]">
+          {onSort && (
+            <span className={clsx(
+              "text-[10px]",
+              active ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
+            )}>
               {dir === "GOOD_FIRST" ? "▲" : "▼"}
             </span>
           )}
@@ -803,16 +1143,15 @@ function Segmented({
   value?: string;
   onChange: (v: string) => void;
 }) {
-  const current = value || "Both";
+  const current = value || options[0];
   return (
     <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
       {options.map((opt) => {
-        const optValue = opt === "Both" ? "Both" : opt.toUpperCase();
-        const isActive = current === optValue;
+        const isActive = current === opt;
         return (
           <button
             key={opt}
-            onClick={() => onChange(optValue)}
+            onClick={() => onChange(opt)}
             className={clsx(
               "px-3 h-9 rounded-md text-sm",
               isActive
@@ -840,14 +1179,19 @@ function Progress({ value }:{ value:number }) {
   );
 }
 
-function GradeChip({ grade }:{ grade:string }) {
-  const color = grade.startsWith("A") ? "#10B981"
-    : grade.startsWith("B") ? "#84CC16"
-    : grade.startsWith("C") ? "#F59E0B"
-    : grade.startsWith("D") ? "#F97316"
-    : "#F97066";
+function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
+  const color = grade.startsWith("A") ? "#050a30" // dark navy blue
+    : grade.startsWith("B") ? "#30558d" // medium blue
+    : grade.startsWith("C") ? "#93c5fd" // light blue
+    : grade.startsWith("D") ? "#d1d5db" // medium grey
+    : "#f3f4f6"; // very light grey
+  const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
+  const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
+    : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
+    : "#4b5563"; // dark grey for all other grades
+  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
   return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
-    style={{ background: `${color}22`, color }}>{grade}</span>;
+    style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
 }
 
 function VoteIcon({ ok }: { ok: boolean }) {
@@ -965,8 +1309,30 @@ function LawmakerCard({
               <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
             )}
             <div className="flex-1">
-              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
-              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
+                {(() => {
+                  if (row.chamber === "SENATE") return "Senator";
+                  if (row.chamber === "HOUSE") {
+                    const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
+                    const state = stateCodeOf(row.state);
+                    return delegateStates.includes(state) ? "Delegate" : "Representative";
+                  }
+                  return "";
+                })()}
+              </div>
+              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                {(() => {
+                  const fullName = String(row.full_name || "");
+                  const commaIndex = fullName.indexOf(",");
+                  if (commaIndex > -1) {
+                    const first = fullName.slice(commaIndex + 1).trim();
+                    const last = fullName.slice(0, commaIndex).trim();
+                    return `${first} ${last}`;
+                  }
+                  return fullName;
+                })()}
+              </div>
+              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
                 <span
                   className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
                   style={{
@@ -1072,7 +1438,7 @@ function LawmakerCard({
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
                   <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
                   <div className="space-y-1">
-                    {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                    {isTruthy(row.aipac_supported) && (
                       <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -1080,7 +1446,7 @@ function LawmakerCard({
                         <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
                       </div>
                     )}
-                    {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    {isTruthy(row.dmfi_supported) && (
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -1088,8 +1454,7 @@ function LawmakerCard({
                         <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
                       </div>
                     )}
-                    {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
-                     !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    {!isTruthy(row.aipac_supported) && !isTruthy(row.dmfi_supported) && (
                       <div className="text-xs text-slate-500 dark:text-slate-400">None</div>
                     )}
                   </div>
@@ -1119,7 +1484,11 @@ function LawmakerCard({
             <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
             <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
               {items.map((it) => (
-                <div key={it.col} className="py-2 flex items-start gap-3">
+                <div
+                  key={it.col}
+                  className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
+                  onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+                >
                   <div className="mt-0.5">
                     {it.waiver ? (
                       <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>

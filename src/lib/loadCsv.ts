@@ -54,6 +54,7 @@ export async function loadData(): Promise<{
     "office_phone",
     "office_address",
     "district_offices",
+    "committees",
     "aipac_supported",
     "dmfi_supported",
     "Total",

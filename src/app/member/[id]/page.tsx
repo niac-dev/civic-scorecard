@@ -9,6 +9,17 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
+function isTruthy(v: unknown): boolean {
+  if (v === 1 || v === '1' || v === true) return true;
+  if (typeof v === 'number' && v > 0) return true;
+  if (typeof v === 'string') {
+    if (v.toLowerCase() === "true") return true;
+    const num = parseFloat(v);
+    if (!isNaN(num) && num > 0) return true;
+  }
+  return false;
+}
+
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
@@ -89,8 +100,8 @@ function partyBadgeStyle(p?: string) {
 }
 
 function GradeChip({ grade }: { grade: string }) {
-  const color = grade.startsWith("A") ? "#10B981"
-    : grade.startsWith("B") ? "#84CC16"
+  const color = grade.startsWith("A") ? "#3b1e5f"
+    : grade.startsWith("B") ? "#10B981"
     : grade.startsWith("C") ? "#F59E0B"
     : grade.startsWith("D") ? "#F97316"
     : "#F97066";
@@ -122,6 +133,7 @@ export default function MemberPage() {
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(true);
 
   useEffect(() => {
     (async () => {
@@ -320,7 +332,7 @@ export default function MemberPage() {
               <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
                 <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
                 <div className="space-y-1">
-                  {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                  {isTruthy(row.aipac_supported) && (
                     <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
                       <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -328,7 +340,7 @@ export default function MemberPage() {
                       <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
                     </div>
                   )}
-                  {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                  {isTruthy(row.dmfi_supported) && (
                     <div className="flex items-center gap-1.5">
                       <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -336,8 +348,8 @@ export default function MemberPage() {
                       <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
                     </div>
                   )}
-                  {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
-                   !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                  {!isTruthy(row.aipac_supported) &&
+                   !isTruthy(row.dmfi_supported) && (
                     <div className="text-xs text-slate-500 dark:text-slate-500">None</div>
                   )}
                 </div>
@@ -350,12 +362,43 @@ export default function MemberPage() {
             {/* District Offices */}
             {row.district_offices && (
               <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
+                <div
+                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
+                >
+                  District Offices
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {districtOfficesExpanded && (
+                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                      {row.district_offices.split(";").map((office, idx) => (
+                        <div key={idx} className="pl-0">
+                          {office.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Committees */}
+            {row.committees && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Committee Assignments</div>
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                    {row.district_offices.split(";").map((office, idx) => (
-                      <div key={idx} className="pl-0">
-                        {office.trim()}
+                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
+                    {row.committees.split(";").map((committee, idx) => (
+                      <div key={idx}>
+                        • {committee.trim()}
                       </div>
                     ))}
                   </div>

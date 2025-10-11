@@ -14,6 +14,7 @@
     "papaparse": "^5.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-usa-map": "^1.5.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

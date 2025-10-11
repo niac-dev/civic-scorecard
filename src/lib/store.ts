@@ -8,7 +8,8 @@ type FiltersState = {
   state: string;           // e.g. "WA"
   search: string;          // free-text member search
   categories: Set<string>; // selected category names
-  viewMode: "summary" | "all" | "category"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category
+  viewMode: "summary" | "all" | "category" | "map"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view
+  myLawmakers: string[];   // array of full names from address search
 
   set: (
     patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories">>
@@ -25,6 +26,7 @@ export const useFilters = create<FiltersState>((set) => ({
   search: "",
   categories: new Set<string>(),
   viewMode: "summary",
+  myLawmakers: [],
 
   set: (patch) =>
     set((prev) => ({

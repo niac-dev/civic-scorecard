@@ -79,6 +79,17 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
+function isTruthy(v: unknown): boolean {
+  if (v === 1 || v === '1' || v === true) return true;
+  if (typeof v === 'number' && v > 0) return true;
+  if (typeof v === 'string') {
+    if (v.toLowerCase() === "true") return true;
+    const num = parseFloat(v);
+    if (!isNaN(num) && num > 0) return true;
+  }
+  return false;
+}
+
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase();
@@ -89,8 +100,8 @@ function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" |
 }
 
 function GradeChip({ grade }: { grade: string }) {
-  const color = grade.startsWith("A") ? "#10B981"
-    : grade.startsWith("B") ? "#84CC16"
+  const color = grade.startsWith("A") ? "#3b1e5f"
+    : grade.startsWith("B") ? "#10B981"
     : grade.startsWith("C") ? "#F59E0B"
     : grade.startsWith("D") ? "#F97316"
     : "#F97066";
@@ -127,9 +138,12 @@ export default function BillPage() {
   const [supporters, setSupporters] = useState<Row[]>([]);
   const [opposers, setOpposers] = useState<Row[]>([]);
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
+  const [sponsorMember, setSponsorMember] = useState<Row | null>(null);
   const [allColumns, setAllColumns] = useState<string[]>([]);
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
+  const [firstExpanded, setFirstExpanded] = useState<boolean>(false);
+  const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -146,11 +160,45 @@ export default function BillPage() {
 
       setMeta(billMeta);
 
+      // Find sponsor member from metadata
+      if (billMeta.sponsor_bioguide_id) {
+        // Use bioguide_id for exact match
+        const sponsorRow = rows.find((row) => row.bioguide_id === billMeta.sponsor_bioguide_id);
+        setSponsorMember(sponsorRow || null);
+      } else if (billMeta.sponsor_name) {
+        // Fallback to name matching
+        const sponsorRow = rows.find((row) =>
+          String(row.full_name).toLowerCase().includes(String(billMeta.sponsor_name).toLowerCase()) ||
+          String(billMeta.sponsor_name).toLowerCase().includes(String(row.full_name).toLowerCase())
+        );
+        setSponsorMember(sponsorRow || null);
+      } else if (billMeta.sponsor) {
+        // Legacy support for old sponsor field
+        const sponsorStr = String(billMeta.sponsor).trim();
+        let sponsorRow = rows.find((row) => row.bioguide_id === sponsorStr);
+        if (!sponsorRow) {
+          sponsorRow = rows.find((row) =>
+            String(row.full_name).toLowerCase().includes(sponsorStr.toLowerCase()) ||
+            sponsorStr.toLowerCase().includes(String(row.full_name).toLowerCase())
+          );
+        }
+        setSponsorMember(sponsorRow || null);
+      }
+
+      // Determine the chamber for this bill
+      const billChamber = inferChamber(billMeta, column);
+
       // Split members into supporters (positive score) and opposers (0 or negative)
+      // Only include members from the appropriate chamber
       const support: Row[] = [];
       const oppose: Row[] = [];
 
       rows.forEach((row) => {
+        // Skip members from the wrong chamber
+        if (billChamber && row.chamber !== billChamber) {
+          return;
+        }
+
         const val = Number((row as Record<string, unknown>)[column] ?? 0);
         if (val > 0) {
           support.push(row);
@@ -166,6 +214,40 @@ export default function BillPage() {
 
   if (!meta) {
     return <div className="p-8">Loading...</div>;
+  }
+
+  // Determine section labels based on action type and position
+  const actionType = (meta as any).action_types || '';
+  const isVote = actionType.includes('vote');
+  const isCosponsor = actionType.includes('cosponsor');
+  const position = (meta.position_to_score || '').toUpperCase();
+  const isSupport = position === 'SUPPORT';
+
+  // Always show affirmative action first (cosponsored/voted for)
+  // Swap arrays if we oppose the bill (since val>0 means they did the opposite)
+  let firstSection = isSupport ? supporters : opposers;
+  let secondSection = isSupport ? opposers : supporters;
+
+  let firstLabel = '';
+  let secondLabel = '';
+  let firstIsGood = false; // Whether first section took the "good" action
+  let secondIsGood = false;
+
+  if (isCosponsor) {
+    firstLabel = 'Cosponsors';
+    secondLabel = 'Has Not Cosponsored';
+    firstIsGood = isSupport;  // Good if we support, bad if we oppose
+    secondIsGood = !isSupport; // Good if we oppose, bad if we support
+  } else if (isVote) {
+    firstLabel = 'Voted For';
+    secondLabel = 'Did Not Vote For';
+    firstIsGood = isSupport;
+    secondIsGood = !isSupport;
+  } else {
+    firstLabel = 'Supporters';
+    secondLabel = 'Did Not Support';
+    firstIsGood = isSupport;
+    secondIsGood = !isSupport;
   }
 
   return (
@@ -193,9 +275,10 @@ export default function BillPage() {
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}
                 </div>
-                {meta.sponsor && (
-                  <div className="text-sm text-slate-600 dark:text-slate-300">
-                    <span className="font-medium">Sponsor:</span> {meta.sponsor}
+                {(meta as any).action_types && (
+                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                    <span className="font-medium">Scoring:</span>{' '}
+                    {(meta as any).action_types.includes('vote') ? 'Vote' : 'Cosponsorship'}
                   </div>
                 )}
               </div>
@@ -240,13 +323,92 @@ export default function BillPage() {
             </div>
           )}
 
-          {/* Supporters/Cosponsors */}
+          {/* Sponsor */}
+          {sponsorMember && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Sponsor
+              </h2>
+              <div
+                className="flex items-center gap-3 p-3 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                onClick={() => setSelectedMember(sponsorMember)}
+              >
+                {sponsorMember.photo_url ? (
+                  <img
+                    src={String(sponsorMember.photo_url)}
+                    alt=""
+                    className="h-16 w-16 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-slate-300 dark:bg-white/10" />
+                )}
+                <div className="flex-1">
+                  <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                    {sponsorMember.full_name}
+                  </div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-1">
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                      style={{
+                        color: "#64748b",
+                        backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
+                      }}
+                    >
+                      {sponsorMember.chamber === "HOUSE"
+                        ? "House"
+                        : sponsorMember.chamber === "SENATE"
+                        ? "Senate"
+                        : sponsorMember.chamber || ""}
+                    </span>
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                      style={partyBadgeStyle(sponsorMember.party)}
+                    >
+                      {partyLabel(sponsorMember.party)}
+                    </span>
+                    <span>{stateCodeOf(sponsorMember.state)}{sponsorMember.district ? `-${sponsorMember.district}` : ""}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {!sponsorMember && (meta.sponsor_name || meta.sponsor) && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Sponsor
+              </h2>
+              <div className="text-sm text-slate-600 dark:text-slate-300">
+                {meta.sponsor_name || meta.sponsor}
+              </div>
+            </div>
+          )}
+
+          {/* First Section - Affirmative Action */}
           <div className="mb-6">
-            <h2 className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">
-              Supporters / Cosponsors ({supporters.length})
+            <h2
+              className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+              onClick={() => setFirstExpanded(!firstExpanded)}
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                {firstIsGood ? (
+                  <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                ) : (
+                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                )}
+              </svg>
+              {firstLabel} ({firstSection.length})
+              <svg
+                viewBox="0 0 20 20"
+                className={clsx("h-4 w-4 ml-auto transition-transform", firstExpanded && "rotate-180")}
+                aria-hidden="true"
+                role="img"
+              >
+                <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {supporters.map((member) => (
+            {firstExpanded && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {firstSection.map((member) => (
                 <div
                   key={member.bioguide_id}
                   className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
@@ -277,21 +439,41 @@ export default function BillPage() {
                   </div>
                 </div>
               ))}
-              {supporters.length === 0 && (
+              {firstSection.length === 0 && (
                 <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                  No supporters found
+                  None found
                 </div>
               )}
             </div>
+            )}
           </div>
 
-          {/* Opposers/Non-supporters */}
+          {/* Second Section - No Affirmative Action */}
           <div>
-            <h2 className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">
-              Did Not Support ({opposers.length})
+            <h2
+              className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+              onClick={() => setSecondExpanded(!secondExpanded)}
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                {secondIsGood ? (
+                  <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                ) : (
+                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                )}
+              </svg>
+              {secondLabel} ({secondSection.length})
+              <svg
+                viewBox="0 0 20 20"
+                className={clsx("h-4 w-4 ml-auto transition-transform", secondExpanded && "rotate-180")}
+                aria-hidden="true"
+                role="img"
+              >
+                <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {opposers.map((member) => (
+            {secondExpanded && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {secondSection.map((member) => (
                 <div
                   key={member.bioguide_id}
                   className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
@@ -322,12 +504,13 @@ export default function BillPage() {
                   </div>
                 </div>
               ))}
-              {opposers.length === 0 && (
+              {secondSection.length === 0 && (
                 <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                  No non-supporters found
+                  None found
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -362,6 +545,7 @@ function MemberModal({
   onClose: () => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
 
   // Build list of items: each bill or manual action gets an entry
   const allItems = useMemo(() => {
@@ -537,7 +721,7 @@ function MemberModal({
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
                   <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
                   <div className="space-y-1">
-                    {(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) && (
+                    {isTruthy(row.aipac_supported) && (
                       <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -545,7 +729,7 @@ function MemberModal({
                         <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
                       </div>
                     )}
-                    {(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    {isTruthy(row.dmfi_supported) && (
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -553,8 +737,8 @@ function MemberModal({
                         <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
                       </div>
                     )}
-                    {!(row.aipac_supported === 1 || row.aipac_supported === '1' || isTrue(row.aipac_supported)) &&
-                     !(row.dmfi_supported === 1 || row.dmfi_supported === '1' || isTrue(row.dmfi_supported)) && (
+                    {!isTruthy(row.aipac_supported) &&
+                     !isTruthy(row.dmfi_supported) && (
                       <div className="text-xs text-slate-500 dark:text-slate-400">None</div>
                     )}
                   </div>
@@ -567,12 +751,43 @@ function MemberModal({
             {/* District Offices */}
             {row.district_offices && (
               <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
+                <div
+                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
+                >
+                  District Offices
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {districtOfficesExpanded && (
+                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                      {row.district_offices.split(";").map((office, idx) => (
+                        <div key={idx}>
+                          {office.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Committees */}
+            {row.committees && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Committee Assignments</div>
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                    {row.district_offices.split(";").map((office, idx) => (
+                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
+                    {row.committees.split(";").map((committee, idx) => (
                       <div key={idx}>
-                        {office.trim()}
+                        • {committee.trim()}
                       </div>
                     ))}
                   </div>
