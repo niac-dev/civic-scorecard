@@ -10,6 +10,7 @@ type FiltersState = {
   categories: Set<string>; // selected category names
   viewMode: "summary" | "all" | "category" | "map"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view
   myLawmakers: string[];   // array of full names from address search
+  billColumn: string;      // column name for bill search
 
   set: (
     patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories">>
@@ -27,6 +28,7 @@ export const useFilters = create<FiltersState>((set) => ({
   categories: new Set<string>(),
   viewMode: "summary",
   myLawmakers: [],
+  billColumn: "",
 
   set: (patch) =>
     set((prev) => ({

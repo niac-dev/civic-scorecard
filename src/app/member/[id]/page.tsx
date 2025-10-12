@@ -99,14 +99,25 @@ function partyBadgeStyle(p?: string) {
   };
 }
 
-function GradeChip({ grade }: { grade: string }) {
-  const color = grade.startsWith("A") ? "#3b1e5f"
-    : grade.startsWith("B") ? "#10B981"
-    : grade.startsWith("C") ? "#F59E0B"
-    : grade.startsWith("D") ? "#F97316"
-    : "#F97066";
-  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
-    style={{ background: `${color}22`, color }}>{grade}</span>;
+function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
+  const color = grade.startsWith("A") ? "#050a30" // dark navy blue
+    : grade.startsWith("B") ? "#30558d" // medium blue
+    : grade.startsWith("C") ? "#93c5fd" // light blue
+    : grade.startsWith("D") ? "#d1d5db" // medium grey
+    : "#f3f4f6"; // very light grey
+  const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
+  const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
+    : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
+    : "#4b5563"; // dark grey for all other grades
+  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
+      style={{ background: `${color}${opacity}`, color: textColor, border }}
+    >
+      {grade}
+    </span>
+  );
 }
 
 function VoteIcon({ ok }: { ok: boolean }) {
@@ -133,7 +144,9 @@ export default function MemberPage() {
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(true);
+  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
+  const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
+  const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(true);
 
   useEffect(() => {
     (async () => {
@@ -197,7 +210,8 @@ export default function MemberPage() {
         waiver,
         label: meta?.short_title || meta?.bill_number || col,
         stance: meta?.position_to_score || "",
-        categories: (meta?.categories || "").split(";").map(c => c.trim()).filter(Boolean)
+        categories: (meta?.categories || "").split(";").map(c => c.trim()).filter(Boolean),
+        val
       };
     })
     .filter((it) => !it.na);
@@ -284,9 +298,81 @@ export default function MemberPage() {
             </div>
           </div>
 
-          {/* Category Grades - Sticky */}
-          <div className="sticky top-0 z-10 bg-white dark:bg-[#0B1220] border-b border-[#E7ECF2] dark:border-white/10 p-6">
-            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+          {/* Content */}
+          <div className="p-6">
+            {/* District Offices */}
+            {row.district_offices && (
+              <div className="mb-6">
+                <div
+                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
+                >
+                  District Offices
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {districtOfficesExpanded && (
+                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                      {row.district_offices.split(";").map((office, idx) => (
+                        <div key={idx} className="pl-0">
+                          {office.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Committees */}
+            {(() => {
+              const filteredCommittees = row.committees
+                ? row.committees.split(";")
+                    .map(c => c.trim())
+                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                : [];
+
+              return filteredCommittees.length > 0 ? (
+                <div className="mb-6">
+                  <div
+                    className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                    onClick={() => setCommitteesExpanded(!committeesExpanded)}
+                  >
+                    Committee Assignments
+                    <svg
+                      viewBox="0 0 20 20"
+                      className={clsx("h-4 w-4 ml-auto transition-transform", committeesExpanded && "rotate-180")}
+                      aria-hidden="true"
+                      role="img"
+                    >
+                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  {committeesExpanded && (
+                    <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
+                        {filteredCommittees.map((committee, idx) => (
+                          <div key={idx} className="pl-0">
+                            {committee}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Issue Grades */}
+            <div className="mb-6">
+              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Overall Grade card */}
               <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
@@ -295,7 +381,7 @@ export default function MemberPage() {
                   <div className="text-xs tabular text-slate-700 dark:text-slate-300">
                     {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                   </div>
-                  <GradeChip grade={String(row.Grade || "N/A")} />
+                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
                 </div>
               </div>
 
@@ -355,94 +441,93 @@ export default function MemberPage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {/* District Offices */}
-            {row.district_offices && (
-              <div className="mb-6">
-                <div
-                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
-                >
-                  District Offices
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
-                    aria-hidden="true"
-                    role="img"
-                  >
-                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {districtOfficesExpanded && (
-                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                      {row.district_offices.split(";").map((office, idx) => (
-                        <div key={idx} className="pl-0">
-                          {office.trim()}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Committees */}
-            {row.committees && (
-              <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Committee Assignments</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
-                    {row.committees.split(";").map((committee, idx) => (
-                      <div key={idx}>
-                        • {committee.trim()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Votes & Actions */}
-            <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
-            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-              {items.map(({ col, meta, na, ok, waiver, label, stance }) => (
-                <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
-                  <div className="mt-0.5">
-                    {waiver ? (
-                      <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                    ) : (
-                      <VoteIcon ok={ok} />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
-                      {label}
+            <div className="mb-6">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setVotesActionsExpanded(!votesActionsExpanded)}
+              >
+                Votes & Actions
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", votesActionsExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {votesActionsExpanded && (
+                <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+                  {items.map(({ col, meta, ok, waiver, label, stance, val }) => (
+                    <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
+                          {label}
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                          <span className="font-medium">NIAC Action Position:</span> {stance || ""}
+                        </div>
+                        {meta && (meta as { action_types?: string }).action_types && (
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
+                            <div className="mt-0.5">
+                              {waiver ? (
+                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                              ) : (
+                                <VoteIcon ok={ok} />
+                              )}
+                            </div>
+                            <span className="font-medium">
+                              {(() => {
+                                const actionTypes = (meta as { action_types?: string }).action_types || "";
+                                const isVote = actionTypes.includes("vote");
+                                const isCosponsor = actionTypes.includes("cosponsor");
+                                const position = (stance || "").toUpperCase();
+                                const isSupport = position === "SUPPORT";
+                                const gotPoints = val > 0;
+
+                                if (isCosponsor) {
+                                  // If we support: points means they cosponsored
+                                  // If we oppose: points means they did NOT cosponsor
+                                  const didCosponsor = isSupport ? gotPoints : !gotPoints;
+                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                } else if (isVote) {
+                                  // If we support: points means they voted for
+                                  // If we oppose: points means they voted against
+                                  const votedFor = isSupport ? gotPoints : !gotPoints;
+                                  if (votedFor) {
+                                    return "Voted For";
+                                  } else {
+                                    return "Voted Against";
+                                  }
+                                }
+                                return "Action";
+                              })()}
+                            </span>
+                          </div>
+                        )}
+                        {meta?.notes && (
+                          <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
+                        )}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {(meta?.categories || "")
+                            .split(";")
+                            .map((c) => c.trim())
+                            .filter(Boolean)
+                            .map((c) => (
+                              <span key={c} className="chip-xs">{c}</span>
+                            ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-300">
-                      {na ? "Not applicable (different chamber)" : stance || ""}
+                  ))}
+                  {!items.length && (
+                    <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      No relevant bills/actions for current filters.
                     </div>
-                    {meta?.notes && (
-                      <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {(meta?.categories || "")
-                        .split(";")
-                        .map((c) => c.trim())
-                        .filter(Boolean)
-                        .map((c) => (
-                          <span key={c} className="chip-xs">{c}</span>
-                        ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!items.length && (
-                <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No relevant bills/actions for current filters.
+                  )}
                 </div>
               )}
             </div>

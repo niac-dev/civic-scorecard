@@ -135,20 +135,9 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
   }, [stateColors]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <div className="us-state-map">
-        <USAMap
-          customize={customizeMap()}
-          onClick={handleStateClick}
-          defaultFill="#E5E7EB"
-          width="100%"
-          height="auto"
-          title=""
-        />
-      </div>
-
+    <div className="w-full max-w-4xl mx-auto">
       {/* Legend */}
-      <div className="mt-8 flex justify-center gap-4 flex-wrap">
+      <div className="mb-6 flex justify-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded" style={{ backgroundColor: "#050a30" }}></div>
           <span className="text-sm text-slate-700 dark:text-slate-300">A Grades</span>
@@ -169,6 +158,17 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
           <div className="w-6 h-6 rounded" style={{ backgroundColor: "#f3f4f6" }}></div>
           <span className="text-sm text-slate-700 dark:text-slate-300">F Grades</span>
         </div>
+      </div>
+
+      <div className="us-state-map">
+        <USAMap
+          customize={customizeMap()}
+          onClick={handleStateClick}
+          defaultFill="#E5E7EB"
+          width="100%"
+          height="auto"
+          title=""
+        />
       </div>
     </div>
   );

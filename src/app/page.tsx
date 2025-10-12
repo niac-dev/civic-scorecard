@@ -382,7 +382,7 @@ export default function Page() {
 
   return (
     <div className="space-y-4">
-      <Filters categories={categories} filteredCount={sorted.length} />
+      <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
       {selected && (
         <LawmakerCard
           row={selected}
@@ -757,7 +757,7 @@ export default function Page() {
   );
 }
 
-function Filters({ filteredCount }: { categories: string[]; filteredCount: number }) {
+function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta> }) {
   const f = useFilters();
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -822,7 +822,7 @@ function Filters({ filteredCount }: { categories: string[]; filteredCount: numbe
           </select>
         </div>
         <div className="ml-auto">
-          <UnifiedSearch filteredCount={filteredCount} />
+          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} />
         </div>
         <div className="basis-full">
           <button
@@ -855,7 +855,7 @@ function Filters({ filteredCount }: { categories: string[]; filteredCount: numbe
                 value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "Both"}
                 onChange={(v)=>f.set({ chamber: v==="Both" ? "" : v.toUpperCase() as any })}
               />
-              <select className="select" onChange={e=>f.set({party:e.target.value as any})}>
+              <select className="select" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
                 <option value="">All parties</option>
                 <option>Democratic</option><option>Republican</option><option>Independent</option>
               </select>
@@ -879,6 +879,14 @@ function Filters({ filteredCount }: { categories: string[]; filteredCount: numbe
                   </option>
                 ))}
               </select>
+              {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+                <button
+                  onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+                  className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -887,7 +895,7 @@ function Filters({ filteredCount }: { categories: string[]; filteredCount: numbe
   );
 }
 
-function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
+function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; metaByCol: Map<string, Meta> }) {
   const f = useFilters();
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">("zip");
@@ -925,14 +933,40 @@ function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
     }
   };
 
+  const handleBillSearch = () => {
+    if (!searchValue.trim()) return;
+
+    const query = searchValue.toLowerCase().trim();
+
+    // Search through all columns in metaByCol
+    let foundColumn = "";
+    for (const [column, meta] of metaByCol.entries()) {
+      const billNumber = (meta.bill_number || "").toLowerCase();
+      const shortTitle = (meta.short_title || "").toLowerCase();
+
+      if (billNumber.includes(query) || shortTitle.includes(query)) {
+        foundColumn = column;
+        break;
+      }
+    }
+
+    if (foundColumn) {
+      // Navigate to bill page
+      window.location.href = `/bill/${encodeURIComponent(foundColumn)}`;
+    } else {
+      setError('No bill found matching your search');
+    }
+  };
+
   const handleSearch = () => {
     if (searchType === "zip") {
       handleZipSearch();
     } else if (searchType === "name") {
       f.set({ search: searchValue });
       setIsOpen(false);
+    } else if (searchType === "legislation") {
+      handleBillSearch();
     }
-    // "legislation" search will be implemented later
   };
 
   const handleClear = () => {
@@ -944,7 +978,7 @@ function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
   const getPlaceholder = () => {
     if (searchType === "zip") return "Enter zip code…";
     if (searchType === "name") return "Enter lawmaker name…";
-    return "Enter bill name…";
+    return "Enter bill number or title…";
   };
 
   const isActive = f.myLawmakers.length > 0 || f.search.length > 0;
@@ -972,7 +1006,7 @@ function UnifiedSearch({ filteredCount }: { filteredCount: number }) {
       )}
 
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-white/10 rounded-lg shadow-lg p-4 min-w-[300px]">
+        <div className="absolute top-full mt-1 right-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-white/10 rounded-lg shadow-lg p-4 min-w-[300px]">
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium mb-1 text-slate-700 dark:text-slate-300">
@@ -1241,6 +1275,9 @@ function LawmakerCard({
   onClose: () => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState(false);
+  const [committeesExpanded, setCommitteesExpanded] = useState(false);
+  const [votesActionsExpanded, setVotesActionsExpanded] = useState(true);
 
   // Build list of items: each bill or manual action gets an entry
   const allItems = useMemo(() => {
@@ -1391,9 +1428,81 @@ function LawmakerCard({
             </button>
           </div>
 
-          {/* Category Grades - Sticky */}
-          <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
-            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 p-6">
+            {/* District Offices */}
+            {row.district_offices && (
+              <div className="mb-6">
+                <div
+                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
+                >
+                  District Offices
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                {districtOfficesExpanded && (
+                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                      {row.district_offices.split(";").map((office, idx) => (
+                        <div key={idx}>
+                          {office.trim()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Committees */}
+            {(() => {
+              const filteredCommittees = row.committees
+                ? row.committees.split(";")
+                    .map(c => c.trim())
+                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                : [];
+
+              return filteredCommittees.length > 0 ? (
+                <div className="mb-6">
+                  <div
+                    className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                    onClick={() => setCommitteesExpanded(!committeesExpanded)}
+                  >
+                    Committee Assignments
+                    <svg
+                      viewBox="0 0 20 20"
+                      className={clsx("h-4 w-4 ml-auto transition-transform", committeesExpanded && "rotate-180")}
+                      aria-hidden="true"
+                      role="img"
+                    >
+                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  {committeesExpanded && (
+                    <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
+                        {filteredCommittees.map((committee, idx) => (
+                          <div key={idx} className="pl-0">
+                            {committee}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Issue Grades */}
+            <div className="mb-6">
+              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Overall Grade card */}
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
@@ -1460,63 +1569,93 @@ function LawmakerCard({
                   </div>
                 </div>
               </div>
-          </div>
-
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto flex-1 p-6">
-            {/* District Offices */}
-            {row.district_offices && (
-              <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">District Offices</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                    {row.district_offices.split(";").map((office, idx) => (
-                      <div key={idx}>
-                        {office.trim()}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Votes & Actions */}
-            <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
-            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-              {items.map((it) => (
-                <div
-                  key={it.col}
-                  className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
-                  onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+            <div className="mb-6">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setVotesActionsExpanded(!votesActionsExpanded)}
+              >
+                Votes & Actions
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", votesActionsExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
                 >
-                  <div className="mt-0.5">
-                    {it.waiver ? (
-                      <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                    ) : (
-                      <VoteIcon ok={it.ok} />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
-                      {it.meta?.short_title || it.meta?.bill_number || it.col}
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {votesActionsExpanded && (
+                <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+                  {items.map((it) => (
+                    <div
+                      key={it.col}
+                      className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
+                      onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
+                          {it.meta?.short_title || it.meta?.bill_number || it.col}
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                          <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
+                        </div>
+                        {it.meta && (it.meta as { action_types?: string }).action_types && (
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
+                            <div className="mt-0.5">
+                              {it.waiver ? (
+                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                              ) : (
+                                <VoteIcon ok={it.ok} />
+                              )}
+                            </div>
+                            <span className="font-medium">
+                              {(() => {
+                                const actionTypes = (it.meta as { action_types?: string }).action_types || "";
+                                const isVote = actionTypes.includes("vote");
+                                const isCosponsor = actionTypes.includes("cosponsor");
+                                const position = (it.meta?.position_to_score || "").toUpperCase();
+                                const isSupport = position === "SUPPORT";
+                                const gotPoints = it.val > 0;
+
+                                if (isCosponsor) {
+                                  // If we support: points means they cosponsored
+                                  // If we oppose: points means they did NOT cosponsor
+                                  const didCosponsor = isSupport ? gotPoints : !gotPoints;
+                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                } else if (isVote) {
+                                  // If we support: points means they voted for
+                                  // If we oppose: points means they voted against
+                                  const votedFor = isSupport ? gotPoints : !gotPoints;
+                                  if (votedFor) {
+                                    return "Voted For";
+                                  } else {
+                                    return "Voted Against";
+                                  }
+                                }
+                                return "Action";
+                              })()}
+                            </span>
+                          </div>
+                        )}
+                        {it.meta?.notes && (
+                          <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{it.meta.notes}</div>
+                        )}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {it.categories.map((c) => (
+                            <span key={c} className="chip-xs">{c}</span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                      <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
+                  ))}
+                  {!items.length && (
+                    <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      No relevant bills/actions for current filters.
                     </div>
-                    {it.meta?.notes && (
-                      <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{it.meta.notes}</div>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {it.categories.map((c) => (
-                        <span key={c} className="chip-xs">{c}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!items.length && (
-                <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No relevant bills/actions for current filters.
+                  )}
                 </div>
               )}
             </div>

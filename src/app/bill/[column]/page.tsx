@@ -99,16 +99,21 @@ function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" |
   return "";
 }
 
-function GradeChip({ grade }: { grade: string }) {
-  const color = grade.startsWith("A") ? "#3b1e5f"
-    : grade.startsWith("B") ? "#10B981"
-    : grade.startsWith("C") ? "#F59E0B"
-    : grade.startsWith("D") ? "#F97316"
-    : "#F97066";
+function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
+  const color = grade.startsWith("A") ? "#050a30" // dark navy blue
+    : grade.startsWith("B") ? "#30558d" // medium blue
+    : grade.startsWith("C") ? "#93c5fd" // light blue
+    : grade.startsWith("D") ? "#d1d5db" // medium grey
+    : "#f3f4f6"; // very light grey
+  const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
+  const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
+    : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
+    : "#4b5563"; // dark grey for all other grades
+  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
   return (
     <span
       className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
-      style={{ background: `${color}22`, color }}
+      style={{ background: `${color}${opacity}`, color: textColor, border }}
     >
       {grade}
     </span>
@@ -161,41 +166,46 @@ export default function BillPage() {
       setMeta(billMeta);
 
       // Find sponsor member from metadata
+      let sponsorRow: Row | null = null;
       if (billMeta.sponsor_bioguide_id) {
         // Use bioguide_id for exact match
-        const sponsorRow = rows.find((row) => row.bioguide_id === billMeta.sponsor_bioguide_id);
-        setSponsorMember(sponsorRow || null);
+        sponsorRow = rows.find((row) => row.bioguide_id === billMeta.sponsor_bioguide_id) || null;
       } else if (billMeta.sponsor_name) {
         // Fallback to name matching
-        const sponsorRow = rows.find((row) =>
+        sponsorRow = rows.find((row) =>
           String(row.full_name).toLowerCase().includes(String(billMeta.sponsor_name).toLowerCase()) ||
           String(billMeta.sponsor_name).toLowerCase().includes(String(row.full_name).toLowerCase())
-        );
-        setSponsorMember(sponsorRow || null);
+        ) || null;
       } else if (billMeta.sponsor) {
         // Legacy support for old sponsor field
         const sponsorStr = String(billMeta.sponsor).trim();
-        let sponsorRow = rows.find((row) => row.bioguide_id === sponsorStr);
+        sponsorRow = rows.find((row) => row.bioguide_id === sponsorStr) || null;
         if (!sponsorRow) {
           sponsorRow = rows.find((row) =>
             String(row.full_name).toLowerCase().includes(sponsorStr.toLowerCase()) ||
             sponsorStr.toLowerCase().includes(String(row.full_name).toLowerCase())
-          );
+          ) || null;
         }
-        setSponsorMember(sponsorRow || null);
       }
+      setSponsorMember(sponsorRow);
 
       // Determine the chamber for this bill
       const billChamber = inferChamber(billMeta, column);
 
       // Split members into supporters (positive score) and opposers (0 or negative)
       // Only include members from the appropriate chamber
+      // Exclude the sponsor from cosponsors list
       const support: Row[] = [];
       const oppose: Row[] = [];
 
       rows.forEach((row) => {
         // Skip members from the wrong chamber
         if (billChamber && row.chamber !== billChamber) {
+          return;
+        }
+
+        // Skip the sponsor (don't include in cosponsors)
+        if (sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
           return;
         }
 
@@ -546,6 +556,8 @@ function MemberModal({
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
+  const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
+  const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(false);
 
   // Build list of items: each bill or manual action gets an entry
   const allItems = useMemo(() => {
@@ -685,7 +697,7 @@ function MemberModal({
                     <div className="text-xs tabular text-slate-700 dark:text-slate-300">
                       {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                     </div>
-                    <GradeChip grade={String(row.Grade || "N/A")} />
+                    <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
                   </div>
                 </div>
 
@@ -780,71 +792,131 @@ function MemberModal({
             )}
 
             {/* Committees */}
-            {row.committees && (
-              <div className="mb-6">
-                <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Committee Assignments</div>
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                  <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
-                    {row.committees.split(";").map((committee, idx) => (
-                      <div key={idx}>
-                        • {committee.trim()}
-                      </div>
-                    ))}
+            {(() => {
+              const filteredCommittees = row.committees
+                ? row.committees.split(";")
+                    .map(c => c.trim())
+                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                : [];
+
+              return filteredCommittees.length > 0 ? (
+                <div className="mb-6">
+                  <div
+                    className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                    onClick={() => setCommitteesExpanded(!committeesExpanded)}
+                  >
+                    Committee Assignments
+                    <svg
+                      viewBox="0 0 20 20"
+                      className={clsx("h-4 w-4 ml-auto transition-transform", committeesExpanded && "rotate-180")}
+                      aria-hidden="true"
+                      role="img"
+                    >
+                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                   </div>
+                  {committeesExpanded && (
+                    <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
+                        {filteredCommittees.map((committee, idx) => (
+                          <div key={idx} className="pl-0">
+                            {committee}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              ) : null;
+            })()}
 
             {/* Votes & Actions */}
-            <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Votes & Actions</div>
-            <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-              {items.length === 0 && (
-                <div className="py-4 text-sm text-slate-500 dark:text-slate-400">
-                  {selectedCategory ? `No votes/actions for ${selectedCategory}` : "No votes/actions found"}
-                </div>
-              )}
-              {items.map((it) => {
-                const pos = (it.meta?.position_to_score || "").toLowerCase();
-                const posLabel = pos === "support" ? "Support" : pos === "oppose" ? "Oppose" : "";
-
-                return (
-                  <div key={it.col} className="py-4">
-                    <div className="flex items-start gap-3">
-                      <VoteIcon ok={it.ok} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 mb-1">
-                          {it.meta?.short_title || it.col}
+            <div className="mb-6">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setVotesActionsExpanded(!votesActionsExpanded)}
+              >
+                Votes & Actions
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", votesActionsExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {votesActionsExpanded && (
+                <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+                  {items.length === 0 && (
+                    <div className="py-4 text-sm text-slate-500 dark:text-slate-400">
+                      {selectedCategory ? `No votes/actions for ${selectedCategory}` : "No votes/actions found"}
+                    </div>
+                  )}
+                  {items.map((it) => (
+                    <div
+                      key={it.col}
+                      className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
+                      onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
+                          {it.meta?.short_title || it.meta?.bill_number || it.col}
                         </div>
-                        {it.meta?.notes && (
-                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 mb-2">
-                            {it.meta.notes}
+                        <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                          <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
+                        </div>
+                        {it.meta && (it.meta as { action_types?: string }).action_types && (
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
+                            <div className="mt-0.5">
+                              {it.waiver ? (
+                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                              ) : (
+                                <VoteIcon ok={it.ok} />
+                              )}
+                            </div>
+                            <span className="font-medium">
+                              {(() => {
+                                const actionTypes = (it.meta as { action_types?: string }).action_types || "";
+                                const isVote = actionTypes.includes("vote");
+                                const isCosponsor = actionTypes.includes("cosponsor");
+                                const position = (it.meta?.position_to_score || "").toUpperCase();
+                                const isSupport = position === "SUPPORT";
+                                const gotPoints = it.val > 0;
+
+                                if (isCosponsor) {
+                                  // If we support: points means they cosponsored
+                                  // If we oppose: points means they did NOT cosponsor
+                                  const didCosponsor = isSupport ? gotPoints : !gotPoints;
+                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                } else if (isVote) {
+                                  // If we support: points means they voted for
+                                  // If we oppose: points means they voted against
+                                  const votedFor = isSupport ? gotPoints : !gotPoints;
+                                  if (votedFor) {
+                                    return "Voted For";
+                                  } else {
+                                    return "Voted Against";
+                                  }
+                                }
+                                return "Action";
+                              })()}
+                            </span>
                           </div>
                         )}
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="chip-xs">
-                            {it.meta?.bill_number || "Manual Action"}
-                          </span>
-                          {posLabel && (
-                            <span className="chip-xs">
-                              Position: {posLabel}
-                            </span>
-                          )}
-                          {it.categories.length > 0 && (
-                            <span className="chip-xs">
-                              {it.categories.join(", ")}
-                            </span>
-                          )}
-                          {it.waiver && (
-                            <span className="chip-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                              Waiver: Preferred option supported
-                            </span>
-                          )}
+                        {it.meta?.notes && (
+                          <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{it.meta.notes}</div>
+                        )}
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {it.categories.map((c) => (
+                            <span key={c} className="chip-xs">{c}</span>
+                          ))}
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
