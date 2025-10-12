@@ -436,32 +436,61 @@ export default function Page() {
                 {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
               </span>
             </div>
-            {gradeColumns.map((gradeCol, idx) => (
-              <div
-                key={gradeCol.field}
-                className={clsx(
-                  "th text-center cursor-pointer relative group",
-                  idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
-                )}
-                title={`Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`}
-                onClick={() => {
-                  if (sortCol === String(gradeCol.field)) {
-                    setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                  } else {
-                    setSortCol(String(gradeCol.field));
-                    setSortDir("GOOD_FIRST");
+            {gradeColumns.map((gradeCol, idx) => {
+              const isOverallGrade = gradeCol.header === "Overall Grade";
+              const isSummaryMode = f.viewMode === "summary";
+              const isCategoryHeader = isSummaryMode && !isOverallGrade;
+
+              return (
+                <div
+                  key={gradeCol.field}
+                  className={clsx(
+                    "th text-center cursor-pointer relative group",
+                    idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
+                  )}
+                  title={
+                    isCategoryHeader
+                      ? `Click to view ${gradeCol.header} bills`
+                      : `Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`
                   }
-                }}
-              >
-                {gradeCol.header}
-                <span className={clsx(
-                  "absolute right-2 top-1.5 text-[10px]",
-                  sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
-                )}>
-                  {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                </span>
-              </div>
-            ))}
+                  onClick={() => {
+                    if (isCategoryHeader) {
+                      // In summary mode, clicking a category header switches to category view
+                      f.set({ viewMode: "category" });
+                      f.clearCategories();
+                      // Add this category to the filter
+                      f.toggleCategory(gradeCol.header);
+                    } else {
+                      // Regular sort behavior
+                      if (sortCol === String(gradeCol.field)) {
+                        setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                      } else {
+                        setSortCol(String(gradeCol.field));
+                        setSortDir("GOOD_FIRST");
+                      }
+                    }
+                  }}
+                >
+                  <div className="flex flex-col items-center">
+                    <div>{gradeCol.header}</div>
+                    {isCategoryHeader && (
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 flex items-center gap-0.5 mt-0.5">
+                        <span>sort</span>
+                        <span>▼</span>
+                      </div>
+                    )}
+                  </div>
+                  {!isCategoryHeader && (
+                    <span className={clsx(
+                      "absolute right-2 top-1.5 text-[10px]",
+                      sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                    )}>
+                      {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             {billCols.map((c) => (
               <Header
                 key={c}
