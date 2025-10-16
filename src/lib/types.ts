@@ -6,6 +6,7 @@ export type Chamber = "HOUSE" | "SENATE" | "";
 export type Meta = {
   bill_number?: string;
   position_to_score?: string;
+  display_name?: string;
   short_title?: string;
   notes?: string;
   sponsor?: string;

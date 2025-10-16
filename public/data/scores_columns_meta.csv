@@ -1,24 +1,25 @@
-column,type,bill_number,categories,action_types,short_title,notes,sponsor_bioguide_id,sponsor_name,position_to_score,preferred,pair_key
-H.Amdt.55 to H.R.4016 — MGT Amendment,BILL,H.Amdt.55 to H.R.4016,Israel-Gaza,vote,MGT Amendment,,,,SUPPORT,,
-H.Con.Res.38 — War Powers Resolution (Massie-Khanna),BILL,H.Con.Res.38,Iran,cosponsor,War Powers Resolution (Massie-Khanna),,M001184,"Massie, Thomas",SUPPORT,true,pair_1:H.Con.Res.38|H.Con.Res.40
-H.Con.Res.40 — War Powers Resolution (Meeks-Smith),BILL,H.Con.Res.40,Iran,cosponsor,War Powers Resolution (Meeks-Smith),,M001137,"Meeks, Gregory W.",SUPPORT,false,pair_1:H.Con.Res.38|H.Con.Res.40
-H.R. 1422 — Enhanced Iran Sanctions Act(Lawler),BILL,H.R. 1422,Iran,cosponsor,Enhanced Iran Sanctions Act(Lawler),,L000599,"Lawler, Michael",OPPOSE,,
-H.R.1576 — Protecting American Agriculture from Foreign Adversaries Act of 2025,BILL,H.R.1576,Civil Rights,cosponsor,Protecting American Agriculture from Foreign Adversaries Act of 2025,,N000189,"Newhouse, Dan",OPPOSE,,
-H.R.1800 — Solidify Iran Sanctions Act (Mackenzie),BILL,H.R.1800,Iran,cosponsor,Solidify Iran Sanctions Act (Mackenzie),,M001230,"Mackenzie, Ryan",OPPOSE,,
-H.R.2619 — No Paydays for Hostage Takers Act,BILL,H.R.2619,Civil Rights,cosponsor,No Paydays for Hostage Takers Act,,B001322,"Baumgartner, Michael",OPPOSE,,
-H.R.3565 — Block the Bombs Act (Sanders),BILL,H.R.3565,Israel-Gaza,cosponsor,Block the Bombs Act (Sanders),,R000617,"Ramirez, Delia C.",SUPPORT,,
-H.R.4281 — Bunker Buster Act (Gottheimer-Lawler),BILL,H.R.4281,Iran,cosponsor,Bunker Buster Act (Gottheimer-Lawler),,G000583,"Gottheimer, Josh",OPPOSE,,
-H.R.630 — Neighbors Not Enemies Act,BILL,H.R.630,Civil Rights,cosponsor,Neighbors Not Enemies Act,,O000173,"Omar, Ilhan",SUPPORT,,
-H.R.924 — NO BAN Act,BILL,H.R.924,Travel & Immigration,cosponsor,NO BAN Act,,C001080,"Chu, Judy",SUPPORT,,
-H.Res.166 — MEK Bill (McClintock),BILL,H.Res.166,Iran,cosponsor,MEK Bill (McClintock),,M001177,"McClintock, Tom",OPPOSE,,
-H.Res.521 — Standing with Israel attack on Iran,BILL,H.Res.521,Iran,cosponsor,Standing with Israel attack on Iran,,T000478,"Tenney, Claudia",OPPOSE,,
-S.197 — Protecting Military Installations and Ranges Act of 2025,BILL,S.197,Civil Rights,cosponsor,Protecting Military Installations and Ranges Act of 2025,,C001098,"Cruz, Ted",OPPOSE,,
-S.2087 — No War Against Iran Act (Sanders),BILL,S.2087,Iran,cosponsor,No War Against Iran Act (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,
-S.2555 — Student Visa Integrity Act of 2025,BILL,S.2555,Travel & Immigration,cosponsor,Student Visa Integrity Act of 2025,,T000278,"Tuberville, Tommy",OPPOSE,,
-S.398 — NO BAN Act,BILL,S.398,Travel & Immigration,cosponsor,NO BAN Act,,C001088,"Coons, Christopher A.",SUPPORT,,
-S.556 — Enhanced Iran Sanctions Act (Sullivan),BILL,S.556,Iran,cosponsor,Enhanced Iran Sanctions Act (Sullivan),,S001198,"Sullivan, Dan",OPPOSE,,
-S.J.Res.33 — Joint Resolution of Disapproval to block weapons for Israel (Sanders),BILL,S.J.Res.33,Israel-Gaza,vote,Joint Resolution of Disapproval to block weapons for Israel (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,
-S.J.Res.34 — Joint Resolution of Disapproval to block weapons for Israel (Sanders),BILL,S.J.Res.34,Israel-Gaza,vote,Joint Resolution of Disapproval to block weapons for Israel (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,
-S.J.Res.41 — Joint Resolution of Disapproval to block weapons for Israel (Sanders),BILL,S.J.Res.41,Israel-Gaza,vote,Joint Resolution of Disapproval to block weapons for Israel (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,
-S.J.Res.59 — War Powers Resolution (Kaine),BILL,S.J.Res.59,Iran,vote,War Powers Resolution (Kaine),,K000384,"Kaine, Tim",SUPPORT,,
-S.____ — Solidify Iran Sanctions Act (Scott-Hassan),BILL,S.____,Iran,cosponsor,Solidify Iran Sanctions Act (Scott-Hassan),,,,OPPOSE,,
+column,type,bill_number,display_name,categories,action_types,short_title,notes,sponsor_bioguide_id,sponsor_name,position_to_score,preferred,pair_key,chamber
+119.H.Amdt.55 — MTG Amendment,BILL,119.H.Amdt.55,119.H.Amdt.55 — MTG Amendment,Israel-Gaza,vote,MTG Amendment,,,,SUPPORT,,,HOUSE
+H.Con.Res.38 — War Powers Resolution (Massie-Khanna),BILL,H.Con.Res.38,H.Con.Res.38 — War Powers Resolution (Massie-Khanna),Iran,cosponsor,War Powers Resolution (Massie-Khanna),,M001184,"Massie, Thomas",SUPPORT,true,pair_1:H.Con.Res.38|H.Con.Res.40,HOUSE
+H.Con.Res.40 — War Powers Resolution (Meeks-Smith),BILL,H.Con.Res.40,H.Con.Res.40 — War Powers Resolution (Meeks-Smith),Iran,cosponsor,War Powers Resolution (Meeks-Smith),,M001137,"Meeks, Gregory W.",SUPPORT,false,pair_1:H.Con.Res.38|H.Con.Res.40,HOUSE
+H.R. 1422 — Enhanced Iran Sanctions Act(Lawler),BILL,H.R. 1422,H.R. 1422 — Enhanced Iran Sanctions Act(Lawler),Iran,cosponsor,Enhanced Iran Sanctions Act(Lawler),,L000599,"Lawler, Michael",OPPOSE,,,HOUSE
+H.R.1576 — Alien Land Law House Bill,BILL,H.R.1576,H.R.1576 — Alien Land Law House Bill,Civil Rights,cosponsor,Alien Land Law House Bill,,N000189,"Newhouse, Dan",OPPOSE,,,HOUSE
+H.R.1800 — Solidify Iran Sanctions Act (Mackenzie),BILL,H.R.1800,H.R.1800 — Solidify Iran Sanctions Act (Mackenzie),Iran,cosponsor,Solidify Iran Sanctions Act (Mackenzie),,M001230,"Mackenzie, Ryan",OPPOSE,,,HOUSE
+H.R.2619 — Banning Travel To Iran,BILL,H.R.2619,H.R.2619 — Banning Travel To Iran,Travel & Immigration,cosponsor,Banning Travel To Iran,,B001322,"Baumgartner, Michael",OPPOSE,,,HOUSE
+H.R.3565 — Block the Bombs Act,BILL,H.R.3565,H.R.3565 — Block the Bombs Act,Israel-Gaza,cosponsor,Block the Bombs Act,,R000617,"Ramirez, Delia C.",SUPPORT,,,HOUSE
+H.R.4281 — Bunker Buster Act (Gottheimer-Lawler),BILL,H.R.4281,H.R.4281 — Bunker Buster Act (Gottheimer-Lawler),Iran,cosponsor,Bunker Buster Act (Gottheimer-Lawler),,G000583,"Gottheimer, Josh",OPPOSE,,,HOUSE
+H.R.630 — Neighbors Not Enemies Act,BILL,H.R.630,H.R.630 — Neighbors Not Enemies Act,Civil Rights,cosponsor,Neighbors Not Enemies Act,,O000173,"Omar, Ilhan",SUPPORT,,,HOUSE
+H.R.924 — NO BAN Act,BILL,H.R.924,H.R.924 — NO BAN Act,Travel & Immigration,cosponsor,NO BAN Act,,C001080,"Chu, Judy",SUPPORT,,,HOUSE
+H.Res.166 — MEK Bill (McClintock),BILL,H.Res.166,H.Res.166 — MEK Bill (McClintock),Iran,cosponsor,MEK Bill (McClintock),,M001177,"McClintock, Tom",OPPOSE,,,HOUSE
+H.Res.521 — Standing with Israel attack on Iran,BILL,H.Res.521,H.Res.521 — Standing with Israel attack on Iran,Iran,cosponsor,Standing with Israel attack on Iran,,T000478,"Tenney, Claudia",OPPOSE,,,HOUSE
+S.197 — Alien Land Law Senate Bill,BILL,S.197,S.197 — Alien Land Law Senate Bill,Civil Rights,cosponsor,Alien Land Law Senate Bill,,C001098,"Cruz, Ted",OPPOSE,,,SENATE
+S.2087 — No War Against Iran Act,BILL,S.2087,S.2087 — No War Against Iran Act,Iran,cosponsor,No War Against Iran Act,,S000033,"Sanders, Bernard",SUPPORT,,,SENATE
+S.2555 — Student Visa Integrity Act of 2025,BILL,S.2555,S.2555 — Student Visa Integrity Act of 2025,Travel & Immigration,cosponsor,Student Visa Integrity Act of 2025,,T000278,"Tuberville, Tommy",OPPOSE,,,SENATE
+S.398 — NO BAN Act,BILL,S.398,S.398 — NO BAN Act,Travel & Immigration,cosponsor,NO BAN Act,,C001088,"Coons, Christopher A.",SUPPORT,,,SENATE
+S.556 — Enhanced Iran Sanctions Act (Sullivan),BILL,S.556,S.556 — Enhanced Iran Sanctions Act (Sullivan),Iran,cosponsor,Enhanced Iran Sanctions Act (Sullivan),,S001198,"Sullivan, Dan",OPPOSE,,,SENATE
+S.J.Res.33 — Block weapons for Israel JRD #3 (Sanders),BILL,S.J.Res.33,S.J.Res.33 — Block weapons for Israel JRD #3 (Sanders),Israel-Gaza,vote,Block weapons for Israel JRD #3 (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,,SENATE
+S.J.Res.34 — Block weapons for Israel JRD #2 (Sanders),BILL,S.J.Res.34,S.J.Res.34 — Block weapons for Israel JRD #2 (Sanders),Israel-Gaza,vote,Block weapons for Israel JRD #2 (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,,SENATE
+S.J.Res.41 — Block weapons for Israel JRD (Sanders),BILL,S.J.Res.41,S.J.Res.41 — Block weapons for Israel JRD (Sanders),Israel-Gaza,vote,Block weapons for Israel JRD (Sanders),,S000033,"Sanders, Bernard",SUPPORT,,,SENATE
+S.J.Res.59 — War Powers Resolution (Kaine),BILL,S.J.Res.59,S.J.Res.59 — War Powers Resolution (Kaine),Iran,vote,War Powers Resolution (Kaine),,K000384,"Kaine, Tim",SUPPORT,,,SENATE
+S.____ — Solidify Iran Sanctions Act (Scott-Hassan),BILL,S.____,S.____ — Solidify Iran Sanctions Act (Scott-Hassan),Iran,cosponsor,Solidify Iran Sanctions Act (Scott-Hassan),,,,OPPOSE,,,SENATE
+Committee_Vote_to_Ban_Travel_to_Iran,MANUAL,,Committee Vote to Ban Travel to Iran,Travel & Immigration,letter,,,,,OPPOSE,,,HOUSE

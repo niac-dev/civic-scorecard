@@ -249,8 +249,8 @@ export default function BillPage() {
     firstIsGood = isSupport;  // Good if we support, bad if we oppose
     secondIsGood = !isSupport; // Good if we oppose, bad if we support
   } else if (isVote) {
-    firstLabel = 'Voted For';
-    secondLabel = 'Did Not Vote For';
+    firstLabel = 'Voted in Favor';
+    secondLabel = 'Voted Against';
     firstIsGood = isSupport;
     secondIsGood = !isSupport;
   } else {
@@ -280,7 +280,7 @@ export default function BillPage() {
                   {meta.bill_number || column}
                 </h1>
                 <div className="text-lg text-slate-700 dark:text-slate-200 mb-2">
-                  {meta.short_title}
+                  {meta.display_name || meta.short_title}
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}
@@ -861,7 +861,7 @@ function MemberModal({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
-                          {it.meta?.short_title || it.meta?.bill_number || it.col}
+                          {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
                           <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
@@ -890,11 +890,11 @@ function MemberModal({
                                   const didCosponsor = isSupport ? gotPoints : !gotPoints;
                                   return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                 } else if (isVote) {
-                                  // If we support: points means they voted for
+                                  // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against
                                   const votedFor = isSupport ? gotPoints : !gotPoints;
                                   if (votedFor) {
-                                    return "Voted For";
+                                    return "Voted in Favor";
                                   } else {
                                     return "Voted Against";
                                   }

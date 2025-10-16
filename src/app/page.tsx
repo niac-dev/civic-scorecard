@@ -186,6 +186,20 @@ export default function Page() {
     return out;
   }, [rows, cols, f, metaByCol]);
 
+  // Calculate max possible points for each column based on actual data
+  const maxPointsByCol = useMemo(() => {
+    const maxMap = new Map<string, number>();
+    cols.forEach((col) => {
+      let max = 0;
+      rows.forEach((row) => {
+        const val = Number((row as Record<string, unknown>)[col] ?? 0);
+        if (val > max) max = val;
+      });
+      maxMap.set(col, max);
+    });
+    return maxMap;
+  }, [rows, cols]);
+
   const sorted = useMemo(() => {
     if (!sortCol) return filtered;
     // Sort by member last name when header "Member" is clicked
@@ -679,8 +693,12 @@ export default function Page() {
                 // Try to determine the chamber for this column (bill or manual action)
                 const inferredChamber = inferChamber(meta, c);
 
-                // If we can determine a chamber and it doesn't match member’s chamber -> N/A
+                // If we can determine a chamber and it doesn't match member's chamber -> N/A
                 const notApplicable = inferredChamber && inferredChamber !== r.chamber;
+
+                // Check if this is a manual action that doesn't apply (type=MANUAL and val=0)
+                const isManualAction = meta?.type === "MANUAL";
+                const manualActionNotApplicable = isManualAction && val === 0;
 
                 // Tooltip text
                 // --- NEW: dash if this is the lesser item in a preferred pair and member hit the preferred one ---
@@ -699,20 +717,75 @@ export default function Page() {
                   return false;
                 })();
 
+                // Determine max points for this column
+                // For pair_key items, the denominator depends on the item and whether they got points
+                let maxPoints = maxPointsByCol.get(c) || 0;
+                if (meta?.pair_key) {
+                  // Find the highest max points among all items in the pair and the OTHER item's max
+                  let pairMax = 0;
+                  let otherItemMax = 0;
+                  for (const other of cols) {
+                    const m2 = metaByCol.get(other);
+                    if (m2?.pair_key === meta.pair_key) {
+                      const otherMax = maxPointsByCol.get(other) || 0;
+                      if (otherMax > pairMax) pairMax = otherMax;
+                      // If this is not the current column, track the other item's max
+                      if (other !== c) {
+                        otherItemMax = otherMax;
+                      }
+                    }
+                  }
+
+                  const thisItemMax = maxPointsByCol.get(c) || 0;
+                  const isPreferred = meta ? isTrue((meta as any).preferred) : false;
+
+                  if (isPreferred) {
+                    // Preferred item: if they got points show 10/10, if not show 0/7
+                    if (val > 0) {
+                      maxPoints = pairMax; // 10/10
+                    } else {
+                      maxPoints = pairMax - otherItemMax; // 0/7 (10 - 3, they can still get 3 from the other)
+                    }
+                  } else {
+                    // Non-preferred item: if they got points show 3/3, if not show 0/3
+                    maxPoints = thisItemMax; // Always use this item's own max (3)
+                  }
+                }
+
+                // Determine the action label based on action_types and position
+                const actionType = (meta as { action_types?: string })?.action_types || '';
+                const isVote = actionType.includes('vote');
+                const isCosponsor = actionType.includes('cosponsor');
+                const position = (meta?.position_to_score || '').toUpperCase();
+                const isSupport = position === 'SUPPORT';
+
                 let title: string;
                 if (notApplicable) {
                   title = "Not applicable (different chamber)";
+                } else if (manualActionNotApplicable) {
+                  title = "Not applicable";
                 } else if (showDashForPreferredPair) {
                   title = "Not penalized: preferred item supported";
-                } else if (val > 0) {
-                  title = "Aligned with our stance (earned points)";
                 } else {
-                  title = "Not aligned with our stance (no points)";
+                  // Determine the action description
+                  let actionDescription = '';
+
+                  if (isCosponsor) {
+                    const didCosponsor = isSupport ? (val > 0) : (val === 0);
+                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has Not Cosponsored';
+                  } else if (isVote) {
+                    const votedFor = isSupport ? (val > 0) : (val === 0);
+                    actionDescription = votedFor ? 'Voted in Favor' : 'Voted Against';
+                  } else {
+                    actionDescription = val > 0 ? 'Supported' : 'Did Not Support';
+                  }
+
+                  title = `${actionDescription}, ${val.toFixed(0)}/${maxPoints} points`;
                 }
 
                 return (
                   <div key={c} className="td pr-0 flex items-center justify-center" title={title}>
-                    {notApplicable ? (
+                    {notApplicable || manualActionNotApplicable ? (
                       <span className="text-xs text-slate-400">N/A</span>
                     ) : showDashForPreferredPair ? (
                       <span className="text-lg leading-none text-slate-400">—</span>
@@ -971,9 +1044,10 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
     let foundColumn = "";
     for (const [column, meta] of metaByCol.entries()) {
       const billNumber = (meta.bill_number || "").toLowerCase();
+      const displayName = (meta.display_name || "").toLowerCase();
       const shortTitle = (meta.short_title || "").toLowerCase();
 
-      if (billNumber.includes(query) || shortTitle.includes(query)) {
+      if (billNumber.includes(query) || displayName.includes(query) || shortTitle.includes(query)) {
         foundColumn = column;
         break;
       }
@@ -1148,7 +1222,7 @@ function Header({
           }
         }}
       >
-        {meta ? (meta.short_title || meta.bill_number) : col}
+        {meta ? (meta.display_name || meta.short_title || meta.bill_number) : col}
       </span>
 
       {/* Position - sortable */}
@@ -1177,12 +1251,12 @@ function Header({
       {meta && (
         <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
           <div className={clsx(
-            meta.short_title ? "text-base font-bold" : "text-sm font-semibold",
+            (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
             "text-slate-900 dark:text-slate-100"
           )}>
-            {meta.bill_number || meta.short_title || col}
+            {meta.bill_number || meta.display_name || meta.short_title || col}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.short_title}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.display_name || meta.short_title}</div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}</div>
           {meta.notes && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.notes}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
@@ -1626,7 +1700,7 @@ function LawmakerCard({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
-                          {it.meta?.short_title || it.meta?.bill_number || it.col}
+                          {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
                           <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
@@ -1655,11 +1729,11 @@ function LawmakerCard({
                                   const didCosponsor = isSupport ? gotPoints : !gotPoints;
                                   return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                 } else if (isVote) {
-                                  // If we support: points means they voted for
+                                  // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against
                                   const votedFor = isSupport ? gotPoints : !gotPoints;
                                   if (votedFor) {
-                                    return "Voted For";
+                                    return "Voted in Favor";
                                   } else {
                                     return "Voted Against";
                                   }

@@ -78,7 +78,7 @@ export async function loadData(): Promise<{
     "Percent_Travel_Immigration",
     "Grade_Travel_Immigration",
   ];
-  const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c));
+  const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c) && !c.endsWith('_sponsor'));
 
   // Map column -> metadata
   const metaByCol = new Map<string, Meta>(meta.map((m) => [m.column, m]));

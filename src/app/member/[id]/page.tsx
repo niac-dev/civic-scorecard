@@ -208,7 +208,7 @@ export default function MemberPage() {
         na,
         ok: !na && val > 0,
         waiver,
-        label: meta?.short_title || meta?.bill_number || col,
+        label: meta?.display_name || meta?.short_title || meta?.bill_number || col,
         stance: meta?.position_to_score || "",
         categories: (meta?.categories || "").split(";").map(c => c.trim()).filter(Boolean),
         val
@@ -494,11 +494,11 @@ export default function MemberPage() {
                                   const didCosponsor = isSupport ? gotPoints : !gotPoints;
                                   return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                 } else if (isVote) {
-                                  // If we support: points means they voted for
+                                  // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against
                                   const votedFor = isSupport ? gotPoints : !gotPoints;
                                   if (votedFor) {
-                                    return "Voted For";
+                                    return "Voted in Favor";
                                   } else {
                                     return "Voted Against";
                                   }
