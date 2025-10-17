@@ -343,12 +343,14 @@ export default function Page() {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "140px").join(" ");
     const gradesPart = gradeColumns.map(() => "120px").join(" ");
+    // Member column: 50vw on small screens (max 50% of viewport), 280px on larger screens
+    const memberCol = "min(50vw, 280px)";
     // In summary mode: member col + grade cols + endorsements col + total/max/percent
     if (f.viewMode === "summary") {
-      return `280px ${gradesPart} 140px 160px 120px 100px`;
+      return `${memberCol} ${gradesPart} 140px 160px 120px 100px`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
-    return `280px ${gradesPart} ${billsPart} 140px 160px 120px 100px`;
+    return `${memberCol} ${gradesPart} ${billsPart} 140px 160px 120px 100px`;
   }, [billCols, gradeColumns, f.viewMode]);
 
   // Calculate average grades per state for map coloring
@@ -605,21 +607,24 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-4 flex items-center gap-3 sticky left-0 z-20 bg-white dark:bg-slate-900 cursor-pointer"
+                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900"
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
+                {/* Photo - smaller on phones, normal on tablets/desktop */}
                 {r.photo_url ? (
                   <img
                     src={String(r.photo_url)}
                     alt=""
-                    className="h-[68px] w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                    className="h-10 w-10 md:h-[68px] md:w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                   />
                 ) : (
-                  <div className="h-[68px] w-[68px] rounded-full bg-slate-300 dark:bg-white/10" />
+                  <div className="h-10 w-10 md:h-[68px] md:w-[68px] rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                 )}
-                <div className="flex flex-col justify-center">
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
+
+                {/* Text content - normal behavior on tablets/desktop, scrolls on phones */}
+                <div className="flex flex-col justify-center min-w-0">
+                  <div className="text-[8px] md:text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5 hidden md:block">
                     {(() => {
                       if (r.chamber === "SENATE") return "Senator";
                       if (r.chamber === "HOUSE") {
@@ -630,7 +635,7 @@ export default function Page() {
                       return "";
                     })()}
                   </div>
-                  <div className="font-bold text-[16px] leading-5 text-slate-800 dark:text-slate-200 mb-1">
+                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-slate-200 mb-0.5 md:mb-1">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
@@ -642,10 +647,10 @@ export default function Page() {
                       return fullName;
                     })()}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                  <div className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 md:gap-2 whitespace-nowrap md:flex-wrap">
                     {/* Chamber first, solid background (purple for Senate, green for House) */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                      className="px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-[11px] font-semibold"
                       style={{
                         color: '#64748b',
                         backgroundColor: `${chamberColor(r.chamber)}20`,
@@ -660,14 +665,23 @@ export default function Page() {
 
                     {/* Party badge next, colored outline/bg by party */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                      className="px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-[11px] font-medium border"
                       style={partyBadgeStyle(r.party)}
                     >
-                      {partyLabel(r.party)}
+                      <span className="md:hidden">
+                        {(() => {
+                          const label = partyLabel(r.party);
+                          if (label.startsWith("Republican")) return "R";
+                          if (label.startsWith("Democrat")) return "D";
+                          if (label.startsWith("Independent")) return "I";
+                          return label;
+                        })()}
+                      </span>
+                      <span className="hidden md:inline">{partyLabel(r.party)}</span>
                     </span>
 
                     {/* State last */}
-                    <span>{stateCodeOf(r.state)}</span>
+                    <span className="text-[10px] md:text-xs">{stateCodeOf(r.state)}</span>
                   </div>
                 </div>
               </div>
@@ -868,8 +882,10 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
   return (
     <div className="mb-1 space-y-2">
+      {/* First row: Map/Summary/Issues buttons and Search */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+        {/* Desktop: Show both buttons (>450px) */}
+        <div className="min-[450px]:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
           <button
             onClick={() => f.set({ viewMode: "map", categories: new Set() })}
             className={clsx(
@@ -892,104 +908,218 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           >
             Summary
           </button>
-          <select
-            className={clsx(
-              "px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
-              f.viewMode === "all" || f.viewMode === "category"
-                ? "bg-[#4B8CFB] text-white"
-                : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
-            )}
-            value={
-              f.viewMode === "all" && f.categories.size === 0
-                ? "All"
-                : f.categories.size > 0
-                ? Array.from(f.categories)[0]
-                : ""
-            }
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "" || value === "All") {
-                f.set({ viewMode: "all", categories: new Set() });
-              } else {
-                f.set({ viewMode: "category", categories: new Set([value]) });
-              }
-            }}
-          >
-            <option value="">Issues</option>
-            <option value="All">All</option>
-            <option value="Civil Rights">Civil Rights</option>
-            <option value="Iran">Iran</option>
-            <option value="Israel-Gaza">Israel-Gaza</option>
-            <option value="Travel & Immigration">Travel & Immigration</option>
-          </select>
         </div>
+
+        {/* Very narrow screens: Show dropdown (<450px) */}
+        <select
+          className={clsx(
+            "max-[449px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
+            (f.viewMode === "map" || f.viewMode === "summary")
+              ? "bg-[#4B8CFB] text-white"
+              : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
+          )}
+          value={f.viewMode === "map" ? "map" : f.viewMode === "summary" ? "summary" : ""}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "map") {
+              f.set({ viewMode: "map", categories: new Set() });
+            } else if (value === "summary") {
+              f.set({ viewMode: "summary", categories: new Set() });
+            }
+          }}
+        >
+          <option value="">View</option>
+          <option value="map">Map</option>
+          <option value="summary">Summary</option>
+        </select>
+
+        {/* Desktop: Show Issues button and individual issue buttons (≥850px) */}
+        <div className="hidden min-[850px]:flex min-[850px]:items-center min-[850px]:gap-2">
+          {/* Issues button - stays blue when any category or all is selected, clicking defaults to All */}
+          <button
+            onClick={() => f.set({ viewMode: "all", categories: new Set() })}
+            className={clsx(
+              "px-3 h-9 rounded-md text-sm",
+              (f.viewMode === "all" || f.viewMode === "category")
+                ? "bg-[#4B8CFB] text-white"
+                : "hover:bg-slate-50 dark:hover:bg-white/10"
+            )}
+          >
+            Issues
+          </button>
+          {/* Border around issue buttons */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10">
+            {/* Individual issue buttons - shallower with lighter blue when active */}
+            <button
+              onClick={() => f.set({ viewMode: "all", categories: new Set() })}
+              className={clsx(
+                "px-2 h-7 rounded-md text-sm",
+                f.viewMode === "all" && f.categories.size === 0
+                  ? "bg-[#93c5fd] text-slate-900"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              All
+            </button>
+            <button
+              onClick={() => f.set({ viewMode: "category", categories: new Set(["Civil Rights"]) })}
+              className={clsx(
+                "px-2 h-7 rounded-md text-sm",
+                f.categories.has("Civil Rights")
+                  ? "bg-[#93c5fd] text-slate-900"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              Civil Rights
+            </button>
+            <button
+              onClick={() => f.set({ viewMode: "category", categories: new Set(["Iran"]) })}
+              className={clsx(
+                "px-2 h-7 rounded-md text-sm",
+                f.categories.has("Iran")
+                  ? "bg-[#93c5fd] text-slate-900"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              Iran
+            </button>
+            <button
+              onClick={() => f.set({ viewMode: "category", categories: new Set(["Israel-Gaza"]) })}
+              className={clsx(
+                "px-2 h-7 rounded-md text-sm",
+                f.categories.has("Israel-Gaza")
+                  ? "bg-[#93c5fd] text-slate-900"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              Israel-Gaza
+            </button>
+            <button
+              onClick={() => f.set({ viewMode: "category", categories: new Set(["Travel & Immigration"]) })}
+              className={clsx(
+                "px-2 h-7 rounded-md text-sm whitespace-nowrap",
+                f.categories.has("Travel & Immigration")
+                  ? "bg-[#93c5fd] text-slate-900"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              Travel & Immigration
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile: Show dropdown (<850px) - narrower on very small screens */}
+        <select
+          className={clsx(
+            "max-[849px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
+            "max-[500px]:px-2 max-[500px]:max-w-[120px] max-[500px]:text-xs",
+            f.viewMode === "all" || f.viewMode === "category"
+              ? "bg-[#4B8CFB] text-white"
+              : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
+          )}
+          value={
+            f.viewMode === "all" && f.categories.size === 0
+              ? "All"
+              : f.categories.size > 0
+              ? Array.from(f.categories)[0]
+              : ""
+          }
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "" || value === "All") {
+              f.set({ viewMode: "all", categories: new Set() });
+            } else {
+              f.set({ viewMode: "category", categories: new Set([value]) });
+            }
+          }}
+        >
+          <option value="">Issues</option>
+          <option value="All">All</option>
+          <option value="Civil Rights">Civil Rights</option>
+          <option value="Iran">Iran</option>
+          <option value="Israel-Gaza">Israel-Gaza</option>
+          <option value="Travel & Immigration">Travel & Immigration</option>
+        </select>
+
         <div className="ml-auto">
           <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} />
         </div>
-        <div className="basis-full">
-          <button
-            onClick={() => setFiltersExpanded(!filtersExpanded)}
-            className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+      </div>
+
+      {/* Second row: Filters */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+        >
+          <svg
+            className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg
-              className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
+          {(f.chamber || f.party || f.state) && !filtersExpanded && (
+            <span className="text-xs text-slate-500">
+              ({[
+                f.chamber && f.chamber,
+                f.party && f.party,
+                f.state && f.state
+              ].filter(Boolean).join(", ")})
+            </span>
+          )}
+        </button>
+
+        <div
+          className={clsx(
+            "flex items-center gap-2 overflow-hidden transition-all duration-300 ease-out",
+            filtersExpanded ? "max-w-[600px] opacity-100" : "max-w-0 opacity-0"
+          )}
+        >
+          <Segmented
+            options={["Both", "House","Senate"]}
+            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "Both"}
+            onChange={(v)=>{
+              if (v === "Both") {
+                f.set({ chamber: "" });
+              } else {
+                f.set({ chamber: v.toUpperCase() as any });
+              }
+            }}
+          />
+          <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
+            <option value="">Party</option>
+            <option>Democratic</option><option>Republican</option><option>Independent</option>
+          </select>
+          <select
+            className="select !text-xs !h-8 !px-2"
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              // If selecting a territory without senate, automatically switch to House
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+            }}
+          >
+            <option value="">State</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </select>
+          {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+            <button
+              onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Filters
-            {(f.chamber || f.party || f.state) && (
-              <span className="text-xs text-slate-500">
-                ({[
-                  f.chamber && f.chamber,
-                  f.party && f.party,
-                  f.state && f.state
-                ].filter(Boolean).join(", ")})
-              </span>
-            )}
-          </button>
-          {filtersExpanded && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Segmented
-                options={["Both","House","Senate"]}
-                value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "Both"}
-                onChange={(v)=>f.set({ chamber: v==="Both" ? "" : v.toUpperCase() as any })}
-              />
-              <select className="select" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
-                <option value="">All parties</option>
-                <option>Democratic</option><option>Republican</option><option>Independent</option>
-              </select>
-              <select
-                className="select"
-                value={f.state || ""}
-                onChange={(e) => {
-                  const selectedState = e.target.value;
-                  // If selecting a territory without senate, automatically switch to House
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }}
-              >
-                <option value="">All states</option>
-                {STATES.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.name} ({s.code})
-                  </option>
-                ))}
-              </select>
-              {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
-                <button
-                  onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-                  className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+              Clear
+            </button>
           )}
         </div>
       </div>
@@ -1104,7 +1234,7 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          Search...
+          <span className="hidden min-[1000px]:inline">Search...</span>
         </button>
       )}
 
@@ -1222,7 +1352,7 @@ function Header({
           }
         }}
       >
-        {meta ? (meta.display_name || meta.short_title || meta.bill_number) : col}
+        {meta ? (meta.short_title || meta.display_name) : col}
       </span>
 
       {/* Position - sortable */}
@@ -1254,11 +1384,11 @@ function Header({
             (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
             "text-slate-900 dark:text-slate-100"
           )}>
-            {meta.bill_number || meta.display_name || meta.short_title || col}
+            {meta.display_name || meta.short_title || col}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">{meta.display_name || meta.short_title}</div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}</div>
-          {meta.notes && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.notes}</div>}
+          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.description}</div>}
+          {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.analysis}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           <div className="mt-2 flex flex-wrap gap-1">
             {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
@@ -1282,7 +1412,7 @@ function Segmented({
 }) {
   const current = value || options[0];
   return (
-    <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+    <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-0.5">
       {options.map((opt) => {
         const isActive = current === opt;
         return (
@@ -1290,7 +1420,7 @@ function Segmented({
             key={opt}
             onClick={() => onChange(opt)}
             className={clsx(
-              "px-3 h-9 rounded-md text-sm",
+              "px-2 h-7 rounded-md text-xs",
               isActive
                 ? "bg-[#4B8CFB] text-white"
                 : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -1438,97 +1568,120 @@ function LawmakerCard({
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
         <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header - Sticky */}
-          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
-            {row.photo_url ? (
-              <img
-                src={String(row.photo_url)}
-                alt=""
-                className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-              />
-            ) : (
-              <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
-            )}
-            <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
-                {(() => {
-                  if (row.chamber === "SENATE") return "Senator";
-                  if (row.chamber === "HOUSE") {
-                    const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
-                    const state = stateCodeOf(row.state);
-                    return delegateStates.includes(state) ? "Delegate" : "Representative";
-                  }
-                  return "";
-                })()}
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
+            {/* Top row: photo, name, badges, and buttons */}
+            <div className="flex items-center gap-3">
+              {row.photo_url ? (
+                <img
+                  src={String(row.photo_url)}
+                  alt=""
+                  className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                />
+              ) : (
+                <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
+              )}
+              <div className="flex-1">
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
+                  {(() => {
+                    if (row.chamber === "SENATE") return "Senator";
+                    if (row.chamber === "HOUSE") {
+                      const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
+                      const state = stateCodeOf(row.state);
+                      return delegateStates.includes(state) ? "Delegate" : "Representative";
+                    }
+                    return "";
+                  })()}
+                </div>
+                <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                  {(() => {
+                    const fullName = String(row.full_name || "");
+                    const commaIndex = fullName.indexOf(",");
+                    if (commaIndex > -1) {
+                      const first = fullName.slice(commaIndex + 1).trim();
+                      const last = fullName.slice(0, commaIndex).trim();
+                      return `${first} ${last}`;
+                    }
+                    return fullName;
+                  })()}
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                    style={{
+                      color: "#64748b",
+                      backgroundColor: `${chamberColor(row.chamber)}20`,
+                    }}
+                  >
+                    {row.chamber === "HOUSE"
+                      ? "House"
+                      : row.chamber === "SENATE"
+                      ? "Senate"
+                      : row.chamber || ""}
+                  </span>
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                    style={partyBadgeStyle(row.party)}
+                  >
+                    {partyLabel(row.party)}
+                  </span>
+                  <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+                </div>
               </div>
-              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                {(() => {
-                  const fullName = String(row.full_name || "");
-                  const commaIndex = fullName.indexOf(",");
-                  if (commaIndex > -1) {
-                    const first = fullName.slice(commaIndex + 1).trim();
-                    const last = fullName.slice(0, commaIndex).trim();
-                    return `${first} ${last}`;
-                  }
-                  return fullName;
-                })()}
-              </div>
-              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                  style={{
-                    color: "#64748b",
-                    backgroundColor: `${chamberColor(row.chamber)}20`,
-                  }}
-                >
-                  {row.chamber === "HOUSE"
-                    ? "House"
-                    : row.chamber === "SENATE"
-                    ? "Senate"
-                    : row.chamber || ""}
-                </span>
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
-                  style={partyBadgeStyle(row.party)}
-                >
-                  {partyLabel(row.party)}
-                </span>
-                <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
-              </div>
+
+              {/* Contact Information - hide on narrow screens */}
+              {(row.office_phone || row.office_address) && (
+                <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 hidden md:block">
+                  {row.office_phone && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                title="Open in new tab"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+              <button
+                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={onClose}
+              >
+                Close
+              </button>
             </div>
 
-            {/* Contact Information */}
+            {/* Contact Information - show below on narrow screens */}
             {(row.office_phone || row.office_address) && (
-              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-                {row.office_phone && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Phone</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                  </div>
-                )}
-                {row.office_address && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Address</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                  </div>
-                )}
+              <div className="text-xs text-slate-600 dark:text-slate-400 mt-4 md:hidden">
+                <div className="flex gap-6">
+                  {row.office_phone && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-
-            <button
-              className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-              title="Open in new tab"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </button>
-            <button
-              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={onClose}
-            >
-              Close
-            </button>
           </div>
 
           {/* Scrollable Content */}

@@ -308,13 +308,25 @@ export default function BillPage() {
             </div>
 
           {/* Description */}
-          {meta.notes && (
+          {meta.description && (
             <div className="mb-6">
               <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
                 Description
               </h2>
               <p className="text-sm text-slate-700 dark:text-slate-200">
-                {meta.notes}
+                {meta.description}
+              </p>
+            </div>
+          )}
+
+          {/* Analysis */}
+          {meta.analysis && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Analysis
+              </h2>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                {meta.analysis}
               </p>
             </div>
           )}
@@ -615,80 +627,103 @@ function MemberModal({
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
         <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header - Sticky */}
-          <div className="flex items-center gap-3 p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
-            {row.photo_url ? (
-              <img
-                src={String(row.photo_url)}
-                alt=""
-                className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-              />
-            ) : (
-              <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
-            )}
-            <div className="flex-1">
-              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
-              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                  style={{
-                    color: "#64748b",
-                    backgroundColor: `${chamberColor(row.chamber)}20`,
-                  }}
-                >
-                  {row.chamber === "HOUSE"
-                    ? "House"
-                    : row.chamber === "SENATE"
-                    ? "Senate"
-                    : row.chamber || ""}
-                </span>
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
-                  style={partyBadgeStyle(row.party)}
-                >
-                  {partyLabel(row.party)}
-                </span>
-                <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
+            {/* Top row: photo, name, badges, and buttons */}
+            <div className="flex items-center gap-3">
+              {row.photo_url ? (
+                <img
+                  src={String(row.photo_url)}
+                  alt=""
+                  className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                />
+              ) : (
+                <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
+              )}
+              <div className="flex-1">
+                <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
+                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                    style={{
+                      color: "#64748b",
+                      backgroundColor: `${chamberColor(row.chamber)}20`,
+                    }}
+                  >
+                    {row.chamber === "HOUSE"
+                      ? "House"
+                      : row.chamber === "SENATE"
+                      ? "Senate"
+                      : row.chamber || ""}
+                  </span>
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                    style={partyBadgeStyle(row.party)}
+                  >
+                    {partyLabel(row.party)}
+                  </span>
+                  <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+                </div>
               </div>
+
+              {/* Contact Information - hide on narrow screens */}
+              {(row.office_phone || row.office_address) && (
+                <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 hidden md:block">
+                  {row.office_phone && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                title="Open in new tab"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+              <button
+                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={onClose}
+              >
+                Close
+              </button>
             </div>
 
-            {/* Contact Information */}
+            {/* Contact Information - show below on narrow screens */}
             {(row.office_phone || row.office_address) && (
-              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-                {row.office_phone && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Phone</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                  </div>
-                )}
-                {row.office_address && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Address</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                  </div>
-                )}
+              <div className="text-xs text-slate-600 dark:text-slate-400 mt-4 md:hidden">
+                <div className="flex gap-6">
+                  {row.office_phone && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Phone</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+                    </div>
+                  )}
+                  {row.office_address && (
+                    <div>
+                      <div className="font-medium mb-0.5">Washington Office Address</div>
+                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-
-            <button
-              className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-              title="Open in new tab"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </button>
-            <button
-              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-              onClick={onClose}
-            >
-              Close
-            </button>
           </div>
 
-          {/* Category Grades - Sticky */}
+          {/* Issue Grades - Sticky */}
           <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
-            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Category Grades</div>
+            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Overall Grade card */}
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">

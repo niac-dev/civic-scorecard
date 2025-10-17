@@ -9,6 +9,8 @@ export type Meta = {
   display_name?: string;
   short_title?: string;
   notes?: string;
+  description?: string;
+  analysis?: string;
   sponsor?: string;
   sponsor_bioguide_id?: string;
   sponsor_name?: string;
