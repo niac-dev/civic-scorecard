@@ -35,8 +35,13 @@ export async function loadData(): Promise<{
         const isGradeCol = k === "Grade" || k.startsWith("Grade_"); // Grade columns should stay as strings
         const isCategoryNumeric = k.startsWith("Total_") || k.startsWith("Max_Possible_") || k.startsWith("Percent_");
         if ((numericCols.has(k) || looksBillCol || isCategoryNumeric) && !isGradeCol) {
-          const n = Number(v as number | string);
-          if (!Number.isNaN(n)) out[k] = n;
+          // Keep empty/null values as-is (don't convert empty string to 0)
+          if (v === null || v === undefined || v === '') {
+            out[k] = null;
+          } else {
+            const n = Number(v as number | string);
+            if (!Number.isNaN(n)) out[k] = n;
+          }
         }
       }
       return out as Row;
@@ -78,7 +83,7 @@ export async function loadData(): Promise<{
     "Percent_Travel_Immigration",
     "Grade_Travel_Immigration",
   ];
-  const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c) && !c.endsWith('_sponsor'));
+  const columns = Object.keys(rows[0] ?? {}).filter((c) => !identity.includes(c) && !c.endsWith('_sponsor') && !c.endsWith('_absent'));
 
   // Map column -> metadata
   const metaByCol = new Map<string, Meta>(meta.map((m) => [m.column, m]));

@@ -92,11 +92,41 @@ function isTruthy(v: unknown): boolean {
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
-  const explicit = (meta?.chamber || "").toString().toUpperCase();
+  const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
+  // If chamber is explicitly set (even to empty), respect that
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as "HOUSE" | "SENATE";
+  // If chamber is explicitly empty in metadata, don't infer from bill number
+  if (meta && meta.chamber !== undefined && explicit === "") return "";
+  // Otherwise infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
   return "";
+}
+
+function formatPositionLegislation(meta: Meta | undefined): string {
+  const position = (meta?.position_to_score || '').toUpperCase();
+  const actionType = (meta as { action_types?: string })?.action_types || '';
+  const isCosponsor = actionType.includes('cosponsor');
+  const isSupport = position === 'SUPPORT';
+
+  if (isCosponsor) {
+    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
+  } else {
+    return isSupport ? 'Vote in Favor' : 'Vote Against';
+  }
+}
+
+function formatPositionScorecard(meta: Meta | undefined): string {
+  const position = (meta?.position_to_score || '').toUpperCase();
+  const actionType = (meta as { action_types?: string })?.action_types || '';
+  const isCosponsor = actionType.includes('cosponsor');
+  const isSupport = position === 'SUPPORT';
+
+  if (isCosponsor) {
+    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
+  } else {
+    return isSupport ? '✓ Vote' : '✗ Vote';
+  }
 }
 
 function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
@@ -141,6 +171,7 @@ export default function BillPage() {
 
   const [meta, setMeta] = useState<Meta | null>(null);
   const [supporters, setSupporters] = useState<Row[]>([]);
+  const [middleGroup, setMiddleGroup] = useState<Row[]>([]);
   const [opposers, setOpposers] = useState<Row[]>([]);
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
   const [sponsorMember, setSponsorMember] = useState<Row | null>(null);
@@ -149,6 +180,9 @@ export default function BillPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [firstExpanded, setFirstExpanded] = useState<boolean>(false);
   const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
+  const [thirdExpanded, setThirdExpanded] = useState<boolean>(false);
+  const [partyFilter, setPartyFilter] = useState<string>("");
+  const [chamberFilter, setChamberFilter] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -195,6 +229,7 @@ export default function BillPage() {
       // Split members into supporters (positive score) and opposers (0 or negative)
       // Only include members from the appropriate chamber
       // Exclude the sponsor from cosponsors list
+      // Also exclude members who were not eligible to vote (null/undefined in CSV)
       const support: Row[] = [];
       const oppose: Row[] = [];
 
@@ -209,7 +244,23 @@ export default function BillPage() {
           return;
         }
 
-        const val = Number((row as Record<string, unknown>)[column] ?? 0);
+        const rawVal = (row as Record<string, unknown>)[column];
+
+        // Skip members who weren't eligible (null/undefined means not applicable)
+        // This happens for manual actions like committee votes where only committee members are eligible
+        if (rawVal === null || rawVal === undefined || rawVal === '') {
+          return;
+        }
+
+        const val = Number(rawVal);
+
+        // Also check if they were absent - if so, skip them from the lists
+        const absentCol = `${column}_absent`;
+        const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+        if (wasAbsent) {
+          return;
+        }
+
         if (val > 0) {
           support.push(row);
         } else if (val === 0) {
@@ -217,10 +268,96 @@ export default function BillPage() {
         }
       });
 
-      setSupporters(support.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
-      setOpposers(oppose.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+      // Check if this is a manual action with a pair_key (for three-group display)
+      const hasPairedGroups = billMeta.type === "MANUAL" && billMeta.pair_key && isTrue((billMeta as Record<string, unknown>).preferred);
+
+      if (hasPairedGroups) {
+        // Split members based on their actual score for this manual action
+        const bestGroup: Row[] = []; // 4 points
+        const middleGrp: Row[] = []; // 2 points
+        const worstGroup: Row[] = []; // 0 points
+
+        rows.forEach((row) => {
+          // Skip members from the wrong chamber
+          if (billChamber && row.chamber !== billChamber) {
+            return;
+          }
+
+          // Skip the sponsor
+          if (sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
+            return;
+          }
+
+          const rawVal = (row as Record<string, unknown>)[column];
+
+          // Skip members who weren't eligible
+          if (rawVal === null || rawVal === undefined || rawVal === '') {
+            return;
+          }
+
+          const val = Number(rawVal);
+
+          // Skip absent members
+          const absentCol = `${column}_absent`;
+          const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+          if (wasAbsent) {
+            return;
+          }
+
+          // Group by score
+          if (val === 4) {
+            bestGroup.push(row);
+          } else if (val === 2) {
+            middleGrp.push(row);
+          } else if (val === 0) {
+            worstGroup.push(row);
+          }
+        });
+
+        setSupporters(bestGroup.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+        setMiddleGroup(middleGrp.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+        setOpposers(worstGroup.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+      } else {
+        setSupporters(support.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+        setMiddleGroup([]);
+        setOpposers(oppose.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+      }
     })();
   }, [column]);
+
+  // Filter supporters, middle group, and opposers based on party and chamber filters (must be before early return)
+  const filteredSupporters = useMemo(() => {
+    let filtered = supporters;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [supporters, partyFilter, chamberFilter]);
+
+  const filteredMiddleGroup = useMemo(() => {
+    let filtered = middleGroup;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [middleGroup, partyFilter, chamberFilter]);
+
+  const filteredOpposers = useMemo(() => {
+    let filtered = opposers;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [opposers, partyFilter, chamberFilter]);
 
   if (!meta) {
     return <div className="p-8">Loading...</div>;
@@ -233,17 +370,49 @@ export default function BillPage() {
   const position = (meta.position_to_score || '').toUpperCase();
   const isSupport = position === 'SUPPORT';
 
-  // Always show affirmative action first (cosponsored/voted for)
-  // Swap arrays if we oppose the bill (since val>0 means they did the opposite)
-  const firstSection = isSupport ? supporters : opposers;
-  const secondSection = isSupport ? opposers : supporters;
+  // Check if this is a paired manual action
+  const hasPairedGroups = meta.type === "MANUAL" && meta.pair_key && isTrue((meta as Record<string, unknown>).preferred);
+  const pairedBillName = hasPairedGroups
+    ? ((meta.pair_key || "").split("|").map(s => s.trim()).find(c => c !== column) || "")
+    : "";
+  const pairedBillMeta = pairedBillName ? metaByCol.get(pairedBillName) : undefined;
+
+  // For paired manual actions, sections are already correctly grouped by score
+  // For regular bills, swap arrays if we oppose the bill (since val>0 means they did the opposite)
+  const firstSection = hasPairedGroups ? filteredSupporters : (isSupport ? filteredSupporters : filteredOpposers);
+  const secondSection = hasPairedGroups ? filteredMiddleGroup : (isSupport ? filteredOpposers : filteredSupporters);
+  const thirdSection = hasPairedGroups ? filteredOpposers : [];
 
   let firstLabel = '';
   let secondLabel = '';
+  let thirdLabel = '';
   let firstIsGood = false; // Whether first section took the "good" action
   let secondIsGood = false;
+  let thirdIsGood = false;
 
-  if (isCosponsor) {
+  if (hasPairedGroups) {
+    // Three-group display for paired manual actions
+    // Labels based on score and position
+    if (isSupport) {
+      // Position is SUPPORT
+      // 4 points = Supported, 2 points = Somewhat supported, 0 points = Opposed
+      firstLabel = 'Supported (4 points)';
+      secondLabel = 'Somewhat Supported (2 points)';
+      thirdLabel = 'Opposed (0 points)';
+      firstIsGood = true;
+      secondIsGood = true;
+      thirdIsGood = false;
+    } else {
+      // Position is OPPOSE
+      // 4 points = Opposed, 2 points = Somewhat opposed, 0 points = Supported
+      firstLabel = 'Opposed (4 points)';
+      secondLabel = 'Somewhat Opposed (2 points)';
+      thirdLabel = 'Supported (0 points)';
+      firstIsGood = true;
+      secondIsGood = true;
+      thirdIsGood = false;
+    }
+  } else if (isCosponsor) {
     firstLabel = 'Cosponsors';
     secondLabel = 'Has Not Cosponsored';
     firstIsGood = isSupport;  // Good if we support, bad if we oppose
@@ -283,14 +452,8 @@ export default function BillPage() {
                   {meta.display_name || meta.short_title}
                 </div>
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                  <span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}
+                  <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
                 </div>
-                {(meta as { action_types?: string }).action_types && (
-                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                    <span className="font-medium">Scoring:</span>{' '}
-                    {(meta as { action_types?: string }).action_types?.includes('vote') ? 'Vote' : 'Cosponsorship'}
-                  </div>
-                )}
               </div>
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -405,6 +568,53 @@ export default function BillPage() {
             </div>
           )}
 
+          {/* Filters */}
+          {(() => {
+            const billChamber = inferChamber(meta, column);
+            const isMultiChamber = billChamber === "";
+            const hasFilters = isMultiChamber || supporters.length > 0 || opposers.length > 0;
+
+            if (!hasFilters) return null;
+
+            return (
+              <div className="mb-6 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Filter:</span>
+                <select
+                  className="select !text-xs !h-8 !px-2"
+                  value={partyFilter}
+                  onChange={(e) => setPartyFilter(e.target.value)}
+                >
+                  <option value="">All Parties</option>
+                  <option value="Democrat">Democrat</option>
+                  <option value="Republican">Republican</option>
+                  <option value="Independent">Independent</option>
+                </select>
+                {isMultiChamber && (
+                  <select
+                    className="select !text-xs !h-8 !px-2"
+                    value={chamberFilter}
+                    onChange={(e) => setChamberFilter(e.target.value)}
+                  >
+                    <option value="">Both Chambers</option>
+                    <option value="HOUSE">House</option>
+                    <option value="SENATE">Senate</option>
+                  </select>
+                )}
+                {(partyFilter || chamberFilter) && (
+                  <button
+                    onClick={() => {
+                      setPartyFilter("");
+                      setChamberFilter("");
+                    }}
+                    className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
           {/* First Section - Affirmative Action */}
           <div className="mb-6">
             <h2
@@ -429,49 +639,67 @@ export default function BillPage() {
               </svg>
             </h2>
             {firstExpanded && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {firstSection.map((member) => (
-                <div
-                  key={member.bioguide_id}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
-                  onClick={() => setSelectedMember(member)}
-                >
-                  {member.photo_url ? (
-                    <img
-                      src={String(member.photo_url)}
-                      alt=""
-                      className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-                      {member.full_name}
+              <>
+                {(() => {
+                  // Determine the chamber for this bill
+                  const billChamber = inferChamber(meta, column);
+                  const isMultiChamber = billChamber === "";
+
+                  if (isMultiChamber) {
+                    // Group by chamber for multi-chamber bills
+                    const housemembers = firstSection.filter(m => m.chamber === "HOUSE");
+                    const senatemembers = firstSection.filter(m => m.chamber === "SENATE");
+
+                    return (
+                      <div className="space-y-4">
+                        {housemembers.length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                              House ({housemembers.length})
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {housemembers.map((member) => (
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {senatemembers.length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                              Senate ({senatemembers.length})
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {senatemembers.map((member) => (
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Single chamber bill - show all members in one grid
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {firstSection.map((member) => (
+                        <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                      ))}
+                      {firstSection.length === 0 && (
+                        <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+                          None found
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      <span
-                        className="px-1 py-0.5 rounded text-[10px] font-medium"
-                        style={partyBadgeStyle(member.party)}
-                      >
-                        {partyLabel(member.party)}
-                      </span>
-                      {" "}{stateCodeOf(member.state)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {firstSection.length === 0 && (
-                <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                  None found
-                </div>
-              )}
-            </div>
+                  );
+                })()}
+              </>
             )}
           </div>
 
           {/* Second Section - No Affirmative Action */}
-          <div>
+          <div className="mb-6">
             <h2
               className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
               onClick={() => setSecondExpanded(!secondExpanded)}
@@ -494,46 +722,149 @@ export default function BillPage() {
               </svg>
             </h2>
             {secondExpanded && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {secondSection.map((member) => (
-                <div
-                  key={member.bioguide_id}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
-                  onClick={() => setSelectedMember(member)}
-                >
-                  {member.photo_url ? (
-                    <img
-                      src={String(member.photo_url)}
-                      alt=""
-                      className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-                      {member.full_name}
+              <>
+                {(() => {
+                  // Determine the chamber for this bill
+                  const billChamber = inferChamber(meta, column);
+                  const isMultiChamber = billChamber === "";
+
+                  if (isMultiChamber) {
+                    // Group by chamber for multi-chamber bills
+                    const housemembers = secondSection.filter(m => m.chamber === "HOUSE");
+                    const senatemembers = secondSection.filter(m => m.chamber === "SENATE");
+
+                    return (
+                      <div className="space-y-4">
+                        {housemembers.length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                              House ({housemembers.length})
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {housemembers.map((member) => (
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {senatemembers.length > 0 && (
+                          <div>
+                            <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                              Senate ({senatemembers.length})
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {senatemembers.map((member) => (
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Single chamber bill - show all members in one grid
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {secondSection.map((member) => (
+                        <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                      ))}
+                      {secondSection.length === 0 && (
+                        <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+                          None found
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      <span
-                        className="px-1 py-0.5 rounded text-[10px] font-medium"
-                        style={partyBadgeStyle(member.party)}
-                      >
-                        {partyLabel(member.party)}
-                      </span>
-                      {" "}{stateCodeOf(member.state)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {secondSection.length === 0 && (
-                <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
-                  None found
-                </div>
-              )}
-            </div>
+                  );
+                })()}
+              </>
             )}
           </div>
+
+          {/* Third Section - Only shown for paired manual actions */}
+          {hasPairedGroups && (
+            <div>
+              <h2
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setThirdExpanded(!thirdExpanded)}
+              >
+                <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                  {thirdIsGood ? (
+                    <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                  ) : (
+                    <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                  )}
+                </svg>
+                {thirdLabel} ({thirdSection.length})
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", thirdExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </h2>
+              {thirdExpanded && (
+                <>
+                  {(() => {
+                    // Determine the chamber for this bill
+                    const billChamber = inferChamber(meta, column);
+                    const isMultiChamber = billChamber === "";
+
+                    if (isMultiChamber) {
+                      // Group by chamber for multi-chamber bills
+                      const housemembers = thirdSection.filter(m => m.chamber === "HOUSE");
+                      const senatemembers = thirdSection.filter(m => m.chamber === "SENATE");
+
+                      return (
+                        <div className="space-y-4">
+                          {housemembers.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                                House ({housemembers.length})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {housemembers.map((member) => (
+                                  <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {senatemembers.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                                Senate ({senatemembers.length})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {senatemembers.map((member) => (
+                                  <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Single chamber bill - show all members in one grid
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {thirdSection.map((member) => (
+                          <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                        ))}
+                        {thirdSection.length === 0 && (
+                          <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
+                            None found
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -549,6 +880,40 @@ export default function BillPage() {
       )}
       </div>
     </>
+  );
+}
+
+// Reusable Member Card Component
+function MemberCard({ member, onClick }: { member: Row; onClick: () => void }) {
+  return (
+    <div
+      className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+      onClick={onClick}
+    >
+      {member.photo_url ? (
+        <img
+          src={String(member.photo_url)}
+          alt=""
+          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+        />
+      ) : (
+        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+          {member.full_name}
+        </div>
+        <div className="text-xs text-slate-500 dark:text-slate-400">
+          <span
+            className="px-1 py-0.5 rounded text-[10px] font-medium"
+            style={partyBadgeStyle(member.party)}
+          >
+            {partyLabel(member.party)}
+          </span>
+          {" "}{stateCodeOf(member.state)}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -579,6 +944,11 @@ function MemberModal({
         const inferredChamber = inferChamber(meta, c);
         const notApplicable = inferredChamber && inferredChamber !== row.chamber;
         const val = Number((row as Record<string, unknown>)[c] ?? 0);
+
+        // Check if member was absent for this vote
+        const absentCol = `${c}_absent`;
+        const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+
         const categories = (meta?.categories || "")
           .split(";")
           .map((s) => s.trim())
@@ -605,6 +975,7 @@ function MemberModal({
           categories,
           notApplicable,
           waiver,
+          wasAbsent,
           ok: !notApplicable && val > 0,
         };
       })
@@ -899,12 +1270,14 @@ function MemberModal({
                           {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                          <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
+                          <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta)}
                         </div>
                         {it.meta && (it.meta as { action_types?: string }).action_types && (
                           <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                             <div className="mt-0.5">
-                              {it.waiver ? (
+                              {it.wasAbsent ? (
+                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                              ) : it.waiver ? (
                                 <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                               ) : (
                                 <VoteIcon ok={it.ok} />
@@ -912,6 +1285,10 @@ function MemberModal({
                             </div>
                             <span className="font-medium">
                               {(() => {
+                                if (it.wasAbsent) {
+                                  return "Did not vote/voted present";
+                                }
+
                                 const actionTypes = (it.meta as { action_types?: string }).action_types || "";
                                 const isVote = actionTypes.includes("vote");
                                 const isCosponsor = actionTypes.includes("cosponsor");

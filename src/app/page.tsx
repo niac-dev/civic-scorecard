@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
@@ -63,11 +63,41 @@ function partyLabel(p?: string) {
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
-  const explicit = (meta?.chamber || "").toString().toUpperCase();
+  const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
+  // If chamber is explicitly set (even to empty), respect that
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
+  // If chamber is explicitly empty in metadata, don't infer from bill number
+  if (meta && meta.chamber !== undefined && explicit === "") return "";
+  // Otherwise infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
   return "";
+}
+
+function formatPositionScorecard(meta: Meta | undefined): string {
+  const position = (meta?.position_to_score || '').toUpperCase();
+  const actionType = (meta as { action_types?: string })?.action_types || '';
+  const isCosponsor = actionType.includes('cosponsor');
+  const isSupport = position === 'SUPPORT';
+
+  if (isCosponsor) {
+    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
+  } else {
+    return isSupport ? '✓ Vote' : '✗ Vote';
+  }
+}
+
+function formatPositionTooltip(meta: Meta | undefined): string {
+  const position = (meta?.position_to_score || '').toUpperCase();
+  const actionType = (meta as { action_types?: string })?.action_types || '';
+  const isCosponsor = actionType.includes('cosponsor');
+  const isSupport = position === 'SUPPORT';
+
+  if (isCosponsor) {
+    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
+  } else {
+    return isSupport ? 'Vote in Favor' : 'Vote Against';
+  }
 }
 
 function lastName(full?: string) {
@@ -150,6 +180,16 @@ export default function Page() {
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
 
+  // Ref for the scrollable table container
+  const tableScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll to top when filters change
+  useEffect(() => {
+    if (tableScrollRef.current) {
+      tableScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [f.chamber, f.party, f.state, f.search, f.categories, f.myLawmakers, f.viewMode]);
+
   const filtered = useMemo(() => {
     let out = rows;
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
@@ -212,6 +252,27 @@ export default function Page() {
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
       });
     }
+    // Sort by AIPAC/DMFI support
+    if (sortCol === "__aipac") {
+      const supportedFirst = sortDir === "GOOD_FIRST";
+      return [...filtered].sort((a, b) => {
+        const aipacA = isTruthy(a.aipac_supported);
+        const dmfiA = isTruthy(a.dmfi_supported);
+        const aipacB = isTruthy(b.aipac_supported);
+        const dmfiB = isTruthy(b.dmfi_supported);
+
+        // Calculate a score: both=2, one=1, none=0
+        const scoreA = (aipacA ? 1 : 0) + (dmfiA ? 1 : 0);
+        const scoreB = (aipacB ? 1 : 0) + (dmfiB ? 1 : 0);
+
+        if (scoreA !== scoreB) {
+          return supportedFirst ? scoreB - scoreA : scoreA - scoreB;
+        }
+
+        // Tie-break by name
+        return String(a.full_name || "").localeCompare(String(b.full_name || ""));
+      });
+    }
     // Check if sorting by any grade column
     if (sortCol.startsWith("Grade")) {
       const goodFirst = sortDir === "GOOD_FIRST"; // best grades first
@@ -234,9 +295,18 @@ export default function Page() {
     const goodFirst = sortDir === "GOOD_FIRST";
 
     const rankFor = (r: Row) => {
-      const val = Number((r as Record<string, unknown>)[sortCol] ?? 0);
+      const rawVal = (r as Record<string, unknown>)[sortCol];
+
+      // Check for chamber mismatch
       const notApplicable = colCh && colCh !== r.chamber;
       if (notApplicable) return 2; // always last
+
+      // Check for manual actions where member wasn't eligible (null/undefined/empty)
+      const isManualAction = meta?.type === "MANUAL";
+      const manualActionNotApplicable = isManualAction && (rawVal === null || rawVal === undefined || rawVal === '');
+      if (manualActionNotApplicable) return 2; // always last
+
+      const val = Number(rawVal ?? 0);
       const good = val > 0;
       if (goodFirst) return good ? 0 : 1; // ✓ first
       return good ? 1 : 0;                // ✕ first
@@ -259,16 +329,46 @@ export default function Page() {
     let out = cols;
 
     // Chamber filter: keep only bills for the selected chamber
+    // Bills with empty chamber (multi-chamber bills) should appear in both filters
     if (f.chamber) {
       out = out.filter((c) => {
         const meta = metaByCol.get(c);
         const ch = inferChamber(meta, c);
-        return ch === f.chamber;
+        return ch === "" || ch === f.chamber;
       });
     }
 
+    // Sort by: chamber (HOUSE, SENATE, then empty), then category (only if no category filter), then alphabetically by display name
+    out = [...out].sort((a, b) => {
+      const metaA = metaByCol.get(a);
+      const metaB = metaByCol.get(b);
+
+      // Sort by chamber first
+      const chamberA = inferChamber(metaA, a);
+      const chamberB = inferChamber(metaB, b);
+      const chamberOrder = { "HOUSE": 1, "SENATE": 2, "": 3 };
+      const chamberCompare = (chamberOrder[chamberA] || 3) - (chamberOrder[chamberB] || 3);
+      if (chamberCompare !== 0) return chamberCompare;
+
+      // Only sort by category if no category filter is active
+      // (when filtering by category, all items are in the same category anyway)
+      if (f.categories.size === 0) {
+        const catsA = (metaA?.categories || "").split(";").map(s => s.trim()).filter(Boolean);
+        const catsB = (metaB?.categories || "").split(";").map(s => s.trim()).filter(Boolean);
+        const catA = catsA[0] || "";
+        const catB = catsB[0] || "";
+        const catCompare = catA.localeCompare(catB);
+        if (catCompare !== 0) return catCompare;
+      }
+
+      // Finally sort alphabetically by display name
+      const nameA = metaA?.display_name || metaA?.short_title || a;
+      const nameB = metaB?.display_name || metaB?.short_title || b;
+      return nameA.localeCompare(nameB);
+    });
+
     return out;
-  }, [cols, metaByCol, f.chamber]);
+  }, [cols, metaByCol, f.chamber, f.categories]);
 
   // Filtered columns for the main table view (chamber + category filtered)
   const billCols = useMemo(() => {
@@ -424,7 +524,7 @@ export default function Page() {
       {/* Table View */}
       {f.viewMode !== "map" && (
         <div className="card overflow-visible">
-          <div className="overflow-auto max-h-[70vh]">
+          <div ref={tableScrollRef} className="overflow-auto max-h-[70vh]">
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
@@ -524,8 +624,25 @@ export default function Page() {
                 }}
               />
             ))}
-            <div className="th text-center border-r border-[#E7ECF2] dark:border-white/10">
-              Endorsements from AIPAC or aligned PACs
+            <div
+              className="th text-center border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer relative group"
+              title="Click to sort by AIPAC/DMFI support"
+              onClick={() => {
+                if (sortCol === "__aipac") {
+                  setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                } else {
+                  setSortCol("__aipac");
+                  setSortDir("GOOD_FIRST");
+                }
+              }}
+            >
+              Supported by AIPAC or aligned PACs
+              <span className={clsx(
+                "absolute right-2 top-1.5 text-[10px]",
+                sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+              )}>
+                {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+              </span>
             </div>
             {/* Sortable score headers */}
             <div
@@ -704,15 +821,21 @@ export default function Page() {
                 const val = Number(valRaw ?? 0);
                 const meta = metaByCol.get(c);
 
+                // Check if member was absent for this vote
+                const absentCol = `${c}_absent`;
+                const wasAbsent = Number((r as Record<string, unknown>)[absentCol] ?? 0) === 1;
+
                 // Try to determine the chamber for this column (bill or manual action)
                 const inferredChamber = inferChamber(meta, c);
 
                 // If we can determine a chamber and it doesn't match member's chamber -> N/A
                 const notApplicable = inferredChamber && inferredChamber !== r.chamber;
 
-                // Check if this is a manual action that doesn't apply (type=MANUAL and val=0)
+                // Check if this is a manual action that doesn't apply
+                // For manual actions: null/undefined/empty = not eligible (N/A)
+                // For manual actions: 0 = eligible but took opposing action (show X)
                 const isManualAction = meta?.type === "MANUAL";
-                const manualActionNotApplicable = isManualAction && val === 0;
+                const manualActionNotApplicable = isManualAction && (valRaw === null || valRaw === undefined || valRaw === '');
 
                 // Tooltip text
                 // --- NEW: dash if this is the lesser item in a preferred pair and member hit the preferred one ---
@@ -778,6 +901,8 @@ export default function Page() {
                   title = "Not applicable (different chamber)";
                 } else if (manualActionNotApplicable) {
                   title = "Not applicable";
+                } else if (wasAbsent) {
+                  title = "Did not vote/voted present";
                 } else if (showDashForPreferredPair) {
                   title = "Not penalized: preferred item supported";
                 } else {
@@ -801,6 +926,8 @@ export default function Page() {
                   <div key={c} className="td pr-0 flex items-center justify-center" title={title}>
                     {notApplicable || manualActionNotApplicable ? (
                       <span className="text-xs text-slate-400">N/A</span>
+                    ) : wasAbsent ? (
+                      <span className="text-lg leading-none text-slate-400">—</span>
                     ) : showDashForPreferredPair ? (
                       <span className="text-lg leading-none text-slate-400">—</span>
                     ) : (
@@ -822,7 +949,7 @@ export default function Page() {
                         <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                         </svg>
-                        <span className="text-xs text-slate-800">Endorsed by AIPAC and DMFI</span>
+                        <span className="text-xs text-slate-800">Supported by AIPAC and DMFI</span>
                       </div>
                     );
                   }
@@ -835,7 +962,7 @@ export default function Page() {
                             <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                               <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                             </svg>
-                            <span className="text-xs text-slate-800">Endorsed by AIPAC</span>
+                            <span className="text-xs text-slate-800">Supported by AIPAC</span>
                           </div>
                         )}
                         {dmfi && (
@@ -843,7 +970,7 @@ export default function Page() {
                             <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                               <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                             </svg>
-                            <span className="text-xs text-slate-800">Endorsed by DMFI</span>
+                            <span className="text-xs text-slate-800">Supported by DMFI</span>
                           </div>
                         )}
                       </div>
@@ -1342,30 +1469,32 @@ function Header({
 }) {
   return (
     <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
-      {/* Bill title - clickable to view details */}
-      <span
-        className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (meta) {
-            window.open(`/bill/${encodeURIComponent(col)}`, '_blank');
-          }
-        }}
-      >
-        {meta ? (meta.short_title || meta.display_name) : col}
-      </span>
+      {/* Bill title - clickable to view details with fixed 3-line height */}
+      <div className="h-[3.375rem] flex items-start">
+        <span
+          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (meta) {
+              window.open(`/bill/${encodeURIComponent(col)}`, '_blank');
+            }
+          }}
+        >
+          {meta ? (meta.short_title || meta.display_name) : col}
+        </span>
+      </div>
 
-      {/* Position - sortable */}
+      {/* Position - sortable, always in uniform position */}
       {meta && meta.position_to_score && (
         <span
           className={clsx(
-            "text-xs text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1",
+            "text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1",
             onSort && "cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
           )}
           onClick={onSort}
           title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
         >
-          {meta.position_to_score}
+          {formatPositionScorecard(meta)}
           {onSort && (
             <span className={clsx(
               "text-[10px]",
@@ -1386,7 +1515,7 @@ function Header({
           )}>
             {meta.display_name || meta.short_title || col}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {meta.position_to_score}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}</div>
           {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.description}</div>}
           {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.analysis}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
@@ -1520,6 +1649,11 @@ function LawmakerCard({
         const inferredChamber = inferChamber(meta, c);
         const notApplicable = inferredChamber && inferredChamber !== row.chamber;
         const val = Number((row as any)[c] ?? 0);
+
+        // Check if member was absent for this vote
+        const absentCol = `${c}_absent`;
+        const wasAbsent = Number((row as any)[absentCol] ?? 0) === 1;
+
         const categories = (meta?.categories || "")
           .split(";")
           .map((s) => s.trim())
@@ -1546,10 +1680,23 @@ function LawmakerCard({
           categories,
           notApplicable,
           waiver,
+          wasAbsent,
           ok: !notApplicable && val > 0,
         };
       })
-      .filter((it) => it.meta && !it.notApplicable);
+      .filter((it) => it.meta && !it.notApplicable)
+      .sort((a, b) => {
+        // Sort by first category alphabetically
+        const catA = a.categories[0] || "";
+        const catB = b.categories[0] || "";
+        const catCompare = catA.localeCompare(catB);
+        if (catCompare !== 0) return catCompare;
+
+        // Then sort alphabetically by display name
+        const nameA = a.meta?.display_name || a.meta?.short_title || a.col;
+        const nameB = b.meta?.display_name || b.meta?.short_title || b.col;
+        return nameA.localeCompare(nameB);
+      });
   }, [billCols, metaByCol, row]);
 
   // Filter items based on selected category
@@ -1801,7 +1948,7 @@ function LawmakerCard({
 
                 {/* Endorsements card */}
                 <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Supported by AIPAC or aligned PACs</div>
                   <div className="space-y-1">
                     {isTruthy(row.aipac_supported) && (
                       <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
@@ -1856,12 +2003,14 @@ function LawmakerCard({
                           {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                          <span className="font-medium">NIAC Action Position:</span> {it.meta?.position_to_score || ""}
+                          <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(it.meta)}
                         </div>
                         {it.meta && (it.meta as { action_types?: string }).action_types && (
                           <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                             <div className="mt-0.5">
-                              {it.waiver ? (
+                              {it.wasAbsent ? (
+                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                              ) : it.waiver ? (
                                 <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                               ) : (
                                 <VoteIcon ok={it.ok} />
@@ -1869,6 +2018,10 @@ function LawmakerCard({
                             </div>
                             <span className="font-medium">
                               {(() => {
+                                if (it.wasAbsent) {
+                                  return "Did not vote/voted present";
+                                }
+
                                 const actionTypes = (it.meta as { action_types?: string }).action_types || "";
                                 const isVote = actionTypes.includes("vote");
                                 const isCosponsor = actionTypes.includes("cosponsor");

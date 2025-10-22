@@ -22,11 +22,28 @@ function isTruthy(v: unknown): boolean {
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
-  const explicit = (meta?.chamber || "").toString().toUpperCase();
+  const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
+  // If chamber is explicitly set (even to empty), respect that
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as "HOUSE" | "SENATE";
+  // If chamber is explicitly empty in metadata, don't infer from bill number
+  if (meta && meta.chamber !== undefined && explicit === "") return "";
+  // Otherwise infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
   return "";
+}
+
+function formatPositionDetail(meta: Meta | undefined): string {
+  const position = (meta?.position_to_score || '').toUpperCase();
+  const actionType = (meta as { action_types?: string })?.action_types || '';
+  const isCosponsor = actionType.includes('cosponsor');
+  const isSupport = position === 'SUPPORT';
+
+  if (isCosponsor) {
+    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
+  } else {
+    return isSupport ? 'Vote in Favor' : 'Vote Against';
+  }
 }
 
 function stateCodeOf(s: string | undefined): string {
@@ -214,7 +231,17 @@ export default function MemberPage() {
         val
       };
     })
-    .filter((it) => !it.na);
+    .filter((it) => !it.na)
+    .sort((a, b) => {
+      // Sort by first category alphabetically
+      const catA = a.categories[0] || "";
+      const catB = b.categories[0] || "";
+      const catCompare = catA.localeCompare(catB);
+      if (catCompare !== 0) return catCompare;
+
+      // Then sort alphabetically by label
+      return a.label.localeCompare(b.label);
+    });
 
   const items = selectedCategory
     ? allItems.filter(it => it.categories.some(c => c === selectedCategory))
@@ -416,7 +443,7 @@ export default function MemberPage() {
 
               {/* Endorsements card */}
               <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Supported by AIPAC or aligned PACs</div>
                 <div className="space-y-1">
                   {isTruthy(row.aipac_supported) && (
                     <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
@@ -461,68 +488,80 @@ export default function MemberPage() {
               </div>
               {votesActionsExpanded && (
                 <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-                  {items.map(({ col, meta, ok, waiver, label, stance, val }) => (
-                    <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
-                          {label}
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                          <span className="font-medium">NIAC Action Position:</span> {stance || ""}
-                        </div>
-                        {meta && (meta as { action_types?: string }).action_types && (
-                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
-                            <div className="mt-0.5">
-                              {waiver ? (
-                                <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                              ) : (
-                                <VoteIcon ok={ok} />
-                              )}
-                            </div>
-                            <span className="font-medium">
-                              {(() => {
-                                const actionTypes = (meta as { action_types?: string }).action_types || "";
-                                const isVote = actionTypes.includes("vote");
-                                const isCosponsor = actionTypes.includes("cosponsor");
-                                const position = (stance || "").toUpperCase();
-                                const isSupport = position === "SUPPORT";
-                                const gotPoints = val > 0;
+                  {items.map(({ col, meta, ok, waiver, label, stance, val }) => {
+                    // Check if member was absent on this vote
+                    const absentCol = `${col}_absent`;
+                    const wasAbsent = Boolean((row as Record<string, unknown>)[absentCol]);
 
-                                if (isCosponsor) {
-                                  // If we support: points means they cosponsored
-                                  // If we oppose: points means they did NOT cosponsor
-                                  const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
-                                } else if (isVote) {
-                                  // If we support: points means they voted in favor
-                                  // If we oppose: points means they voted against
-                                  const votedFor = isSupport ? gotPoints : !gotPoints;
-                                  if (votedFor) {
-                                    return "Voted in Favor";
-                                  } else {
-                                    return "Voted Against";
-                                  }
-                                }
-                                return "Action";
-                              })()}
-                            </span>
+                    return (
+                      <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
+                            {label}
                           </div>
-                        )}
-                        {meta?.notes && (
-                          <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
-                        )}
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {(meta?.categories || "")
-                            .split(";")
-                            .map((c) => c.trim())
-                            .filter(Boolean)
-                            .map((c) => (
-                              <span key={c} className="chip-xs">{c}</span>
-                            ))}
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                            <span className="font-medium">NIAC Action Position:</span> {formatPositionDetail(meta)}
+                          </div>
+                          {meta && (meta as { action_types?: string }).action_types && (
+                            <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
+                              <div className="mt-0.5">
+                                {wasAbsent ? (
+                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500" title="Did not vote/voted present">—</span>
+                                ) : waiver ? (
+                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                                ) : (
+                                  <VoteIcon ok={ok} />
+                                )}
+                              </div>
+                              <span className="font-medium">
+                                {(() => {
+                                  const actionTypes = (meta as { action_types?: string }).action_types || "";
+                                  const isVote = actionTypes.includes("vote");
+                                  const isCosponsor = actionTypes.includes("cosponsor");
+                                  const position = (stance || "").toUpperCase();
+                                  const isSupport = position === "SUPPORT";
+                                  const gotPoints = val > 0;
+
+                                  if (wasAbsent && isVote) {
+                                    return <span title="Did not vote/voted present">Did Not Vote/Voted Present</span>;
+                                  }
+
+                                  if (isCosponsor) {
+                                    // If we support: points means they cosponsored
+                                    // If we oppose: points means they did NOT cosponsor
+                                    const didCosponsor = isSupport ? gotPoints : !gotPoints;
+                                    return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                  } else if (isVote) {
+                                    // If we support: points means they voted in favor
+                                    // If we oppose: points means they voted against
+                                    const votedFor = isSupport ? gotPoints : !gotPoints;
+                                    if (votedFor) {
+                                      return "Voted in Favor";
+                                    } else {
+                                      return "Voted Against";
+                                    }
+                                  }
+                                  return "Action";
+                                })()}
+                              </span>
+                            </div>
+                          )}
+                          {meta?.notes && (
+                            <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
+                          )}
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {(meta?.categories || "")
+                              .split(";")
+                              .map((c) => c.trim())
+                              .filter(Boolean)
+                              .map((c) => (
+                                <span key={c} className="chip-xs">{c}</span>
+                              ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {!items.length && (
                     <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                       No relevant bills/actions for current filters.
