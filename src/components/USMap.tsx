@@ -26,11 +26,13 @@ const STATE_NAMES: Record<string, string> = {
 
 export default function USMap({ stateColors, onStateClick }: USMapProps) {
   // Convert state codes to the format expected by react-usa-map
-  // The library uses lowercase state abbreviations as keys
+  // All states get custom dark blue fill with teal border
   const customizeMap = () => {
-    const config: Record<string, { fill: string }> = {};
-    Object.entries(stateColors).forEach(([code, color]) => {
-      config[code] = { fill: color };
+    const config: Record<string, { fill: string; stroke?: string; strokeWidth?: string }> = {};
+    Object.keys(stateColors).forEach((code) => {
+      config[code] = {
+        fill: "#002b49", // main map color
+      };
     });
     return config;
   };
@@ -63,9 +65,9 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
         existingTitle.remove();
       }
 
-      // Store original stroke
-      const originalStroke = stateElement.getAttribute('stroke') || '#FFFFFF';
-      const originalStrokeWidth = stateElement.getAttribute('stroke-width') || '0.5';
+      // Set teal border on all states
+      stateElement.setAttribute('stroke', '#b6dfcc'); // border color
+      stateElement.setAttribute('stroke-width', '1');
 
       // Add drop shadow and label on hover
       stateElement.addEventListener('mouseenter', () => {
@@ -73,15 +75,13 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
         const centerX = bbox.x + bbox.width / 2;
         const centerY = bbox.y + bbox.height / 2;
 
-        // Add drop shadow and yellow border
-        stateElement.style.filter = 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))';
-        stateElement.setAttribute('stroke', '#fef3c7'); // pale yellow border matching text background
-        stateElement.setAttribute('stroke-width', '1');
+        // Change to hover color
+        stateElement.setAttribute('fill', '#4699d3'); // hover color
 
         // Create background rectangle for text
         const textBgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         textBgElement.setAttribute('id', `label-bg-${stateCode}`);
-        textBgElement.setAttribute('fill', '#fef3c7'); // pale yellow background
+        textBgElement.setAttribute('fill', '#b6dfcc'); // teal background
         textBgElement.setAttribute('rx', '4');
         textBgElement.setAttribute('pointer-events', 'none');
 
@@ -114,12 +114,8 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
       });
 
       stateElement.addEventListener('mouseleave', () => {
-        // Remove drop shadow
-        stateElement.style.filter = 'none';
-
-        // Reset stroke
-        stateElement.setAttribute('stroke', originalStroke);
-        stateElement.setAttribute('stroke-width', originalStrokeWidth);
+        // Reset fill to main map color
+        stateElement.setAttribute('fill', '#002b49'); // main map color
 
         // Remove text label and background
         const label = svg.querySelector(`#label-${stateCode}`);
@@ -136,35 +132,11 @@ export default function USMap({ stateColors, onStateClick }: USMapProps) {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Legend */}
-      <div className="mb-6 flex justify-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: "#050a30" }}></div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">A Grades</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: "#30558d" }}></div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">B Grades</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: "#93c5fd" }}></div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">C Grades</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: "#d1d5db" }}></div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">D Grades</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded" style={{ backgroundColor: "#f3f4f6" }}></div>
-          <span className="text-sm text-slate-700 dark:text-slate-300">F Grades</span>
-        </div>
-      </div>
-
       <div className="us-state-map">
         <USAMap
           customize={customizeMap()}
           onClick={handleStateClick}
-          defaultFill="#E5E7EB"
+          defaultFill="#002b49"
           width="100%"
           height="auto"
           title=""

@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
+import Papa from "papaparse";
 
 function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
@@ -18,6 +19,80 @@ function isTruthy(v: unknown): boolean {
     if (!isNaN(num) && num > 0) return true;
   }
   return false;
+}
+
+interface PacData {
+  bioguide_id: string;
+  full_name: string;
+  aipac_featured: number;
+  aipac_direct_amount: number;
+  aipac_earmark_amount: number;
+  aipac_ie_support: number;
+  aipac_ie_total: number;
+  aipac_total: number;
+  dmfi_website: number;
+  dmfi_direct: number;
+  dmfi_ie_support: number;
+  dmfi_ie_total: number;
+  dmfi_total: number;
+}
+
+async function loadPacData(): Promise<Map<string, PacData>> {
+  const response = await fetch('/data/pac_data.csv');
+  const text = await response.text();
+
+  return new Promise((resolve) => {
+    Papa.parse<Record<string, string>>(text, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const map = new Map<string, PacData>();
+
+        results.data.forEach((row) => {
+          const bioguide_id = row.bioguide_id;
+          if (!bioguide_id) return;
+
+          map.set(bioguide_id, {
+            bioguide_id,
+            full_name: row.full_name || '',
+            aipac_featured: parseFloat(row.aipac_featured) || 0,
+            aipac_direct_amount: parseFloat(row.aipac_direct_amount) || 0,
+            aipac_earmark_amount: parseFloat(row.aipac_earmark_amount) || 0,
+            aipac_ie_support: parseFloat(row.aipac_ie_support) || 0,
+            aipac_ie_total: parseFloat(row.aipac_ie_total) || 0,
+            aipac_total: parseFloat(row.aipac_total) || 0,
+            dmfi_website: parseFloat(row.dmfi_website) || 0,
+            dmfi_direct: parseFloat(row.dmfi_direct) || 0,
+            dmfi_ie_support: parseFloat(row.dmfi_ie_support) || 0,
+            dmfi_ie_total: parseFloat(row.dmfi_ie_total) || 0,
+            dmfi_total: parseFloat(row.dmfi_total) || 0,
+          });
+        });
+
+        resolve(map);
+      },
+    });
+  });
+}
+
+// Check if member is endorsed by AIPAC based on PAC data
+function isAipacEndorsed(pacData: PacData | undefined): boolean {
+  if (!pacData) return false;
+  return (
+    pacData.aipac_featured === 1 ||
+    pacData.aipac_direct_amount > 0 ||
+    pacData.aipac_ie_support > 0
+  );
+}
+
+// Check if member is endorsed by DMFI based on PAC data
+function isDmfiEndorsed(pacData: PacData | undefined): boolean {
+  if (!pacData) return false;
+  return (
+    pacData.dmfi_website === 1 ||
+    pacData.dmfi_direct > 0 ||
+    pacData.dmfi_ie_support > 0
+  );
 }
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
@@ -164,10 +239,16 @@ export default function MemberPage() {
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(true);
+  const [lobbySupportExpanded, setLobbySupportExpanded] = useState<boolean>(false);
+  const [pacData, setPacData] = useState<PacData | undefined>(undefined);
+
+  const votesActionsRef = useRef<HTMLDivElement>(null);
+  const lobbySupportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
-      const { rows, columns, metaByCol: meta, categories: cats } = await loadData();
+      const [data, pacDataMap] = await Promise.all([loadData(), loadPacData()]);
+      const { rows, columns, metaByCol: meta, categories: cats } = data;
 
       // Find the member by bioguide_id
       const member = rows.find((r) => r.bioguide_id === id);
@@ -179,6 +260,7 @@ export default function MemberPage() {
       setRow(member);
       setMetaByCol(meta);
       setCategories(cats);
+      setPacData(pacDataMap.get(id));
 
       // Filter columns by chamber (don't filter by category for member page)
       const filtered = columns.filter((c) => {
@@ -248,172 +330,174 @@ export default function MemberPage() {
     : allItems;
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] dark:bg-[#0B1220] p-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="card">
-          {/* Header */}
-          <div className="flex items-start gap-4 p-6 border-b border-[#E7ECF2] dark:border-white/10">
-            {row.photo_url ? (
-              <img
-                src={String(row.photo_url)}
-                alt=""
-                className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-              />
-            ) : (
-              <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
-              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                  style={{
-                    color: "#64748b",
-                    backgroundColor: `${chamberColor(row.chamber)}20`,
+    <>
+      <style dangerouslySetInnerHTML={{__html: `
+        body {
+          background: #F7F8FA !important;
+        }
+        .card {
+          background: white !important;
+          color: #1e293b !important;
+        }
+        * {
+          color-scheme: light !important;
+        }
+        @media print {
+          body {
+            background: white !important;
+          }
+        }
+      `}} />
+      <div className="min-h-screen bg-[#F7F8FA] p-4 md:p-6">
+        <div className="max-w-6xl mx-auto min-w-[768px]">
+          <div className="card bg-white">
+            {/* Header */}
+          <div className="p-6 border-b border-[#E7ECF2]">
+            <div className="flex items-start gap-4 mb-4">
+              {row.photo_url ? (
+                <img
+                  src={String(row.photo_url)}
+                  alt=""
+                  className="h-32 w-32 rounded-full object-cover bg-slate-200"
+                />
+              ) : (
+                <div className="h-32 w-32 rounded-full bg-slate-300" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold text-slate-900 mb-2">{row.full_name}</div>
+                <div className="text-xs text-slate-600 flex items-center gap-2 mb-3">
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                    style={{
+                      color: "#64748b",
+                      backgroundColor: `${chamberColor(row.chamber)}20`,
+                    }}
+                  >
+                    {chamberTag}
+                  </span>
+                  <span
+                    className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                    style={partyBadgeStyle(row.party)}
+                  >
+                    {partyLabel(row.party)}
+                  </span>
+                  <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+                </div>
+
+                {/* Committee Assignments */}
+                {(() => {
+                  const filteredCommittees = row.committees
+                    ? row.committees.split(";")
+                        .map(c => c.trim())
+                        .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                    : [];
+
+                  return filteredCommittees.length > 0 ? (
+                    <div className="mb-3">
+                      <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                        Committee Assignments
+                      </div>
+                      <div className="text-xs text-slate-700 space-y-0.5">
+                        {filteredCommittees.map((committee, idx) => (
+                          <div key={idx}>{committee}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  className="chip-outline text-slate-700 hover:bg-slate-100"
+                  onClick={() => window.print()}
+                >
+                  Print
+                </button>
+                <button
+                  className="chip-outline text-slate-700 hover:bg-slate-100"
+                  onClick={() => {
+                    window.close();
+                    setTimeout(() => {
+                      window.location.href = '/';
+                    }, 100);
                   }}
                 >
-                  {chamberTag}
-                </span>
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
-                  style={partyBadgeStyle(row.party)}
-                >
-                  {partyLabel(row.party)}
-                </span>
-                <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+                  Close
+                </button>
               </div>
             </div>
 
-            {/* Contact Information */}
-            {(row.office_phone || row.office_address) && (
-              <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-                {row.office_phone && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Phone</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
+            {/* Contact Information Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Washington Office */}
+              {(row.office_phone || row.office_address) && (
+                <div>
+                  <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    Washington Office
                   </div>
-                )}
-                {row.office_address && (
-                  <div>
-                    <div className="font-medium mb-0.5">Washington Office Address</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
+                  <div className="text-xs text-slate-700 space-y-1">
+                    {row.office_phone && <div>{row.office_phone}</div>}
+                    {row.office_address && <div>{row.office_address}</div>}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
-            <div className="flex items-center gap-2">
-              <button
-                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.print()}
-              >
-                Print
-              </button>
-              <button
-                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => {
-                  // Try to close the window (works if opened via window.open)
-                  // If that fails, navigate back to home
-                  window.close();
-                  setTimeout(() => {
-                    window.location.href = '/';
-                  }, 100);
-                }}
-              >
-                Close
-              </button>
+              {/* District Offices */}
+              {(() => {
+                const districtOfficesList = row.district_offices
+                  ? row.district_offices.split(";").map(o => o.trim()).filter(Boolean)
+                  : [];
+
+                return districtOfficesList.length > 0 ? (
+                  <div>
+                    <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                      District Offices
+                    </div>
+                    <div className="text-xs text-slate-700 space-y-1">
+                      {districtOfficesList.map((office, idx) => (
+                        <div key={idx}>{office}</div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
 
           {/* Content */}
           <div className="p-6">
-            {/* District Offices */}
-            {row.district_offices && (
-              <div className="mb-6">
-                <div
-                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
-                >
-                  District Offices
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
-                    aria-hidden="true"
-                    role="img"
-                  >
-                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {districtOfficesExpanded && (
-                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                      {row.district_offices.split(";").map((office, idx) => (
-                        <div key={idx} className="pl-0">
-                          {office.trim()}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Committees */}
-            {(() => {
-              const filteredCommittees = row.committees
-                ? row.committees.split(";")
-                    .map(c => c.trim())
-                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
-                : [];
-
-              return filteredCommittees.length > 0 ? (
-                <div className="mb-6">
-                  <div
-                    className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                    onClick={() => setCommitteesExpanded(!committeesExpanded)}
-                  >
-                    Committee Assignments
-                    <svg
-                      viewBox="0 0 20 20"
-                      className={clsx("h-4 w-4 ml-auto transition-transform", committeesExpanded && "rotate-180")}
-                      aria-hidden="true"
-                      role="img"
-                    >
-                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  {committeesExpanded && (
-                    <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
-                        {filteredCommittees.map((committee, idx) => (
-                          <div key={idx} className="pl-0">
-                            {committee}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null;
-            })()}
-
             {/* Issue Grades */}
             <div className="mb-6">
               <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Overall Grade card */}
-              <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
+              <button
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setVotesActionsExpanded(true);
+                  setTimeout(() => {
+                    votesActionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                className={clsx(
+                  "rounded-lg border p-3 text-left transition cursor-pointer",
+                  selectedCategory === null
+                    ? "border-[#4B8CFB] bg-[#4B8CFB]/10"
+                    : "border-[#E7ECF2] bg-slate-50 hover:bg-slate-100"
+                )}
+              >
+                <div className="text-xs text-slate-600 mb-1">Overall Grade</div>
                 <div className="flex items-center justify-between">
-                  <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                  <div className="text-xs tabular text-slate-700">
                     {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                   </div>
                   <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
                 </div>
-              </div>
+              </button>
 
               {/* Dynamic category cards */}
-              {categories.map((category) => {
+              {categories.filter(cat => cat !== "AIPAC").map((category) => {
                 const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                 const totalField = `Total_${fieldSuffix}` as keyof Row;
                 const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
@@ -426,13 +510,13 @@ export default function MemberPage() {
                     className={clsx(
                       "rounded-lg border p-3 text-left transition cursor-pointer",
                       selectedCategory === category
-                        ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                        : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                        ? "border-[#4B8CFB] bg-[#4B8CFB]/10"
+                        : "border-[#E7ECF2] bg-slate-50 hover:bg-slate-100"
                     )}
                   >
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
+                    <div className="text-xs text-slate-600 mb-1">{category}</div>
                     <div className="flex items-center justify-between">
-                      <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                      <div className="text-xs tabular text-slate-700">
                         {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
                       </div>
                       <GradeChip grade={String(row[gradeField] || "N/A")} />
@@ -442,38 +526,54 @@ export default function MemberPage() {
               })}
 
               {/* Endorsements card */}
-              <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Supported by AIPAC or aligned PACs</div>
-                <div className="space-y-1">
-                  {isTruthy(row.aipac_supported) && (
-                    <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
-                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                      </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
-                    </div>
-                  )}
-                  {isTruthy(row.dmfi_supported) && (
-                    <div className="flex items-center gap-1.5">
-                      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                        <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                      </svg>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
-                    </div>
-                  )}
-                  {!isTruthy(row.aipac_supported) &&
-                   !isTruthy(row.dmfi_supported) && (
-                    <div className="text-xs text-slate-500 dark:text-slate-500">None</div>
-                  )}
-                </div>
-              </div>
+              {(() => {
+                const aipac = isAipacEndorsed(pacData);
+                const dmfi = isDmfiEndorsed(pacData);
+
+                return (
+                  <button
+                    onClick={() => {
+                      if (aipac || dmfi) {
+                        setLobbySupportExpanded(true);
+                        setTimeout(() => {
+                          lobbySupportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      }
+                    }}
+                    className={clsx(
+                      "rounded-lg border p-3 text-left w-full transition",
+                      (aipac || dmfi)
+                        ? "border-[#E7ECF2] bg-slate-50 cursor-pointer hover:bg-slate-100"
+                        : "border-[#E7ECF2] bg-slate-50 cursor-default"
+                    )}
+                  >
+                    {aipac || dmfi ? (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700">
+                          {aipac && dmfi ? "Supported by AIPAC and DMFI" : aipac ? "Supported by AIPAC" : "Supported by DMFI"}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-700">Not supported by AIPAC or DMFI</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })()}
             </div>
             </div>
 
             {/* Votes & Actions */}
-            <div className="mb-6">
+            <div className="mb-6" ref={votesActionsRef}>
               <div
-                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                className="text-sm font-semibold mb-3 text-slate-700 flex items-center gap-2 cursor-pointer hover:text-slate-900 transition-colors"
                 onClick={() => setVotesActionsExpanded(!votesActionsExpanded)}
               >
                 Votes & Actions
@@ -487,92 +587,155 @@ export default function MemberPage() {
                 </svg>
               </div>
               {votesActionsExpanded && (
-                <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
-                  {items.map(({ col, meta, ok, waiver, label, stance, val }) => {
-                    // Check if member was absent on this vote
-                    const absentCol = `${col}_absent`;
-                    const wasAbsent = Boolean((row as Record<string, unknown>)[absentCol]);
+                <div className="space-y-4">
+                  {(() => {
+                    // Group items by category
+                    const itemsByCategory = new Map<string, typeof items>();
+                    items.forEach((it) => {
+                      it.categories.forEach((cat) => {
+                        if (!itemsByCategory.has(cat)) {
+                          itemsByCategory.set(cat, []);
+                        }
+                        itemsByCategory.get(cat)!.push(it);
+                      });
+                    });
 
-                    return (
-                      <div key={col} className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB]">
-                            {label}
+                    const sortedCategories = Array.from(itemsByCategory.keys()).sort();
+
+                    return sortedCategories.map((category) => {
+                      const categoryItems = itemsByCategory.get(category) || [];
+                      const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+                      const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+                      const grade = String(row[gradeField] || "N/A");
+
+                      return (
+                        <div key={category} className="rounded-lg border border-[#E7ECF2] bg-slate-50 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="text-xs font-semibold text-slate-700">{category}</div>
+                            <GradeChip grade={grade} />
                           </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                            <span className="font-medium">NIAC Action Position:</span> {formatPositionDetail(meta)}
-                          </div>
-                          {meta && (meta as { action_types?: string }).action_types && (
-                            <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
-                              <div className="mt-0.5">
-                                {wasAbsent ? (
-                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500" title="Did not vote/voted present">—</span>
-                                ) : waiver ? (
-                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                                ) : (
-                                  <VoteIcon ok={ok} />
-                                )}
-                              </div>
-                              <span className="font-medium">
-                                {(() => {
-                                  const actionTypes = (meta as { action_types?: string }).action_types || "";
-                                  const isVote = actionTypes.includes("vote");
-                                  const isCosponsor = actionTypes.includes("cosponsor");
-                                  const position = (stance || "").toUpperCase();
-                                  const isSupport = position === "SUPPORT";
-                                  const gotPoints = val > 0;
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {categoryItems.map(({ col, meta, ok, waiver, label, stance, val }) => {
+                              // Check if member was absent on this vote
+                              const absentCol = `${col}_absent`;
+                              const wasAbsent = Boolean((row as Record<string, unknown>)[absentCol]);
 
-                                  if (wasAbsent && isVote) {
-                                    return <span title="Did not vote/voted present">Did Not Vote/Voted Present</span>;
-                                  }
+                              return (
+                                <div key={col} className="rounded-lg border border-[#E7ECF2] bg-white p-3 cursor-pointer hover:border-[#4B8CFB] transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
+                                  <div className="text-[13px] font-medium leading-5 text-slate-700 hover:text-[#4B8CFB] mb-1.5">
+                                    {label}
+                                  </div>
+                                  <div className="text-[11px] text-slate-600 mb-1">
+                                    <span className="font-medium">NIAC Action Position:</span> {formatPositionDetail(meta)}
+                                  </div>
+                                  {meta && (meta as { action_types?: string }).action_types && (
+                                    <div className="text-[11px] text-slate-600 flex items-center gap-1.5 mb-1">
+                                      <div className="mt-0.5">
+                                        {wasAbsent ? (
+                                          <span className="text-lg leading-none text-slate-400" title="Did not vote/voted present">—</span>
+                                        ) : waiver ? (
+                                          <span className="text-lg leading-none text-slate-400">—</span>
+                                        ) : (
+                                          <VoteIcon ok={ok} />
+                                        )}
+                                      </div>
+                                      <span className="font-medium">
+                                        {(() => {
+                                          const actionTypes = (meta as { action_types?: string }).action_types || "";
+                                          const isVote = actionTypes.includes("vote");
+                                          const isCosponsor = actionTypes.includes("cosponsor");
+                                          const position = (stance || "").toUpperCase();
+                                          const isSupport = position === "SUPPORT";
+                                          const gotPoints = val > 0;
 
-                                  if (isCosponsor) {
-                                    // If we support: points means they cosponsored
-                                    // If we oppose: points means they did NOT cosponsor
-                                    const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                    return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
-                                  } else if (isVote) {
-                                    // If we support: points means they voted in favor
-                                    // If we oppose: points means they voted against
-                                    const votedFor = isSupport ? gotPoints : !gotPoints;
-                                    if (votedFor) {
-                                      return "Voted in Favor";
-                                    } else {
-                                      return "Voted Against";
-                                    }
-                                  }
-                                  return "Action";
-                                })()}
-                              </span>
-                            </div>
-                          )}
-                          {meta?.notes && (
-                            <div className="text-xs mt-1 text-slate-700 dark:text-slate-200">{meta.notes}</div>
-                          )}
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {(meta?.categories || "")
-                              .split(";")
-                              .map((c) => c.trim())
-                              .filter(Boolean)
-                              .map((c) => (
-                                <span key={c} className="chip-xs">{c}</span>
-                              ))}
+                                          if (wasAbsent && isVote) {
+                                            return <span title="Did not vote/voted present">Did Not Vote/Voted Present</span>;
+                                          }
+
+                                          if (isCosponsor) {
+                                            const didCosponsor = isSupport ? gotPoints : !gotPoints;
+                                            return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                          } else if (isVote) {
+                                            const votedFor = isSupport ? gotPoints : !gotPoints;
+                                            if (votedFor) {
+                                              return "Voted in Favor";
+                                            } else {
+                                              return "Voted Against";
+                                            }
+                                          }
+                                          return "Action";
+                                        })()}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {meta?.notes && (
+                                    <div className="text-[11px] mt-1 text-slate-700">{meta.notes}</div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                   {!items.length && (
-                    <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <div className="py-8 text-center text-sm text-slate-500">
                       No relevant bills/actions for current filters.
                     </div>
                   )}
                 </div>
               )}
             </div>
+
+            {/* Israel Lobby Support */}
+            {(() => {
+              const aipac = isAipacEndorsed(pacData);
+              const dmfi = isDmfiEndorsed(pacData);
+
+              if (!aipac && !dmfi) return null;
+
+              return (
+                <div className="mb-6" ref={lobbySupportRef}>
+                  <div
+                    className="text-sm font-semibold mb-3 text-slate-700 flex items-center gap-2 cursor-pointer hover:text-slate-900 transition-colors"
+                    onClick={() => setLobbySupportExpanded(!lobbySupportExpanded)}
+                  >
+                    Israel Lobby Support
+                    <svg
+                      viewBox="0 0 20 20"
+                      className={clsx("h-4 w-4 ml-auto transition-transform", lobbySupportExpanded && "rotate-180")}
+                      aria-hidden="true"
+                      role="img"
+                    >
+                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  {lobbySupportExpanded && (
+                    <div className="rounded-lg border border-[#E7ECF2] bg-slate-50 p-4">
+                      <div className="text-xs text-slate-700 space-y-2">
+                        {aipac && (
+                          <div>
+                            <div className="font-semibold mb-1">AIPAC (American Israel Public Affairs Committee)</div>
+                            <div>This member has received support from AIPAC or AIPAC-aligned PACs.</div>
+                          </div>
+                        )}
+                        {dmfi && (
+                          <div>
+                            <div className="font-semibold mb-1">Democratic Majority For Israel</div>
+                            <div>This member has received support from Democratic Majority For Israel.</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

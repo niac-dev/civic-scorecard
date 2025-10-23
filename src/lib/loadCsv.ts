@@ -97,6 +97,8 @@ export async function loadData(): Promise<{
       .filter(Boolean);
     cats.forEach((c) => catSet.add(c));
   });
+  // Add AIPAC as a special category
+  catSet.add("AIPAC");
   const categories = Array.from(catSet).sort();
 
   return { rows, columns, metaByCol, categories };
