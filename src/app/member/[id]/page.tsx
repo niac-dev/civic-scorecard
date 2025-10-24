@@ -88,11 +88,22 @@ function isAipacEndorsed(pacData: PacData | undefined): boolean {
 // Check if member is endorsed by DMFI based on PAC data
 function isDmfiEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
-  return (
-    pacData.dmfi_website === 1 ||
-    pacData.dmfi_direct > 0 ||
-    pacData.dmfi_ie_support > 0
-  );
+
+  // If DMFI has actual financial support, return true
+  if (pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0) {
+    return true;
+  }
+
+  // If DMFI website === 1 but no financial support, check if there's AIPAC financial support
+  if (pacData.dmfi_website === 1) {
+    // Only return true if there's also AIPAC financial support
+    const hasAipacFinancialSupport =
+      pacData.aipac_direct_amount > 0 ||
+      pacData.aipac_ie_support > 0;
+    return hasAipacFinancialSupport;
+  }
+
+  return false;
 }
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
@@ -716,14 +727,12 @@ export default function MemberPage() {
                       <div className="text-xs text-slate-700 space-y-2">
                         {aipac && (
                           <div>
-                            <div className="font-semibold mb-1">AIPAC (American Israel Public Affairs Committee)</div>
-                            <div>This member has received support from AIPAC or AIPAC-aligned PACs.</div>
+                            <span className="font-semibold">Endorsed by AIPAC</span> (American Israel Public Affairs Committee)
                           </div>
                         )}
                         {dmfi && (
                           <div>
-                            <div className="font-semibold mb-1">Democratic Majority For Israel</div>
-                            <div>This member has received support from Democratic Majority For Israel.</div>
+                            <span className="font-semibold">Endorsed by DMFI</span> (Democratic Majority For Israel)
                           </div>
                         )}
                       </div>

@@ -151,11 +151,22 @@ function isAipacEndorsed(pacData: PacData | undefined): boolean {
 // Check if member is endorsed by DMFI based on PAC data
 function isDmfiEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
-  return (
-    pacData.dmfi_website === 1 ||
-    pacData.dmfi_direct > 0 ||
-    pacData.dmfi_ie_support > 0
-  );
+
+  // If DMFI has actual financial support, return true
+  if (pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0) {
+    return true;
+  }
+
+  // If DMFI website === 1 but no financial support, check if there's AIPAC financial support
+  if (pacData.dmfi_website === 1) {
+    // Only return true if there's also AIPAC financial support
+    const hasAipacFinancialSupport =
+      pacData.aipac_direct_amount > 0 ||
+      pacData.aipac_ie_support > 0;
+    return hasAipacFinancialSupport;
+  }
+
+  return false;
 }
 
 // Determine which election year to display (prefer 2024, then 2025, then 2022 if 2024 has no $ data)
@@ -482,8 +493,29 @@ export default function Page() {
     if (f.party) out = out.filter(r => r.party === f.party);
     if (f.state) out = out.filter(r => stateCodeOf(r.state) === f.state);
     if (f.search) {
-      const q = f.search.toLowerCase();
-      out = out.filter(r => (r.full_name||"").toLowerCase().includes(q));
+      const q = f.search.toLowerCase().trim();
+      out = out.filter(r => {
+        const fullName = (r.full_name || "").toLowerCase();
+
+        // Direct substring match (e.g., "Kim, Andy" matches "Kim, Andy")
+        if (fullName.includes(q)) return true;
+
+        // Split the search query into parts
+        const searchParts = q.split(/\s+/).filter(Boolean);
+
+        // Check if all search parts appear in the name (in any order)
+        // This allows "Andy Kim" to match "Kim, Andy"
+        const allPartsMatch = searchParts.every(part => fullName.includes(part));
+        if (allPartsMatch) return true;
+
+        // Try reversing "First Last" to "Last, First" format
+        if (searchParts.length === 2) {
+          const reversedQuery = `${searchParts[1]}, ${searchParts[0]}`;
+          if (fullName.includes(reversedQuery.toLowerCase())) return true;
+        }
+
+        return false;
+      });
     }
     if (f.myLawmakers.length > 0) {
       // Fuzzy match by last name - handles middle names/initials
@@ -874,8 +906,8 @@ export default function Page() {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "minmax(140px, 140px)").join(" ");
     const gradesPart = gradeColumns.map(() => "minmax(120px, 120px)").join(" ");
-    // Member column: 50vw on small screens (max 50% of viewport), 280px on larger screens
-    const memberCol = "min(50vw, 280px)";
+    // Member column: 50vw on small screens (max 50% of viewport), 300px on larger screens
+    const memberCol = "min(50vw, 300px)";
     // In summary mode: member col + grade cols + endorsements col + total/max/percent
     if (f.viewMode === "summary") {
       return `${memberCol} ${gradesPart} minmax(140px, 140px) minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
@@ -1320,8 +1352,12 @@ export default function Page() {
                       <span className="hidden md:inline">{partyLabel(r.party)}</span>
                     </span>
 
-                    {/* State last */}
-                    <span className="text-[10px] md:text-xs">{stateCodeOf(r.state)}</span>
+                    {/* State last, with district for House members */}
+                    <span className="text-[9px] md:text-[11px]">
+                      {r.chamber === "HOUSE" && r.district
+                        ? `${stateCodeOf(r.state)}-${r.district}`
+                        : stateCodeOf(r.state)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1591,8 +1627,8 @@ export default function Page() {
                   >
                     {(() => {
                       const pacData = pacDataMap.get(String(r.bioguide_id));
-                      const aipac = isAipacEndorsed(pacData) || isTruthy(r.aipac_supported);
-                      const dmfi = isDmfiEndorsed(pacData) || isTruthy(r.dmfi_supported);
+                      const aipac = isAipacEndorsed(pacData);
+                      const dmfi = isDmfiEndorsed(pacData);
 
                       if (aipac && dmfi) {
                         return (
@@ -2334,7 +2370,7 @@ function LawmakerCard({
   const [committeesExpanded, setCommitteesExpanded] = useState(false);
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState(true);
-  const [pacData, setPacData] = useState<PacData | null>(null);
+  const [pacData, setPacData] = useState<PacData | undefined>(undefined);
 
   const votesActionsRef = useRef<HTMLDivElement>(null);
   const lobbySupportRef = useRef<HTMLDivElement>(null);
@@ -2606,8 +2642,8 @@ function LawmakerCard({
 
               {/* Endorsements card */}
               {(() => {
-                const aipac = isAipacEndorsed(pacData || undefined);
-                const dmfi = isDmfiEndorsed(pacData || undefined);
+                const aipac = isAipacEndorsed(pacData);
+                const dmfi = isDmfiEndorsed(pacData);
 
                 return (
                   <button
@@ -2748,6 +2784,57 @@ function LawmakerCard({
                 {lobbySupportExpanded && (
                   <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
                     {pacData ? (
+                      <>
+                        {(() => {
+                          // Check if there's ANY financial data across all years
+                          const hasAnyFinancialData =
+                            pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
+                            pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
+                            pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
+                            pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
+                            pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
+                            pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
+                            pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
+                            pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
+
+                          if (!hasAnyFinancialData) {
+                            // No financial data, show endorsement message
+                            return (
+                              <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
+                                {aipac && (
+                                  <div>
+                                    <span className="font-semibold">Endorsed by AIPAC</span> (American Israel Public Affairs Committee)
+                                  </div>
+                                )}
+                                {dmfi && (
+                                  <div>
+                                    <span className="font-semibold">Endorsed by DMFI</span> (Democratic Majority For Israel)
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          // Has financial data, show the detailed breakdown
+                          return null;
+                        })()}
+                      </>
+                    ) : null}
+                    {pacData && (() => {
+                      // Check if there's ANY financial data to show detailed sections
+                      const hasAnyFinancialData =
+                        pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
+                        pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
+                        pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
+                        pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
+                        pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
+                        pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
+                        pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
+                        pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
+
+                      if (!hasAnyFinancialData) return null;
+
+                      return (
                       <div className="space-y-6">
                         {/* 2026 Election Section (2025 data) */}
                         {(() => {
@@ -2967,7 +3054,9 @@ function LawmakerCard({
                           );
                         })()}
                       </div>
-                    ) : (
+                      );
+                    })()}
+                    {!pacData && (
                       <div className="text-xs text-slate-500 dark:text-slate-500">Loading PAC data...</div>
                     )}
                   </div>
