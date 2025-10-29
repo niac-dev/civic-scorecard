@@ -6,7 +6,7 @@
 
 :root {
   color-scheme: light dark;
-  font-size: 18px; /* Increased from default 16px - makes everything 12.5% bigger */
+  font-size: 20px; /* Increased by 10% from 18px (originally 16px default) */
 }
 
 body { @apply bg-[#F7F8FA] text-[#0B1220] antialiased; }

@@ -138,32 +138,46 @@ function isTruthy(v: unknown): boolean {
   return false;
 }
 
-// Check if member is endorsed by AIPAC based on PAC data
+// Check if member is endorsed by AIPAC based on PAC data (any election cycle)
 function isAipacEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
   return (
     pacData.aipac_featured === 1 ||
+    // 2024 cycle
     pacData.aipac_direct_amount > 0 ||
-    pacData.aipac_ie_support > 0
+    pacData.aipac_earmark_amount > 0 ||
+    pacData.aipac_ie_support > 0 ||
+    // 2025 cycle
+    pacData.aipac_direct_amount_2025 > 0 ||
+    pacData.aipac_earmark_amount_2025 > 0 ||
+    pacData.aipac_ie_support_2025 > 0 ||
+    // 2022 cycle
+    pacData.aipac_direct_amount_2022 > 0 ||
+    pacData.aipac_earmark_amount_2022 > 0 ||
+    pacData.aipac_ie_support_2022 > 0
   );
 }
 
-// Check if member is endorsed by DMFI based on PAC data
+// Check if member is endorsed by DMFI based on PAC data (any election cycle)
 function isDmfiEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
 
-  // If DMFI has actual financial support, return true
-  if (pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0) {
+  // If DMFI has actual financial support in any cycle, return true
+  if (
+    // 2024 cycle
+    pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0 ||
+    // 2025 cycle
+    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_ie_support_2025 > 0 ||
+    // 2022 cycle
+    pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_support_2022 > 0
+  ) {
     return true;
   }
 
-  // If DMFI website === 1 but no financial support, check if there's AIPAC financial support
+  // If DMFI website === 1 but no DMFI financial support, check if there's ANY financial support from AIPAC
   if (pacData.dmfi_website === 1) {
-    // Only return true if there's also AIPAC financial support
-    const hasAipacFinancialSupport =
-      pacData.aipac_direct_amount > 0 ||
-      pacData.aipac_ie_support > 0;
-    return hasAipacFinancialSupport;
+    // Use the isAipacEndorsed function which now checks all cycles
+    return isAipacEndorsed(pacData);
   }
 
   return false;
@@ -572,8 +586,12 @@ export default function Page() {
     }
     // Sort by AIPAC/DMFI support
     if (sortCol === "__aipac") {
-      const supportedFirst = sortDir === "GOOD_FIRST";
+      const goodFirst = sortDir === "GOOD_FIRST";
       return [...filtered].sort((a, b) => {
+        // Check for custom reject AIPAC commitment text
+        const hasCustomA = a.reject_aipac_commitment && String(a.reject_aipac_commitment).length > 10;
+        const hasCustomB = b.reject_aipac_commitment && String(b.reject_aipac_commitment).length > 10;
+
         const pacA = pacDataMap.get(String(a.bioguide_id));
         const pacB = pacDataMap.get(String(b.bioguide_id));
         const aipacA = isAipacEndorsed(pacA);
@@ -581,16 +599,30 @@ export default function Page() {
         const aipacB = isAipacEndorsed(pacB);
         const dmfiB = isDmfiEndorsed(pacB);
 
-        // Simple check: is supported by either AIPAC or DMFI?
-        const supportedA = aipacA || dmfiA;
-        const supportedB = aipacB || dmfiB;
+        // Assign priority (lower number = better/higher priority)
+        // 1. Custom reject commitment
+        // 2. Not supported by either
+        // 3. Supported by both
+        // 4. Supported by AIPAC only
+        // 5. Supported by DMFI only
+        const getPriority = (hasCustom: boolean, aipac: boolean, dmfi: boolean) => {
+          if (hasCustom) return 1;
+          if (!aipac && !dmfi) return 2;
+          if (aipac && dmfi) return 3;
+          if (aipac) return 4;
+          if (dmfi) return 5;
+          return 6; // fallback
+        };
 
-        // First sort by supported status
-        if (supportedA !== supportedB) {
-          if (supportedFirst) {
-            return supportedA ? -1 : 1; // Supported first
+        const priorityA = getPriority(hasCustomA, aipacA, dmfiA);
+        const priorityB = getPriority(hasCustomB, aipacB, dmfiB);
+
+        // Sort by priority
+        if (priorityA !== priorityB) {
+          if (goodFirst) {
+            return priorityA - priorityB; // Lower priority number first (1,2,3,4,5)
           } else {
-            return supportedA ? 1 : -1; // Not supported first
+            return priorityB - priorityA; // Higher priority number first (5,4,3,2,1)
           }
         }
 
@@ -617,12 +649,6 @@ export default function Page() {
           if (yearB === "2024") valB = (pacB?.aipac_total || 0) + (pacB?.dmfi_total || 0);
           else if (yearB === "2025") valB = (pacB?.aipac_total_2025 || 0) + (pacB?.dmfi_total_2025 || 0);
           else if (yearB === "2022") valB = (pacB?.aipac_total_2022 || 0) + (pacB?.dmfi_total_2022 || 0);
-        } else if (sortCol === "__aipac_endorsed") {
-          valA = isTruthy(a.aipac_supported) ? 1 : 0;
-          valB = isTruthy(b.aipac_supported) ? 1 : 0;
-        } else if (sortCol === "__dmfi_endorsed") {
-          valA = isTruthy(a.dmfi_supported) ? 1 : 0;
-          valB = isTruthy(b.dmfi_supported) ? 1 : 0;
         } else if (sortCol === "__election") {
           // Sort by election year (2024 first, then 2025, then 2022)
           const yearA = getElectionYear(pacA);
@@ -837,15 +863,7 @@ export default function Page() {
         return cats.some((cc) => wanted.has(cc));
       });
 
-      // Add __aipac_endorsed column at the end for all categories EXCEPT Civil Rights, Travel & Immigration, and AIPAC
-      const selectedCategory = Array.from(f.categories)[0];
-      const shouldIncludeAipacEndorsed = selectedCategory !== "Civil Rights" &&
-                                          selectedCategory !== "Travel & Immigration" &&
-                                          selectedCategory !== "AIPAC";
-
-      if (shouldIncludeAipacEndorsed) {
-        out.push("__aipac_endorsed");
-      }
+      // Removed __aipac_endorsed column - no longer needed
     }
 
     return out;
@@ -916,8 +934,12 @@ export default function Page() {
     if (f.categories.has("AIPAC")) {
       return `${memberCol} ${gradesPart} ${billsPart}`;
     }
+    // Civil Rights or Travel & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
+    if (f.categories.has("Civil Rights") || f.categories.has("Travel & Immigration")) {
+      return `${memberCol} ${gradesPart} ${billsPart} minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
+    }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
-    return `${memberCol} ${gradesPart} ${billsPart} minmax(140px, 140px) minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
+    return `${memberCol} ${gradesPart} ${billsPart} 16rem minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
   }, [billCols, gradeColumns, f.viewMode, f.categories]);
 
   // Calculate average grades per state for map coloring
@@ -946,7 +968,7 @@ export default function Page() {
 
       const avgRank = grades.reduce((a, b) => a + b, 0) / grades.length;
 
-      // Map average grade rank to color (dark navy = A, light grey = F)
+      // Map average grade rank to color (dark navy = A, bronze = F)
       if (avgRank <= 2) { // A+ to A-
         colors[state] = "#050a30"; // dark navy blue
       } else if (avgRank <= 5) { // B+ to B-
@@ -954,9 +976,9 @@ export default function Page() {
       } else if (avgRank <= 8) { // C+ to C-
         colors[state] = "#93c5fd"; // light blue
       } else if (avgRank <= 11) { // D+ to D-
-        colors[state] = "#d1d5db"; // medium grey
+        colors[state] = "#D4B870"; // tan/gold
       } else { // F
-        colors[state] = "#f3f4f6"; // very light grey
+        colors[state] = "#C38B32"; // bronze/gold
       }
     });
 
@@ -1086,8 +1108,6 @@ export default function Page() {
                 const headerLabels: Record<string, string> = {
                   "__election": "Election",
                   "__total_support": "Total AIPAC/DMFI Support",
-                  "__aipac_endorsed": "Endorsed by AIPAC",
-                  "__dmfi_endorsed": "Endorsed by DMFI",
                   "__aipac_total": "AIPAC Total",
                   "__dmfi_total": "DMFI Total",
                   "__aipac_direct": "AIPAC Direct Donations",
@@ -1158,45 +1178,49 @@ export default function Page() {
                 />
               );
             })}
-            {/* Hide endorsements and score columns when AIPAC is selected */}
-            {!f.categories.has("AIPAC") && (
-              <>
-                <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col max-w-[14rem]">
-                  {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
-                  <div className="h-[3.375rem] flex items-start">
-                    <span
-                      className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open('/aipac', '_blank');
-                      }}
-                    >
-                      Supported by AIPAC or aligned PACs
-                    </span>
-                  </div>
-
-                  {/* Sortable indicator - always in uniform position */}
+            {/* Endorsements column header - only shown when NOT viewing AIPAC, Civil Rights, or Travel & Immigration */}
+            {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
+              <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col">
+                {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
+                <div className="h-[3.375rem] flex items-start">
                   <span
-                    className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
-                    onClick={() => {
-                      if (sortCol === "__aipac") {
-                        setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                      } else {
-                        setSortCol("__aipac");
-                        setSortDir("GOOD_FIRST");
-                      }
+                    className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open('/aipac', '_blank');
                     }}
-                    title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
                   >
-                    sort
-                    <span className={clsx(
-                      "text-[10px]",
-                      sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
-                    )}>
-                      {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                    </span>
+                    Supported by AIPAC or DMFI
                   </span>
                 </div>
+
+                {/* Sortable indicator - always in uniform position */}
+                <span
+                  className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+                  onClick={() => {
+                    if (sortCol === "__aipac") {
+                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                    } else {
+                      setSortCol("__aipac");
+                      setSortDir("GOOD_FIRST");
+                    }
+                  }}
+                  title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
+                >
+                  sort
+                  <span className={clsx(
+                    "text-[10px]",
+                    sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
+                  )}>
+                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                  </span>
+                </span>
+              </div>
+            )}
+
+            {/* Sortable score headers - shown for all views except AIPAC */}
+            {!f.categories.has("AIPAC") && (
+              <>
                 {/* Sortable score headers */}
                 <div
                   className="th text-right pr-3 cursor-pointer relative group"
@@ -1213,7 +1237,7 @@ export default function Page() {
                 >
                   Total Points
                   <span className={clsx(
-                    "absolute right-2 top-1.5 text-[10px]",
+                    "absolute right-2 bottom-1.5 text-[10px]",
                     sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
                   )}>
                     {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
@@ -1235,7 +1259,7 @@ export default function Page() {
                 >
                   Max Points
                   <span className={clsx(
-                    "absolute right-2 top-1.5 text-[10px]",
+                    "absolute right-2 bottom-1.5 text-[10px]",
                     sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
                   )}>
                     {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
@@ -1257,7 +1281,7 @@ export default function Page() {
                 >
                   Percent
                   <span className={clsx(
-                    "absolute right-2 top-1.5 text-[10px]",
+                    "absolute right-2 bottom-1.5 text-[10px]",
                     sortCol === (scoreSuffix ? `Percent_${scoreSuffix}` : "Percent") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
                   )}>
                     {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
@@ -1425,41 +1449,6 @@ export default function Page() {
                     );
                   }
 
-                  // Endorsement columns
-                  if (c === "__aipac_endorsed") {
-                    const endorsed = isAipacEndorsed(pacData);
-                    return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10">
-                        {endorsed ? (
-                          <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                          </svg>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  if (c === "__dmfi_endorsed") {
-                    const endorsed = isDmfiEndorsed(pacData);
-                    return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10">
-                        {endorsed ? (
-                          <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                          </svg>
-                        )}
-                      </div>
-                    );
-                  }
-
                   // Monetary columns - use appropriate year's data
                   let amount = 0;
                   if (electionYear === "2024") {
@@ -1616,66 +1605,87 @@ export default function Page() {
                 );
               })}
 
-              {/* Hide endorsements and score columns when AIPAC is selected */}
-              {!f.categories.has("AIPAC") && (
-                <>
-                  {/* Endorsements column - clickable to switch to AIPAC issue view */}
-                  <div
-                    className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
-                    onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
-                    title="Click to view AIPAC contributions"
-                  >
-                    {(() => {
-                      const pacData = pacDataMap.get(String(r.bioguide_id));
-                      const aipac = isAipacEndorsed(pacData);
-                      const dmfi = isDmfiEndorsed(pacData);
+              {/* Endorsements column - only shown when NOT viewing AIPAC, Civil Rights, or Travel & Immigration */}
+              {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
+                <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+                  {(() => {
+                    // Check if member has reject AIPAC commitment text (takes priority)
+                    const rejectCommitment = r.reject_aipac_commitment;
+                    const rejectLink = r.reject_aipac_link;
+                    const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
 
-                      if (aipac && dmfi) {
-                        return (
-                          <div className="flex items-center gap-1">
-                            <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                              <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                            </svg>
-                            <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC and DMFI</span>
-                          </div>
-                        );
-                      }
-
-                      if (aipac || dmfi) {
-                        return (
-                          <div className="space-y-0.5">
-                            {aipac && (
-                              <div className="flex items-center gap-1">
-                                <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                                </svg>
-                                <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC</span>
-                              </div>
+                    if (hasRejectCommitment) {
+                      return (
+                        <div className="flex items-start gap-1">
+                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
+                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                          </svg>
+                          <span className="text-xs text-slate-800 dark:text-slate-200 font-bold">
+                            {rejectLink && String(rejectLink).startsWith('http') ? (
+                              <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                                {rejectCommitment}
+                              </a>
+                            ) : (
+                              rejectCommitment
                             )}
-                            {dmfi && (
-                              <div className="flex items-center gap-1">
-                                <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                                </svg>
-                                <span className="text-xs text-slate-800 dark:text-slate-200">Supported by DMFI</span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
+                          </span>
+                        </div>
+                      );
+                    }
 
+                    const pacData = pacDataMap.get(String(r.bioguide_id));
+                    const aipac = isAipacEndorsed(pacData);
+                    const dmfi = isDmfiEndorsed(pacData);
+
+                    if (aipac && dmfi) {
                       return (
                         <div className="flex items-center gap-1">
                           <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                           </svg>
-                          <span className="text-xs text-slate-800 dark:text-slate-200">Not supported by AIPAC or DMFI</span>
+                          <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC and DMFI</span>
                         </div>
                       );
-                    })()}
-                  </div>
+                    }
 
-                  {/* Total/Max/Percent */}
+                    if (aipac || dmfi) {
+                      return (
+                        <div className="space-y-0.5">
+                          {aipac && (
+                            <div className="flex items-center gap-1">
+                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                              </svg>
+                              <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC</span>
+                            </div>
+                          )}
+                          {dmfi && (
+                            <div className="flex items-center gap-1">
+                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                              </svg>
+                              <span className="text-xs text-slate-800 dark:text-slate-200">Supported by DMFI</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex items-center gap-1">
+                        <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-800 dark:text-slate-200">Not supported by AIPAC or DMFI</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Total/Max/Percent - shown for all views except AIPAC */}
+              {!f.categories.has("AIPAC") && (
+                <>
                   <div className="td tabular text-right pr-3 font-medium flex items-center justify-end">
                     {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
                   </div>
@@ -2245,6 +2255,7 @@ function Header({
             {meta.display_name || meta.short_title || col}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}</div>
+          {meta.points && <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">Points:</span> {Number(meta.points).toFixed(0)}</div>}
           {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.description}</div>}
           {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.analysis}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
@@ -2306,16 +2317,17 @@ function Progress({ value }:{ value:number }) {
 
 function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
   const color = grade.startsWith("A") ? "#050a30" // dark navy blue
-    : grade.startsWith("B") ? "#30558d" // medium blue
-    : grade.startsWith("C") ? "#93c5fd" // light blue
-    : grade.startsWith("D") ? "#d1d5db" // medium grey
-    : "#f3f4f6"; // very light grey
+    : grade.startsWith("B") ? "#93c5fd" // light blue
+    : grade.startsWith("C") ? "#b6dfcc" // mint green
+    : grade.startsWith("D") ? "#D4B870" // tan/gold
+    : "#C38B32"; // bronze/gold for F
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
-    : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
-    : "#4b5563"; // dark grey for all other grades
+    : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
+    : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
+    : "#4b5563"; // dark grey for D and F grades
   const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
-  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
+  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
     style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
 }
 
@@ -2385,6 +2397,18 @@ function LawmakerCard({
       }
     })();
   }, [row.bioguide_id]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    // Save original overflow style
+    const originalOverflow = document.body.style.overflow;
+    // Prevent scrolling on mount
+    document.body.style.overflow = 'hidden';
+    // Re-enable scrolling on unmount
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   // Build list of items: each bill or manual action gets an entry
   const allItems = useMemo(() => {
@@ -2461,9 +2485,31 @@ function LawmakerCard({
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
         <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header - Sticky */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
-            {/* Top row: photo, name, badges, and buttons */}
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20 relative">
+            {/* Action buttons - positioned in top-right corner */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                title="Open in new tab"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                onClick={onClose}
+                title="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Top row: photo, name, badges */}
+            <div className="flex items-center gap-3 pr-20">
               {row.photo_url ? (
                 <img
                   src={String(row.photo_url)}
@@ -2497,7 +2543,7 @@ function LawmakerCard({
                     return fullName;
                   })()}
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 flex-wrap">
                   <span
                     className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
                     style={{
@@ -2538,22 +2584,6 @@ function LawmakerCard({
                   )}
                 </div>
               )}
-
-              <button
-                className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-                title="Open in new tab"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-              <button
-                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={onClose}
-              >
-                Close
-              </button>
             </div>
 
             {/* Contact Information - show below on narrow screens */}
@@ -2642,13 +2672,18 @@ function LawmakerCard({
 
               {/* Endorsements card */}
               {(() => {
+                // Check if member has reject AIPAC commitment text (takes priority)
+                const rejectCommitment = row.reject_aipac_commitment;
+                const rejectLink = row.reject_aipac_link;
+                const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
+
                 const aipac = isAipacEndorsed(pacData);
                 const dmfi = isDmfiEndorsed(pacData);
 
                 return (
                   <button
                     onClick={() => {
-                      if (aipac || dmfi) {
+                      if (!hasRejectCommitment && (aipac || dmfi)) {
                         setLobbySupportExpanded(true);
                         // Scroll to section after a brief delay
                         setTimeout(() => {
@@ -2658,12 +2693,27 @@ function LawmakerCard({
                     }}
                     className={clsx(
                       "rounded-lg border p-3 text-left w-full transition",
-                      (aipac || dmfi)
+                      (!hasRejectCommitment && (aipac || dmfi))
                         ? "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                         : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-default"
                     )}
                   >
-                    {aipac || dmfi ? (
+                    {hasRejectCommitment ? (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                          {rejectLink && String(rejectLink).startsWith('http') ? (
+                            <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                              {rejectCommitment}
+                            </a>
+                          ) : (
+                            rejectCommitment
+                          )}
+                        </span>
+                      </div>
+                    ) : aipac || dmfi ? (
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -3125,6 +3175,11 @@ function LawmakerCard({
                                 <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
                                   <span className="font-medium">NIAC Position:</span> {formatPositionTooltip(it.meta)}
                                 </div>
+                                {it.meta?.points && (
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
+                                    <span className="font-medium">Points:</span> {Number(it.val).toFixed(0)}/{Number(it.meta.points).toFixed(0)}
+                                  </div>
+                                )}
                                 {it.meta && (it.meta as { action_types?: string }).action_types && (
                                   <div className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                                     <div className="mt-0.5">

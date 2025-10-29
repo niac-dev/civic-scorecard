@@ -131,18 +131,19 @@ function formatPositionScorecard(meta: Meta | undefined): string {
 
 function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
   const color = grade.startsWith("A") ? "#050a30" // dark navy blue
-    : grade.startsWith("B") ? "#30558d" // medium blue
-    : grade.startsWith("C") ? "#93c5fd" // light blue
-    : grade.startsWith("D") ? "#d1d5db" // medium grey
-    : "#f3f4f6"; // very light grey
+    : grade.startsWith("B") ? "#93c5fd" // light blue
+    : grade.startsWith("C") ? "#b6dfcc" // mint green
+    : grade.startsWith("D") ? "#D4B870" // tan/gold
+    : "#C38B32"; // bronze/gold for F
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
-    : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
-    : "#4b5563"; // dark grey for all other grades
+    : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
+    : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
+    : "#4b5563"; // dark grey for D and F grades
   const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
+      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
       style={{ background: `${color}${opacity}`, color: textColor, border }}
     >
       {grade}
@@ -445,15 +446,28 @@ export default function BillPage() {
             {/* Header */}
             <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-white/10 pb-4">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  {meta.bill_number || column}
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-start gap-2">
+                  {isSupport ? (
+                    <svg viewBox="0 0 20 20" className="h-6 w-6 flex-shrink-0 mt-1" aria-hidden="true" role="img">
+                      <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 20 20" className="h-6 w-6 flex-shrink-0 mt-1" aria-hidden="true" role="img">
+                      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                    </svg>
+                  )}
+                  <span>
+                    {meta.display_name || meta.short_title || `${meta.bill_number || column}`}
+                  </span>
                 </h1>
-                <div className="text-lg text-slate-700 dark:text-slate-200 mb-2">
-                  {meta.display_name || meta.short_title}
-                </div>
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
                 </div>
+                {meta.points && (
+                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                    <span className="font-medium">Points:</span> {Number(meta.points).toFixed(0)}
+                  </div>
+                )}
               </div>
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -936,6 +950,18 @@ function MemberModal({
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(false);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    // Save original overflow style
+    const originalOverflow = document.body.style.overflow;
+    // Prevent scrolling on mount
+    document.body.style.overflow = 'hidden';
+    // Re-enable scrolling on unmount
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Build list of items: each bill or manual action gets an entry
   const allItems = useMemo(() => {
     return billCols
@@ -995,8 +1021,8 @@ function MemberModal({
         onClick={onClose}
       />
       {/* Modal */}
-      <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+      <div className="fixed inset-4 md:inset-10 z-[110] flex items-center justify-center">
+        <div className="w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-full">
           {/* Header - Sticky */}
           <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20">
             {/* Top row: photo, name, badges, and buttons */}
@@ -1134,33 +1160,6 @@ function MemberModal({
                     </button>
                   );
                 })}
-
-                {/* Endorsements card */}
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Endorsements from AIPAC or aligned PACs</div>
-                  <div className="space-y-1">
-                    {isTruthy(row.aipac_supported) && (
-                      <div className="flex items-center gap-1.5" title="American Israel Public Affairs Committee">
-                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                        </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300">AIPAC</span>
-                      </div>
-                    )}
-                    {isTruthy(row.dmfi_supported) && (
-                      <div className="flex items-center gap-1.5">
-                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                        </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300">Democratic Majority For Israel</span>
-                      </div>
-                    )}
-                    {!isTruthy(row.aipac_supported) &&
-                     !isTruthy(row.dmfi_supported) && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400">None</div>
-                    )}
-                  </div>
-                </div>
               </div>
           </div>
 
@@ -1272,6 +1271,11 @@ function MemberModal({
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta)}
                         </div>
+                        {it.meta?.points && (
+                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
+                            <span className="font-medium">Points:</span> {Number(it.val).toFixed(0)}/{Number(it.meta.points).toFixed(0)}
+                          </div>
+                        )}
                         {it.meta && (it.meta as { action_types?: string }).action_types && (
                           <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                             <div className="mt-0.5">

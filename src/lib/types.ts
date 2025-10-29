@@ -23,6 +23,7 @@ export type Meta = {
   type?: "BILL" | "MANUAL";
   preferred?: boolean | number | string; // tolerate csv typing
   pair_key?: string;
+  points?: string | number; // total possible points for this action
 };
 
 /** One member row from scores_wide.csv */
@@ -40,6 +41,8 @@ export type Row = {
   committees?: string;
   aipac_supported?: string | number | boolean;
   dmfi_supported?: string | number | boolean;
+  reject_aipac_commitment?: string;
+  reject_aipac_link?: string;
   Total?: number | string;
   Max_Possible?: number | string;
   Percent?: number | string;

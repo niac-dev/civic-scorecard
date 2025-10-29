@@ -24,6 +24,7 @@ function isTruthy(v: unknown): boolean {
 interface PacData {
   bioguide_id: string;
   full_name: string;
+  // 2024 data
   aipac_featured: number;
   aipac_direct_amount: number;
   aipac_earmark_amount: number;
@@ -35,20 +36,46 @@ interface PacData {
   dmfi_ie_support: number;
   dmfi_ie_total: number;
   dmfi_total: number;
+  // 2025 cycle
+  aipac_direct_amount_2025: number;
+  aipac_earmark_amount_2025: number;
+  aipac_ie_support_2025: number;
+  aipac_total_2025: number;
+  dmfi_direct_2025: number;
+  dmfi_ie_support_2025: number;
+  dmfi_total_2025: number;
+  // 2022 cycle
+  aipac_direct_amount_2022: number;
+  aipac_earmark_amount_2022: number;
+  aipac_ie_support_2022: number;
+  aipac_total_2022: number;
+  dmfi_direct_2022: number;
+  dmfi_ie_support_2022: number;
+  dmfi_total_2022: number;
 }
 
 async function loadPacData(): Promise<Map<string, PacData>> {
-  const response = await fetch('/data/pac_data.csv');
-  const text = await response.text();
+  const [response2024, response2025, response2022] = await Promise.all([
+    fetch('/data/pac_data.csv'),
+    fetch('/data/pac_data_2025.csv'),
+    fetch('/data/pac_data_2022.csv')
+  ]);
+  const [text2024, text2025, text2022] = await Promise.all([
+    response2024.text(),
+    response2025.text(),
+    response2022.text()
+  ]);
 
   return new Promise((resolve) => {
-    Papa.parse<Record<string, string>>(text, {
+    // First parse 2024 data
+    Papa.parse<Record<string, string>>(text2024, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: (results2024) => {
         const map = new Map<string, PacData>();
 
-        results.data.forEach((row) => {
+        // Load 2024 data
+        results2024.data.forEach((row) => {
           const bioguide_id = row.bioguide_id;
           if (!bioguide_id) return;
 
@@ -66,10 +93,72 @@ async function loadPacData(): Promise<Map<string, PacData>> {
             dmfi_ie_support: parseFloat(row.dmfi_ie_support) || 0,
             dmfi_ie_total: parseFloat(row.dmfi_ie_total) || 0,
             dmfi_total: parseFloat(row.dmfi_total) || 0,
+            // Initialize 2025 data as 0
+            aipac_direct_amount_2025: 0,
+            aipac_earmark_amount_2025: 0,
+            aipac_ie_support_2025: 0,
+            aipac_total_2025: 0,
+            dmfi_direct_2025: 0,
+            dmfi_ie_support_2025: 0,
+            dmfi_total_2025: 0,
+            // Initialize 2022 data as 0
+            aipac_direct_amount_2022: 0,
+            aipac_earmark_amount_2022: 0,
+            aipac_ie_support_2022: 0,
+            aipac_total_2022: 0,
+            dmfi_direct_2022: 0,
+            dmfi_ie_support_2022: 0,
+            dmfi_total_2022: 0,
           });
         });
 
-        resolve(map);
+        // Then parse 2025 data and merge
+        Papa.parse<Record<string, string>>(text2025, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results2025) => {
+            results2025.data.forEach((row) => {
+              const bioguide_id = row.bioguide_id;
+              if (!bioguide_id) return;
+
+              const existing = map.get(bioguide_id);
+              if (existing) {
+                existing.aipac_direct_amount_2025 = parseFloat(row.aipac_direct_amount) || 0;
+                existing.aipac_earmark_amount_2025 = parseFloat(row.aipac_earmark_amount) || 0;
+                existing.aipac_ie_support_2025 = parseFloat(row.aipac_ie_support) || 0;
+                existing.aipac_total_2025 = parseFloat(row.aipac_total) || 0;
+                existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct) || 0;
+                existing.dmfi_ie_support_2025 = parseFloat(row.dmfi_ie_support) || 0;
+                existing.dmfi_total_2025 = parseFloat(row.dmfi_total) || 0;
+              }
+            });
+
+            // Finally parse 2022 data and merge
+            Papa.parse<Record<string, string>>(text2022, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results2022) => {
+                results2022.data.forEach((row) => {
+                  const bioguide_id = row.bioguide_id;
+                  if (!bioguide_id) return;
+
+                  const existing = map.get(bioguide_id);
+                  if (existing) {
+                    existing.aipac_direct_amount_2022 = parseFloat(row.aipac_direct_amount) || 0;
+                    existing.aipac_earmark_amount_2022 = parseFloat(row.aipac_earmark_amount) || 0;
+                    existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support) || 0;
+                    existing.aipac_total_2022 = parseFloat(row.aipac_total) || 0;
+                    existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct) || 0;
+                    existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support) || 0;
+                    existing.dmfi_total_2022 = parseFloat(row.dmfi_total) || 0;
+                  }
+                });
+
+                resolve(map);
+              },
+            });
+          },
+        });
       },
     });
   });
@@ -80,8 +169,18 @@ function isAipacEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
   return (
     pacData.aipac_featured === 1 ||
+    // 2024 cycle
     pacData.aipac_direct_amount > 0 ||
-    pacData.aipac_ie_support > 0
+    pacData.aipac_earmark_amount > 0 ||
+    pacData.aipac_ie_support > 0 ||
+    // 2025 cycle
+    pacData.aipac_direct_amount_2025 > 0 ||
+    pacData.aipac_earmark_amount_2025 > 0 ||
+    pacData.aipac_ie_support_2025 > 0 ||
+    // 2022 cycle
+    pacData.aipac_direct_amount_2022 > 0 ||
+    pacData.aipac_earmark_amount_2022 > 0 ||
+    pacData.aipac_ie_support_2022 > 0
   );
 }
 
@@ -89,17 +188,35 @@ function isAipacEndorsed(pacData: PacData | undefined): boolean {
 function isDmfiEndorsed(pacData: PacData | undefined): boolean {
   if (!pacData) return false;
 
-  // If DMFI has actual financial support, return true
-  if (pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0) {
+  // If DMFI has actual financial support in any cycle, return true
+  if (
+    pacData.dmfi_direct > 0 ||
+    pacData.dmfi_ie_support > 0 ||
+    pacData.dmfi_direct_2025 > 0 ||
+    pacData.dmfi_ie_support_2025 > 0 ||
+    pacData.dmfi_direct_2022 > 0 ||
+    pacData.dmfi_ie_support_2022 > 0
+  ) {
     return true;
   }
 
-  // If DMFI website === 1 but no financial support, check if there's AIPAC financial support
+  // If DMFI website === 1 but no DMFI financial support, check if there's ANY financial support from AIPAC
   if (pacData.dmfi_website === 1) {
-    // Only return true if there's also AIPAC financial support
+    // Check if they're getting AIPAC money (which would mean isAipacEndorsed returns true)
     const hasAipacFinancialSupport =
+      pacData.aipac_featured === 1 ||
+      // 2024 cycle
       pacData.aipac_direct_amount > 0 ||
-      pacData.aipac_ie_support > 0;
+      pacData.aipac_earmark_amount > 0 ||
+      pacData.aipac_ie_support > 0 ||
+      // 2025 cycle
+      pacData.aipac_direct_amount_2025 > 0 ||
+      pacData.aipac_earmark_amount_2025 > 0 ||
+      pacData.aipac_ie_support_2025 > 0 ||
+      // 2022 cycle
+      pacData.aipac_direct_amount_2022 > 0 ||
+      pacData.aipac_earmark_amount_2022 > 0 ||
+      pacData.aipac_ie_support_2022 > 0;
     return hasAipacFinancialSupport;
   }
 
@@ -215,7 +332,7 @@ function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean })
   const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium min-w-[2.75rem]"
+      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
       style={{ background: `${color}${opacity}`, color: textColor, border }}
     >
       {grade}
@@ -538,13 +655,18 @@ export default function MemberPage() {
 
               {/* Endorsements card */}
               {(() => {
+                // Check if member has reject AIPAC commitment text (takes priority)
+                const rejectCommitment = row.reject_aipac_commitment;
+                const rejectLink = row.reject_aipac_link;
+                const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
+
                 const aipac = isAipacEndorsed(pacData);
                 const dmfi = isDmfiEndorsed(pacData);
 
                 return (
                   <button
                     onClick={() => {
-                      if (aipac || dmfi) {
+                      if (!hasRejectCommitment && (aipac || dmfi)) {
                         setLobbySupportExpanded(true);
                         setTimeout(() => {
                           lobbySupportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -553,12 +675,27 @@ export default function MemberPage() {
                     }}
                     className={clsx(
                       "rounded-lg border p-3 text-left w-full transition",
-                      (aipac || dmfi)
+                      (!hasRejectCommitment && (aipac || dmfi))
                         ? "border-[#E7ECF2] bg-slate-50 cursor-pointer hover:bg-slate-100"
                         : "border-[#E7ECF2] bg-slate-50 cursor-default"
                     )}
                   >
-                    {aipac || dmfi ? (
+                    {hasRejectCommitment ? (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-700 font-bold">
+                          {rejectLink && String(rejectLink).startsWith('http') ? (
+                            <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                              {rejectCommitment}
+                            </a>
+                          ) : (
+                            rejectCommitment
+                          )}
+                        </span>
+                      </div>
+                    ) : aipac || dmfi ? (
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
@@ -639,6 +776,11 @@ export default function MemberPage() {
                                   <div className="text-[11px] text-slate-600 mb-1">
                                     <span className="font-medium">NIAC Action Position:</span> {formatPositionDetail(meta)}
                                   </div>
+                                  {meta?.points && (
+                                    <div className="text-[11px] text-slate-600 mb-1">
+                                      <span className="font-medium">Points:</span> {Number(val).toFixed(0)}/{Number(meta.points).toFixed(0)}
+                                    </div>
+                                  )}
                                   {meta && (meta as { action_types?: string }).action_types && (
                                     <div className="text-[11px] text-slate-600 flex items-center gap-1.5 mb-1">
                                       <div className="mt-0.5">
