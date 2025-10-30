@@ -670,8 +670,8 @@ export default function Page() {
       const goodFirst = sortDir === "GOOD_FIRST";
       return [...filtered].sort((a, b) => {
         // Check for custom reject AIPAC commitment text
-        const hasCustomA = a.reject_aipac_commitment && String(a.reject_aipac_commitment).length > 10;
-        const hasCustomB = b.reject_aipac_commitment && String(b.reject_aipac_commitment).length > 10;
+        const hasCustomA = Boolean(a.reject_aipac_commitment && String(a.reject_aipac_commitment).length > 10);
+        const hasCustomB = Boolean(b.reject_aipac_commitment && String(b.reject_aipac_commitment).length > 10);
 
         const pacA = pacDataMap.get(String(a.bioguide_id));
         const pacB = pacDataMap.get(String(b.bioguide_id));
