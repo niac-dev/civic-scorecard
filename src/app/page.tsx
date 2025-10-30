@@ -82,7 +82,7 @@ function formatPositionScorecard(meta: Meta | undefined): string {
   const isSupport = position === 'SUPPORT';
 
   if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
+    return isSupport ? '✓ Cosponsor' : '✗ Do Not Cosponsor';
   } else {
     return isSupport ? '✓ Vote' : '✗ Vote';
   }
@@ -93,12 +93,95 @@ function formatPositionTooltip(meta: Meta | undefined): string {
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
   const isSupport = position === 'SUPPORT';
+  const points = meta?.points ? ` (+${Number(meta.points).toFixed(0)})` : '';
 
   if (isCosponsor) {
-    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
+    return isSupport ? `Support Cosponsorship${points}` : `Do Not Cosponsor${points}`;
   } else {
-    return isSupport ? 'Vote in Favor' : 'Vote Against';
+    return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   }
+}
+
+function formatDate(dateStr: string): string {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Check for ISO format: YYYY-MM-DD
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const day = parseInt(parts[2], 10);
+
+      if (month >= 1 && month <= 12) {
+        return `${monthNames[month - 1]} ${day}, ${year}`;
+      }
+    }
+  }
+
+  // Parse dates in format: M/D/YY or M/D/YYYY or MM/DD/YY or MM/DD/YYYY
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parseInt(parts[0], 10);
+    const day = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+
+    // Convert 2-digit year to 4-digit
+    if (year < 100) {
+      year += year < 50 ? 2000 : 1900;
+    }
+
+    if (month >= 1 && month <= 12) {
+      return `${monthNames[month - 1]} ${day}, ${year}`;
+    }
+  }
+
+  return dateStr;
+}
+
+function extractVoteInfo(meta: Meta | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
+  if (!meta) return {};
+
+  const description = String(meta.description || '');
+  const analysis = String(meta.analysis || '');
+  const combinedText = `${description} ${analysis}`;
+
+  // Extract vote results and dates
+  // Patterns: "failed 6-422 in a vote on 7/10/25", "Vote fails 15-83 on 4/3/25", "Voted down 47-53 on 6/27/25"
+  // "Passed 24-73 on 5/15/25", "passed the House 219-206 on 3/14/25"
+  const votePattern = /(?:failed?|passed?|voted\s+down|vote\s+fails?)\s+(?:the\s+(?:House|Senate)\s+)?(\d+-\d+)(?:\s+in\s+a\s+vote)?\s+on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const match = combinedText.match(votePattern);
+
+  let voteResult: string | undefined;
+  let voteDate: string | undefined;
+
+  if (match) {
+    const votes = match[1]; // e.g., "6-422"
+    const date = match[2]; // e.g., "7/10/25"
+
+    // Determine if it passed or failed based on context
+    const isPassed = /passed?/i.test(match[0]);
+    const isFailed = /failed?|voted\s+down|vote\s+fails?/i.test(match[0]);
+
+    if (isPassed) {
+      voteResult = `Passed ${votes}`;
+    } else if (isFailed) {
+      voteResult = `Failed ${votes}`;
+    } else {
+      voteResult = votes;
+    }
+
+    voteDate = formatDate(date);
+  }
+
+  // Get date introduced from metadata field
+  const dateIntroduced = (meta as { introduced_date?: string }).introduced_date;
+  const formattedIntroducedDate = dateIntroduced ? formatDate(dateIntroduced) : undefined;
+
+  return { voteResult, voteDate, dateIntroduced: formattedIntroducedDate };
 }
 
 function lastName(full?: string) {
@@ -167,7 +250,7 @@ function isDmfiEndorsed(pacData: PacData | undefined): boolean {
     // 2024 cycle
     pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0 ||
     // 2025 cycle
-    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_ie_support_2025 > 0 ||
+    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
     // 2022 cycle
     pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_support_2022 > 0
   ) {
@@ -401,19 +484,14 @@ async function loadPacData(): Promise<Map<string, PacData>> {
 
 function ZipcodeSearch() {
   const f = useFilters();
-  const [zipcode, setZipcode] = useState("");
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSearch = async () => {
-    if (!zipcode.trim()) {
-      setError("Please enter a zipcode");
-      return;
-    }
-
-    // Basic zipcode validation
-    if (!/^\d{5}(-\d{4})?$/.test(zipcode.trim())) {
-      setError("Please enter a valid 5-digit zipcode");
+    const trimmedAddress = address.trim();
+    if (!trimmedAddress) {
+      setError("Please enter an address or zipcode");
       return;
     }
 
@@ -421,21 +499,25 @@ function ZipcodeSearch() {
     setError("");
 
     try {
-      const response = await fetch(`https://ziptasticapi.com/${zipcode.trim()}`);
-      if (!response.ok) {
-        throw new Error("Unable to find location");
-      }
-
+      // Use the find-lawmakers API which handles both zipcodes and addresses
+      const response = await fetch(`/api/find-lawmakers?address=${encodeURIComponent(trimmedAddress)}`);
       const data = await response.json();
 
-      if (data.state) {
-        // Switch to summary view and filter by state
-        f.set({ state: data.state, viewMode: "summary" });
+      if (!response.ok) {
+        setError(data.error || 'Failed to find lawmakers');
+        return;
+      }
+
+      if (data.lawmakers && data.lawmakers.length > 0) {
+        const names = data.lawmakers.map((l: any) => l.name);
+        // Switch to summary mode and filter by these lawmakers
+        f.set({ myLawmakers: names, viewMode: "summary" });
+        setAddress(""); // Clear the input after successful search
       } else {
-        setError("Unable to determine state from zipcode");
+        setError("No lawmakers found for this location");
       }
     } catch (err) {
-      setError("Unable to find location. Please try again.");
+      setError("Unable to find lawmakers. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -446,13 +528,12 @@ function ZipcodeSearch() {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Enter your zipcode"
+          placeholder="Enter your address or zipcode"
           className="input flex-1"
-          value={zipcode}
-          onChange={(e) => setZipcode(e.target.value)}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           disabled={loading}
-          maxLength={10}
         />
         <button
           className="px-4 py-2 bg-[#4B8CFB] text-white rounded-lg hover:bg-[#3A7BE0] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
@@ -494,12 +575,12 @@ export default function Page() {
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll to top when filters change
+  // Scroll to top when filters change (but not when categories change)
   useEffect(() => {
     if (tableScrollRef.current) {
       tableScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [f.chamber, f.party, f.state, f.search, f.categories, f.myLawmakers, f.viewMode]);
+  }, [f.chamber, f.party, f.state, f.search, f.myLawmakers, f.viewMode]);
 
   const filtered = useMemo(() => {
     let out = rows;
@@ -998,9 +1079,17 @@ export default function Page() {
         />
       )}
 
-      {/* Map View */}
-      {f.viewMode === "map" && (
-        <div className="card p-6">
+      {/* Views Container with Sliding Animation */}
+      <div className="relative overflow-hidden">
+        {/* Map View */}
+        <div
+          className={clsx(
+            "card p-6 transition-all duration-500 ease-in-out",
+            f.viewMode === "map"
+              ? "translate-x-0 opacity-100"
+              : "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+          )}
+        >
           <div className="mb-6 text-center">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">Find your lawmakers</h2>
             <div className="max-w-md mx-auto">
@@ -1014,11 +1103,16 @@ export default function Page() {
             }}
           />
         </div>
-      )}
 
-      {/* Table View */}
-      {f.viewMode !== "map" && (
-        <div className="card overflow-visible">
+        {/* Table View */}
+        <div
+          className={clsx(
+            "card overflow-visible transition-all duration-500 ease-in-out",
+            f.viewMode !== "map"
+              ? "translate-x-0 opacity-100"
+              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+          )}
+        >
           <div ref={tableScrollRef} className="overflow-auto max-h-[70vh]">
             {/* Header */}
             <div
@@ -1296,14 +1390,14 @@ export default function Page() {
             <div
               key={i}
               className={clsx(
-                "grid min-w-max transition",
+                "grid min-w-max transition group",
                 "hover:bg-slate-50 dark:hover:bg-white/5"
               )}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {/* member + photo */}
               <div
-                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900"
+                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-white/5 transition"
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
@@ -1579,7 +1673,7 @@ export default function Page() {
 
                   if (isCosponsor) {
                     const didCosponsor = isSupport ? (val > 0) : (val === 0);
-                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has Not Cosponsored';
+                    actionDescription = didCosponsor ? 'Cosponsored' : 'Have Not Cosponsored';
                   } else if (isVote) {
                     const votedFor = isSupport ? (val > 0) : (val === 0);
                     actionDescription = votedFor ? 'Voted in Favor' : 'Voted Against';
@@ -1700,8 +1794,8 @@ export default function Page() {
             </div>
           ))}
         </div>
+        </div>
       </div>
-      )}
     </div>
   );
 }
@@ -1766,8 +1860,8 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           <option value="summary">Summary</option>
         </select>
 
-        {/* Desktop: Show Issues button and individual issue buttons (≥900px) */}
-        <div className="hidden min-[900px]:flex min-[900px]:items-center min-[900px]:gap-2">
+        {/* Desktop: Show Issues button and individual issue buttons (≥985px) */}
+        <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
           {/* Issues button - stays blue when any category or all is selected, clicking defaults to All */}
           <button
             onClick={() => f.set({ viewMode: "all", categories: new Set() })}
@@ -1852,10 +1946,10 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           </div>
         </div>
 
-        {/* Mobile: Show dropdown (<900px) - narrower on very small screens */}
+        {/* Mobile: Show dropdown (<985px) - narrower on very small screens */}
         <select
           className={clsx(
-            "max-[899px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
+            "max-[984px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
             "max-[500px]:px-2 max-[500px]:max-w-[120px] max-[500px]:text-xs",
             f.viewMode === "all" || f.viewMode === "category"
               ? "bg-[#4B8CFB] text-white"
@@ -1931,7 +2025,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         <div
           className={clsx(
             "flex items-center gap-2 overflow-hidden transition-all duration-300 ease-out",
-            filtersExpanded ? "max-w-[600px] opacity-100" : "max-w-0 opacity-0"
+            filtersExpanded ? "max-w-[800px] opacity-100" : "max-w-0 opacity-0"
           )}
         >
           <Segmented
@@ -1950,7 +2044,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             <option>Democratic</option><option>Republican</option><option>Independent</option>
           </select>
           <select
-            className="select !text-xs !h-8 !px-2"
+            className="select !text-xs !h-8 !px-2 !max-w-[140px]"
             value={f.state || ""}
             onChange={(e) => {
               const selectedState = e.target.value;
@@ -1965,7 +2059,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             <option value="">State</option>
             {STATES.map((s) => (
               <option key={s.code} value={s.code}>
-                {s.name} ({s.code})
+                {s.name}
               </option>
             ))}
           </select>
@@ -1973,6 +2067,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             <button
               onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
               className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+              title="Clear all filters"
             >
               Clear
             </button>
@@ -2100,7 +2195,7 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden min-[1000px]:inline">Search...</span>
+          <span className="hidden min-[1060px]:inline">Search...</span>
         </button>
       )}
 
@@ -2255,9 +2350,8 @@ function Header({
             {meta.display_name || meta.short_title || col}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}</div>
-          {meta.points && <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">Points:</span> {Number(meta.points).toFixed(0)}</div>}
-          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.description}</div>}
-          {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2">{meta.analysis}</div>}
+          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
+          {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           <div className="mt-2 flex flex-wrap gap-1">
             {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
@@ -2326,7 +2420,7 @@ function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
     : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
     : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
     : "#4b5563"; // dark grey for D and F grades
-  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
+  const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
     style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
 }
@@ -3175,11 +3269,22 @@ function LawmakerCard({
                                 <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
                                   <span className="font-medium">NIAC Position:</span> {formatPositionTooltip(it.meta)}
                                 </div>
-                                {it.meta?.points && (
-                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-                                    <span className="font-medium">Points:</span> {Number(it.val).toFixed(0)}/{Number(it.meta.points).toFixed(0)}
-                                  </div>
-                                )}
+                                {(() => {
+                                  const voteInfo = extractVoteInfo(it.meta);
+                                  return (
+                                    <>
+                                      {voteInfo.voteResult && voteInfo.voteDate ? (
+                                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
+                                          <span className="font-medium">Date of Vote:</span> {voteInfo.voteResult} on {voteInfo.voteDate}
+                                        </div>
+                                      ) : voteInfo.dateIntroduced ? (
+                                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
+                                          <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
+                                        </div>
+                                      ) : null}
+                                    </>
+                                  );
+                                })()}
                                 {it.meta && (it.meta as { action_types?: string }).action_types && (
                                   <div className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                                     <div className="mt-0.5">
@@ -3206,7 +3311,7 @@ function LawmakerCard({
 
                                         if (isCosponsor) {
                                           const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                          return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                          return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
                                         } else if (isVote) {
                                           const votedFor = isSupport ? gotPoints : !gotPoints;
                                           if (votedFor) {

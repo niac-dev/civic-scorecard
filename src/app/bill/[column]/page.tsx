@@ -108,11 +108,12 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
   const isSupport = position === 'SUPPORT';
+  const points = meta?.points ? ` (+${Number(meta.points).toFixed(0)})` : '';
 
   if (isCosponsor) {
-    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
+    return isSupport ? `Support Cosponsorship${points}` : `Do Not Cosponsor${points}`;
   } else {
-    return isSupport ? 'Vote in Favor' : 'Vote Against';
+    return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   }
 }
 
@@ -123,10 +124,92 @@ function formatPositionScorecard(meta: Meta | undefined): string {
   const isSupport = position === 'SUPPORT';
 
   if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
+    return isSupport ? '✓ Cosponsor' : '✗ Do Not Cosponsor';
   } else {
     return isSupport ? '✓ Vote' : '✗ Vote';
   }
+}
+
+function formatDate(dateStr: string): string {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Check for ISO format: YYYY-MM-DD
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const day = parseInt(parts[2], 10);
+
+      if (month >= 1 && month <= 12) {
+        return `${monthNames[month - 1]} ${day}, ${year}`;
+      }
+    }
+  }
+
+  // Parse dates in format: M/D/YY or M/D/YYYY or MM/DD/YY or MM/DD/YYYY
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parseInt(parts[0], 10);
+    const day = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+
+    // Convert 2-digit year to 4-digit
+    if (year < 100) {
+      year += year < 50 ? 2000 : 1900;
+    }
+
+    if (month >= 1 && month <= 12) {
+      return `${monthNames[month - 1]} ${day}, ${year}`;
+    }
+  }
+
+  return dateStr;
+}
+
+function extractVoteInfo(meta: Meta | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
+  if (!meta) return {};
+
+  const description = String(meta.description || '');
+  const analysis = String(meta.analysis || '');
+  const combinedText = `${description} ${analysis}`;
+
+  // Extract vote results and dates
+  // Patterns: "failed 6-422 in a vote on 7/10/25", "Vote fails 15-83 on 4/3/25", "Voted down 47-53 on 6/27/25"
+  // "Passed 24-73 on 5/15/25", "passed the House 219-206 on 3/14/25"
+  const votePattern = /(?:failed?|passed?|voted\s+down|vote\s+fails?)\s+(?:the\s+(?:House|Senate)\s+)?(\d+-\d+)(?:\s+in\s+a\s+vote)?\s+on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
+  const match = combinedText.match(votePattern);
+
+  let voteResult: string | undefined;
+  let voteDate: string | undefined;
+
+  if (match) {
+    const votes = match[1]; // e.g., "6-422"
+    const date = match[2]; // e.g., "7/10/25"
+
+    // Determine if it passed or failed based on context
+    const isPassed = /passed?/i.test(match[0]);
+    const isFailed = /failed?|voted\s+down|vote\s+fails?/i.test(match[0]);
+
+    if (isPassed) {
+      voteResult = `Passed ${votes}`;
+    } else if (isFailed) {
+      voteResult = `Failed ${votes}`;
+    } else {
+      voteResult = votes;
+    }
+
+    voteDate = formatDate(date);
+  }
+
+  // Get date introduced from metadata field
+  const dateIntroduced = (meta as { introduced_date?: string }).introduced_date;
+  const formattedIntroducedDate = dateIntroduced ? formatDate(dateIntroduced) : undefined;
+
+  return { voteResult, voteDate, dateIntroduced: formattedIntroducedDate };
 }
 
 function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
@@ -140,7 +223,7 @@ function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean })
     : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
     : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
     : "#4b5563"; // dark grey for D and F grades
-  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
+  const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return (
     <span
       className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
@@ -229,10 +312,14 @@ export default function BillPage() {
 
       // Split members into supporters (positive score) and opposers (0 or negative)
       // Only include members from the appropriate chamber
-      // Exclude the sponsor from cosponsors list
+      // Exclude the sponsor from cosponsors list (but include them for votes)
       // Also exclude members who were not eligible to vote (null/undefined in CSV)
       const support: Row[] = [];
       const oppose: Row[] = [];
+
+      // Check if this is a cosponsor action
+      const actionType = (billMeta as { action_types?: string })?.action_types || '';
+      const isCosponsorAction = actionType.includes('cosponsor');
 
       rows.forEach((row) => {
         // Skip members from the wrong chamber
@@ -240,8 +327,8 @@ export default function BillPage() {
           return;
         }
 
-        // Skip the sponsor (don't include in cosponsors)
-        if (sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
+        // Skip the sponsor only for cosponsor actions (not for votes)
+        if (isCosponsorAction && sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
           return;
         }
 
@@ -284,8 +371,8 @@ export default function BillPage() {
             return;
           }
 
-          // Skip the sponsor
-          if (sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
+          // Skip the sponsor only for cosponsor actions (not for votes)
+          if (isCosponsorAction && sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
             return;
           }
 
@@ -415,7 +502,7 @@ export default function BillPage() {
     }
   } else if (isCosponsor) {
     firstLabel = 'Cosponsors';
-    secondLabel = 'Has Not Cosponsored';
+    secondLabel = 'Have Not Cosponsored';
     firstIsGood = isSupport;  // Good if we support, bad if we oppose
     secondIsGood = !isSupport; // Good if we oppose, bad if we support
   } else if (isVote) {
@@ -463,11 +550,26 @@ export default function BillPage() {
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
                 </div>
-                {meta.points && (
-                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                    <span className="font-medium">Points:</span> {Number(meta.points).toFixed(0)}
-                  </div>
-                )}
+                {(() => {
+                  const voteInfo = extractVoteInfo(meta);
+                  return (
+                    <>
+                      {voteInfo.voteResult && voteInfo.voteDate ? (
+                        <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                          <span className="font-medium">Date of Vote:</span> {voteInfo.voteResult} on {voteInfo.voteDate}
+                        </div>
+                      ) : voteInfo.dateIntroduced ? (
+                        <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                          <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                          <span className="font-medium">Date:</span> N/A
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -1271,11 +1373,6 @@ function MemberModal({
                         <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta)}
                         </div>
-                        {it.meta?.points && (
-                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                            <span className="font-medium">Points:</span> {Number(it.val).toFixed(0)}/{Number(it.meta.points).toFixed(0)}
-                          </div>
-                        )}
                         {it.meta && (it.meta as { action_types?: string }).action_types && (
                           <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                             <div className="mt-0.5">
@@ -1304,7 +1401,7 @@ function MemberModal({
                                   // If we support: points means they cosponsored
                                   // If we oppose: points means they did NOT cosponsor
                                   const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                  return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
                                 } else if (isVote) {
                                   // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against

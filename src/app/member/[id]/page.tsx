@@ -329,7 +329,7 @@ function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean })
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
     : grade.startsWith("B") ? "#f3f4f6" // light grey (F pill color) for B grades
     : "#4b5563"; // dark grey for all other grades
-  const border = isOverall ? "1px solid #000000" : "none"; // thin black border for overall grades
+  const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return (
     <span
       className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
@@ -807,7 +807,7 @@ export default function MemberPage() {
 
                                           if (isCosponsor) {
                                             const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                            return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                            return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
                                           } else if (isVote) {
                                             const votedFor = isSupport ? gotPoints : !gotPoints;
                                             if (votedFor) {

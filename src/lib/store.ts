@@ -26,7 +26,7 @@ export const useFilters = create<FiltersState>((set) => ({
   state: "",
   search: "",
   categories: new Set<string>(),
-  viewMode: "summary",
+  viewMode: "map",
   myLawmakers: [],
   billColumn: "",
 
