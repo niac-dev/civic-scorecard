@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
+import Papa from "papaparse";
 
 function stateCodeOf(s: string | undefined): string {
   const STATES: { code: string; name: string }[] = [
@@ -107,13 +108,16 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
+  const isVote = actionType.includes('vote');
   const isSupport = position === 'SUPPORT';
-  const points = meta?.points ? ` (+${Number(meta.points).toFixed(0)})` : '';
+  const points = meta?.points ? ` (${Number(meta.points).toFixed(0)} pts)` : '';
 
   if (isCosponsor) {
-    return isSupport ? `Support Cosponsorship${points}` : `Do Not Cosponsor${points}`;
-  } else {
+    return isSupport ? `Cosponsor${points}` : `Do Not Cosponsor${points}`;
+  } else if (isVote) {
     return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
+  } else {
+    return isSupport ? `Support${points}` : `Oppose${points}`;
   }
 }
 
@@ -124,7 +128,7 @@ function formatPositionScorecard(meta: Meta | undefined): string {
   const isSupport = position === 'SUPPORT';
 
   if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Do Not Cosponsor';
+    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
   } else {
     return isSupport ? '✓ Vote' : '✗ Vote';
   }
@@ -249,6 +253,206 @@ function VoteIcon({ ok }: { ok: boolean }) {
   );
 }
 
+interface PacData {
+  bioguide_id: string;
+  full_name: string;
+  // 2024 data
+  aipac_featured: number;
+  aipac_direct_amount: number;
+  aipac_earmark_amount: number;
+  aipac_ie_support: number;
+  aipac_ie_total: number;
+  aipac_total: number;
+  dmfi_website: number;
+  dmfi_direct: number;
+  dmfi_ie_support: number;
+  dmfi_ie_total: number;
+  dmfi_total: number;
+  // 2025 data
+  aipac_direct_amount_2025: number;
+  aipac_earmark_amount_2025: number;
+  aipac_ie_support_2025: number;
+  aipac_ie_total_2025: number;
+  aipac_total_2025: number;
+  aipac_supported_2025: number;
+  dmfi_direct_2025: number;
+  dmfi_total_2025: number;
+  dmfi_supported_2025: number;
+  // 2022 data
+  aipac_direct_amount_2022: number;
+  aipac_earmark_amount_2022: number;
+  aipac_ie_support_2022: number;
+  aipac_ie_total_2022: number;
+  aipac_total_2022: number;
+  dmfi_direct_2022: number;
+  dmfi_ie_support_2022: number;
+  dmfi_ie_total_2022: number;
+  dmfi_total_2022: number;
+}
+
+async function loadPacData(): Promise<Map<string, PacData>> {
+  const [response2024, response2025, response2022] = await Promise.all([
+    fetch('/data/pac_data.csv'),
+    fetch('/data/pac_data_2025.csv'),
+    fetch('/data/pac_data_2022.csv')
+  ]);
+  const [text2024, text2025, text2022] = await Promise.all([
+    response2024.text(),
+    response2025.text(),
+    response2022.text()
+  ]);
+
+  return new Promise((resolve) => {
+    // First parse 2024 data
+    Papa.parse<Record<string, string>>(text2024, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results2024) => {
+        const map = new Map<string, PacData>();
+
+        // Load 2024 data
+        results2024.data.forEach((row) => {
+          const bioguide_id = row.bioguide_id;
+          if (!bioguide_id) return;
+
+          map.set(bioguide_id, {
+            bioguide_id,
+            full_name: row.full_name || '',
+            aipac_featured: parseFloat(row.aipac_featured) || 0,
+            aipac_direct_amount: parseFloat(row.aipac_direct_amount) || 0,
+            aipac_earmark_amount: parseFloat(row.aipac_earmark_amount) || 0,
+            aipac_ie_support: parseFloat(row.aipac_ie_support) || 0,
+            aipac_ie_total: parseFloat(row.aipac_ie_total) || 0,
+            aipac_total: parseFloat(row.aipac_total) || 0,
+            dmfi_website: parseFloat(row.dmfi_website) || 0,
+            dmfi_direct: parseFloat(row.dmfi_direct) || 0,
+            dmfi_ie_support: parseFloat(row.dmfi_ie_support) || 0,
+            dmfi_ie_total: parseFloat(row.dmfi_ie_total) || 0,
+            dmfi_total: parseFloat(row.dmfi_total) || 0,
+            // Initialize 2025 data as 0
+            aipac_direct_amount_2025: 0,
+            aipac_earmark_amount_2025: 0,
+            aipac_ie_support_2025: 0,
+            aipac_ie_total_2025: 0,
+            aipac_total_2025: 0,
+            aipac_supported_2025: 0,
+            dmfi_direct_2025: 0,
+            dmfi_total_2025: 0,
+            dmfi_supported_2025: 0,
+            // Initialize 2022 data as 0
+            aipac_direct_amount_2022: 0,
+            aipac_earmark_amount_2022: 0,
+            aipac_ie_support_2022: 0,
+            aipac_ie_total_2022: 0,
+            aipac_total_2022: 0,
+            dmfi_direct_2022: 0,
+            dmfi_ie_support_2022: 0,
+            dmfi_ie_total_2022: 0,
+            dmfi_total_2022: 0,
+          });
+        });
+
+        // Parse 2025 data and merge
+        Papa.parse<Record<string, string>>(text2025, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results2025) => {
+            results2025.data.forEach((row) => {
+              const bioguide_id = row.bioguide_id;
+              if (!bioguide_id) return;
+
+              const existing = map.get(bioguide_id);
+              if (existing) {
+                existing.aipac_direct_amount_2025 = parseFloat(row.aipac_direct_amount_2025) || 0;
+                existing.aipac_earmark_amount_2025 = parseFloat(row.aipac_earmark_amount_2025) || 0;
+                existing.aipac_ie_support_2025 = parseFloat(row.aipac_ie_support_2025) || 0;
+                existing.aipac_ie_total_2025 = parseFloat(row.aipac_ie_total_2025) || 0;
+                existing.aipac_total_2025 = parseFloat(row.aipac_total_2025) || 0;
+                existing.aipac_supported_2025 = parseFloat(row.aipac_supported_2025) || 0;
+                existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct_2025) || 0;
+                existing.dmfi_total_2025 = parseFloat(row.dmfi_total_2025) || 0;
+                existing.dmfi_supported_2025 = parseFloat(row.dmfi_supported_2025) || 0;
+              }
+            });
+
+            // Parse 2022 data and merge
+            Papa.parse<Record<string, string>>(text2022, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results2022) => {
+                results2022.data.forEach((row) => {
+                  const bioguide_id = row.bioguide_id;
+                  if (!bioguide_id) return;
+
+                  const existing = map.get(bioguide_id);
+                  if (existing) {
+                    existing.aipac_direct_amount_2022 = parseFloat(row.aipac_direct_amount_2022) || 0;
+                    existing.aipac_earmark_amount_2022 = parseFloat(row.aipac_earmark_amount_2022) || 0;
+                    existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support_2022) || 0;
+                    existing.aipac_ie_total_2022 = parseFloat(row.aipac_ie_total_2022) || 0;
+                    existing.aipac_total_2022 = parseFloat(row.aipac_total_2022) || 0;
+                    existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct_2022) || 0;
+                    existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support_2022) || 0;
+                    existing.dmfi_ie_total_2022 = parseFloat(row.dmfi_ie_total_2022) || 0;
+                    existing.dmfi_total_2022 = parseFloat(row.dmfi_total_2022) || 0;
+                  }
+                });
+
+                resolve(map);
+              },
+            });
+          },
+        });
+      },
+    });
+  });
+}
+
+// Check if member is endorsed by AIPAC based on PAC data (any election cycle)
+function isAipacEndorsed(pacData: PacData | undefined): boolean {
+  if (!pacData) return false;
+  return (
+    pacData.aipac_featured === 1 ||
+    // 2024 cycle
+    pacData.aipac_direct_amount > 0 ||
+    pacData.aipac_earmark_amount > 0 ||
+    pacData.aipac_ie_support > 0 ||
+    // 2025 cycle
+    pacData.aipac_direct_amount_2025 > 0 ||
+    pacData.aipac_earmark_amount_2025 > 0 ||
+    pacData.aipac_ie_support_2025 > 0 ||
+    // 2022 cycle
+    pacData.aipac_direct_amount_2022 > 0 ||
+    pacData.aipac_earmark_amount_2022 > 0 ||
+    pacData.aipac_ie_support_2022 > 0
+  );
+}
+
+// Check if member is endorsed by DMFI based on PAC data (any election cycle)
+function isDmfiEndorsed(pacData: PacData | undefined): boolean {
+  if (!pacData) return false;
+
+  // If DMFI has actual financial support in any cycle, return true
+  if (
+    // 2024 cycle
+    pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0 ||
+    // 2025 cycle
+    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
+    // 2022 cycle
+    pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_support_2022 > 0
+  ) {
+    return true;
+  }
+
+  // If DMFI website === 1 but no DMFI financial support, check if there's ANY financial support from AIPAC
+  if (pacData.dmfi_website === 1) {
+    // Use the isAipacEndorsed function which now checks all cycles
+    return isAipacEndorsed(pacData);
+  }
+
+  return false;
+}
+
 export default function BillPage() {
   const params = useParams();
   const column = decodeURIComponent(params.column as string);
@@ -316,10 +520,13 @@ export default function BillPage() {
       // Also exclude members who were not eligible to vote (null/undefined in CSV)
       const support: Row[] = [];
       const oppose: Row[] = [];
+      const present: Row[] = []; // For votes where member voted "present"
 
-      // Check if this is a cosponsor action
+      // Check if this is a cosponsor action or vote
       const actionType = (billMeta as { action_types?: string })?.action_types || '';
       const isCosponsorAction = actionType.includes('cosponsor');
+      const isVoteAction = actionType.includes('vote');
+      const fullPoints = Number(billMeta?.points ?? 0);
 
       rows.forEach((row) => {
         // Skip members from the wrong chamber
@@ -349,7 +556,10 @@ export default function BillPage() {
           return;
         }
 
-        if (val > 0) {
+        // Check for "present" vote (partial points - not 0, not full)
+        if (isVoteAction && val > 0 && val < fullPoints) {
+          present.push(row);
+        } else if (val > 0) {
           support.push(row);
         } else if (val === 0) {
           oppose.push(row);
@@ -407,7 +617,8 @@ export default function BillPage() {
         setOpposers(worstGroup.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
       } else {
         setSupporters(support.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
-        setMiddleGroup([]);
+        // For votes, set middleGroup to present voters; otherwise empty
+        setMiddleGroup(isVoteAction ? present.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))) : []);
         setOpposers(oppose.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
       }
     })();
@@ -502,14 +713,16 @@ export default function BillPage() {
     }
   } else if (isCosponsor) {
     firstLabel = 'Cosponsors';
-    secondLabel = 'Have Not Cosponsored';
+    secondLabel = 'Has Not Cosponsored';
     firstIsGood = isSupport;  // Good if we support, bad if we oppose
     secondIsGood = !isSupport; // Good if we oppose, bad if we support
   } else if (isVote) {
     firstLabel = 'Voted in Favor';
     secondLabel = 'Voted Against';
+    thirdLabel = 'Voted Present';
     firstIsGood = isSupport;
     secondIsGood = !isSupport;
+    thirdIsGood = false; // Present votes don't get full points
   } else {
     firstLabel = 'Supporters';
     secondLabel = 'Did Not Support';
@@ -1048,9 +1261,26 @@ function MemberModal({
   onClose: () => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [gradesExpanded, setGradesExpanded] = useState(true);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
+  const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(false);
+  const [pacData, setPacData] = useState<PacData | undefined>(undefined);
+
+  const votesActionsRef = useRef<HTMLDivElement>(null);
+  const lobbySupportRef = useRef<HTMLDivElement>(null);
+
+  // Load PAC data when component mounts
+  useEffect(() => {
+    (async () => {
+      const pacDataMap = await loadPacData();
+      const memberPacData = pacDataMap.get(row.bioguide_id as string);
+      if (memberPacData) {
+        setPacData(memberPacData);
+      }
+    })();
+  }, [row.bioguide_id]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -1139,8 +1369,22 @@ function MemberModal({
                 <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
               )}
               <div className="flex-1">
-                <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{row.full_name}</div>
-                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {(() => {
+                      const fullName = String(row.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
+                  </div>
+                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
                   <span
                     className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
                     style={{
@@ -1220,53 +1464,132 @@ function MemberModal({
             )}
           </div>
 
-          {/* Issue Grades - Sticky */}
-          <div className="p-6 pb-3 border-b border-[#E7ECF2] dark:border-white/10 sticky top-[180px] bg-white dark:bg-[#0B1220] z-10">
-            <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Overall Grade card */}
-                <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                      {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
-                    </div>
-                    <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
-                  </div>
-                </div>
-
-                {categories.map((category) => {
-                  const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
-                  const totalField = `Total_${fieldSuffix}` as keyof Row;
-                  const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
-                  const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
-                      className={clsx(
-                        "rounded-lg border p-3 text-left transition cursor-pointer",
-                        selectedCategory === category
-                          ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                          : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                      )}
-                    >
-                      <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                          {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
-                        </div>
-                        <GradeChip grade={String(row[gradeField] || "N/A")} />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-          </div>
-
           {/* Scrollable Content */}
           <div className="overflow-y-auto flex-1 p-6">
+            {/* Issue Grades - Collapsible */}
+            <div className="mb-6">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setGradesExpanded(!gradesExpanded)}
+              >
+                Issue Grades
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", gradesExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {gradesExpanded && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Overall Grade card */}
+                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-3">
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                        {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
+                      </div>
+                      <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                    </div>
+                  </div>
+
+                  {categories.filter(cat => cat !== "AIPAC").map((category) => {
+                    const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+                    const totalField = `Total_${fieldSuffix}` as keyof Row;
+                    const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
+                    const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
+                        className={clsx(
+                          "rounded-lg border p-3 text-left transition cursor-pointer",
+                          selectedCategory === category
+                            ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
+                            : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                        )}
+                      >
+                        <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs tabular text-slate-700 dark:text-slate-300">
+                            {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
+                          </div>
+                          <GradeChip grade={String(row[gradeField] || "N/A")} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Lobby Support / AIPAC Endorsement */}
+            <div className="mb-6">
+              {(() => {
+                const hasRejectCommitment = !!(row.reject_commitment && String(row.reject_commitment).trim());
+                const rejectCommitment = String(row.reject_commitment || "").trim();
+                const rejectLink = row.reject_commitment_link;
+                const aipac = isAipacEndorsed(pacData);
+                const dmfi = isDmfiEndorsed(pacData);
+
+                return (
+                  <button
+                    onClick={() => {
+                      if (!hasRejectCommitment && (aipac || dmfi)) {
+                        setLobbySupportExpanded(true);
+                        // Scroll to section after a brief delay
+                        setTimeout(() => {
+                          lobbySupportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      }
+                    }}
+                    className={clsx(
+                      "rounded-lg border p-3 text-left w-full transition",
+                      (!hasRejectCommitment && (aipac || dmfi))
+                        ? "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                        : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-default"
+                    )}
+                  >
+                    {hasRejectCommitment ? (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                          {rejectLink && String(rejectLink).startsWith('http') ? (
+                            <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                              {rejectCommitment}
+                            </a>
+                          ) : (
+                            rejectCommitment
+                          )}
+                        </span>
+                      </div>
+                    ) : aipac || dmfi ? (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">
+                          {aipac && dmfi ? "Supported by AIPAC and DMFI" : aipac ? "Supported by AIPAC" : "Supported by DMFI"}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-700 dark:text-slate-300">Not supported by AIPAC or DMFI</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })()}
+            </div>
+
             {/* District Offices */}
             {row.district_offices && (
               <div className="mb-6">
@@ -1401,7 +1724,7 @@ function MemberModal({
                                   // If we support: points means they cosponsored
                                   // If we oppose: points means they did NOT cosponsor
                                   const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                  return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
+                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                 } else if (isVote) {
                                   // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against

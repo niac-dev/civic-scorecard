@@ -366,6 +366,7 @@ export default function MemberPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
+  const [gradesExpanded, setGradesExpanded] = useState<boolean>(true);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(true);
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState<boolean>(false);
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
@@ -478,9 +479,9 @@ export default function MemberPage() {
       `}} />
       <div className="min-h-screen bg-[#F7F8FA] p-4 md:p-6">
         <div className="max-w-6xl mx-auto min-w-[768px]">
-          <div className="card bg-white">
-            {/* Header */}
-          <div className="p-6 border-b border-[#E7ECF2]">
+          <div className="card bg-white overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+            {/* Header - Sticky */}
+          <div className="p-6 border-b border-[#E7ECF2] sticky top-0 bg-white z-20">
             <div className="flex items-start gap-4 mb-4">
               {row.photo_url ? (
                 <img
@@ -492,7 +493,21 @@ export default function MemberPage() {
                 <div className="h-32 w-32 rounded-full bg-slate-300" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xl font-bold text-slate-900 mb-2">{row.full_name}</div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="text-xl font-bold text-slate-900">
+                    {(() => {
+                      const fullName = String(row.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
+                  </div>
+                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                </div>
                 <div className="text-xs text-slate-600 flex items-center gap-2 mb-3">
                   <span
                     className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
@@ -593,12 +608,26 @@ export default function MemberPage() {
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-6">
-            {/* Issue Grades */}
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 p-6">
+            {/* Issue Grades - Collapsible */}
             <div className="mb-6">
-              <div className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200">Issue Grades</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 flex items-center gap-2 cursor-pointer hover:text-slate-900 transition-colors"
+                onClick={() => setGradesExpanded(!gradesExpanded)}
+              >
+                Issue Grades
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", gradesExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            {gradesExpanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Overall Grade card */}
               <button
                 onClick={() => {
@@ -652,14 +681,16 @@ export default function MemberPage() {
                   </button>
                 );
               })}
+            </div>
+            )}
+            </div>
 
-              {/* Endorsements card */}
+            {/* Lobby Support / AIPAC Endorsement */}
+            <div className="mb-6">
               {(() => {
-                // Check if member has reject AIPAC commitment text (takes priority)
-                const rejectCommitment = row.reject_aipac_commitment;
-                const rejectLink = row.reject_aipac_link;
-                const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
-
+                const hasRejectCommitment = !!(row.reject_commitment && String(row.reject_commitment).trim());
+                const rejectCommitment = String(row.reject_commitment || "").trim();
+                const rejectLink = row.reject_commitment_link;
                 const aipac = isAipacEndorsed(pacData);
                 const dmfi = isDmfiEndorsed(pacData);
 
@@ -715,7 +746,6 @@ export default function MemberPage() {
                   </button>
                 );
               })()}
-            </div>
             </div>
 
             {/* Votes & Actions */}
@@ -807,7 +837,7 @@ export default function MemberPage() {
 
                                           if (isCosponsor) {
                                             const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                            return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
+                                            return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                           } else if (isVote) {
                                             const votedFor = isSupport ? gotPoints : !gotPoints;
                                             if (votedFor) {

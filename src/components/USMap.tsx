@@ -3,10 +3,16 @@
 
 import { useEffect } from "react";
 import USAMap from "react-usa-map";
+import DistrictMap from "./DistrictMap";
+import type { Row } from "@/lib/types";
 
 type USMapProps = {
   stateColors: Record<string, string>;
   onStateClick: (stateCode: string) => void;
+  members?: Row[];
+  onMemberClick?: (member: Row) => void;
+  useDistrictMap?: boolean;
+  chamber?: string;
 };
 
 // State names mapping
@@ -24,7 +30,13 @@ const STATE_NAMES: Record<string, string> = {
   WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-export default function USMap({ stateColors, onStateClick }: USMapProps) {
+export default function USMap({ stateColors, onStateClick, members, onMemberClick, useDistrictMap = false, chamber }: USMapProps) {
+  // If district map is requested and we have member data, render it
+  if (useDistrictMap && members) {
+    return <DistrictMap members={members} onMemberClick={onMemberClick} onStateClick={onStateClick} chamber={chamber} />;
+  }
+
+  // Otherwise render the original state map
   // Convert state codes to the format expected by react-usa-map
   // All states get custom dark blue fill with teal border
   const customizeMap = () => {

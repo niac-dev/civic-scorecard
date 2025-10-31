@@ -82,7 +82,7 @@ function formatPositionScorecard(meta: Meta | undefined): string {
   const isSupport = position === 'SUPPORT';
 
   if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Do Not Cosponsor';
+    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
   } else {
     return isSupport ? '✓ Vote' : '✗ Vote';
   }
@@ -1090,17 +1090,15 @@ export default function Page() {
               : "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div className="mb-6 text-center">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">Find your lawmakers</h2>
-            <div className="max-w-md mx-auto">
-              <ZipcodeSearch />
-            </div>
-          </div>
           <USMap
             stateColors={stateColors}
             onStateClick={(stateCode) => {
               f.set({ state: stateCode, viewMode: "summary" });
             }}
+            members={filtered}
+            onMemberClick={(member) => setSelected(member)}
+            useDistrictMap={true}
+            chamber={f.chamber}
           />
         </div>
 
@@ -1658,13 +1656,19 @@ export default function Page() {
                 const position = (meta?.position_to_score || '').toUpperCase();
                 const isSupport = position === 'SUPPORT';
 
+                // Check if member voted "present" - got partial points (non-zero but not full)
+                const fullPoints = Number(meta?.points ?? 0);
+                const votedPresent = !wasAbsent && isVote && val > 0 && val < fullPoints;
+
                 let title: string;
                 if (notApplicable) {
                   title = "Not applicable (different chamber)";
                 } else if (manualActionNotApplicable) {
                   title = "Not applicable";
+                } else if (votedPresent) {
+                  title = "Voted Present";
                 } else if (wasAbsent) {
-                  title = "Did not vote/voted present";
+                  title = "Did not vote";
                 } else if (showDashForPreferredPair) {
                   title = "Not penalized: preferred item supported";
                 } else {
@@ -1688,6 +1692,8 @@ export default function Page() {
                   <div key={c} className="td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10" title={title}>
                     {notApplicable || manualActionNotApplicable ? (
                       <span className="text-xs text-slate-400">N/A</span>
+                    ) : votedPresent ? (
+                      <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Present</span>
                     ) : wasAbsent ? (
                       <span className="text-lg leading-none text-slate-400">—</span>
                     ) : showDashForPreferredPair ? (
@@ -1802,7 +1808,16 @@ export default function Page() {
 
 function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta> }) {
   const f = useFilters();
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(f.viewMode === "map");
+
+  // Auto-expand filters in map view, collapse in other views
+  useEffect(() => {
+    if (f.viewMode === "map") {
+      setFiltersExpanded(true);
+    } else {
+      setFiltersExpanded(false);
+    }
+  }, [f.viewMode]);
 
   // Territories without senators
   const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
@@ -1814,7 +1829,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         {/* Desktop: Show both buttons (>450px) */}
         <div className="min-[450px]:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
           <button
-            onClick={() => f.set({ viewMode: "map", categories: new Set() })}
+            onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
             className={clsx(
               "px-3 h-9 rounded-md text-sm",
               f.viewMode === "map"
@@ -1849,7 +1864,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           onChange={(e) => {
             const value = e.target.value;
             if (value === "map") {
-              f.set({ viewMode: "map", categories: new Set() });
+              f.set({ viewMode: "map", categories: new Set(), state: "" });
             } else if (value === "summary") {
               f.set({ viewMode: "summary", categories: new Set() });
             }
@@ -1860,7 +1875,8 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           <option value="summary">Summary</option>
         </select>
 
-        {/* Desktop: Show Issues button and individual issue buttons (≥985px) */}
+        {/* Desktop: Show Issues button and individual issue buttons (≥985px) - Hide in map mode */}
+        {f.viewMode !== "map" && (
         <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
           {/* Issues button - stays blue when any category or all is selected, clicking defaults to All */}
           <button
@@ -1945,8 +1961,10 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             </button>
           </div>
         </div>
+        )}
 
-        {/* Mobile: Show dropdown (<985px) - narrower on very small screens */}
+        {/* Mobile: Show dropdown (<985px) - narrower on very small screens - Hide in map mode */}
+        {f.viewMode !== "map" && (
         <select
           className={clsx(
             "max-[984px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
@@ -1979,6 +1997,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           <option value="Travel & Immigration">Travel & Immigration</option>
           <option value="AIPAC">AIPAC</option>
         </select>
+        )}
 
         <div className="ml-auto">
           <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} />
@@ -1987,39 +2006,43 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
       {/* Second row: Filters */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
-        >
-          <svg
-            className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-          <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
-          {(f.chamber || f.party || f.state) && !filtersExpanded && (
-            <span className="text-xs text-slate-500">
-              ({[
-                f.chamber && f.chamber,
-                f.party && f.party,
-                f.state && f.state
-              ].filter(Boolean).join(", ")})
-            </span>
-          )}
-        </button>
+        {f.viewMode !== "map" && (
+          <>
+            <button
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+            >
+              <svg
+                className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
+              {(f.chamber || f.party || f.state) && !filtersExpanded && (
+                <span className="text-xs text-slate-500">
+                  ({[
+                    f.chamber && f.chamber,
+                    f.party && f.party,
+                    f.state && f.state
+                  ].filter(Boolean).join(", ")})
+                </span>
+              )}
+            </button>
 
-        {/* Clear button when filters are active but collapsed */}
-        {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
-          <button
-            onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-            className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-            title="Clear all filters"
-          >
-            ✕
-          </button>
+            {/* Clear button when filters are active but collapsed */}
+            {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
+              <button
+                onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                title="Clear all filters"
+              >
+                ✕
+              </button>
+            )}
+          </>
         )}
 
         <div
@@ -2029,48 +2052,52 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           )}
         >
           <Segmented
-            options={["Both", "House","Senate"]}
-            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "Both"}
+            options={["All", "House","Senate"]}
+            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
             onChange={(v)=>{
-              if (v === "Both") {
+              if (v === "All") {
                 f.set({ chamber: "" });
               } else {
                 f.set({ chamber: v.toUpperCase() as any });
               }
             }}
           />
-          <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
-            <option value="">Party</option>
-            <option>Democratic</option><option>Republican</option><option>Independent</option>
-          </select>
-          <select
-            className="select !text-xs !h-8 !px-2 !max-w-[140px]"
-            value={f.state || ""}
-            onChange={(e) => {
-              const selectedState = e.target.value;
-              // If selecting a territory without senate, automatically switch to House
-              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                f.set({ state: selectedState, chamber: "HOUSE" });
-              } else {
-                f.set({ state: selectedState });
-              }
-            }}
-          >
-            <option value="">State</option>
-            {STATES.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
-            <button
-              onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-              title="Clear all filters"
-            >
-              Clear
-            </button>
+          {f.viewMode !== "map" && (
+            <>
+              <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
+                <option value="">Party</option>
+                <option>Democratic</option><option>Republican</option><option>Independent</option>
+              </select>
+              <select
+                className="select !text-xs !h-8 !px-2 !max-w-[140px]"
+                value={f.state || ""}
+                onChange={(e) => {
+                  const selectedState = e.target.value;
+                  // If selecting a territory without senate, automatically switch to House
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
+                }}
+              >
+                <option value="">State</option>
+                {STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+                <button
+                  onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+                  className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                  title="Clear all filters"
+                >
+                  Clear
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -2472,6 +2499,7 @@ function LawmakerCard({
   onClose: () => void;
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [gradesExpanded, setGradesExpanded] = useState(true);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState(false);
   const [committeesExpanded, setCommitteesExpanded] = useState(false);
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
@@ -2577,9 +2605,9 @@ function LawmakerCard({
       />
       {/* Modal */}
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header - Sticky */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 sticky top-0 bg-white dark:bg-[#0B1220] z-20 relative">
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] sticky top-0 z-10 relative">
             {/* Action buttons - positioned in top-right corner */}
             <div className="absolute top-4 right-4 flex gap-2">
               <button
@@ -2625,17 +2653,20 @@ function LawmakerCard({
                     return "";
                   })()}
                 </div>
-                <div className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  {(() => {
-                    const fullName = String(row.full_name || "");
-                    const commaIndex = fullName.indexOf(",");
-                    if (commaIndex > -1) {
-                      const first = fullName.slice(commaIndex + 1).trim();
-                      const last = fullName.slice(0, commaIndex).trim();
-                      return `${first} ${last}`;
-                    }
-                    return fullName;
-                  })()}
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {(() => {
+                      const fullName = String(row.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
+                  </div>
+                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 flex-wrap">
                   <span
@@ -2699,9 +2730,28 @@ function LawmakerCard({
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Issue Grades - no title, part of header card */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          {/* Content */}
+          <div className="p-6">
+            {/* Issue Grades - collapsible */}
+            <div className="mb-6">
+              <div
+                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
+                onClick={() => setGradesExpanded(!gradesExpanded)}
+              >
+                Issue Grades
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", gradesExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {gradesExpanded && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Overall Grade card */}
               <button
                 onClick={() => {
@@ -2827,11 +2877,10 @@ function LawmakerCard({
                   </button>
                 );
               })()}
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto flex-1 p-6">
             {/* District Offices */}
             {row.district_offices && (
               <div className="mb-6">
