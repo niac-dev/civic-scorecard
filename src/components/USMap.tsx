@@ -31,40 +31,15 @@ const STATE_NAMES: Record<string, string> = {
 };
 
 export default function USMap({ stateColors, onStateClick, members, onMemberClick, useDistrictMap = false, chamber }: USMapProps) {
-  // If district map is requested and we have member data, render it
-  if (useDistrictMap && members) {
-    return <DistrictMap members={members} onMemberClick={onMemberClick} onStateClick={onStateClick} chamber={chamber} />;
-  }
-
-  // Otherwise render the original state map
-  // Convert state codes to the format expected by react-usa-map
-  // All states get custom dark blue fill with teal border
-  const customizeMap = () => {
-    const config: Record<string, { fill: string; stroke?: string; strokeWidth?: string }> = {};
-    Object.keys(stateColors).forEach((code) => {
-      config[code] = {
-        fill: "#002b49", // main map color
-      };
-    });
-    return config;
-  };
-
-  const handleStateClick = (event: React.MouseEvent<SVGElement>) => {
-    // react-usa-map passes the state code in event.target.dataset.name
-    const target = event.target as SVGElement & { dataset: { name?: string } };
-    const stateCode = target.dataset.name;
-    if (stateCode) {
-      onStateClick(stateCode.toUpperCase());
-    }
-  };
-
   // Add hover effects and tooltips after component mounts
   useEffect(() => {
+    // Only run effect if not using district map
+    if (useDistrictMap && members) return;
     const mapContainer = document.querySelector('.us-state-map');
     const svg = mapContainer?.querySelector('svg');
     if (!svg) return;
 
-    const states = document.querySelectorAll('.us-state-map path');
+    const states = document.querySelectorAll<SVGPathElement>('.us-state-map path');
 
     states.forEach((state) => {
       const stateElement = state as SVGPathElement;
@@ -140,7 +115,32 @@ export default function USMap({ stateColors, onStateClick, members, onMemberClic
         }
       });
     });
-  }, [stateColors]);
+  }, [stateColors, useDistrictMap, members]);
+
+  // If district map is requested and we have member data, render it
+  if (useDistrictMap && members) {
+    return <DistrictMap members={members} onMemberClick={onMemberClick} onStateClick={onStateClick} chamber={chamber} />;
+  }
+
+  // Helper functions for the state map
+  const customizeMap = () => {
+    const config: Record<string, { fill: string; stroke?: string; strokeWidth?: string }> = {};
+    Object.keys(stateColors).forEach((code) => {
+      config[code] = {
+        fill: "#002b49", // main map color
+      };
+    });
+    return config;
+  };
+
+  const handleStateClick = (event: React.MouseEvent<SVGElement>) => {
+    // react-usa-map passes the state code in event.target.dataset.name
+    const target = event.target as SVGElement & { dataset: { name?: string } };
+    const stateCode = target.dataset.name;
+    if (stateCode) {
+      onStateClick(stateCode.toUpperCase());
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto">

@@ -364,10 +364,12 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
         });
 
         // Add fill layer for districts/states with colors based on grades or presidential projections
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let fillColor: any;
 
         if (isBothMode) {
           // Both mode: Use presidential election colors
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
             'match',
             ['get', 'name']  // For states GeoJSON, use the 'name' property (state name)
@@ -398,6 +400,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           fillColor = matchExpression;
         } else if (Object.keys(districtGrades).length > 0) {
           // Senate or House mode: Use grade colors
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
             'match',
             isSenate

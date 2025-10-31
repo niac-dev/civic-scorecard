@@ -80,16 +80,6 @@ function isTrue(v: unknown): boolean {
   return String(v).toLowerCase() === "true";
 }
 
-function isTruthy(v: unknown): boolean {
-  if (v === 1 || v === '1' || v === true) return true;
-  if (typeof v === 'number' && v > 0) return true;
-  if (typeof v === 'string') {
-    if (v.toLowerCase() === "true") return true;
-    const num = parseFloat(v);
-    if (!isNaN(num) && num > 0) return true;
-  }
-  return false;
-}
 
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
@@ -118,19 +108,6 @@ function formatPositionLegislation(meta: Meta | undefined): string {
     return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   } else {
     return isSupport ? `Support${points}` : `Oppose${points}`;
-  }
-}
-
-function formatPositionScorecard(meta: Meta | undefined): string {
-  const position = (meta?.position_to_score || '').toUpperCase();
-  const actionType = (meta as { action_types?: string })?.action_types || '';
-  const isCosponsor = actionType.includes('cosponsor');
-  const isSupport = position === 'SUPPORT';
-
-  if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
-  } else {
-    return isSupport ? '✓ Vote' : '✗ Vote';
   }
 }
 
@@ -674,6 +651,7 @@ export default function BillPage() {
   const pairedBillName = hasPairedGroups
     ? ((meta.pair_key || "").split("|").map(s => s.trim()).find(c => c !== column) || "")
     : "";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const pairedBillMeta = pairedBillName ? metaByCol.get(pairedBillName) : undefined;
 
   // For paired manual actions, sections are already correctly grouped by score
@@ -1264,10 +1242,12 @@ function MemberModal({
   const [gradesExpanded, setGradesExpanded] = useState(true);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState<boolean>(false);
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const votesActionsRef = useRef<HTMLDivElement>(null);
   const lobbySupportRef = useRef<HTMLDivElement>(null);
 
