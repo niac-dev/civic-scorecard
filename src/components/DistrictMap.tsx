@@ -191,71 +191,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           return lowerLookup;
         };
 
-        // 2024 Presidential election projections by state (FIPS code)
-        // Colors: Dark Blue (Safe D), Light Blue (Likely D), Purple (Toss-up), Light Red (Likely R), Dark Red (Safe R)
-        const presidentialColors: Record<string, string> = {
-          // Dark Blue - Safe Democratic
-          '06': '#1e40af', // California
-          '09': '#1e40af', // Connecticut
-          '10': '#1e40af', // Delaware
-          '11': '#1e40af', // DC
-          '15': '#1e40af', // Hawaii
-          '17': '#1e40af', // Illinois
-          '24': '#1e40af', // Maryland
-          '25': '#1e40af', // Massachusetts
-          '36': '#1e40af', // New York
-          '44': '#1e40af', // Rhode Island
-          '50': '#1e40af', // Vermont
-          '53': '#1e40af', // Washington
-
-          // Light Blue - Likely Democratic
-          '08': '#60a5fa', // Colorado
-          '23': '#60a5fa', // Maine
-          '27': '#60a5fa', // Minnesota
-          '33': '#60a5fa', // New Hampshire
-          '34': '#60a5fa', // New Jersey
-          '35': '#60a5fa', // New Mexico
-          '41': '#60a5fa', // Oregon
-          '51': '#60a5fa', // Virginia
-
-          // Purple - Toss-up
-          '04': '#7c3aed', // Arizona
-          '13': '#7c3aed', // Georgia
-          '26': '#7c3aed', // Michigan
-          '32': '#7c3aed', // Nevada
-          '37': '#7c3aed', // North Carolina
-          '42': '#7c3aed', // Pennsylvania
-          '55': '#7c3aed', // Wisconsin
-
-          // Light Red - Likely Republican
-          '01': '#f87171', // Alabama
-          '12': '#f87171', // Florida
-          '19': '#f87171', // Iowa
-          '18': '#f87171', // Indiana
-          '20': '#f87171', // Kansas
-          '22': '#f87171', // Louisiana
-          '28': '#f87171', // Mississippi
-          '29': '#f87171', // Missouri
-          '30': '#f87171', // Montana
-          '31': '#f87171', // Nebraska
-          '39': '#f87171', // Ohio
-          '45': '#f87171', // South Carolina
-          '46': '#f87171', // South Dakota
-          '47': '#f87171', // Tennessee
-          '48': '#f87171', // Texas
-
-          // Dark Red - Safe Republican
-          '02': '#b91c1c', // Alaska
-          '05': '#b91c1c', // Arkansas
-          '16': '#b91c1c', // Idaho
-          '21': '#b91c1c', // Kentucky
-          '38': '#b91c1c', // North Dakota
-          '40': '#b91c1c', // Oklahoma
-          '49': '#b91c1c', // Utah
-          '54': '#b91c1c', // West Virginia
-          '56': '#b91c1c', // Wyoming
-        };
-
         // Create district/state-to-member mapping
         const districtGrades: Record<string, string> = {};
         const districtMembers: Record<string, Row | Row[]> = {};
@@ -367,38 +302,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let fillColor: any;
 
-        if (isBothMode) {
-          // Both mode: Use presidential election colors
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const matchExpression: any[] = [
-            'match',
-            ['get', 'name']  // For states GeoJSON, use the 'name' property (state name)
-          ];
-
-          // Add all states with presidential colors
-          Object.entries(presidentialColors).forEach(([fips, color]) => {
-            // Convert FIPS to state name for matching
-            const stateAbbr = fipsToStateAbbr[fips];
-            const stateEntry = Object.entries(stateToFips).find(([name]) =>
-              name.length === 2 && name === stateAbbr
-            );
-            if (stateEntry) {
-              const fullNameEntry = Object.entries(stateToFips).find(([name, fipsCode]) =>
-                fipsCode === fips && name.length > 2
-              );
-              const matchKey = fullNameEntry ? fullNameEntry[0].toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : stateAbbr;
-              matchExpression.push(matchKey);
-              matchExpression.push(color);
-              console.log(`Added state to presidential match:`, matchKey, '→', color);
-            }
-          });
-
-          // Add fallback color (required)
-          matchExpression.push('#e5e7eb'); // default gray
-
-          console.log('Presidential match expression has', (matchExpression.length - 3) / 2, 'states');
-          fillColor = matchExpression;
-        } else if (Object.keys(districtGrades).length > 0) {
+        if (Object.keys(districtGrades).length > 0) {
           // Senate or House mode: Use grade colors
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
