@@ -44,6 +44,8 @@ interface PacData {
   aipac_total_2025: number;
   aipac_supported_2025: number;
   dmfi_direct_2025: number;
+  dmfi_ie_support_2025: number;
+  dmfi_ie_total_2025: number;
   dmfi_total_2025: number;
   dmfi_supported_2025: number;
   // 2022 cycle
@@ -105,6 +107,8 @@ async function loadPacData(): Promise<Map<string, PacData>> {
             aipac_total_2025: 0,
             aipac_supported_2025: 0,
             dmfi_direct_2025: 0,
+            dmfi_ie_support_2025: 0,
+            dmfi_ie_total_2025: 0,
             dmfi_total_2025: 0,
             dmfi_supported_2025: 0,
             // Initialize 2022 data as 0
@@ -138,6 +142,8 @@ async function loadPacData(): Promise<Map<string, PacData>> {
                 existing.aipac_total_2025 = parseFloat(row.aipac_total) || 0;
                 existing.aipac_supported_2025 = parseFloat(row.aipac_supported) || 0;
                 existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct) || 0;
+                existing.dmfi_ie_support_2025 = parseFloat(row.dmfi_ie_support) || 0;
+                existing.dmfi_ie_total_2025 = parseFloat(row.dmfi_ie_total) || 0;
                 existing.dmfi_total_2025 = parseFloat(row.dmfi_total) || 0;
                 existing.dmfi_supported_2025 = parseFloat(row.dmfi_supported) || 0;
               }
