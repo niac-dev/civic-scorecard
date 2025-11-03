@@ -338,7 +338,7 @@ function partyBadgeStyle(p?: string) {
 }
 
 function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
-  const color = grade.startsWith("A") ? "#050a30" // dark navy blue
+  const color = grade.startsWith("A") ? "#30558C" // dark blue
     : grade.startsWith("B") ? "#93c5fd" // light blue
     : grade.startsWith("C") ? "#b6dfcc" // mint green
     : grade.startsWith("D") ? "#D4B870" // tan/gold
@@ -499,8 +499,8 @@ export default function MemberPage() {
       <div className="min-h-screen bg-[#F7F8FA] p-4 md:p-6">
         <div className="max-w-6xl mx-auto min-w-[768px]">
           <div className="card bg-white overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
-            {/* Header - Sticky */}
-          <div className="p-6 border-b border-[#E7ECF2] sticky top-0 bg-white z-20">
+            {/* Header */}
+          <div className="p-6 border-b border-[#E7ECF2] bg-white">
             <div className="flex items-start gap-4 mb-4">
               {row.photo_url ? (
                 <img

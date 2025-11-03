@@ -583,6 +583,36 @@ export default function Page() {
     }
   }, [f.chamber, f.party, f.state, f.search, f.myLawmakers, f.viewMode]);
 
+  // Prevent horizontal scroll from navigating browser history (important for iframe embeds)
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Check if the scroll is primarily horizontal
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        // Check if there's a scrollable container that can handle this scroll
+        let target = e.target as HTMLElement | null;
+        while (target && target !== document.body) {
+          const hasHorizontalScroll = target.scrollWidth > target.clientWidth;
+          const canScrollLeft = target.scrollLeft > 0;
+          const canScrollRight = target.scrollLeft < target.scrollWidth - target.clientWidth;
+
+          // If the element can scroll horizontally and there's room to scroll, prevent navigation
+          if (hasHorizontalScroll && (canScrollLeft || canScrollRight)) {
+            e.preventDefault();
+            return;
+          }
+          target = target.parentElement;
+        }
+      }
+    };
+
+    // Add listener with passive: false to allow preventDefault
+    window.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   const filtered = useMemo(() => {
     let out = rows;
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
@@ -666,11 +696,33 @@ export default function Page() {
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
       });
     }
-    // Sort by district (senators first, then by district number)
+    // Sort by district (by state alphabetically, then senators before house, then by district number)
     if (sortCol === "__district") {
-      const asc = sortDir === "GOOD_FIRST"; // GOOD_FIRST = ascending district order
+      const asc = sortDir === "GOOD_FIRST"; // GOOD_FIRST = ascending order
+
+      // State code to full name mapping
+      const stateNames: Record<string, string> = {
+        AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+        CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+        FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+        IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+        ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+        MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+        NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+        NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+        PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+        TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+        WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+      };
+
       return [...filtered].sort((a, b) => {
-        // Senators come first
+        // First, sort by state name alphabetically
+        const stateA = stateNames[String(a.state)] || String(a.state);
+        const stateB = stateNames[String(b.state)] || String(b.state);
+        const stateCompare = stateA.localeCompare(stateB);
+        if (stateCompare !== 0) return asc ? stateCompare : -stateCompare;
+
+        // Within same state, senators come before house members
         if (a.chamber === "SENATE" && b.chamber !== "SENATE") return -1;
         if (a.chamber !== "SENATE" && b.chamber === "SENATE") return 1;
 
@@ -1222,54 +1274,66 @@ export default function Page() {
                   <div
                     key={gradeCol.field}
                     className={clsx(
-                      "th text-center cursor-pointer relative group",
+                      "th text-center relative group",
                       idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10"
                     )}
-                    title={
-                      isCategoryHeader
-                        ? `Click to view ${gradeCol.header} bills`
-                        : `Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`
-                    }
-                    onClick={() => {
-                      if (isCategoryHeader) {
-                        // In summary mode, clicking a category header switches to category view
-                        f.set({ viewMode: "category" });
-                        f.clearCategories();
-                        // Add this category to the filter
-                        f.toggleCategory(gradeCol.header);
-                      } else {
-                        // Regular sort behavior
+                  >
+                    <div
+                      className={clsx(
+                        "flex flex-col items-center cursor-pointer",
+                        isCategoryHeader && "hover:text-[#4B8CFB] transition-colors"
+                      )}
+                      title={
+                        isCategoryHeader
+                          ? `Click to view ${gradeCol.header} bills`
+                          : `Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`
+                      }
+                      onClick={() => {
+                        if (isCategoryHeader) {
+                          // In summary mode, clicking a category header switches to category view
+                          f.set({ viewMode: "category" });
+                          f.clearCategories();
+                          // Add this category to the filter
+                          f.toggleCategory(gradeCol.header);
+                        } else {
+                          // Regular sort behavior
+                          if (sortCol === String(gradeCol.field)) {
+                            setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                          } else {
+                            setSortCol(String(gradeCol.field));
+                            setSortDir("GOOD_FIRST");
+                          }
+                        }
+                      }}
+                    >
+                      <div>{gradeCol.header}</div>
+                    </div>
+                    <div
+                      className="absolute bottom-1 left-0 right-0 text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Sort behavior when clicking the sort indicator
                         if (sortCol === String(gradeCol.field)) {
                           setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
                         } else {
                           setSortCol(String(gradeCol.field));
                           setSortDir("GOOD_FIRST");
                         }
-                      }
-                    }}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div>{gradeCol.header}</div>
-                      {isCategoryHeader && (
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 flex items-center gap-0.5 mt-0.5">
-                          <span>sort</span>
-                          <span>▼</span>
-                        </div>
-                      )}
-                    </div>
-                    {!isCategoryHeader && (
+                      }}
+                      title="Click to sort"
+                    >
+                      <span>Sort</span>
                       <span className={clsx(
-                        "absolute right-2 top-1.5 text-[10px]",
-                        sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                        sortCol === String(gradeCol.field) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       )}>
-                        {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                        {sortCol === String(gradeCol.field) ? (sortDir === "GOOD_FIRST" ? "▲" : "▼") : "▼"}
                       </span>
-                    )}
+                    </div>
                   </div>
 
                   {/* Endorsements column header - after Overall Grade in AIPAC view */}
                   {idx === 0 && f.categories.has("AIPAC") && (
-                    <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col">
+                    <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
                       {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
                       <div className="h-[3.375rem] flex items-start">
                         <span
@@ -1285,7 +1349,10 @@ export default function Page() {
 
                       {/* Sortable indicator - always in uniform position */}
                       <span
-                        className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+                        className={clsx(
+                          "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                          sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
                         onClick={() => {
                           if (sortCol === "__aipac") {
                             setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
@@ -1297,10 +1364,7 @@ export default function Page() {
                         title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
                       >
                         sort
-                        <span className={clsx(
-                          "text-[10px]",
-                          sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
-                        )}>
+                        <span>
                           {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                         </span>
                       </span>
@@ -1354,7 +1418,7 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="th group/header relative select-none flex flex-col max-w-[14rem]"
+                    className="th group relative select-none flex flex-col max-w-[14rem]"
                   >
                     {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
                     <div className="h-[3.375rem] flex items-start">
@@ -1371,7 +1435,10 @@ export default function Page() {
 
                     {/* Sortable indicator - always in uniform position */}
                     <span
-                      className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+                      className={clsx(
+                        "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                        sortCol === c ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      )}
                       onClick={() => {
                         if (sortCol === c) {
                           setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
@@ -1383,10 +1450,7 @@ export default function Page() {
                       title="Click to sort by this column"
                     >
                       sort
-                      <span className={clsx(
-                        "text-[10px]",
-                        sortCol === c ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
-                      )}>
+                      <span>
                         {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                       </span>
                     </span>
@@ -1415,7 +1479,7 @@ export default function Page() {
             })}
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
-              <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col">
+              <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
                 {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
                 <div className="h-[3.375rem] flex items-start">
                   <span
@@ -1431,7 +1495,10 @@ export default function Page() {
 
                 {/* Sortable indicator - always in uniform position */}
                 <span
-                  className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+                  className={clsx(
+                    "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                    sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}
                   onClick={() => {
                     if (sortCol === "__aipac") {
                       setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
@@ -1443,10 +1510,7 @@ export default function Page() {
                   title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
                 >
                   sort
-                  <span className={clsx(
-                    "text-[10px]",
-                    sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
-                  )}>
+                  <span>
                     {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
                   </span>
                 </span>
@@ -2067,8 +2131,10 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
             className={clsx(
               "px-3 h-9 rounded-md text-sm",
-              (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category")
+              f.viewMode === "summary"
                 ? "bg-[#4B8CFB] text-white"
+                : (f.viewMode === "all" || f.viewMode === "category")
+                ? "bg-[#93c5fd] text-slate-900"
                 : "hover:bg-slate-50 dark:hover:bg-white/10"
             )}
           >
@@ -2104,13 +2170,13 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
           {/* Border around issue buttons */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10">
-            {/* Individual issue buttons - shallower with lighter blue when active */}
+            {/* Individual issue buttons - bright blue when active */}
             <button
               onClick={() => f.set({ viewMode: "all", categories: new Set() })}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.viewMode === "all" && f.categories.size === 0
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2121,7 +2187,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Civil Rights")
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2132,7 +2198,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Iran")
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2143,7 +2209,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Israel-Gaza")
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2154,7 +2220,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               className={clsx(
                 "px-2 h-7 rounded-md text-sm whitespace-nowrap",
                 f.categories.has("Travel & Immigration")
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2165,7 +2231,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("AIPAC")
-                  ? "bg-[#93c5fd] text-slate-900"
+                  ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
@@ -2669,7 +2735,7 @@ function Progress({ value }:{ value:number }) {
 }
 
 function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
-  const color = grade.startsWith("A") ? "#050a30" // dark navy blue
+  const color = grade.startsWith("A") ? "#30558C" // dark blue
     : grade.startsWith("B") ? "#93c5fd" // light blue
     : grade.startsWith("C") ? "#b6dfcc" // mint green
     : grade.startsWith("D") ? "#D4B870" // tan/gold
@@ -2732,8 +2798,6 @@ function LawmakerCard({
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [gradesExpanded, setGradesExpanded] = useState(true);
-  const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState(false);
-  const [committeesExpanded, setCommitteesExpanded] = useState(false);
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
   const [votesActionsExpanded, setVotesActionsExpanded] = useState(true);
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
@@ -2838,8 +2902,8 @@ function LawmakerCard({
       {/* Modal */}
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
         <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
-          {/* Header - Sticky */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] sticky top-0 z-10 relative">
+          {/* Header */}
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] relative">
             {/* Action buttons - positioned in top-right corner */}
             <div className="absolute top-4 right-4 flex gap-2">
               <button
@@ -3068,18 +3132,19 @@ function LawmakerCard({
                       }
                     }}
                     className={clsx(
-                      "rounded-lg border p-3 text-left w-full transition",
+                      "rounded-lg border p-3 text-left transition",
                       (!hasRejectCommitment && (aipac || dmfi))
                         ? "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                         : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-default"
                     )}
                   >
+                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">AIPAC/DMFI</div>
                     {hasRejectCommitment ? (
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
                         </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                        <span className="text-xs text-slate-700 dark:text-slate-300 font-bold line-clamp-2">
                           {rejectLink && String(rejectLink).startsWith('http') ? (
                             <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
                               {rejectCommitment}
@@ -3112,76 +3177,6 @@ function LawmakerCard({
                 </div>
               )}
             </div>
-
-            {/* District Offices */}
-            {row.district_offices && (
-              <div className="mb-6">
-                <div
-                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                  onClick={() => setDistrictOfficesExpanded(!districtOfficesExpanded)}
-                >
-                  District Offices
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={clsx("h-4 w-4 ml-auto transition-transform", districtOfficesExpanded && "rotate-180")}
-                    aria-hidden="true"
-                    role="img"
-                  >
-                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {districtOfficesExpanded && (
-                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                      {row.district_offices.split(";").map((office, idx) => (
-                        <div key={idx}>
-                          {office.trim()}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Committees */}
-            {(() => {
-              const filteredCommittees = row.committees
-                ? row.committees.split(";")
-                    .map(c => c.trim())
-                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
-                : [];
-
-              return filteredCommittees.length > 0 ? (
-                <div className="mb-6">
-                  <div
-                    className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                    onClick={() => setCommitteesExpanded(!committeesExpanded)}
-                  >
-                    Committee Assignments
-                    <svg
-                      viewBox="0 0 20 20"
-                      className={clsx("h-4 w-4 ml-auto transition-transform", committeesExpanded && "rotate-180")}
-                      aria-hidden="true"
-                      role="img"
-                    >
-                      <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  {committeesExpanded && (
-                    <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-1">
-                        {filteredCommittees.map((committee, idx) => (
-                          <div key={idx} className="pl-0">
-                            {committee}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : null;
-            })()}
 
             {/* Support from AIPAC and Affiliates */}
             {(() => {
