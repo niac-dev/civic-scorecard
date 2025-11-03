@@ -559,12 +559,12 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             'Wisconsin': [-89.6385, 43.7844], 'Wyoming': [-107.2903, 43.0750], 'District of Columbia': [-77.0369, 38.9072]
           };
 
-          const stateLabels: any = {
-            type: 'FeatureCollection',
+          const stateLabels = {
+            type: 'FeatureCollection' as const,
             features: Object.entries(stateCenters).map(([name, coords]) => ({
-              type: 'Feature',
+              type: 'Feature' as const,
               properties: { name },
-              geometry: { type: 'Point', coordinates: coords }
+              geometry: { type: 'Point' as const, coordinates: coords }
             }))
           };
 
