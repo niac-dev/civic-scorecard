@@ -2675,7 +2675,7 @@ function Header({
           onClick={(e) => {
             e.stopPropagation();
             if (meta) {
-              window.open(`/bill/${encodeURIComponent(col)}`, '_blank');
+              window.location.href = `/bill/${encodeURIComponent(col)}`;
             }
           }}
         >
@@ -2969,7 +2969,7 @@ function LawmakerCard({
             <div className="absolute top-4 right-4 flex gap-2">
               <button
                 className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                onClick={() => window.location.href = `/member/${row.bioguide_id}`}
                 title="Open in new tab"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3598,7 +3598,7 @@ function LawmakerCard({
                               <div
                                 key={it.col}
                                 className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] p-3 cursor-pointer hover:border-[#4B8CFB] transition"
-                                onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+                                onClick={() => window.location.href = `/bill/${encodeURIComponent(it.col)}`}
                               >
                                 <div className="text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200 mb-2">
                                   {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}

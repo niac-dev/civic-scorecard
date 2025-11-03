@@ -498,7 +498,7 @@ export default function MemberPage() {
       `}} />
       <div className="min-h-screen bg-[#F7F8FA] p-4 md:p-6">
         <div className="max-w-6xl mx-auto min-w-[768px]">
-          <div className="card bg-white overflow-hidden flex flex-col max-h-[calc(100vh-2rem)]">
+          <div className="card bg-white overflow-visible flex flex-col">
             {/* Header */}
           <div className="p-6 border-b border-[#E7ECF2] bg-white">
             <div className="flex items-start gap-4 mb-4">
@@ -628,7 +628,7 @@ export default function MemberPage() {
           </div>
 
           {/* Scrollable Content */}
-          <div className="overflow-y-auto flex-1 p-6">
+          <div className="p-6">
             {/* Issue Grades - Collapsible */}
             <div className="mb-6">
               <div
