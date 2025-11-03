@@ -43,19 +43,20 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
       container: mapContainer.current,
       style: {
         version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
-          'osm': {
+          'carto': {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© CARTO © OpenStreetMap contributors'
           }
         },
         layers: [
           {
-            id: 'osm',
+            id: 'carto',
             type: 'raster',
-            source: 'osm'
+            source: 'carto'
           }
         ]
       },
@@ -374,6 +375,240 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             'line-width': 0.5
           }
         });
+
+        // Add major city labels with tier system for zoom-based display
+        const majorCities = {
+          type: 'FeatureCollection',
+          features: [
+            // Tier 1: Largest cities (always visible)
+            { type: 'Feature', properties: { name: 'New York', tier: 1 }, geometry: { type: 'Point', coordinates: [-74.006, 40.7128] } },
+            { type: 'Feature', properties: { name: 'Los Angeles', tier: 1 }, geometry: { type: 'Point', coordinates: [-118.2437, 34.0522] } },
+            { type: 'Feature', properties: { name: 'Chicago', tier: 1 }, geometry: { type: 'Point', coordinates: [-87.6298, 41.8781] } },
+            { type: 'Feature', properties: { name: 'Houston', tier: 1 }, geometry: { type: 'Point', coordinates: [-95.3698, 29.7604] } },
+            { type: 'Feature', properties: { name: 'Phoenix', tier: 1 }, geometry: { type: 'Point', coordinates: [-112.074, 33.4484] } },
+            { type: 'Feature', properties: { name: 'Philadelphia', tier: 1 }, geometry: { type: 'Point', coordinates: [-75.1652, 39.9526] } },
+            { type: 'Feature', properties: { name: 'San Antonio', tier: 1 }, geometry: { type: 'Point', coordinates: [-98.4936, 29.4241] } },
+            { type: 'Feature', properties: { name: 'San Diego', tier: 1 }, geometry: { type: 'Point', coordinates: [-117.1611, 32.7157] } },
+            { type: 'Feature', properties: { name: 'Dallas', tier: 1 }, geometry: { type: 'Point', coordinates: [-96.797, 32.7767] } },
+            { type: 'Feature', properties: { name: 'San Jose', tier: 1 }, geometry: { type: 'Point', coordinates: [-121.8863, 37.3382] } },
+
+            // Tier 2: Major cities (visible at zoom 4+)
+            { type: 'Feature', properties: { name: 'Austin', tier: 2 }, geometry: { type: 'Point', coordinates: [-97.7431, 30.2672] } },
+            { type: 'Feature', properties: { name: 'Jacksonville', tier: 2 }, geometry: { type: 'Point', coordinates: [-81.6557, 30.3322] } },
+            { type: 'Feature', properties: { name: 'San Francisco', tier: 2 }, geometry: { type: 'Point', coordinates: [-122.4194, 37.7749] } },
+            { type: 'Feature', properties: { name: 'Columbus', tier: 2 }, geometry: { type: 'Point', coordinates: [-82.9988, 39.9612] } },
+            { type: 'Feature', properties: { name: 'Indianapolis', tier: 2 }, geometry: { type: 'Point', coordinates: [-86.1581, 39.7684] } },
+            { type: 'Feature', properties: { name: 'Seattle', tier: 2 }, geometry: { type: 'Point', coordinates: [-122.3321, 47.6062] } },
+            { type: 'Feature', properties: { name: 'Denver', tier: 2 }, geometry: { type: 'Point', coordinates: [-104.9903, 39.7392] } },
+            { type: 'Feature', properties: { name: 'Boston', tier: 2 }, geometry: { type: 'Point', coordinates: [-71.0589, 42.3601] } },
+            { type: 'Feature', properties: { name: 'Nashville', tier: 2 }, geometry: { type: 'Point', coordinates: [-86.7816, 36.1627] } },
+            { type: 'Feature', properties: { name: 'Detroit', tier: 2 }, geometry: { type: 'Point', coordinates: [-83.0458, 42.3314] } },
+            { type: 'Feature', properties: { name: 'Portland', tier: 2 }, geometry: { type: 'Point', coordinates: [-122.6765, 45.5152] } },
+            { type: 'Feature', properties: { name: 'Las Vegas', tier: 2 }, geometry: { type: 'Point', coordinates: [-115.1398, 36.1699] } },
+            { type: 'Feature', properties: { name: 'Memphis', tier: 2 }, geometry: { type: 'Point', coordinates: [-90.0490, 35.1495] } },
+            { type: 'Feature', properties: { name: 'Atlanta', tier: 2 }, geometry: { type: 'Point', coordinates: [-84.3880, 33.7490] } },
+            { type: 'Feature', properties: { name: 'Miami', tier: 2 }, geometry: { type: 'Point', coordinates: [-80.1918, 25.7617] } },
+
+            // Tier 3: Additional cities (visible at zoom 5+)
+            { type: 'Feature', properties: { name: 'Salt Lake City', tier: 3 }, geometry: { type: 'Point', coordinates: [-111.8910, 40.7608] } },
+            { type: 'Feature', properties: { name: 'Reno', tier: 3 }, geometry: { type: 'Point', coordinates: [-119.8138, 39.5296] } },
+            { type: 'Feature', properties: { name: 'Albuquerque', tier: 3 }, geometry: { type: 'Point', coordinates: [-106.6504, 35.0844] } },
+            { type: 'Feature', properties: { name: 'Tucson', tier: 3 }, geometry: { type: 'Point', coordinates: [-110.9747, 32.2226] } },
+            { type: 'Feature', properties: { name: 'Fresno', tier: 3 }, geometry: { type: 'Point', coordinates: [-119.7871, 36.7378] } },
+            { type: 'Feature', properties: { name: 'Sacramento', tier: 3 }, geometry: { type: 'Point', coordinates: [-121.4944, 38.5816] } },
+            { type: 'Feature', properties: { name: 'Kansas City', tier: 3 }, geometry: { type: 'Point', coordinates: [-94.5786, 39.0997] } },
+            { type: 'Feature', properties: { name: 'Mesa', tier: 3 }, geometry: { type: 'Point', coordinates: [-111.8315, 33.4152] } },
+            { type: 'Feature', properties: { name: 'Charlotte', tier: 3 }, geometry: { type: 'Point', coordinates: [-80.8431, 35.2271] } },
+            { type: 'Feature', properties: { name: 'Omaha', tier: 3 }, geometry: { type: 'Point', coordinates: [-95.9345, 41.2565] } },
+            { type: 'Feature', properties: { name: 'Raleigh', tier: 3 }, geometry: { type: 'Point', coordinates: [-78.6382, 35.7796] } },
+            { type: 'Feature', properties: { name: 'Long Beach', tier: 3 }, geometry: { type: 'Point', coordinates: [-118.1937, 33.7701] } },
+            { type: 'Feature', properties: { name: 'Virginia Beach', tier: 3 }, geometry: { type: 'Point', coordinates: [-75.9780, 36.8529] } },
+            { type: 'Feature', properties: { name: 'Oakland', tier: 3 }, geometry: { type: 'Point', coordinates: [-122.2711, 37.8044] } },
+            { type: 'Feature', properties: { name: 'Minneapolis', tier: 3 }, geometry: { type: 'Point', coordinates: [-93.2650, 44.9778] } },
+            { type: 'Feature', properties: { name: 'Tampa', tier: 3 }, geometry: { type: 'Point', coordinates: [-82.4572, 27.9506] } },
+            { type: 'Feature', properties: { name: 'New Orleans', tier: 3 }, geometry: { type: 'Point', coordinates: [-90.0715, 29.9511] } },
+            { type: 'Feature', properties: { name: 'Cleveland', tier: 3 }, geometry: { type: 'Point', coordinates: [-81.6944, 41.4993] } },
+            { type: 'Feature', properties: { name: 'Pittsburgh', tier: 3 }, geometry: { type: 'Point', coordinates: [-79.9959, 40.4406] } },
+            { type: 'Feature', properties: { name: 'Cincinnati', tier: 3 }, geometry: { type: 'Point', coordinates: [-84.5120, 39.1031] } },
+            { type: 'Feature', properties: { name: 'Milwaukee', tier: 3 }, geometry: { type: 'Point', coordinates: [-87.9065, 43.0389] } },
+            { type: 'Feature', properties: { name: 'Boise', tier: 3 }, geometry: { type: 'Point', coordinates: [-116.2146, 43.6150] } },
+            { type: 'Feature', properties: { name: 'Spokane', tier: 3 }, geometry: { type: 'Point', coordinates: [-117.4260, 47.6588] } },
+            { type: 'Feature', properties: { name: 'Richmond', tier: 3 }, geometry: { type: 'Point', coordinates: [-77.4360, 37.5407] } },
+            { type: 'Feature', properties: { name: 'Louisville', tier: 3 }, geometry: { type: 'Point', coordinates: [-85.7585, 38.2527] } },
+
+            // Tier 4: Medium cities (visible at zoom 6+)
+            { type: 'Feature', properties: { name: 'Irvine', tier: 4 }, geometry: { type: 'Point', coordinates: [-117.8265, 33.6846] } },
+            { type: 'Feature', properties: { name: 'Anaheim', tier: 4 }, geometry: { type: 'Point', coordinates: [-117.9145, 33.8366] } },
+            { type: 'Feature', properties: { name: 'Santa Ana', tier: 4 }, geometry: { type: 'Point', coordinates: [-117.8678, 33.7455] } },
+            { type: 'Feature', properties: { name: 'Riverside', tier: 4 }, geometry: { type: 'Point', coordinates: [-117.3961, 33.9533] } },
+            { type: 'Feature', properties: { name: 'Stockton', tier: 4 }, geometry: { type: 'Point', coordinates: [-121.2908, 37.9577] } },
+            { type: 'Feature', properties: { name: 'Bakersfield', tier: 4 }, geometry: { type: 'Point', coordinates: [-119.0187, 35.3733] } },
+            { type: 'Feature', properties: { name: 'Aurora', tier: 4 }, geometry: { type: 'Point', coordinates: [-104.8319, 39.7294] } },
+            { type: 'Feature', properties: { name: 'St. Louis', tier: 4 }, geometry: { type: 'Point', coordinates: [-90.1994, 38.6270] } },
+            { type: 'Feature', properties: { name: 'Corpus Christi', tier: 4 }, geometry: { type: 'Point', coordinates: [-97.3964, 27.8006] } },
+            { type: 'Feature', properties: { name: 'Plano', tier: 4 }, geometry: { type: 'Point', coordinates: [-96.6989, 33.0198] } },
+            { type: 'Feature', properties: { name: 'Newark', tier: 4 }, geometry: { type: 'Point', coordinates: [-74.1724, 40.7357] } },
+            { type: 'Feature', properties: { name: 'Buffalo', tier: 4 }, geometry: { type: 'Point', coordinates: [-78.8784, 42.8864] } },
+            { type: 'Feature', properties: { name: 'Jersey City', tier: 4 }, geometry: { type: 'Point', coordinates: [-74.0776, 40.7178] } },
+            { type: 'Feature', properties: { name: 'St. Petersburg', tier: 4 }, geometry: { type: 'Point', coordinates: [-82.6403, 27.7676] } },
+            { type: 'Feature', properties: { name: 'Orlando', tier: 4 }, geometry: { type: 'Point', coordinates: [-81.3792, 28.5383] } },
+            { type: 'Feature', properties: { name: 'Fort Worth', tier: 4 }, geometry: { type: 'Point', coordinates: [-97.3208, 32.7555] } },
+            { type: 'Feature', properties: { name: 'Tacoma', tier: 4 }, geometry: { type: 'Point', coordinates: [-122.4443, 47.2529] } },
+            { type: 'Feature', properties: { name: 'Lexington', tier: 4 }, geometry: { type: 'Point', coordinates: [-84.5037, 38.0406] } },
+            { type: 'Feature', properties: { name: 'Anchorage', tier: 4 }, geometry: { type: 'Point', coordinates: [-149.9003, 61.2181] } },
+            { type: 'Feature', properties: { name: 'Honolulu', tier: 4 }, geometry: { type: 'Point', coordinates: [-157.8583, 21.3099] } },
+
+            // Tier 5: Smaller cities (visible at zoom 7+)
+            { type: 'Feature', properties: { name: 'Everett', tier: 5 }, geometry: { type: 'Point', coordinates: [-122.2015, 47.9790] } },
+            { type: 'Feature', properties: { name: 'Bellingham', tier: 5 }, geometry: { type: 'Point', coordinates: [-122.4783, 48.7519] } },
+            { type: 'Feature', properties: { name: 'Santa Rosa', tier: 5 }, geometry: { type: 'Point', coordinates: [-122.7141, 38.4404] } },
+            { type: 'Feature', properties: { name: 'Modesto', tier: 5 }, geometry: { type: 'Point', coordinates: [-120.9969, 37.6391] } },
+            { type: 'Feature', properties: { name: 'Berkeley', tier: 5 }, geometry: { type: 'Point', coordinates: [-122.2728, 37.8715] } },
+            { type: 'Feature', properties: { name: 'Pasadena', tier: 5 }, geometry: { type: 'Point', coordinates: [-118.1445, 34.1478] } },
+            { type: 'Feature', properties: { name: 'Glendale', tier: 5 }, geometry: { type: 'Point', coordinates: [-118.2551, 34.1425] } },
+            { type: 'Feature', properties: { name: 'Huntington Beach', tier: 5 }, geometry: { type: 'Point', coordinates: [-117.9992, 33.6603] } },
+            { type: 'Feature', properties: { name: 'Ontario', tier: 5 }, geometry: { type: 'Point', coordinates: [-117.6509, 34.0633] } },
+            { type: 'Feature', properties: { name: 'Eugene', tier: 5 }, geometry: { type: 'Point', coordinates: [-123.0868, 44.0521] } },
+            { type: 'Feature', properties: { name: 'Salem', tier: 5 }, geometry: { type: 'Point', coordinates: [-123.0351, 44.9429] } },
+            { type: 'Feature', properties: { name: 'Fort Collins', tier: 5 }, geometry: { type: 'Point', coordinates: [-105.0844, 40.5853] } },
+            { type: 'Feature', properties: { name: 'Boulder', tier: 5 }, geometry: { type: 'Point', coordinates: [-105.2705, 40.0150] } },
+            { type: 'Feature', properties: { name: 'Ann Arbor', tier: 5 }, geometry: { type: 'Point', coordinates: [-83.7430, 42.2808] } },
+            { type: 'Feature', properties: { name: 'Charleston', tier: 5 }, geometry: { type: 'Point', coordinates: [-79.9311, 32.7765] } },
+            { type: 'Feature', properties: { name: 'Savannah', tier: 5 }, geometry: { type: 'Point', coordinates: [-81.0998, 32.0809] } },
+            { type: 'Feature', properties: { name: 'Durham', tier: 5 }, geometry: { type: 'Point', coordinates: [-78.8986, 35.9940] } },
+            { type: 'Feature', properties: { name: 'Madison', tier: 5 }, geometry: { type: 'Point', coordinates: [-89.4012, 43.0731] } },
+            { type: 'Feature', properties: { name: 'Des Moines', tier: 5 }, geometry: { type: 'Point', coordinates: [-93.6091, 41.6005] } },
+            { type: 'Feature', properties: { name: 'Providence', tier: 5 }, geometry: { type: 'Point', coordinates: [-71.4128, 41.8240] } }
+          ]
+        };
+
+        map.current.addSource('cities', {
+          type: 'geojson',
+          data: majorCities
+        });
+
+        map.current.addLayer({
+          id: 'city-labels',
+          type: 'symbol',
+          source: 'cities',
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 10,
+            'text-anchor': 'top',
+            'text-offset': [0, 0.5]
+          },
+          paint: {
+            'text-color': '#475569',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 1,
+            'text-halo-blur': 0.5,
+            'text-opacity': [
+              'step',
+              ['zoom'],
+              ['case', ['==', ['get', 'tier'], 1], 1, 0],  // Default zoom: tier 1 (10 largest)
+              4, ['case', ['<=', ['get', 'tier'], 2], 1, 0],  // Zoom 4+: tier 1-2 (25 cities)
+              5, ['case', ['<=', ['get', 'tier'], 3], 1, 0],  // Zoom 5+: tier 1-3 (50 cities)
+              6, ['case', ['<=', ['get', 'tier'], 4], 1, 0],  // Zoom 6+: tier 1-4 (70 cities)
+              7, 1  // Zoom 7+: all tiers (90 cities)
+            ]
+          }
+        });
+
+        // Add city dots
+        map.current.addLayer({
+          id: 'city-dots',
+          type: 'circle',
+          source: 'cities',
+          paint: {
+            'circle-radius': 3,
+            'circle-color': '#475569',
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#ffffff',
+            'circle-opacity': [
+              'step',
+              ['zoom'],
+              ['case', ['==', ['get', 'tier'], 1], 1, 0],  // Default zoom: tier 1 (10 largest)
+              4, ['case', ['<=', ['get', 'tier'], 2], 1, 0],  // Zoom 4+: tier 1-2 (25 cities)
+              5, ['case', ['<=', ['get', 'tier'], 3], 1, 0],  // Zoom 5+: tier 1-3 (50 cities)
+              6, ['case', ['<=', ['get', 'tier'], 4], 1, 0],  // Zoom 6+: tier 1-4 (70 cities)
+              7, 1  // Zoom 7+: all tiers (90 cities)
+            ]
+          }
+        });
+
+        // Add state labels for Senate/Both view (added AFTER cities to render on top)
+        if (isSenate) {
+          // Predefined state centers for consistent labeling
+          const stateCenters: Record<string, [number, number]> = {
+            'Alabama': [-86.9023, 32.3182], 'Alaska': [-152.4044, 61.3707], 'Arizona': [-111.0937, 34.0489],
+            'Arkansas': [-92.3731, 34.7465], 'California': [-119.4179, 36.7783], 'Colorado': [-105.5478, 39.5501],
+            'Connecticut': [-72.7554, 41.6032], 'Delaware': [-75.5277, 38.9108], 'Florida': [-81.5158, 27.6648],
+            'Georgia': [-83.5007, 32.1656], 'Hawaii': [-156.3319, 20.2927], 'Idaho': [-114.7420, 44.0682],
+            'Illinois': [-89.3985, 40.6331], 'Indiana': [-86.1349, 40.2672], 'Iowa': [-93.0977, 41.8780],
+            'Kansas': [-98.4842, 39.0119], 'Kentucky': [-84.2700, 37.8393], 'Louisiana': [-91.9623, 30.9843],
+            'Maine': [-69.4455, 45.2538], 'Maryland': [-76.6413, 39.0458], 'Massachusetts': [-71.3824, 42.4072],
+            'Michigan': [-85.6024, 44.3148], 'Minnesota': [-94.6859, 46.7296], 'Mississippi': [-89.3985, 32.3547],
+            'Missouri': [-92.6038, 37.9643], 'Montana': [-110.3626, 46.8797], 'Nebraska': [-99.9018, 41.4925],
+            'Nevada': [-116.4194, 38.8026], 'New Hampshire': [-71.5724, 43.1939], 'New Jersey': [-74.4057, 40.0583],
+            'New Mexico': [-105.8701, 34.5199], 'New York': [-75.5268, 43.2994], 'North Carolina': [-79.0193, 35.7596],
+            'North Dakota': [-101.0020, 47.5515], 'Ohio': [-82.9071, 40.4173], 'Oklahoma': [-97.5164, 35.4676],
+            'Oregon': [-120.5542, 43.8041], 'Pennsylvania': [-77.1945, 41.2033], 'Rhode Island': [-71.4774, 41.5801],
+            'South Carolina': [-81.1637, 33.8361], 'South Dakota': [-100.2263, 43.9695], 'Tennessee': [-86.5804, 35.5175],
+            'Texas': [-99.9018, 31.9686], 'Utah': [-111.0937, 39.3210], 'Vermont': [-72.5778, 44.5588],
+            'Virginia': [-78.6569, 37.4316], 'Washington': [-120.7401, 47.7511], 'West Virginia': [-80.4549, 38.5976],
+            'Wisconsin': [-89.6385, 43.7844], 'Wyoming': [-107.2903, 43.0750], 'District of Columbia': [-77.0369, 38.9072]
+          };
+
+          const stateLabels: any = {
+            type: 'FeatureCollection',
+            features: Object.entries(stateCenters).map(([name, coords]) => ({
+              type: 'Feature',
+              properties: { name },
+              geometry: { type: 'Point', coordinates: coords }
+            }))
+          };
+
+          map.current.addSource('state-labels', {
+            type: 'geojson',
+            data: stateLabels
+          });
+
+          map.current.addLayer({
+            id: 'state-labels',
+            type: 'symbol',
+            source: 'state-labels',
+            layout: {
+              'text-field': ['get', 'name'],
+              'text-size': [
+                'step',
+                ['zoom'],
+                10,  // Smaller at low zoom for small states
+                4, 12,  // Normal size at zoom 4+
+                6, 14   // Larger at higher zoom
+              ],
+              'text-transform': 'uppercase',
+              'text-letter-spacing': 0.1,
+              'text-max-width': 15,  // Increased from 8 to allow longer names
+              'text-allow-overlap': true,  // Allow state names to overlap if needed
+              'text-optional': false,
+              'text-ignore-placement': false,
+              'text-padding': 2,
+              'symbol-sort-key': 1  // Give states high priority
+            },
+            paint: {
+              'text-color': '#1e293b',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 1.5,
+              'text-halo-blur': 0.5,
+              'text-opacity': [
+                'step',
+                ['zoom'],
+                1,  // Full opacity at low zoom
+                5, 0.7  // Slightly transparent at higher zoom when cities appear
+              ]
+            }
+          });
+        }
 
         // Initialize popup
         popup.current = new maplibregl.Popup({

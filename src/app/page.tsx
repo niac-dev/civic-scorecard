@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
-import { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
@@ -590,17 +590,27 @@ export default function Page() {
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
         // Check if there's a scrollable container that can handle this scroll
         let target = e.target as HTMLElement | null;
+        let foundScrollableContainer = false;
+
         while (target && target !== document.body) {
           const hasHorizontalScroll = target.scrollWidth > target.clientWidth;
           const canScrollLeft = target.scrollLeft > 0;
           const canScrollRight = target.scrollLeft < target.scrollWidth - target.clientWidth;
 
-          // If the element can scroll horizontally and there's room to scroll, prevent navigation
+          // If the element can scroll horizontally and there's room to scroll
           if (hasHorizontalScroll && (canScrollLeft || canScrollRight)) {
+            foundScrollableContainer = true;
+            // Manually handle the scroll
+            target.scrollLeft += e.deltaX;
             e.preventDefault();
             return;
           }
           target = target.parentElement;
+        }
+
+        // If no scrollable container was found, prevent browser navigation
+        if (!foundScrollableContainer) {
+          e.preventDefault();
         }
       }
     };
@@ -1213,7 +1223,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-auto max-h-[70vh]">
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
@@ -1270,9 +1280,8 @@ export default function Page() {
               const isCategoryHeader = isSummaryMode && !isOverallGrade;
 
               return (
-                <>
+                <React.Fragment key={gradeCol.field}>
                   <div
-                    key={gradeCol.field}
                     className={clsx(
                       "th text-center relative group",
                       idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10"
@@ -1370,7 +1379,7 @@ export default function Page() {
                       </span>
                     </div>
                   )}
-                </>
+                </React.Fragment>
               );
             })}
             {billCols.map((c) => {
@@ -2112,7 +2121,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
   return (
     <div className="mb-1 space-y-2">
-      {/* First row: Map/Scorecard/Issues buttons and Search */}
+      {/* First row: Map/Scorecard/Issues buttons */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Desktop: Show both buttons (>450px) */}
         <div className="min-[450px]:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
@@ -2277,50 +2286,70 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         </select>
         )}
 
-        <div className="ml-auto">
-          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} />
-        </div>
+        {/* Scorecard view search - right-aligned */}
+        {f.viewMode !== "map" && (
+          <div className="ml-auto">
+            <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={false} />
+          </div>
+        )}
       </div>
 
-      {/* Second row: Filters */}
-      <div className="flex items-center gap-2">
-        {f.viewMode !== "map" && (
-          <>
-            <button
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
-            >
-              <svg
-                className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
-              {(f.chamber || f.party || f.state) && !filtersExpanded && (
-                <span className="text-xs text-slate-500">
-                  ({[
-                    f.chamber && f.chamber,
-                    f.party && f.party,
-                    f.state && f.state
-                  ].filter(Boolean).join(", ")})
-                </span>
-              )}
-            </button>
+      {/* Second row: Map view - chamber filter on left, search centered */}
+      {f.viewMode === "map" && (
+        <div className="flex items-center gap-3">
+          <Segmented
+            options={["All", "House","Senate"]}
+            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
+            onChange={(v)=>{
+              if (v === "All") {
+                f.set({ chamber: "" });
+              } else {
+                f.set({ chamber: v.toUpperCase() as any });
+              }
+            }}
+          />
+          <div className="flex-1 flex justify-center">
+            <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={true} />
+          </div>
+        </div>
+      )}
 
-            {/* Clear button when filters are active but collapsed */}
-            {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
-              <button
-                onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-                title="Clear all filters"
-              >
-                ✕
-              </button>
-            )}
-          </>
+      {/* Second row: Scorecard view - Filters */}
+      {f.viewMode !== "map" && (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+          className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+        >
+          <svg
+            className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
+          {(f.chamber || f.party || f.state) && !filtersExpanded && (
+            <span className="text-xs text-slate-500">
+              ({[
+                f.chamber && f.chamber,
+                f.party && f.party,
+                f.state && f.state
+              ].filter(Boolean).join(", ")})
+            </span>
+          )}
+        </button>
+
+        {/* Clear button when filters are active but collapsed */}
+        {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
+          <button
+            onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+            className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+            title="Clear all filters"
+          >
+            ✕
+          </button>
         )}
 
         <div
@@ -2340,53 +2369,50 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               }
             }}
           />
-          {f.viewMode !== "map" && (
-            <>
-              <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
-                <option value="">Party</option>
-                <option>Democratic</option><option>Republican</option><option>Independent</option>
-              </select>
-              <select
-                className="select !text-xs !h-8 !px-2 !max-w-[140px]"
-                value={f.state || ""}
-                onChange={(e) => {
-                  const selectedState = e.target.value;
-                  // If selecting a territory without senate, automatically switch to House
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }}
-              >
-                <option value="">State</option>
-                {STATES.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
-                <button
-                  onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-                  className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-                  title="Clear all filters"
-                >
-                  Clear
-                </button>
-              )}
-            </>
+          <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
+            <option value="">Party</option>
+            <option>Democratic</option><option>Republican</option><option>Independent</option>
+          </select>
+          <select
+            className="select !text-xs !h-8 !px-2 !max-w-[140px]"
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              // If selecting a territory without senate, automatically switch to House
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+            }}
+          >
+            <option value="">State</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+            <button
+              onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+              title="Clear all filters"
+            >
+              Clear
+            </button>
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
 
-function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; metaByCol: Map<string, Meta> }) {
+function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean }) {
   const f = useFilters();
   const [isOpen, setIsOpen] = useState(false);
-  const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">("name");
+  const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">(isMapView ? "zip" : "name");
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -2475,6 +2501,7 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
   };
 
   const getPlaceholder = () => {
+    if (isMapView) return "Enter zipcode...";
     if (searchType === "zip") return "Enter zip code…";
     if (searchType === "name") return "Enter lawmaker name…";
     return "Enter bill number or title…";
@@ -2482,6 +2509,40 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
 
   const isActive = f.myLawmakers.length > 0 || f.search.length > 0;
 
+  // Map view: show simple inline search
+  if (isMapView) {
+    return (
+      <div className="relative flex items-center gap-2">
+        <input
+          type="text"
+          placeholder={getPlaceholder()}
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSearch();
+            }
+          }}
+          className="px-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent min-w-[250px]"
+        />
+        {loading ? (
+          <div className="text-xs text-slate-500">Loading...</div>
+        ) : error ? (
+          <div className="text-xs text-red-600">{error}</div>
+        ) : isActive ? (
+          <button
+            onClick={handleClear}
+            className="chip bg-[#4B8CFB] text-white hover:bg-[#3B7CEB] text-xs"
+            title="Clear search"
+          >
+            Showing {filteredCount} ✕
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
+  // Scorecard view: show dropdown button
   return (
     <div className="relative">
       {isActive ? (
