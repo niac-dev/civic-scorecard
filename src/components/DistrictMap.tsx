@@ -378,7 +378,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
         // Add major city labels with tier system for zoom-based display
         const majorCities = {
-          type: 'FeatureCollection',
+          type: 'FeatureCollection' as const,
           features: [
             // Tier 1: Largest cities (always visible)
             { type: 'Feature', properties: { name: 'New York', tier: 1 }, geometry: { type: 'Point', coordinates: [-74.006, 40.7128] } },
@@ -477,9 +477,9 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             { type: 'Feature', properties: { name: 'Savannah', tier: 5 }, geometry: { type: 'Point', coordinates: [-81.0998, 32.0809] } },
             { type: 'Feature', properties: { name: 'Durham', tier: 5 }, geometry: { type: 'Point', coordinates: [-78.8986, 35.9940] } },
             { type: 'Feature', properties: { name: 'Madison', tier: 5 }, geometry: { type: 'Point', coordinates: [-89.4012, 43.0731] } },
-            { type: 'Feature', properties: { name: 'Des Moines', tier: 5 }, geometry: { type: 'Point', coordinates: [-93.6091, 41.6005] } },
-            { type: 'Feature', properties: { name: 'Providence', tier: 5 }, geometry: { type: 'Point', coordinates: [-71.4128, 41.8240] } }
-          ]
+            { type: 'Feature' as const, properties: { name: 'Des Moines', tier: 5 }, geometry: { type: 'Point' as const, coordinates: [-93.6091, 41.6005] } },
+            { type: 'Feature' as const, properties: { name: 'Providence', tier: 5 }, geometry: { type: 'Point' as const, coordinates: [-71.4128, 41.8240] } }
+          ].map(f => ({ ...f, type: 'Feature' as const, geometry: { ...f.geometry, type: 'Point' as const } }))
         };
 
         map.current.addSource('cities', {
