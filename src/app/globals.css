@@ -10,12 +10,15 @@
 }
 
 body { @apply bg-[#F7F8FA] text-[#0B1220] antialiased; }
-.dark body { @apply bg-[#0B1220] text-[#E8EEF7]; }
 
-.th { @apply px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-800 dark:text-slate-300; }
-.td { @apply px-3 py-3 text-sm text-slate-800 dark:text-slate-800 border-b border-[#E7ECF2] dark:border-white/10; }
-.select { @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 px-3 text-sm; }
-.input { @apply h-9 w-64 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 px-3 text-sm; }
+@media (prefers-color-scheme: dark) {
+  body { @apply bg-[#0B1220] text-[#E8EEF7]; }
+}
+
+.th { @apply px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-800 dark:text-white; }
+.td { @apply px-3 py-3 text-sm text-slate-800 dark:text-white border-b border-[#E7ECF2] dark:border-white/10; }
+.select { @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/15 px-3 text-sm text-slate-900 dark:text-white; }
+.input { @apply h-9 w-64 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 px-3 text-sm text-slate-900 dark:text-white; }
 .chip { @apply h-8 px-3 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-sm text-slate-700 dark:text-slate-500 hover:bg-[#dae2ec] dark:hover:bg-white/15; }
 .chip-outline { @apply h-8 px-3 rounded-full border border-[#E7ECF2] dark:border-white/15 text-sm hover:bg-white dark:hover:bg-white/5; }
 .chip-xs { @apply px-2 py-0.5 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-[11px] text-slate-700 dark:text-slate-200; }
@@ -25,7 +28,7 @@ body { @apply bg-[#F7F8FA] text-[#0B1220] antialiased; }
 
 th {
   /* non-sticky header but keep the glass look */
-  @apply z-10 bg-white/70 dark:bg-[#0B1220]/70 backdrop-blur border-b border-[#E7ECF2] dark:border-white/10;
+  @apply z-10 bg-white/70 dark:bg-slate-900/85 backdrop-blur border-b border-[#E7ECF2] dark:border-white/10;
 }
 
 /* add a class to the first header/td cell: className="col-sticky" */

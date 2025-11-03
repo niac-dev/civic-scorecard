@@ -498,10 +498,10 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             'text-offset': [0, 0.5]
           },
           paint: {
-            'text-color': '#475569',
+            'text-color': '#000000',
             'text-halo-color': '#ffffff',
-            'text-halo-width': 1,
-            'text-halo-blur': 0.5,
+            'text-halo-width': 0.5,
+            'text-halo-blur': 0,
             'text-opacity': [
               'step',
               ['zoom'],
@@ -538,6 +538,21 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
         // Add state labels for Senate/Both view (added AFTER cities to render on top)
         if (isSenate) {
+          // State name to abbreviation mapping
+          const stateNameToAbbr: Record<string, string> = {
+            'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+            'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+            'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+            'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+            'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+            'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+            'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+            'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+            'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+            'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+            'District of Columbia': 'DC'
+          };
+
           // Predefined state centers for consistent labeling
           const stateCenters: Record<string, [number, number]> = {
             'Alabama': [-86.9023, 32.3182], 'Alaska': [-152.4044, 61.3707], 'Arizona': [-111.0937, 34.0489],
@@ -563,7 +578,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             type: 'FeatureCollection' as const,
             features: Object.entries(stateCenters).map(([name, coords]) => ({
               type: 'Feature' as const,
-              properties: { name },
+              properties: { name: stateNameToAbbr[name] || name },
               geometry: { type: 'Point' as const, coordinates: coords }
             }))
           };
@@ -582,9 +597,9 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
               'text-size': [
                 'step',
                 ['zoom'],
-                10,  // Smaller at low zoom for small states
-                4, 12,  // Normal size at zoom 4+
-                6, 14   // Larger at higher zoom
+                12,  // Bigger at low zoom
+                4, 14,  // Larger size at zoom 4+
+                6, 16   // Even larger at higher zoom
               ],
               'text-transform': 'uppercase',
               'text-letter-spacing': 0.1,
@@ -596,10 +611,10 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
               'symbol-sort-key': 1  // Give states high priority
             },
             paint: {
-              'text-color': '#1e293b',
-              'text-halo-color': '#ffffff',
+              'text-color': '#000000',
+              'text-halo-color': '#d1d5db',
               'text-halo-width': 1.5,
-              'text-halo-blur': 0.5,
+              'text-halo-blur': 0,
               'text-opacity': [
                 'step',
                 ['zoom'],
@@ -692,11 +707,11 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                     // Both mode: Just show state and average grade
                     html = `
                       <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                        <div style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
+                        <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;">
                           ${stateName}
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="font-size: 12px; color: #64748b; font-weight: 500;">Average Grade:</span>
+                          <span style="font-size: 12px; color: #cbd5e1; font-weight: 500;">Average Grade:</span>
                           <span style="${getGradeChipStyle(avgGrade)}">${avgGrade}</span>
                         </div>
                       </div>
@@ -705,18 +720,18 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                     // Senate mode: Show senators with details
                     const senators = stateMembers.filter(m => m.chamber === 'SENATE');
                     const senatorsHtml = senators.map(senator => `
-                      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #475569;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                           ${senator.photo_url ? `
                             <img
                               src="${senator.photo_url}"
                               alt=""
-                              style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #e5e7eb;"
+                              style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #475569;"
                             />
                           ` : `
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #e5e7eb;"></div>
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
                           `}
-                          <div style="font-size: 13px; font-weight: 600; color: #1e293b;">
+                          <div style="font-size: 13px; font-weight: 600; color: #e2e8f0;">
                             ${senator.full_name}
                           </div>
                         </div>
@@ -729,7 +744,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
                     html = `
                       <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 220px;">
-                        <div style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                        <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px;">
                           ${stateName}
                         </div>
                         ${senatorsHtml}
@@ -796,10 +811,10 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
                 const html = `
                   <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                    <div style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">
+                    <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 2px;">
                       ${stateName}
                     </div>
-                    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">
                       ${districtDisplay}
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
@@ -807,12 +822,12 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                         <img
                           src="${member.photo_url}"
                           alt=""
-                          style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #e5e7eb;"
+                          style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #475569;"
                         />
                       ` : `
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #e5e7eb;"></div>
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
                       `}
-                      <div style="font-size: 13px; font-weight: 600; color: #1e293b;">
+                      <div style="font-size: 13px; font-weight: 600; color: #e2e8f0;">
                         ${member.full_name}
                       </div>
                     </div>

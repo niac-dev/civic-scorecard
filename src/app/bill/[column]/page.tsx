@@ -84,13 +84,13 @@ function isTrue(v: unknown): boolean {
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
-  // If chamber is explicitly set (even to empty), respect that
+  // If chamber is explicitly set to HOUSE or SENATE, use that
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as "HOUSE" | "SENATE";
-  // If chamber is explicitly empty in metadata, don't infer from bill number
-  if (meta && meta.chamber !== undefined && explicit === "") return "";
-  // Otherwise infer from bill number prefix
+  // Try to infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
+  // If we still can't determine and chamber is explicitly empty in metadata, it's multi-chamber
+  if (meta && meta.chamber !== undefined && explicit === "") return "";
   return "";
 }
 
@@ -122,7 +122,7 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   }
 
   if (isCosponsor) {
-    return isSupport ? `Cosponsor${points}` : `Do Not Cosponsor${points}`;
+    return isSupport ? `Support Cosponsorship${points}` : `Oppose Cosponsorship${points}`;
   } else if (isVote) {
     return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   } else {
@@ -553,13 +553,26 @@ export default function BillPage() {
           return;
         }
 
-        // Check for "present" vote (partial points - not 0, not full)
-        if (isVoteAction && val > 0 && val < fullPoints) {
-          present.push(row);
-        } else if (val > 0) {
-          support.push(row);
-        } else if (val === 0) {
-          oppose.push(row);
+        // For cosponsor bills, use the _cosponsor column to determine grouping
+        if (isCosponsorAction) {
+          const cosponsorCol = `${column}_cosponsor`;
+          const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
+
+          if (didCosponsor) {
+            support.push(row); // Cosponsored
+          } else {
+            oppose.push(row); // Did not cosponsor
+          }
+        } else {
+          // For votes, use points-based grouping
+          // Check for "present" vote (partial points - not 0, not full)
+          if (isVoteAction && val > 0 && val < fullPoints) {
+            present.push(row);
+          } else if (val > 0) {
+            support.push(row);
+          } else if (val === 0) {
+            oppose.push(row);
+          }
         }
       });
 
@@ -675,10 +688,11 @@ export default function BillPage() {
   const pairedBillMeta = pairedBillName ? metaByCol.get(pairedBillName) : undefined;
 
   // For paired manual actions, sections are already correctly grouped by score
-  // For regular bills, swap arrays if we oppose the bill (since val>0 means they did the opposite)
-  const firstSection = hasPairedGroups ? filteredSupporters : (isSupport ? filteredSupporters : filteredOpposers);
-  const secondSection = hasPairedGroups ? filteredMiddleGroup : (isSupport ? filteredOpposers : filteredSupporters);
-  const thirdSection = hasPairedGroups ? filteredOpposers : [];
+  // For cosponsor and vote bills, keep sections consistent (don't swap based on position)
+  // filteredSupporters always = people who got points, filteredOpposers always = people who got 0 points
+  const firstSection = hasPairedGroups ? filteredSupporters : filteredSupporters;
+  const secondSection = hasPairedGroups ? filteredMiddleGroup : filteredOpposers;
+  const thirdSection = hasPairedGroups ? filteredOpposers : filteredMiddleGroup;
 
   let firstLabel = '';
   let secondLabel = '';
@@ -710,20 +724,41 @@ export default function BillPage() {
       thirdIsGood = false;
     }
   } else if (isCosponsor) {
-    firstLabel = 'Cosponsors';
-    secondLabel = 'Has Not Cosponsored';
-    firstIsGood = isSupport;  // Good if we support, bad if we oppose
-    secondIsGood = !isSupport; // Good if we oppose, bad if we support
+    // For cosponsor bills, val in CSV is the raw action (1 = cosponsored, 0 = didn't)
+    // firstSection (val > 0) = cosponsors, secondSection (val = 0) = non-cosponsors
+    // Labels always describe the action, only good/bad indicator changes with NIAC position
+    firstLabel = 'Cosponsored';
+    secondLabel = 'Has not cosponsored';
+    if (isSupport) {
+      // We support cosponsorship
+      firstIsGood = true;   // cosponsoring is good
+      secondIsGood = false; // not cosponsoring is bad
+    } else {
+      // We oppose cosponsorship
+      firstIsGood = false;  // cosponsoring is bad
+      secondIsGood = true;  // not cosponsoring is good
+    }
   } else if (isVote) {
-    firstLabel = 'Voted in Favor';
-    secondLabel = 'Voted Against';
+    // For vote bills, val in CSV is the raw action (1 = voted yes, 0 = voted no)
+    // firstSection (val > 0) = yes votes, secondSection (val = 0) = no votes
+    // Labels always describe the action, only good/bad indicator changes with NIAC position
+    firstLabel = 'Voted in favor';
+    secondLabel = 'Voted against';
     thirdLabel = 'Voted Present';
-    firstIsGood = isSupport;
-    secondIsGood = !isSupport;
-    thirdIsGood = false; // Present votes don't get full points
+    if (isSupport) {
+      // We support the bill
+      firstIsGood = true;   // yes vote is good
+      secondIsGood = false; // no vote is bad
+      thirdIsGood = false;
+    } else {
+      // We oppose the bill
+      firstIsGood = false;  // yes vote is bad
+      secondIsGood = true;  // no vote is good
+      thirdIsGood = false;
+    }
   } else {
-    firstLabel = 'Supporters';
-    secondLabel = 'Did Not Support';
+    firstLabel = 'Support';
+    secondLabel = 'Oppose';
     firstIsGood = isSupport;
     secondIsGood = !isSupport;
   }
@@ -1038,6 +1073,9 @@ export default function BillPage() {
                             </div>
                           </div>
                         )}
+                        {housemembers.length > 0 && senatemembers.length > 0 && (
+                          <div className="border-t border-[#E7ECF2] dark:border-white/10 my-4"></div>
+                        )}
                         {senatemembers.length > 0 && (
                           <div>
                             <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
@@ -1120,6 +1158,9 @@ export default function BillPage() {
                               ))}
                             </div>
                           </div>
+                        )}
+                        {housemembers.length > 0 && senatemembers.length > 0 && (
+                          <div className="border-t border-[#E7ECF2] dark:border-white/10 my-4"></div>
                         )}
                         {senatemembers.length > 0 && (
                           <div>
@@ -1437,9 +1478,9 @@ function MemberModal({
       />
       {/* Modal */}
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
+        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220]">
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800">
             {/* Top row: photo, name, badges, and buttons */}
             <div className="flex items-center gap-3">
               {row.photo_url ? (
@@ -2055,11 +2096,6 @@ function MemberModal({
                                   return "Did not vote/voted present";
                                 }
 
-                                const actionTypes = (it.meta as { action_types?: string }).action_types || "";
-                                const isVote = actionTypes.includes("vote");
-                                const isCosponsor = actionTypes.includes("cosponsor");
-                                const position = (it.meta?.position_to_score || "").toUpperCase();
-                                const isSupport = position === "SUPPORT";
                                 const gotPoints = it.val > 0;
 
                                 // Format points display with +/- notation
@@ -2075,20 +2111,8 @@ function MemberModal({
                                   }
                                 }
 
-                                if (isCosponsor) {
-                                  // Use the explicit didCosponsor field instead of inferring from points
-                                  return it.didCosponsor ? `Cosponsored${pointsDisplay}` : `Has Not Cosponsored${pointsDisplay}`;
-                                } else if (isVote) {
-                                  // If we support: points means they voted in favor
-                                  // If we oppose: points means they voted against
-                                  const votedFor = isSupport ? gotPoints : !gotPoints;
-                                  if (votedFor) {
-                                    return `Voted in Favor${pointsDisplay}`;
-                                  } else {
-                                    return `Voted Against${pointsDisplay}`;
-                                  }
-                                }
-                                return "Action";
+                                const actionDescription = gotPoints ? 'Support' : 'Oppose';
+                                return `${actionDescription}${pointsDisplay}`;
                               })()}
                             </span>
                           </div>

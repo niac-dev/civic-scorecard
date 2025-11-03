@@ -66,27 +66,14 @@ function partyLabel(p?: string) {
 function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
   const bn = (meta?.bill_number || col || "").toString().trim();
   const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
-  // If chamber is explicitly set (even to empty), respect that
+  // If chamber is explicitly set to HOUSE or SENATE, use that
   if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
-  // If chamber is explicitly empty in metadata, don't infer from bill number
-  if (meta && meta.chamber !== undefined && explicit === "") return "";
-  // Otherwise infer from bill number prefix
+  // Try to infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
+  // If we still can't determine and chamber is explicitly empty in metadata, it's multi-chamber
+  if (meta && meta.chamber !== undefined && explicit === "") return "";
   return "";
-}
-
-function formatPositionScorecard(meta: Meta | undefined): string {
-  const position = (meta?.position_to_score || '').toUpperCase();
-  const actionType = (meta as { action_types?: string })?.action_types || '';
-  const isCosponsor = actionType.includes('cosponsor');
-  const isSupport = position === 'SUPPORT';
-
-  if (isCosponsor) {
-    return isSupport ? '✓ Cosponsor' : '✗ Cosponsor';
-  } else {
-    return isSupport ? '✓ Vote' : '✗ Vote';
-  }
 }
 
 function formatPositionTooltip(meta: Meta | undefined): string {
@@ -116,7 +103,7 @@ function formatPositionTooltip(meta: Meta | undefined): string {
   }
 
   if (isCosponsor) {
-    return isSupport ? `Support Cosponsorship${points}` : `Do Not Cosponsor${points}`;
+    return isSupport ? `Support Cosponsorship${points}` : `Oppose Cosponsorship${points}`;
   } else {
     return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   }
@@ -674,14 +661,15 @@ export default function Page() {
       });
     }
     if (f.myLawmakers.length > 0) {
-      // Fuzzy match by last name - handles middle names/initials
+      // Match by both first and last name
       out = out.filter(r => {
         const dbName = (r.full_name as string) || '';
         return f.myLawmakers.some(apiName => {
-          // Extract last name from both (before the comma)
-          const dbLast = dbName.split(',')[0]?.trim().toLowerCase();
-          const apiLast = apiName.split(',')[0]?.trim().toLowerCase();
-          return dbLast === apiLast;
+          // Extract last name and first name from both
+          const [dbLast, dbFirst] = dbName.split(',').map(s => s?.trim().toLowerCase());
+          const [apiLast, apiFirst] = apiName.split(',').map(s => s?.trim().toLowerCase());
+          // Match both last and first name (first name can be a partial match to handle middle names/initials)
+          return dbLast === apiLast && dbFirst && apiFirst && dbFirst.startsWith(apiFirst.split(' ')[0]);
         });
       });
     }
@@ -1145,8 +1133,8 @@ export default function Page() {
       const restGradesPart = gradeColumns.slice(1).map(() => "minmax(120px, 120px)").join(" ");
       return `${memberCol} minmax(120px, 120px) minmax(240px, 240px) ${restGradesPart} ${billsPart}`;
     }
-    // Civil Rights or Travel & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
-    if (f.categories.has("Civil Rights") || f.categories.has("Travel & Immigration")) {
+    // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
+    if (f.categories.has("Civil Rights & Immigration")) {
       return `${memberCol} ${gradesPart} ${billsPart} minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
@@ -1363,10 +1351,10 @@ export default function Page() {
                   {/* Endorsements column header - after Overall Grade in AIPAC view */}
                   {idx === 0 && f.categories.has("AIPAC") && (
                     <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
-                      {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
-                      <div className="h-[3.375rem] flex items-start">
+                      {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
+                      <div className="h-[4.5rem] flex items-start">
                         <span
-                          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                          className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open('/aipac', '_blank');
@@ -1425,7 +1413,7 @@ export default function Page() {
                       className="th group/header relative select-none flex flex-col max-w-[14rem]"
                     >
                       {/* Header and dropdown for election year selection */}
-                      <div className="h-[3.375rem] flex flex-col items-start justify-start">
+                      <div className="h-[4.5rem] flex flex-col items-start justify-start">
                         <div className="mb-1">Election Cycle</div>
                         <select
                           className="text-sm font-normal bg-transparent border border-slate-300 dark:border-slate-600 rounded px-2 py-0.5 cursor-pointer hover:border-[#4B8CFB] dark:hover:border-[#4B8CFB] focus:outline-none focus:border-[#4B8CFB] dark:focus:border-[#4B8CFB]"
@@ -1449,10 +1437,10 @@ export default function Page() {
                     key={c}
                     className="th group relative select-none flex flex-col max-w-[14rem]"
                   >
-                    {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
-                    <div className="h-[3.375rem] flex items-start">
+                    {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
+                    <div className="h-[4.5rem] flex items-start">
                       <span
-                        className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                        className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open('/aipac', '_blank');
@@ -1507,7 +1495,7 @@ export default function Page() {
               );
             })}
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
-            {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
+            {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
               <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
                 {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
                 <div className="h-[3.375rem] flex items-start">
@@ -1625,13 +1613,13 @@ export default function Page() {
               key={i}
               className={clsx(
                 "grid min-w-max transition group",
-                "hover:bg-slate-50 dark:hover:bg-white/5"
+                "hover:bg-slate-50 dark:hover:bg-slate-800"
               )}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {/* member + photo */}
               <div
-                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-white/5 transition border-r border-[#E7ECF2] dark:border-white/10"
+                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-white/10"
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
@@ -1659,7 +1647,7 @@ export default function Page() {
                       return "";
                     })()}
                   </div>
-                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-slate-200 mb-0.5 md:mb-1">
+                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-white mb-0.5 md:mb-1">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
@@ -1745,7 +1733,7 @@ export default function Page() {
 
                     {/* Endorsements column - after Overall Grade in AIPAC view */}
                     {idx === 0 && f.categories.has("AIPAC") && (
-                      <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+                      <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
                         {(() => {
                           // Check if member has reject AIPAC commitment text (takes priority)
                           const rejectCommitment = r.reject_aipac_commitment;
@@ -1758,7 +1746,7 @@ export default function Page() {
                                 <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
                                   <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
                                 </svg>
-                                <span className="text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                <span className="text-xs text-slate-800 dark:text-white font-bold">
                                   {rejectLink && String(rejectLink).startsWith('http') ? (
                                     <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
                                       {rejectCommitment}
@@ -1781,7 +1769,7 @@ export default function Page() {
                                 <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                   <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                                 </svg>
-                                <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC and DMFI</span>
+                                <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
                               </div>
                             );
                           }
@@ -1794,7 +1782,7 @@ export default function Page() {
                                     <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                       <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                                     </svg>
-                                    <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC</span>
+                                    <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
                                   </div>
                                 )}
                                 {dmfi && (
@@ -1802,7 +1790,7 @@ export default function Page() {
                                     <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                       <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                                     </svg>
-                                    <span className="text-xs text-slate-800 dark:text-slate-200">Supported by DMFI</span>
+                                    <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
                                   </div>
                                 )}
                               </div>
@@ -1814,7 +1802,7 @@ export default function Page() {
                               <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                 <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
                               </svg>
-                              <span className="text-xs text-slate-800 dark:text-slate-200">Not supported by AIPAC or DMFI</span>
+                              <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
                             </div>
                           );
                         })()}
@@ -1936,8 +1924,9 @@ export default function Page() {
                 })();
 
                 // Determine max points for this column
+                // For regular bills, max points is just the points value from metadata
                 // For pair_key items, the denominator depends on the item and whether they got points
-                let maxPoints = maxPointsByCol.get(c) || 0;
+                let maxPoints = Number(meta?.points ?? 0);
                 if (meta?.pair_key) {
                   // Find the highest max points among all items in the pair and the OTHER item's max
                   let pairMax = 0;
@@ -2003,20 +1992,34 @@ export default function Page() {
                 } else if (showDashForPreferredPair) {
                   title = "Not penalized: preferred item supported";
                 } else {
-                  // Determine the action description
+                  // Determine the specific action description based on actual action taken
                   let actionDescription = '';
-
                   if (isCosponsor) {
-                    // Use the explicit _cosponsor column instead of inferring from points
-                    actionDescription = didCosponsor ? 'Cosponsored' : 'Did Not Cosponsor';
+                    // For cosponsor bills, use the _cosponsor column to determine actual action
+                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                   } else if (isVote) {
-                    const votedFor = isSupport ? (val > 0) : (val === 0);
-                    actionDescription = votedFor ? 'Voted in Favor' : 'Voted Against';
+                    // For vote bills, valRaw represents the raw vote (1 = yes, 0 = no)
+                    actionDescription = Number(valRaw) > 0 ? 'Voted in favor' : 'Voted against';
                   } else {
-                    actionDescription = val > 0 ? 'Supported' : 'Did Not Support';
+                    // Fallback for other action types
+                    actionDescription = val > 0 ? 'Support' : 'Oppose';
                   }
-
-                  title = `${actionDescription}, ${val.toFixed(0)}/${maxPoints} points`;
+                  // Format points: show as +X, -X, or 0
+                  let pointsText;
+                  if (val > 0) {
+                    pointsText = `+${val.toFixed(0)} points`;
+                  } else if (val < 0) {
+                    pointsText = `${val.toFixed(0)} points`;
+                  } else {
+                    // val = 0
+                    // For no_cosponsor_benefit bills we oppose, not cosponsoring gives 0 points (neutral)
+                    if (isCosponsor && noCosponsorBenefit && !isSupport && !didCosponsor) {
+                      pointsText = '0 points';
+                    } else {
+                      pointsText = `-${maxPoints} points`;
+                    }
+                  }
+                  title = `${actionDescription}, ${pointsText}`;
                 }
 
                 return (
@@ -2037,8 +2040,8 @@ export default function Page() {
               })}
 
               {/* Endorsements column - shown after bills in non-AIPAC views */}
-              {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
-                <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+              {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
+                <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
                   {(() => {
                     // Check if member has reject AIPAC commitment text (takes priority)
                     const rejectCommitment = r.reject_aipac_commitment;
@@ -2051,7 +2054,7 @@ export default function Page() {
                           <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
                             <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
                           </svg>
-                          <span className="text-xs text-slate-800 dark:text-slate-200 font-bold">
+                          <span className="text-xs text-slate-800 dark:text-white font-bold">
                             {rejectLink && String(rejectLink).startsWith('http') ? (
                               <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
                                 {rejectCommitment}
@@ -2074,7 +2077,7 @@ export default function Page() {
                           <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                             <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                           </svg>
-                          <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC and DMFI</span>
+                          <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
                         </div>
                       );
                     }
@@ -2087,7 +2090,7 @@ export default function Page() {
                               <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                 <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                               </svg>
-                              <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC</span>
+                              <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
                             </div>
                           )}
                           {dmfi && (
@@ -2095,7 +2098,7 @@ export default function Page() {
                               <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                                 <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                               </svg>
-                              <span className="text-xs text-slate-800 dark:text-slate-200">Supported by DMFI</span>
+                              <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
                             </div>
                           )}
                         </div>
@@ -2107,7 +2110,7 @@ export default function Page() {
                         <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
                           <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
                         </svg>
-                        <span className="text-xs text-slate-800 dark:text-slate-200">Not supported by AIPAC or DMFI</span>
+                        <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
                       </div>
                     );
                   })()}
@@ -2226,15 +2229,15 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               All
             </button>
             <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["Civil Rights"]) })}
+              onClick={() => f.set({ viewMode: "category", categories: new Set(["Civil Rights & Immigration"]) })}
               className={clsx(
-                "px-2 h-7 rounded-md text-sm",
-                f.categories.has("Civil Rights")
+                "px-2 h-7 rounded-md text-sm whitespace-nowrap",
+                f.categories.has("Civil Rights & Immigration")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              Civil Rights
+              Civil Rights & Immigration
             </button>
             <button
               onClick={() => f.set({ viewMode: "category", categories: new Set(["Iran"]) })}
@@ -2257,17 +2260,6 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               )}
             >
               Israel-Gaza
-            </button>
-            <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["Travel & Immigration"]) })}
-              className={clsx(
-                "px-2 h-7 rounded-md text-sm whitespace-nowrap",
-                f.categories.has("Travel & Immigration")
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
-              )}
-            >
-              Travel & Immigration
             </button>
             <button
               onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
@@ -2312,10 +2304,9 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         >
           <option value="">Issues</option>
           <option value="All">All</option>
-          <option value="Civil Rights">Civil Rights</option>
+          <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
           <option value="Iran">Iran</option>
           <option value="Israel-Gaza">Israel-Gaza</option>
-          <option value="Travel & Immigration">Travel & Immigration</option>
           <option value="AIPAC">AIPAC</option>
         </select>
         )}
@@ -2348,7 +2339,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
       <div className="flex items-center gap-2">
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
+          className="flex items-center gap-2 text-sm text-slate-700 dark:text-white hover:text-slate-900 dark:hover:text-slate-300"
         >
           <svg
             className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
@@ -2374,7 +2365,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
           <button
             onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
-            className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+            className="chip-outline text-slate-700 dark:text-slate-800 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
             title="Clear all filters"
           >
             ✕
@@ -2709,10 +2700,10 @@ function Header({
   const router = useRouter();
   return (
     <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
-      {/* Bill title - clickable to view details with fixed 3-line height */}
-      <div className="h-[3.375rem] flex items-start justify-start overflow-hidden">
+      {/* Bill title - clickable to view details with fixed 4-line height */}
+      <div className="h-[4.5rem] flex items-start justify-start overflow-hidden">
         <span
-          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+          className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             if (meta) {
@@ -2724,24 +2715,34 @@ function Header({
         </span>
       </div>
 
-      {/* Chamber - always in uniform position */}
-      {meta?.chamber && (
-        <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-          {meta.chamber === 'HOUSE' ? 'House' : meta.chamber === 'SENATE' ? 'Senate' : meta.chamber}
-        </div>
-      )}
-
       {/* Position - sortable, always in uniform position */}
       {meta && meta.position_to_score && (
         <span
           className={clsx(
-            "text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1",
-            onSort && "cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+            "text-[10px] text-slate-700 dark:text-slate-200 font-light mt-0.5 flex items-center gap-1",
+            onSort && "cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
           )}
           onClick={onSort}
           title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
         >
-          {formatPositionScorecard(meta)}
+          {(() => {
+            const position = (meta?.position_to_score || '').toUpperCase();
+            const isSupport = position === 'SUPPORT';
+            const label = isSupport ? 'Support' : 'Oppose';
+            const icon = isSupport ? '✓' : '✗';
+
+            return (
+              <>
+                {icon}{' '}
+                <span
+                  className="px-1 py-0.5 rounded font-medium"
+                  style={meta?.chamber ? { backgroundColor: `${chamberColor(meta.chamber)}40` } : undefined}
+                >
+                  {label}
+                </span>
+              </>
+            );
+          })()}
           {onSort && (
             <span className={clsx(
               "text-[10px]",
@@ -2831,7 +2832,7 @@ function Progress({ value }:{ value:number }) {
       <div className="flex-1 h-2 rounded-full bg-[#E7ECF2] overflow-hidden">
         <div className="h-2 rounded-full" style={{ width: `${percent}%`, background: "#0FDDAA" }} />
       </div>
-      <span className="text-xs tabular text-slate-800 min-w-[32px]">{percent}%</span>
+      <span className="text-xs tabular text-slate-800 dark:text-white min-w-[32px]">{percent}%</span>
     </div>
   );
 }
@@ -2978,13 +2979,24 @@ function LawmakerCard({
         const position = (meta?.position_to_score || '').toUpperCase();
         const isSupport = position === 'SUPPORT';
 
-        let ok = !notApplicable && val > 0;
-
-        // Special handling for no_cosponsor_benefit bills
-        if (!notApplicable && isCosponsor && noCosponsorBenefit && !isSupport) {
-          // For bills we oppose with no_cosponsor_benefit:
-          // "ok" means they did NOT cosponsor
-          ok = !didCosponsor;
+        // Determine if member took the "good" action
+        // For cosponsor bills, check against actual cosponsor status and NIAC position
+        // For vote bills, val > 0 means they took the good action
+        let ok = false;
+        if (!notApplicable) {
+          if (isCosponsor) {
+            // For cosponsor bills, determine based on NIAC position
+            if (isSupport) {
+              // We support cosponsorship: cosponsoring is good
+              ok = didCosponsor;
+            } else {
+              // We oppose cosponsorship: not cosponsoring is good
+              ok = !didCosponsor;
+            }
+          } else {
+            // For vote bills and other actions, val > 0 means good action
+            ok = val > 0;
+          }
         }
 
         return {
@@ -3029,9 +3041,9 @@ function LawmakerCard({
       />
       {/* Modal */}
       <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
+        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
           {/* Header */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] relative">
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 relative">
             {/* Action buttons - positioned in top-right corner */}
             <div className="absolute top-4 right-4 flex gap-2">
               <button
@@ -3671,7 +3683,7 @@ function LawmakerCard({
                             {categoryItems.map((it) => (
                               <div
                                 key={it.col}
-                                className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] p-3 cursor-pointer hover:border-[#4B8CFB] transition"
+                                className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-700 p-3 cursor-pointer hover:border-[#4B8CFB] transition"
                                 onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
                               >
                                 <div className="text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200 mb-2">
@@ -3713,11 +3725,6 @@ function LawmakerCard({
                                           return "Did not vote/voted present";
                                         }
 
-                                        const actionTypes = (it.meta as { action_types?: string }).action_types || "";
-                                        const isVote = actionTypes.includes("vote");
-                                        const isCosponsor = actionTypes.includes("cosponsor");
-                                        const position = (it.meta?.position_to_score || "").toUpperCase();
-                                        const isSupport = position === "SUPPORT";
                                         const gotPoints = it.val > 0;
 
                                         // Format points display with +/- notation
@@ -3729,22 +3736,48 @@ function LawmakerCard({
                                             pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
                                           } else {
                                             // val === 0
-                                            pointsDisplay = ' (0 pts)';
+                                            const actionType = (it.meta as { action_types?: string })?.action_types || '';
+                                            const isCosponsor = actionType.includes('cosponsor');
+                                            const position = (it.meta?.position_to_score || '').toUpperCase();
+                                            const isSupport = position === 'SUPPORT';
+                                            const noCosponsorBenefit = it.meta?.no_cosponsor_benefit === true ||
+                                                                       it.meta?.no_cosponsor_benefit === 1 ||
+                                                                       it.meta?.no_cosponsor_benefit === '1';
+
+                                            // For no_cosponsor_benefit bills we oppose, not cosponsoring gives 0 points
+                                            if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor) {
+                                              pointsDisplay = ' (0 pts)';
+                                            } else {
+                                              const maxPoints = Number(it.meta?.points ?? 0);
+                                              pointsDisplay = ` (-${maxPoints} pts)`;
+                                            }
                                           }
                                         }
 
+                                        // Determine specific action based on actual action taken
+                                        const actionType = (it.meta as { action_types?: string })?.action_types || '';
+                                        const isCosponsor = actionType.includes('cosponsor');
+                                        const isVote = actionType.includes('vote');
+
+                                        let actionDescription = '';
                                         if (isCosponsor) {
-                                          // Use the explicit didCosponsor field instead of inferring from points
-                                          return it.didCosponsor ? `Cosponsored${pointsDisplay}` : `Has Not Cosponsored${pointsDisplay}`;
+                                          // For cosponsor bills, use the actual cosponsor status
+                                          actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                                         } else if (isVote) {
-                                          const votedFor = isSupport ? gotPoints : !gotPoints;
-                                          if (votedFor) {
-                                            return `Voted in Favor${pointsDisplay}`;
+                                          // For vote bills, infer from points (val > 0 = voted the way we wanted)
+                                          const position = (it.meta?.position_to_score || '').toUpperCase();
+                                          const isSupport = position === 'SUPPORT';
+                                          if (isSupport) {
+                                            actionDescription = gotPoints ? 'Voted in favor' : 'Voted against';
                                           } else {
-                                            return `Voted Against${pointsDisplay}`;
+                                            actionDescription = gotPoints ? 'Voted against' : 'Voted in favor';
                                           }
+                                        } else {
+                                          // Fallback for other action types
+                                          actionDescription = gotPoints ? 'Support' : 'Oppose';
                                         }
-                                        return "Action";
+
+                                        return `${actionDescription}${pointsDisplay}`;
                                       })()}
                                     </span>
                                   </div>

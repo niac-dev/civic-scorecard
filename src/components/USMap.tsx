@@ -65,53 +65,35 @@ export default function USMap({ stateColors, onStateClick, members, onMemberClic
         // Change to hover color
         stateElement.setAttribute('fill', '#4699d3'); // hover color
 
-        // Create background rectangle for text
-        const textBgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        textBgElement.setAttribute('id', `label-bg-${stateCode}`);
-        textBgElement.setAttribute('fill', '#b6dfcc'); // teal background
-        textBgElement.setAttribute('rx', '4');
-        textBgElement.setAttribute('pointer-events', 'none');
-
-        // Create text label for state name
+        // Create text label for state name with white fill and black stroke
         const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         textElement.setAttribute('id', `label-${stateCode}`);
         textElement.setAttribute('x', String(centerX));
         textElement.setAttribute('y', String(centerY));
         textElement.setAttribute('text-anchor', 'middle');
         textElement.setAttribute('dominant-baseline', 'middle');
-        textElement.setAttribute('fill', '#000000');
+        textElement.setAttribute('fill', 'white');
+        textElement.setAttribute('stroke', 'black');
+        textElement.setAttribute('stroke-width', '3');
+        textElement.setAttribute('stroke-linejoin', 'round');
+        textElement.setAttribute('paint-order', 'stroke');
         textElement.setAttribute('font-size', '14');
         textElement.setAttribute('font-weight', 'bold');
         textElement.setAttribute('pointer-events', 'none');
         textElement.textContent = stateName;
 
-        // Append text first to get its bounding box
+        // Append text
         svg.appendChild(textElement);
-
-        // Get text dimensions and position background
-        const textBBox = textElement.getBBox();
-        const padding = 4;
-        textBgElement.setAttribute('x', String(textBBox.x - padding));
-        textBgElement.setAttribute('y', String(textBBox.y - padding));
-        textBgElement.setAttribute('width', String(textBBox.width + padding * 2));
-        textBgElement.setAttribute('height', String(textBBox.height + padding * 2));
-
-        // Insert background before text
-        svg.insertBefore(textBgElement, textElement);
       });
 
       stateElement.addEventListener('mouseleave', () => {
         // Reset fill to main map color
         stateElement.setAttribute('fill', '#002b49'); // main map color
 
-        // Remove text label and background
+        // Remove text label
         const label = svg.querySelector(`#label-${stateCode}`);
-        const labelBg = svg.querySelector(`#label-bg-${stateCode}`);
         if (label) {
           label.remove();
-        }
-        if (labelBg) {
-          labelBg.remove();
         }
       });
     });
