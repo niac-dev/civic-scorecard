@@ -17,6 +17,8 @@ export type Meta = {
   categories?: string; // semicolon-delimited: "Iran; War Powers"
   action_types?: string;
   chamber?: Chamber;   // optional explicit chamber override
+  congress_url?: string;
+  learn_more_link?: string;
   /** original column key in scores_wide.csv (optional but handy) */
   column: string;
   /** optional type tag if you use it ("BILL" | "MANUAL") */
@@ -24,6 +26,7 @@ export type Meta = {
   preferred?: boolean | number | string; // tolerate csv typing
   pair_key?: string;
   points?: string | number; // total possible points for this action
+  no_cosponsor_benefit?: boolean | number | string; // whether cosponsors can get positive points
 };
 
 /** One member row from scores_wide.csv */

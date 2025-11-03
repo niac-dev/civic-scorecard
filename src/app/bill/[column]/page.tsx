@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
@@ -100,7 +100,26 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   const isCosponsor = actionType.includes('cosponsor');
   const isVote = actionType.includes('vote');
   const isSupport = position === 'SUPPORT';
-  const points = meta?.points ? ` (${Number(meta.points).toFixed(0)} pts)` : '';
+  const pointsValue = meta?.points ? Number(meta.points).toFixed(0) : '';
+
+  // For cosponsor bills, check no_cosponsor_benefit flag
+  const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
+                             meta?.no_cosponsor_benefit === 1 ||
+                             meta?.no_cosponsor_benefit === '1';
+
+  let points = '';
+  if (pointsValue) {
+    if (isCosponsor && !noCosponsorBenefit) {
+      // Cosponsors can get points either way
+      points = ` (+/- ${pointsValue} pts)`;
+    } else if (isCosponsor && noCosponsorBenefit) {
+      // Cosponsors can only lose points
+      points = ` (- ${pointsValue} pts)`;
+    } else {
+      // Regular points display
+      points = ` (${pointsValue} pts)`;
+    }
+  }
 
   if (isCosponsor) {
     return isSupport ? `Cosponsor${points}` : `Do Not Cosponsor${points}`;
@@ -432,6 +451,7 @@ function isDmfiEndorsed(pacData: PacData | undefined): boolean {
 
 export default function BillPage() {
   const params = useParams();
+  const router = useRouter();
   const column = decodeURIComponent(params.column as string);
 
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -765,55 +785,12 @@ export default function BillPage() {
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
                 onClick={() => {
-                  // Try to close the window (works if opened via window.open)
-                  // If that fails, navigate back to home
-                  window.close();
-                  setTimeout(() => {
-                    window.location.href = '/';
-                  }, 100);
+                  router.back();
                 }}
               >
                 Close
               </button>
             </div>
-
-          {/* Description */}
-          {meta.description && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Description
-              </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {meta.description}
-              </p>
-            </div>
-          )}
-
-          {/* Analysis */}
-          {meta.analysis && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Analysis
-              </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {meta.analysis}
-              </p>
-            </div>
-          )}
-
-          {/* Categories */}
-          {meta.categories && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Categories
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
-                  <span key={c} className="chip-xs">{c}</span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Sponsor */}
           {sponsorMember && (
@@ -886,6 +863,81 @@ export default function BillPage() {
               </h2>
               <div className="text-sm text-slate-600 dark:text-slate-300">
                 {meta.sponsor_name || meta.sponsor}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {meta.description && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Description
+              </h2>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                {meta.description}
+              </p>
+            </div>
+          )}
+
+          {/* Analysis */}
+          {meta.analysis && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Analysis
+              </h2>
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                {meta.analysis}
+              </p>
+            </div>
+          )}
+
+          {/* Links */}
+          {(meta.congress_url || meta.learn_more_link) && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Links
+              </h2>
+              <div className="flex flex-col gap-2">
+                {meta.congress_url && (
+                  <a
+                    href={meta.congress_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                  >
+                    Congress.gov
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+                {meta.learn_more_link && (
+                  <a
+                    href={meta.learn_more_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                  >
+                    Learn more
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Categories */}
+          {meta.categories && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                Categories
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
+                  <span key={c} className="chip-xs">{c}</span>
+                ))}
               </div>
             </div>
           )}
@@ -1313,6 +1365,10 @@ function MemberModal({
         const absentCol = `${c}_absent`;
         const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
 
+        // Check if member cosponsored (for cosponsor bills)
+        const cosponsorCol = `${c}_cosponsor`;
+        const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
+
         const categories = (meta?.categories || "")
           .split(";")
           .map((s) => s.trim())
@@ -1332,6 +1388,26 @@ function MemberModal({
           }
         }
 
+        // Determine if member took the "good" action
+        // For most bills: val > 0 means they did the right thing
+        // For no_cosponsor_benefit bills: need to check actual cosponsor status
+        const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
+                                   meta?.no_cosponsor_benefit === 1 ||
+                                   meta?.no_cosponsor_benefit === '1';
+        const actionType = (meta as { action_types?: string })?.action_types || '';
+        const isCosponsor = actionType.includes('cosponsor');
+        const position = (meta?.position_to_score || '').toUpperCase();
+        const isSupport = position === 'SUPPORT';
+
+        let ok = !notApplicable && val > 0;
+
+        // Special handling for no_cosponsor_benefit bills
+        if (!notApplicable && isCosponsor && noCosponsorBenefit && !isSupport) {
+          // For bills we oppose with no_cosponsor_benefit:
+          // "ok" means they did NOT cosponsor
+          ok = !didCosponsor;
+        }
+
         return {
           col: c,
           meta,
@@ -1340,7 +1416,8 @@ function MemberModal({
           notApplicable,
           waiver,
           wasAbsent,
-          ok: !notApplicable && val > 0,
+          didCosponsor,
+          ok,
         };
       })
       .filter((it) => it.meta && !it.notApplicable);
@@ -1985,19 +2062,30 @@ function MemberModal({
                                 const isSupport = position === "SUPPORT";
                                 const gotPoints = it.val > 0;
 
+                                // Format points display with +/- notation
+                                let pointsDisplay = '';
+                                if (it.val !== undefined) {
+                                  if (it.val > 0) {
+                                    pointsDisplay = ` (+${it.val.toFixed(0)} pts)`;
+                                  } else if (it.val < 0) {
+                                    pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
+                                  } else {
+                                    // val === 0
+                                    pointsDisplay = ' (0 pts)';
+                                  }
+                                }
+
                                 if (isCosponsor) {
-                                  // If we support: points means they cosponsored
-                                  // If we oppose: points means they did NOT cosponsor
-                                  const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                  return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                  // Use the explicit didCosponsor field instead of inferring from points
+                                  return it.didCosponsor ? `Cosponsored${pointsDisplay}` : `Has Not Cosponsored${pointsDisplay}`;
                                 } else if (isVote) {
                                   // If we support: points means they voted in favor
                                   // If we oppose: points means they voted against
                                   const votedFor = isSupport ? gotPoints : !gotPoints;
                                   if (votedFor) {
-                                    return "Voted in Favor";
+                                    return `Voted in Favor${pointsDisplay}`;
                                   } else {
-                                    return "Voted Against";
+                                    return `Voted Against${pointsDisplay}`;
                                   }
                                 }
                                 return "Action";

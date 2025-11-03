@@ -2,6 +2,7 @@
 
 "use client";
 import React, { useEffect, useMemo, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
@@ -93,7 +94,26 @@ function formatPositionTooltip(meta: Meta | undefined): string {
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
   const isSupport = position === 'SUPPORT';
-  const points = meta?.points ? ` (+${Number(meta.points).toFixed(0)})` : '';
+  const pointsValue = meta?.points ? Number(meta.points).toFixed(0) : '';
+
+  // For cosponsor bills, check no_cosponsor_benefit flag
+  const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
+                             meta?.no_cosponsor_benefit === 1 ||
+                             meta?.no_cosponsor_benefit === '1';
+
+  let points = '';
+  if (pointsValue) {
+    if (isCosponsor && !noCosponsorBenefit) {
+      // Cosponsors can get points either way
+      points = ` (+/- ${pointsValue})`;
+    } else if (isCosponsor && noCosponsorBenefit) {
+      // Cosponsors can only lose points
+      points = ` (- ${pointsValue})`;
+    } else {
+      // Regular points display
+      points = ` (+${pointsValue})`;
+    }
+  }
 
   if (isCosponsor) {
     return isSupport ? `Support Cosponsorship${points}` : `Do Not Cosponsor${points}`;
@@ -1611,7 +1631,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-white/5 transition"
+                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-white/5 transition border-r border-[#E7ECF2] dark:border-white/10"
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
@@ -1686,8 +1706,8 @@ export default function Page() {
 
                     {/* State last, with district for House members */}
                     <span className="text-[9px] md:text-[11px]">
-                      {r.chamber === "HOUSE" && r.district
-                        ? `${stateCodeOf(r.state)}-${r.district}`
+                      {r.chamber === "HOUSE"
+                        ? `${stateCodeOf(r.state)}-${r.district || '1'}`
                         : stateCodeOf(r.state)}
                     </span>
                   </div>
@@ -1882,6 +1902,10 @@ export default function Page() {
                 const absentCol = `${c}_absent`;
                 const wasAbsent = Number((r as Record<string, unknown>)[absentCol] ?? 0) === 1;
 
+                // Check if member cosponsored (for cosponsor bills)
+                const cosponsorCol = `${c}_cosponsor`;
+                const didCosponsor = Number((r as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
+
                 // Try to determine the chamber for this column (bill or manual action)
                 const inferredChamber = inferChamber(meta, c);
 
@@ -1957,6 +1981,16 @@ export default function Page() {
                 const fullPoints = Number(meta?.points ?? 0);
                 const votedPresent = !wasAbsent && isVote && val > 0 && val < fullPoints;
 
+                // Determine if member took the "good" action
+                const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
+                                           meta?.no_cosponsor_benefit === 1 ||
+                                           meta?.no_cosponsor_benefit === '1';
+                let memberOk = val > 0;
+                // Special handling for no_cosponsor_benefit bills we oppose
+                if (isCosponsor && noCosponsorBenefit && !isSupport) {
+                  memberOk = !didCosponsor;
+                }
+
                 let title: string;
                 if (notApplicable) {
                   title = "Not applicable (different chamber)";
@@ -1973,8 +2007,8 @@ export default function Page() {
                   let actionDescription = '';
 
                   if (isCosponsor) {
-                    const didCosponsor = isSupport ? (val > 0) : (val === 0);
-                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has Not Cosponsored';
+                    // Use the explicit _cosponsor column instead of inferring from points
+                    actionDescription = didCosponsor ? 'Cosponsored' : 'Did Not Cosponsor';
                   } else if (isVote) {
                     const votedFor = isSupport ? (val > 0) : (val === 0);
                     actionDescription = votedFor ? 'Voted in Favor' : 'Voted Against';
@@ -1996,7 +2030,7 @@ export default function Page() {
                     ) : showDashForPreferredPair ? (
                       <span className="text-lg leading-none text-slate-400">—</span>
                     ) : (
-                      <VoteIcon ok={val > 0} />
+                      <VoteIcon ok={memberOk} />
                     )}
                   </div>
                 );
@@ -2286,15 +2320,13 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         </select>
         )}
 
-        {/* Scorecard view search - right-aligned */}
-        {f.viewMode !== "map" && (
-          <div className="ml-auto">
-            <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={false} />
-          </div>
-        )}
+        {/* Search - right-aligned for both map and scorecard */}
+        <div className="ml-auto">
+          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={f.viewMode === "map"} />
+        </div>
       </div>
 
-      {/* Second row: Map view - chamber filter on left, search centered */}
+      {/* Second row: Map view - chamber filter */}
       {f.viewMode === "map" && (
         <div className="flex items-center gap-3">
           <Segmented
@@ -2308,9 +2340,6 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               }
             }}
           />
-          <div className="flex-1 flex justify-center">
-            <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={true} />
-          </div>
         </div>
       )}
 
@@ -2411,6 +2440,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
 function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean }) {
   const f = useFilters();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">(isMapView ? "zip" : "name");
   const [searchValue, setSearchValue] = useState("");
@@ -2472,7 +2502,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
 
     if (foundColumn) {
       // Navigate to bill page
-      window.location.href = `/bill/${encodeURIComponent(foundColumn)}`;
+      router.push(`/bill/${encodeURIComponent(foundColumn)}`);
     } else {
       setError('No bill found matching your search');
     }
@@ -2513,18 +2543,28 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
   if (isMapView) {
     return (
       <div className="relative flex items-center gap-2">
-        <input
-          type="text"
-          placeholder={getPlaceholder()}
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSearch();
-            }
-          }}
-          className="px-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent min-w-[250px]"
-        />
+        <div className="relative">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder={getPlaceholder()}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch();
+              }
+            }}
+            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent min-w-[250px]"
+          />
+        </div>
         {loading ? (
           <div className="text-xs text-slate-500">Loading...</div>
         ) : error ? (
@@ -2666,6 +2706,7 @@ function Header({
   active?: boolean;
   dir?: "GOOD_FIRST" | "BAD_FIRST";
 }) {
+  const router = useRouter();
   return (
     <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
       {/* Bill title - clickable to view details with fixed 3-line height */}
@@ -2675,7 +2716,7 @@ function Header({
           onClick={(e) => {
             e.stopPropagation();
             if (meta) {
-              window.location.href = `/bill/${encodeURIComponent(col)}`;
+              router.push(`/bill/${encodeURIComponent(col)}`);
             }
           }}
         >
@@ -2857,6 +2898,7 @@ function LawmakerCard({
   categories: string[];
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [gradesExpanded, setGradesExpanded] = useState(true);
   const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
@@ -2902,6 +2944,10 @@ function LawmakerCard({
         const absentCol = `${c}_absent`;
         const wasAbsent = Number((row as any)[absentCol] ?? 0) === 1;
 
+        // Check if member cosponsored (for cosponsor bills)
+        const cosponsorCol = `${c}_cosponsor`;
+        const didCosponsor = Number((row as any)[cosponsorCol] ?? 0) === 1;
+
         const categories = (meta?.categories || "")
           .split(";")
           .map((s) => s.trim())
@@ -2921,6 +2967,26 @@ function LawmakerCard({
           }
         }
 
+        // Determine if member took the "good" action
+        // For most bills: val > 0 means they did the right thing
+        // For no_cosponsor_benefit bills: need to check actual cosponsor status
+        const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
+                                   meta?.no_cosponsor_benefit === 1 ||
+                                   meta?.no_cosponsor_benefit === '1';
+        const actionType = (meta as { action_types?: string })?.action_types || '';
+        const isCosponsor = actionType.includes('cosponsor');
+        const position = (meta?.position_to_score || '').toUpperCase();
+        const isSupport = position === 'SUPPORT';
+
+        let ok = !notApplicable && val > 0;
+
+        // Special handling for no_cosponsor_benefit bills
+        if (!notApplicable && isCosponsor && noCosponsorBenefit && !isSupport) {
+          // For bills we oppose with no_cosponsor_benefit:
+          // "ok" means they did NOT cosponsor
+          ok = !didCosponsor;
+        }
+
         return {
           col: c,
           meta,
@@ -2929,7 +2995,8 @@ function LawmakerCard({
           notApplicable,
           waiver,
           wasAbsent,
-          ok: !notApplicable && val > 0,
+          didCosponsor,
+          ok,
         };
       })
       .filter((it) => it.meta && !it.notApplicable)
@@ -2969,7 +3036,7 @@ function LawmakerCard({
             <div className="absolute top-4 right-4 flex gap-2">
               <button
                 className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.location.href = `/member/${row.bioguide_id}`}
+                onClick={() => router.push(`/member/${row.bioguide_id}`)}
                 title="Open in new tab"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3045,7 +3112,7 @@ function LawmakerCard({
                   >
                     {partyLabel(row.party)}
                   </span>
-                  <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
+                  <span>{stateCodeOf(row.state)}{row.chamber === "HOUSE" ? `-${row.district || '1'}` : ""}</span>
                 </div>
               </div>
 
@@ -3582,6 +3649,13 @@ function LawmakerCard({
                     return sortedCategories.map((category) => {
                       const categoryItems = itemsByCategory.get(category) || [];
 
+                      // Sort bills within category alphabetically by display name
+                      categoryItems.sort((a, b) => {
+                        const nameA = a.meta?.display_name || a.meta?.short_title || a.meta?.bill_number || a.col;
+                        const nameB = b.meta?.display_name || b.meta?.short_title || b.meta?.bill_number || b.col;
+                        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+                      });
+
                       // Get grade for this category
                       const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                       const gradeField = `Grade_${fieldSuffix}` as keyof Row;
@@ -3598,7 +3672,7 @@ function LawmakerCard({
                               <div
                                 key={it.col}
                                 className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#0B1220] p-3 cursor-pointer hover:border-[#4B8CFB] transition"
-                                onClick={() => window.location.href = `/bill/${encodeURIComponent(it.col)}`}
+                                onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
                               >
                                 <div className="text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200 mb-2">
                                   {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
@@ -3646,15 +3720,28 @@ function LawmakerCard({
                                         const isSupport = position === "SUPPORT";
                                         const gotPoints = it.val > 0;
 
+                                        // Format points display with +/- notation
+                                        let pointsDisplay = '';
+                                        if (it.val !== undefined) {
+                                          if (it.val > 0) {
+                                            pointsDisplay = ` (+${it.val.toFixed(0)} pts)`;
+                                          } else if (it.val < 0) {
+                                            pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
+                                          } else {
+                                            // val === 0
+                                            pointsDisplay = ' (0 pts)';
+                                          }
+                                        }
+
                                         if (isCosponsor) {
-                                          const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                          return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
+                                          // Use the explicit didCosponsor field instead of inferring from points
+                                          return it.didCosponsor ? `Cosponsored${pointsDisplay}` : `Has Not Cosponsored${pointsDisplay}`;
                                         } else if (isVote) {
                                           const votedFor = isSupport ? gotPoints : !gotPoints;
                                           if (votedFor) {
-                                            return "Voted in Favor";
+                                            return `Voted in Favor${pointsDisplay}`;
                                           } else {
-                                            return "Voted Against";
+                                            return `Voted Against${pointsDisplay}`;
                                           }
                                         }
                                         return "Action";
