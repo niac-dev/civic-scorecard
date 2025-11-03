@@ -18,6 +18,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
   const popup = useRef<maplibregl.Popup | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tooltipContent, setTooltipContent] = useState<string>('');
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -501,10 +502,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                     `;
                   }
 
-                  popup.current
-                    .setLngLat(e.lngLat)
-                    .setHTML(html)
-                    .addTo(map.current);
+                  setTooltipContent(html);
                 }
               }
             }
@@ -590,10 +588,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                   </div>
                 `;
 
-                popup.current
-                  .setLngLat(e.lngLat)
-                  .setHTML(html)
-                  .addTo(map.current);
+                setTooltipContent(html);
               }
             }
           }
@@ -603,9 +598,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           if (!map.current) return;
 
           map.current.getCanvas().style.cursor = '';
-          if (popup.current) {
-            popup.current.remove();
-          }
+          setTooltipContent('');
         });
 
         // Add click handler
@@ -691,6 +684,15 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
         </div>
       )}
       <div ref={mapContainer} className="w-full h-full" />
+
+      {/* Fixed tooltip in upper right corner */}
+      {tooltipContent && (
+        <div
+          className="absolute top-4 right-4 z-20 rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] shadow-xl max-w-2xl"
+          style={{ transform: 'scale(1.5)', transformOrigin: 'top right' }}
+          dangerouslySetInnerHTML={{ __html: tooltipContent }}
+        />
+      )}
     </div>
   );
 }

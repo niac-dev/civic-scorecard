@@ -74,6 +74,16 @@ function isTruthy(v: unknown): boolean {
   return false;
 }
 
+function gradeColor(grade: string): string {
+  const g = (grade || "").trim().toUpperCase();
+  if (g === "A" || g === "A+") return "#10B981"; // green
+  if (g === "A-" || g === "B+" || g === "B") return "#3B82F6"; // blue
+  if (g === "B-" || g === "C+") return "#F59E0B"; // amber
+  if (g === "C" || g === "C-") return "#EF4444"; // red
+  if (g === "D" || g === "F") return "#991B1B"; // dark red
+  return "#94A3B8"; // gray
+}
+
 export default function AipacPage() {
   const [supported, setSupported] = useState<Row[]>([]);
   const [notSupported, setNotSupported] = useState<Row[]>([]);
@@ -136,6 +146,8 @@ export default function AipacPage() {
           background: #0B1220 !important;
         }
       `}} />
+
+
       <div className="min-h-screen bg-[#F7F8FA] dark:bg-[#0B1220] p-4">
         <div className="max-w-5xl mx-auto">
           <div className="card p-6">
@@ -143,10 +155,10 @@ export default function AipacPage() {
             <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-white/10 pb-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  AIPAC & Aligned PAC Support
+                  AIPAC & DMFI Support
                 </h1>
                 <div className="text-lg text-slate-700 dark:text-slate-200 mb-2">
-                  Members of Congress who receive support from AIPAC or aligned PACs
+                  Members of Congress who receive support from AIPAC or DMFI
                 </div>
               </div>
               <button
@@ -321,9 +333,9 @@ export default function AipacPage() {
 
 function MemberCard({ member }: { member: Row }) {
   return (
-    <div
+    <a
+      href={`/member/${member.bioguide_id}`}
       className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
-      onClick={() => window.open(`/member/${member.bioguide_id}`, '_blank')}
     >
       {member.photo_url ? (
         <img
@@ -335,8 +347,16 @@ function MemberCard({ member }: { member: Row }) {
         <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
       )}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-          {member.full_name}
+        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate flex items-center gap-2">
+          <span>{member.full_name}</span>
+          {member["Grade: Overall"] && (
+            <span
+              className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
+              style={{ backgroundColor: gradeColor(String(member["Grade: Overall"])) }}
+            >
+              {member["Grade: Overall"]}
+            </span>
+          )}
         </div>
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
           <span
@@ -359,6 +379,6 @@ function MemberCard({ member }: { member: Row }) {
           )}
         </div>
       </div>
-    </div>
+    </a>
   );
 }

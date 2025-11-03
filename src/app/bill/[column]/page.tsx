@@ -835,8 +835,19 @@ export default function BillPage() {
                   <div className="h-16 w-16 rounded-full bg-slate-300 dark:bg-white/10" />
                 )}
                 <div className="flex-1">
-                  <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                    {sponsorMember.full_name}
+                  <div className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>{sponsorMember.full_name}</span>
+                    {sponsorMember.Grade && (
+                      <span className="flex-shrink-0 inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{
+                        backgroundColor: String(sponsorMember.Grade).startsWith("A") ? "#10B981"
+                          : String(sponsorMember.Grade).startsWith("B") ? "#3B82F6"
+                          : String(sponsorMember.Grade).startsWith("C") ? "#F59E0B"
+                          : String(sponsorMember.Grade).startsWith("D") ? "#EF4444"
+                          : "#991B1B"
+                      }}>
+                        {sponsorMember.Grade}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-1">
                     <span
@@ -1207,8 +1218,19 @@ function MemberCard({ member, onClick }: { member: Row; onClick: () => void }) {
         <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
       )}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-          {member.full_name}
+        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 overflow-hidden">
+          <span className="truncate">{member.full_name}</span>
+          {member.Grade && (
+            <span className="flex-shrink-0 inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{
+              backgroundColor: String(member.Grade).startsWith("A") ? "#10B981"
+                : String(member.Grade).startsWith("B") ? "#3B82F6"
+                : String(member.Grade).startsWith("C") ? "#F59E0B"
+                : String(member.Grade).startsWith("D") ? "#EF4444"
+                : "#991B1B"
+            }}>
+              {member.Grade}
+            </span>
+          )}
         </div>
         <div className="text-xs text-slate-500 dark:text-slate-400">
           <span

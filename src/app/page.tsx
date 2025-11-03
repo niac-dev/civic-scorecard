@@ -571,6 +571,7 @@ export default function Page() {
 
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
+  const [selectedElection, setSelectedElection] = useState<"2024" | "2025" | "2022">("2024");
 
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -665,6 +666,32 @@ export default function Page() {
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
       });
     }
+    // Sort by district (senators first, then by district number)
+    if (sortCol === "__district") {
+      const asc = sortDir === "GOOD_FIRST"; // GOOD_FIRST = ascending district order
+      return [...filtered].sort((a, b) => {
+        // Senators come first
+        if (a.chamber === "SENATE" && b.chamber !== "SENATE") return -1;
+        if (a.chamber !== "SENATE" && b.chamber === "SENATE") return 1;
+
+        // If both are senators, sort by last name
+        if (a.chamber === "SENATE" && b.chamber === "SENATE") {
+          const la = lastName(a.full_name);
+          const lb = lastName(b.full_name);
+          return la.localeCompare(lb);
+        }
+
+        // Both are house members - sort by district number
+        const distA = Number(a.district) || 0;
+        const distB = Number(b.district) || 0;
+        if (distA !== distB) return asc ? distA - distB : distB - distA;
+
+        // Same district - sort by last name
+        const la = lastName(a.full_name);
+        const lb = lastName(b.full_name);
+        return la.localeCompare(lb);
+      });
+    }
     // Sort by AIPAC/DMFI support
     if (sortCol === "__aipac") {
       const goodFirst = sortDir === "GOOD_FIRST";
@@ -722,83 +749,98 @@ export default function Page() {
         let valB = 0;
 
         if (sortCol === "__total_support") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = (pacA?.aipac_total || 0) + (pacA?.dmfi_total || 0);
-          else if (yearA === "2025") valA = (pacA?.aipac_total_2025 || 0) + (pacA?.dmfi_total_2025 || 0);
-          else if (yearA === "2022") valA = (pacA?.aipac_total_2022 || 0) + (pacA?.dmfi_total_2022 || 0);
-          if (yearB === "2024") valB = (pacB?.aipac_total || 0) + (pacB?.dmfi_total || 0);
-          else if (yearB === "2025") valB = (pacB?.aipac_total_2025 || 0) + (pacB?.dmfi_total_2025 || 0);
-          else if (yearB === "2022") valB = (pacB?.aipac_total_2022 || 0) + (pacB?.dmfi_total_2022 || 0);
+          // Use selectedElection for all members instead of individual years
+          if (selectedElection === "2024") {
+            valA = (pacA?.aipac_total || 0) + (pacA?.dmfi_total || 0);
+            valB = (pacB?.aipac_total || 0) + (pacB?.dmfi_total || 0);
+          } else if (selectedElection === "2025") {
+            valA = (pacA?.aipac_total_2025 || 0) + (pacA?.dmfi_total_2025 || 0);
+            valB = (pacB?.aipac_total_2025 || 0) + (pacB?.dmfi_total_2025 || 0);
+          } else if (selectedElection === "2022") {
+            valA = (pacA?.aipac_total_2022 || 0) + (pacA?.dmfi_total_2022 || 0);
+            valB = (pacB?.aipac_total_2022 || 0) + (pacB?.dmfi_total_2022 || 0);
+          }
         } else if (sortCol === "__election") {
           // Sort by election year (2024 first, then 2025, then 2022)
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          valA = yearA === "2024" ? 3 : yearA === "2025" ? 2 : yearA === "2022" ? 1 : 0;
-          valB = yearB === "2024" ? 3 : yearB === "2025" ? 2 : yearB === "2022" ? 1 : 0;
+          valA = selectedElection === "2024" ? 3 : selectedElection === "2025" ? 2 : selectedElection === "2022" ? 1 : 0;
+          valB = selectedElection === "2024" ? 3 : selectedElection === "2025" ? 2 : selectedElection === "2022" ? 1 : 0;
         } else if (sortCol === "__aipac_total") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.aipac_total || 0;
-          else if (yearA === "2025") valA = pacA?.aipac_total_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.aipac_total_2022 || 0;
-          if (yearB === "2024") valB = pacB?.aipac_total || 0;
-          else if (yearB === "2025") valB = pacB?.aipac_total_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.aipac_total_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.aipac_total || 0;
+            valB = pacB?.aipac_total || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.aipac_total_2025 || 0;
+            valB = pacB?.aipac_total_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.aipac_total_2022 || 0;
+            valB = pacB?.aipac_total_2022 || 0;
+          }
         } else if (sortCol === "__dmfi_total") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.dmfi_total || 0;
-          else if (yearA === "2025") valA = pacA?.dmfi_total_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.dmfi_total_2022 || 0;
-          if (yearB === "2024") valB = pacB?.dmfi_total || 0;
-          else if (yearB === "2025") valB = pacB?.dmfi_total_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.dmfi_total_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.dmfi_total || 0;
+            valB = pacB?.dmfi_total || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.dmfi_total_2025 || 0;
+            valB = pacB?.dmfi_total_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.dmfi_total_2022 || 0;
+            valB = pacB?.dmfi_total_2022 || 0;
+          }
         } else if (sortCol === "__aipac_direct") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.aipac_direct_amount || 0;
-          else if (yearA === "2025") valA = pacA?.aipac_direct_amount_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.aipac_direct_amount_2022 || 0;
-          if (yearB === "2024") valB = pacB?.aipac_direct_amount || 0;
-          else if (yearB === "2025") valB = pacB?.aipac_direct_amount_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.aipac_direct_amount_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.aipac_direct_amount || 0;
+            valB = pacB?.aipac_direct_amount || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.aipac_direct_amount_2025 || 0;
+            valB = pacB?.aipac_direct_amount_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.aipac_direct_amount_2022 || 0;
+            valB = pacB?.aipac_direct_amount_2022 || 0;
+          }
         } else if (sortCol === "__dmfi_direct") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.dmfi_direct || 0;
-          else if (yearA === "2025") valA = pacA?.dmfi_direct_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.dmfi_direct_2022 || 0;
-          if (yearB === "2024") valB = pacB?.dmfi_direct || 0;
-          else if (yearB === "2025") valB = pacB?.dmfi_direct_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.dmfi_direct_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.dmfi_direct || 0;
+            valB = pacB?.dmfi_direct || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.dmfi_direct_2025 || 0;
+            valB = pacB?.dmfi_direct_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.dmfi_direct_2022 || 0;
+            valB = pacB?.dmfi_direct_2022 || 0;
+          }
         } else if (sortCol === "__aipac_earmark") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.aipac_earmark_amount || 0;
-          else if (yearA === "2025") valA = pacA?.aipac_earmark_amount_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.aipac_earmark_amount_2022 || 0;
-          if (yearB === "2024") valB = pacB?.aipac_earmark_amount || 0;
-          else if (yearB === "2025") valB = pacB?.aipac_earmark_amount_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.aipac_earmark_amount_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.aipac_earmark_amount || 0;
+            valB = pacB?.aipac_earmark_amount || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.aipac_earmark_amount_2025 || 0;
+            valB = pacB?.aipac_earmark_amount_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.aipac_earmark_amount_2022 || 0;
+            valB = pacB?.aipac_earmark_amount_2022 || 0;
+          }
         } else if (sortCol === "__aipac_ie") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.aipac_ie_total || 0;
-          else if (yearA === "2025") valA = pacA?.aipac_ie_total_2025 || 0;
-          else if (yearA === "2022") valA = pacA?.aipac_ie_total_2022 || 0;
-          if (yearB === "2024") valB = pacB?.aipac_ie_total || 0;
-          else if (yearB === "2025") valB = pacB?.aipac_ie_total_2025 || 0;
-          else if (yearB === "2022") valB = pacB?.aipac_ie_total_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.aipac_ie_total || 0;
+            valB = pacB?.aipac_ie_total || 0;
+          } else if (selectedElection === "2025") {
+            valA = pacA?.aipac_ie_total_2025 || 0;
+            valB = pacB?.aipac_ie_total_2025 || 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.aipac_ie_total_2022 || 0;
+            valB = pacB?.aipac_ie_total_2022 || 0;
+          }
         } else if (sortCol === "__dmfi_ie") {
-          const yearA = getElectionYear(pacA);
-          const yearB = getElectionYear(pacB);
-          if (yearA === "2024") valA = pacA?.dmfi_ie_total || 0;
-          else if (yearA === "2025") valA = 0; // No dmfi_ie for 2025
-          else if (yearA === "2022") valA = pacA?.dmfi_ie_total_2022 || 0;
-          if (yearB === "2024") valB = pacB?.dmfi_ie_total || 0;
-          else if (yearB === "2025") valB = 0; // No dmfi_ie for 2025
-          else if (yearB === "2022") valB = pacB?.dmfi_ie_total_2022 || 0;
+          if (selectedElection === "2024") {
+            valA = pacA?.dmfi_ie_total || 0;
+            valB = pacB?.dmfi_ie_total || 0;
+          } else if (selectedElection === "2025") {
+            valA = 0; // No dmfi_ie for 2025
+            valB = 0;
+          } else if (selectedElection === "2022") {
+            valA = pacA?.dmfi_ie_total_2022 || 0;
+            valB = pacB?.dmfi_ie_total_2022 || 0;
+          }
         }
 
         if (valA !== valB) {
@@ -898,9 +940,13 @@ export default function Page() {
       }
 
       // Finally sort alphabetically by display name
-      // Use natural sort to handle numbers correctly (e.g., #1 before #2)
-      const nameA = metaA?.display_name || metaA?.short_title || a;
-      const nameB = metaB?.display_name || metaB?.short_title || b;
+      // Strip bill numbers (e.g., "H.R.123 — Title" -> "Title") to group related bills together
+      const stripBillNumber = (name: string) => {
+        // Match patterns like "H.R.123 — ", "S.456 — ", "H.Con.Res.78 — ", etc.
+        return name.replace(/^[A-Z]\.[A-Z\.]+\s*\d+\s*—\s*/i, '').trim();
+      };
+      const nameA = stripBillNumber(metaA?.display_name || metaA?.short_title || a);
+      const nameB = stripBillNumber(metaB?.display_name || metaB?.short_title || b);
       return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
     });
 
@@ -1009,18 +1055,20 @@ export default function Page() {
     const memberCol = "min(50vw, 300px)";
     // In summary mode: member col + grade cols + endorsements col + total/max/percent
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} minmax(140px, 140px) minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
+      return `${memberCol} ${gradesPart} minmax(240px, 240px) minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
     }
-    // AIPAC mode: member col + grade cols + dynamic bill cols (no endorsements, no totals)
+    // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols (no totals)
     if (f.categories.has("AIPAC")) {
-      return `${memberCol} ${gradesPart} ${billsPart}`;
+      // First grade column is Overall Grade (120px), then endorsements (240px), then remaining grade columns
+      const restGradesPart = gradeColumns.slice(1).map(() => "minmax(120px, 120px)").join(" ");
+      return `${memberCol} minmax(120px, 120px) minmax(240px, 240px) ${restGradesPart} ${billsPart}`;
     }
     // Civil Rights or Travel & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
     if (f.categories.has("Civil Rights") || f.categories.has("Travel & Immigration")) {
-      return `${memberCol} ${gradesPart} ${billsPart} minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
+      return `${memberCol} ${gradesPart} ${billsPart} minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
-    return `${memberCol} ${gradesPart} ${billsPart} 16rem minmax(160px, 160px) minmax(120px, 120px) minmax(100px, 100px)`;
+    return `${memberCol} ${gradesPart} ${billsPart} 16rem minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
   }, [billCols, gradeColumns, f.viewMode, f.categories]);
 
   // Calculate average grades per state for map coloring
@@ -1094,6 +1142,8 @@ export default function Page() {
             stateColors={stateColors}
             onStateClick={(stateCode) => {
               f.set({ state: stateCode, viewMode: "summary" });
+              setSortCol("__district");
+              setSortDir("GOOD_FIRST");
             }}
             members={filtered}
             onMemberClick={(member) => setSelected(member)}
@@ -1123,75 +1173,140 @@ export default function Page() {
               className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer group"
               onClick={() => {
                 if (sortCol === "__member") {
-                  setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                  // Cycle: alphabet asc → alphabet desc → district asc → district desc → alphabet asc
+                  if (sortDir === "GOOD_FIRST") {
+                    setSortDir("BAD_FIRST");
+                  } else {
+                    setSortCol("__district");
+                    setSortDir("GOOD_FIRST");
+                  }
+                } else if (sortCol === "__district") {
+                  if (sortDir === "GOOD_FIRST") {
+                    setSortDir("BAD_FIRST");
+                  } else {
+                    setSortCol("__member");
+                    setSortDir("GOOD_FIRST");
+                  }
                 } else {
                   setSortCol("__member");
                   setSortDir("GOOD_FIRST");
                 }
               }}
-              title="Click to sort by member (toggle A→Z / Z→A)"
+              title={
+                sortCol === "__member"
+                  ? `Click to sort by alphabet (currently ${sortDir === "GOOD_FIRST" ? "A→Z" : "Z→A"})`
+                  : sortCol === "__district"
+                  ? `Click to sort by district (currently ${sortDir === "GOOD_FIRST" ? "ascending" : "descending"})`
+                  : "Click to sort by alphabet or district"
+              }
             >
               Member
               <span className={clsx(
-                "absolute right-2 top-1.5 text-[10px]",
-                sortCol === "__member" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                "absolute right-2 top-1.5 text-[10px] flex items-center gap-1",
+                (sortCol === "__member" || sortCol === "__district") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
               )}>
+                <span className="text-[9px]">
+                  {sortCol === "__district" ? "district" : sortCol === "__member" ? "name" : "sort"}
+                </span>
                 {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
               </span>
             </div>
+
             {gradeColumns.map((gradeCol, idx) => {
               const isOverallGrade = gradeCol.header === "Overall Grade";
               const isSummaryMode = f.viewMode === "summary";
               const isCategoryHeader = isSummaryMode && !isOverallGrade;
 
               return (
-                <div
-                  key={gradeCol.field}
-                  className={clsx(
-                    "th text-center cursor-pointer relative group",
-                    idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10"
-                  )}
-                  title={
-                    isCategoryHeader
-                      ? `Click to view ${gradeCol.header} bills`
-                      : `Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`
-                  }
-                  onClick={() => {
-                    if (isCategoryHeader) {
-                      // In summary mode, clicking a category header switches to category view
-                      f.set({ viewMode: "category" });
-                      f.clearCategories();
-                      // Add this category to the filter
-                      f.toggleCategory(gradeCol.header);
-                    } else {
-                      // Regular sort behavior
-                      if (sortCol === String(gradeCol.field)) {
-                        setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                      } else {
-                        setSortCol(String(gradeCol.field));
-                        setSortDir("GOOD_FIRST");
-                      }
+                <>
+                  <div
+                    key={gradeCol.field}
+                    className={clsx(
+                      "th text-center cursor-pointer relative group",
+                      idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10"
+                    )}
+                    title={
+                      isCategoryHeader
+                        ? `Click to view ${gradeCol.header} bills`
+                        : `Click to sort by ${gradeCol.header} (toggle best→worst / worst→best)`
                     }
-                  }}
-                >
-                  <div className="flex flex-col items-center">
-                    <div>{gradeCol.header}</div>
-                    {isCategoryHeader && (
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 flex items-center gap-0.5 mt-0.5">
-                        <span>sort</span>
-                        <span>▼</span>
-                      </div>
+                    onClick={() => {
+                      if (isCategoryHeader) {
+                        // In summary mode, clicking a category header switches to category view
+                        f.set({ viewMode: "category" });
+                        f.clearCategories();
+                        // Add this category to the filter
+                        f.toggleCategory(gradeCol.header);
+                      } else {
+                        // Regular sort behavior
+                        if (sortCol === String(gradeCol.field)) {
+                          setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                        } else {
+                          setSortCol(String(gradeCol.field));
+                          setSortDir("GOOD_FIRST");
+                        }
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div>{gradeCol.header}</div>
+                      {isCategoryHeader && (
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 opacity-0 group-hover:opacity-100 flex items-center gap-0.5 mt-0.5">
+                          <span>sort</span>
+                          <span>▼</span>
+                        </div>
+                      )}
+                    </div>
+                    {!isCategoryHeader && (
+                      <span className={clsx(
+                        "absolute right-2 top-1.5 text-[10px]",
+                        sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                      )}>
+                        {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                      </span>
                     )}
                   </div>
-                  {!isCategoryHeader && (
-                    <span className={clsx(
-                      "absolute right-2 top-1.5 text-[10px]",
-                      sortCol === String(gradeCol.field) ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
-                    )}>
-                      {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                    </span>
+
+                  {/* Endorsements column header - after Overall Grade in AIPAC view */}
+                  {idx === 0 && f.categories.has("AIPAC") && (
+                    <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col">
+                      {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
+                      <div className="h-[3.375rem] flex items-start">
+                        <span
+                          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open('/aipac', '_blank');
+                          }}
+                        >
+                          Supported by AIPAC or DMFI
+                        </span>
+                      </div>
+
+                      {/* Sortable indicator - always in uniform position */}
+                      <span
+                        className="text-[10px] text-slate-500 dark:text-slate-300 font-light mt-0.5 flex items-center gap-1 cursor-pointer hover:text-slate-700 dark:hover:text-slate-100"
+                        onClick={() => {
+                          if (sortCol === "__aipac") {
+                            setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                          } else {
+                            setSortCol("__aipac");
+                            setSortDir("GOOD_FIRST");
+                          }
+                        }}
+                        title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
+                      >
+                        sort
+                        <span className={clsx(
+                          "text-[10px]",
+                          sortCol === "__aipac" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover/header:opacity-100"
+                        )}>
+                          {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                        </span>
+                      </span>
+                    </div>
                   )}
-                </div>
+                </>
               );
             })}
             {billCols.map((c) => {
@@ -1208,6 +1323,34 @@ export default function Page() {
                   "__aipac_ie": "AIPAC Independent Expenditures",
                   "__dmfi_ie": "DMFI Independent Expenditures"
                 };
+
+                // Special handling for Election column - make it a dropdown
+                if (c === "__election") {
+                  return (
+                    <div
+                      key={c}
+                      className="th group/header relative select-none flex flex-col max-w-[14rem]"
+                    >
+                      {/* Header and dropdown for election year selection */}
+                      <div className="h-[3.375rem] flex flex-col items-start justify-start">
+                        <div className="mb-1">Election Cycle</div>
+                        <select
+                          className="text-sm font-normal bg-transparent border border-slate-300 dark:border-slate-600 rounded px-2 py-0.5 cursor-pointer hover:border-[#4B8CFB] dark:hover:border-[#4B8CFB] focus:outline-none focus:border-[#4B8CFB] dark:focus:border-[#4B8CFB]"
+                          value={selectedElection}
+                          onChange={(e) => {
+                            setSelectedElection(e.target.value as "2024" | "2025" | "2022");
+                          }}
+                        >
+                          <option value="2025">2026</option>
+                          <option value="2024">2024</option>
+                          <option value="2022">2022</option>
+                        </select>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Regular AIPAC column headers
                 return (
                   <div
                     key={c}
@@ -1270,7 +1413,7 @@ export default function Page() {
                 />
               );
             })}
-            {/* Endorsements column header - only shown when NOT viewing AIPAC, Civil Rights, or Travel & Immigration */}
+            {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
               <div className="th border-r border-[#E7ECF2] dark:border-white/10 group/header relative select-none flex flex-col">
                 {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
@@ -1315,7 +1458,7 @@ export default function Page() {
               <>
                 {/* Sortable score headers */}
                 <div
-                  className="th text-right pr-3 cursor-pointer relative group"
+                  className="th text-center cursor-pointer relative group border-l border-[#E7ECF2] dark:border-white/10"
                   title="Click to sort by Total (toggle high→low / low→high)"
                   onClick={() => {
                     const col = scoreSuffix ? `Total_${scoreSuffix}` : "Total";
@@ -1337,7 +1480,7 @@ export default function Page() {
                 </div>
 
                 <div
-                  className="th text-right pr-3 cursor-pointer relative group"
+                  className="th text-center cursor-pointer relative group"
                   title="Click to sort by Max (toggle high→low / low→high)"
                   onClick={() => {
                     const col = scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible";
@@ -1359,7 +1502,7 @@ export default function Page() {
                 </div>
 
                 <div
-                  className="th text-right pr-3 cursor-pointer relative group"
+                  className="th text-center cursor-pointer relative group"
                   title="Click to sort by Percent (toggle high→low / low→high)"
                   onClick={() => {
                     const col = scoreSuffix ? `Percent_${scoreSuffix}` : "Percent";
@@ -1483,28 +1626,108 @@ export default function Page() {
                 const isSummaryMode = f.viewMode === "summary";
 
                 return (
-                  <div
-                    key={gradeCol.field}
-                    className={clsx(
-                      "td flex items-center justify-center",
-                      idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-white/10",
-                      isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
-                    )}
-                    onClick={() => {
-                      if (!isSummaryMode) return;
+                  <>
+                    <div
+                      key={gradeCol.field}
+                      className={clsx(
+                        "td flex items-center justify-center",
+                        idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10",
+                        isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                      )}
+                      onClick={() => {
+                        if (!isSummaryMode) return;
 
-                      if (isOverall) {
-                        // Overall grade opens member card
-                        setSelected(r);
-                      } else {
-                        // Category grade switches to that category view
-                        f.set({ viewMode: "category", categories: new Set([gradeCol.header]) });
-                      }
-                    }}
-                    title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} bills`) : undefined}
-                  >
-                    <GradeChip grade={String(r[gradeCol.field] || "N/A")} isOverall={isOverall} />
-                  </div>
+                        if (isOverall) {
+                          // Overall grade opens member card
+                          setSelected(r);
+                        } else {
+                          // Category grade switches to that category view
+                          f.set({ viewMode: "category", categories: new Set([gradeCol.header]) });
+                        }
+                      }}
+                      title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} bills`) : undefined}
+                    >
+                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} isOverall={isOverall} />
+                    </div>
+
+                    {/* Endorsements column - after Overall Grade in AIPAC view */}
+                    {idx === 0 && f.categories.has("AIPAC") && (
+                      <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
+                        {(() => {
+                          // Check if member has reject AIPAC commitment text (takes priority)
+                          const rejectCommitment = r.reject_aipac_commitment;
+                          const rejectLink = r.reject_aipac_link;
+                          const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
+
+                          if (hasRejectCommitment) {
+                            return (
+                              <div className="flex items-start gap-1">
+                                <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
+                                  <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                                </svg>
+                                <span className="text-xs text-slate-800 dark:text-slate-200 font-bold">
+                                  {rejectLink && String(rejectLink).startsWith('http') ? (
+                                    <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                                      {rejectCommitment}
+                                    </a>
+                                  ) : (
+                                    rejectCommitment
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          const pacData = pacDataMap.get(String(r.bioguide_id));
+                          const aipac = isAipacEndorsed(pacData);
+                          const dmfi = isDmfiEndorsed(pacData);
+
+                          if (aipac && dmfi) {
+                            return (
+                              <div className="flex items-center gap-1">
+                                <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                                </svg>
+                                <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC and DMFI</span>
+                              </div>
+                            );
+                          }
+
+                          if (aipac || dmfi) {
+                            return (
+                              <div className="space-y-0.5">
+                                {aipac && (
+                                  <div className="flex items-center gap-1">
+                                    <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                                    </svg>
+                                    <span className="text-xs text-slate-800 dark:text-slate-200">Supported by AIPAC</span>
+                                  </div>
+                                )}
+                                {dmfi && (
+                                  <div className="flex items-center gap-1">
+                                    <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                                    </svg>
+                                    <span className="text-xs text-slate-800 dark:text-slate-200">Supported by DMFI</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="flex items-center gap-1">
+                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                              </svg>
+                              <span className="text-xs text-slate-800 dark:text-slate-200">Not supported by AIPAC or DMFI</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 );
               })}
 
@@ -1513,7 +1736,8 @@ export default function Page() {
                 // Handle AIPAC-specific columns
                 if (c.startsWith("__aipac_") || c.startsWith("__dmfi_") || c === "__total_support" || c === "__election") {
                   const pacData = pacDataMap.get(String(r.bioguide_id));
-                  const electionYear = getElectionYear(pacData);
+                  // Use selectedElection instead of getElectionYear
+                  const electionYear = selectedElection;
 
                   // Election column
                   if (c === "__election") {
@@ -1677,7 +1901,7 @@ export default function Page() {
 
                   if (isCosponsor) {
                     const didCosponsor = isSupport ? (val > 0) : (val === 0);
-                    actionDescription = didCosponsor ? 'Cosponsored' : 'Have Not Cosponsored';
+                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has Not Cosponsored';
                   } else if (isVote) {
                     const votedFor = isSupport ? (val > 0) : (val === 0);
                     actionDescription = votedFor ? 'Voted in Favor' : 'Voted Against';
@@ -1705,7 +1929,7 @@ export default function Page() {
                 );
               })}
 
-              {/* Endorsements column - only shown when NOT viewing AIPAC, Civil Rights, or Travel & Immigration */}
+              {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights") && !f.categories.has("Travel & Immigration") && (
                 <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2">
                   {(() => {
@@ -1786,13 +2010,13 @@ export default function Page() {
               {/* Total/Max/Percent - shown for all views except AIPAC */}
               {!f.categories.has("AIPAC") && (
                 <>
-                  <div className="td tabular text-right pr-3 font-medium flex items-center justify-end">
+                  <div className="td tabular text-center font-medium flex items-center justify-center border-l border-[#E7ECF2] dark:border-white/10">
                     {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
                   </div>
-                  <div className="td tabular text-right pr-3 flex items-center justify-end">
+                  <div className="td tabular text-center flex items-center justify-center">
                     {Number(r[scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible"] || 0).toFixed(0)}
                   </div>
-                  <div className="td tabular text-right pr-3 flex items-center justify-end">
+                  <div className="td flex items-center justify-center px-2">
                     <Progress value={Number(r[scoreSuffix ? `Percent_${scoreSuffix}` : "Percent"] || 0)} />
                   </div>
                 </>
@@ -1824,7 +2048,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
   return (
     <div className="mb-1 space-y-2">
-      {/* First row: Map/Summary/Issues buttons and Search */}
+      {/* First row: Map/Scorecard/Issues buttons and Search */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Desktop: Show both buttons (>450px) */}
         <div className="min-[450px]:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
@@ -1843,12 +2067,12 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
             className={clsx(
               "px-3 h-9 rounded-md text-sm",
-              f.viewMode === "summary"
+              (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category")
                 ? "bg-[#4B8CFB] text-white"
                 : "hover:bg-slate-50 dark:hover:bg-white/10"
             )}
           >
-            Summary
+            Scorecard
           </button>
         </div>
 
@@ -1856,40 +2080,28 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         <select
           className={clsx(
             "max-[449px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
-            (f.viewMode === "map" || f.viewMode === "summary")
+            (f.viewMode === "map" || f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category")
               ? "bg-[#4B8CFB] text-white"
               : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
           )}
-          value={f.viewMode === "map" ? "map" : f.viewMode === "summary" ? "summary" : ""}
+          value={f.viewMode === "map" ? "map" : (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") ? "scorecard" : ""}
           onChange={(e) => {
             const value = e.target.value;
             if (value === "map") {
               f.set({ viewMode: "map", categories: new Set(), state: "" });
-            } else if (value === "summary") {
+            } else if (value === "scorecard") {
               f.set({ viewMode: "summary", categories: new Set() });
             }
           }}
         >
           <option value="">View</option>
           <option value="map">Map</option>
-          <option value="summary">Summary</option>
+          <option value="scorecard">Scorecard</option>
         </select>
 
-        {/* Desktop: Show Issues button and individual issue buttons (≥985px) - Hide in map mode */}
+        {/* Desktop: Show individual issue buttons (≥985px) - Hide in map mode */}
         {f.viewMode !== "map" && (
         <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
-          {/* Issues button - stays blue when any category or all is selected, clicking defaults to All */}
-          <button
-            onClick={() => f.set({ viewMode: "all", categories: new Set() })}
-            className={clsx(
-              "px-3 h-9 rounded-md text-sm",
-              (f.viewMode === "all" || f.viewMode === "category")
-                ? "bg-[#4B8CFB] text-white"
-                : "hover:bg-slate-50 dark:hover:bg-white/10"
-            )}
-          >
-            Issues
-          </button>
           {/* Border around issue buttons */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10">
             {/* Individual issue buttons - shallower with lighter blue when active */}
@@ -2222,7 +2434,6 @@ function UnifiedSearch({ filteredCount, metaByCol }: { filteredCount: number; me
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden min-[1060px]:inline">Search...</span>
         </button>
       )}
 
@@ -2331,7 +2542,7 @@ function Header({
   return (
     <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
       {/* Bill title - clickable to view details with fixed 3-line height */}
-      <div className="h-[3.375rem] flex items-start">
+      <div className="h-[3.375rem] flex items-start justify-start overflow-hidden">
         <span
           className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
           onClick={(e) => {
@@ -2344,6 +2555,13 @@ function Header({
           {meta ? (meta.short_title || meta.display_name) : col}
         </span>
       </div>
+
+      {/* Chamber - always in uniform position */}
+      {meta?.chamber && (
+        <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+          {meta.chamber === 'HOUSE' ? 'House' : meta.chamber === 'SENATE' ? 'Senate' : meta.chamber}
+        </div>
+      )}
 
       {/* Position - sortable, always in uniform position */}
       {meta && meta.position_to_score && (
@@ -2376,15 +2594,29 @@ function Header({
           )}>
             {meta.display_name || meta.short_title || col}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1"><span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}</div>
-          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
+          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+            <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
+          </div>
           {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
-          <div className="mt-2 flex flex-wrap gap-1">
-            {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
-              <span key={c} className="chip-xs">{c}</span>
-            ))}
-          </div>
+          {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {meta.chamber && (
+                <span
+                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                  style={{
+                    color: '#64748b',
+                    backgroundColor: `${chamberColor(meta.chamber)}20`,
+                  }}
+                >
+                  {meta.chamber === 'HOUSE' ? 'House' : meta.chamber === 'SENATE' ? 'Senate' : meta.chamber}
+                </span>
+              )}
+              {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
+                <span key={c} className="chip-xs">{c}</span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -3360,7 +3592,7 @@ function LawmakerCard({
 
                                         if (isCosponsor) {
                                           const didCosponsor = isSupport ? gotPoints : !gotPoints;
-                                          return didCosponsor ? "Cosponsored" : "Have Not Cosponsored";
+                                          return didCosponsor ? "Cosponsored" : "Has Not Cosponsored";
                                         } else if (isVote) {
                                           const votedFor = isSupport ? gotPoints : !gotPoints;
                                           if (votedFor) {
