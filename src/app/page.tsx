@@ -8,6 +8,7 @@ import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import USMap from "@/components/USMap";
 import Papa from "papaparse";
+import { MemberModal } from "@/components/MemberModal";
 
 import clsx from "clsx";
 
@@ -565,6 +566,7 @@ export default function Page() {
   const [metaByCol, setMeta] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{rowId: string, col: string} | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
 
   useEffect(() => { (async () => {
@@ -629,6 +631,25 @@ export default function Page() {
       window.removeEventListener('wheel', handleWheel);
     };
   }, []);
+
+  // Close tooltip when clicking outside
+  useEffect(() => {
+    if (!selectedCell) return;
+
+    const handleClickOutside = () => {
+      setSelectedCell(null);
+    };
+
+    // Add a small delay to avoid immediately closing on the same click that opened it
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [selectedCell]);
 
   const filtered = useMemo(() => {
     let out = rows;
@@ -1188,7 +1209,7 @@ export default function Page() {
     <div className="space-y-4">
       <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
       {selected && (
-        <LawmakerCard
+        <MemberModal
           row={selected}
           billCols={allBillCols}
           metaByCol={metaByCol}
@@ -1998,8 +2019,15 @@ export default function Page() {
                     // For cosponsor bills, use the _cosponsor column to determine actual action
                     actionDescription = didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                   } else if (isVote) {
-                    // For vote bills, valRaw represents the raw vote (1 = yes, 0 = no)
-                    actionDescription = Number(valRaw) > 0 ? 'Voted in favor' : 'Voted against';
+                    // For vote bills, infer actual vote from points and NIAC position
+                    const gotPoints = val > 0;
+                    if (isSupport) {
+                      // We support: got points = voted in favor, no points = voted against
+                      actionDescription = gotPoints ? 'Voted in favor' : 'Voted against';
+                    } else {
+                      // We oppose: got points = voted against, no points = voted in favor
+                      actionDescription = gotPoints ? 'Voted against' : 'Voted in favor';
+                    }
                   } else {
                     // Fallback for other action types
                     actionDescription = val > 0 ? 'Support' : 'Oppose';
@@ -2022,8 +2050,18 @@ export default function Page() {
                   title = `${actionDescription}, ${pointsText}`;
                 }
 
+                const bioguideId = String(r.bioguide_id || "");
+                const isTooltipOpen = selectedCell?.rowId === bioguideId && selectedCell?.col === c;
+
                 return (
-                  <div key={c} className="td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10" title={title}>
+                  <div
+                    key={c}
+                    className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCell(isTooltipOpen ? null : { rowId: bioguideId, col: c });
+                    }}
+                  >
                     {notApplicable || manualActionNotApplicable ? (
                       <span className="text-xs text-slate-400">N/A</span>
                     ) : votedPresent ? (
@@ -2034,6 +2072,121 @@ export default function Page() {
                       <span className="text-lg leading-none text-slate-400">—</span>
                     ) : (
                       <VoteIcon ok={memberOk} />
+                    )}
+
+                    {/* Small hover tooltip - only shown when main tooltip is closed */}
+                    {!isTooltipOpen && (
+                      <div className="opacity-0 group-hover/cell:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white text-[10px] whitespace-nowrap transition-opacity duration-200 delay-700 shadow-sm border border-slate-200 dark:border-slate-600">
+                        Click to learn more
+                      </div>
+                    )}
+
+                    {/* Tooltip - shown on click */}
+                    {isTooltipOpen && meta && (
+                      <div className="pointer-events-auto absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-xl">
+                        {/* Close button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCell(null);
+                          }}
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                          aria-label="Close"
+                        >
+                          <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor">
+                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                          </svg>
+                        </button>
+
+                        <a
+                          href={`/bill/${c}`}
+                          className={clsx(
+                            (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
+                            "text-slate-900 dark:text-slate-100 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] underline cursor-pointer pr-8"
+                          )}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {meta.display_name || meta.short_title || c}
+                        </a>
+                        <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                          <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
+                        </div>
+                        {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
+                        {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
+                        {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {meta.chamber && (
+                              <span
+                                className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                                style={{
+                                  color: '#64748b',
+                                  backgroundColor: `${chamberColor(meta.chamber)}20`,
+                                }}
+                              >
+                                {meta.chamber === 'HOUSE' ? 'House' : meta.chamber === 'SENATE' ? 'Senate' : meta.chamber}
+                              </span>
+                            )}
+                            {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
+                              <span key={c} className="chip-xs">{c}</span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Member-specific action line */}
+                        <div className="mt-3 pt-3 border-t border-[#E7ECF2] dark:border-white/10 flex items-center gap-2">
+                          {(() => {
+                            const memberLastName = lastName(String(r.full_name || ""));
+                            const capitalizedLastName = memberLastName.charAt(0).toUpperCase() + memberLastName.slice(1);
+                            const title = r.chamber === "SENATE" ? "Sen." : "Rep.";
+
+                            if (notApplicable || manualActionNotApplicable) {
+                              return <span className="text-xs text-slate-400">N/A</span>;
+                            } else if (votedPresent) {
+                              return (
+                                <>
+                                  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Present</span>
+                                  <span className="text-xs text-slate-700 dark:text-slate-200">
+                                    {title} {capitalizedLastName} voted Present
+                                  </span>
+                                </>
+                              );
+                            } else if (wasAbsent) {
+                              return (
+                                <>
+                                  <span className="text-lg leading-none text-slate-400">—</span>
+                                  <span className="text-xs text-slate-700 dark:text-slate-200">
+                                    {title} {capitalizedLastName} did not vote
+                                  </span>
+                                </>
+                              );
+                            } else if (showDashForPreferredPair) {
+                              return (
+                                <>
+                                  <span className="text-lg leading-none text-slate-400">—</span>
+                                  <span className="text-xs text-slate-700 dark:text-slate-200">
+                                    {title} {capitalizedLastName} not penalized (preferred item supported)
+                                  </span>
+                                </>
+                              );
+                            } else {
+                              return (
+                                <>
+                                  <VoteIcon ok={memberOk} />
+                                  <span className="text-xs text-slate-700 dark:text-slate-200">
+                                    {title} {capitalizedLastName} {
+                                      isCosponsor
+                                        ? (didCosponsor ? "cosponsored" : "has not cosponsored")
+                                        : isVote
+                                          ? (memberOk ? "voted in favor" : "voted against")
+                                          : (memberOk ? "supported" : "opposed")
+                                    }
+                                  </span>
+                                </>
+                              );
+                            }
+                          })()}
+                        </div>
+                      </div>
                     )}
                   </div>
                 );
@@ -2883,929 +3036,6 @@ function VoteIcon({ ok }: { ok: boolean }) {
         fill="#F97066"
       />
     </svg>
-  );
-}
-
-function LawmakerCard({
-  row,
-  billCols,
-  metaByCol,
-  categories,
-  onClose,
-}: {
-  row: Row;
-  billCols: string[];
-  metaByCol: Map<string, Meta>;
-  categories: string[];
-  onClose: () => void;
-}) {
-  const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [gradesExpanded, setGradesExpanded] = useState(true);
-  const [lobbySupportExpanded, setLobbySupportExpanded] = useState(false);
-  const [votesActionsExpanded, setVotesActionsExpanded] = useState(true);
-  const [pacData, setPacData] = useState<PacData | undefined>(undefined);
-
-  const votesActionsRef = useRef<HTMLDivElement>(null);
-  const lobbySupportRef = useRef<HTMLDivElement>(null);
-
-  // Load PAC data when component mounts
-  useEffect(() => {
-    (async () => {
-      const pacDataMap = await loadPacData();
-      const memberPacData = pacDataMap.get(row.bioguide_id as string);
-      if (memberPacData) {
-        setPacData(memberPacData);
-      }
-    })();
-  }, [row.bioguide_id]);
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    // Save original overflow style
-    const originalOverflow = document.body.style.overflow;
-    // Prevent scrolling on mount
-    document.body.style.overflow = 'hidden';
-    // Re-enable scrolling on unmount
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
-
-  // Build list of items: each bill or manual action gets an entry
-  const allItems = useMemo(() => {
-    return billCols
-      .map((c) => {
-        const meta = metaByCol.get(c);
-        const inferredChamber = inferChamber(meta, c);
-        const notApplicable = inferredChamber && inferredChamber !== row.chamber;
-        const val = Number((row as any)[c] ?? 0);
-
-        // Check if member was absent for this vote
-        const absentCol = `${c}_absent`;
-        const wasAbsent = Number((row as any)[absentCol] ?? 0) === 1;
-
-        // Check if member cosponsored (for cosponsor bills)
-        const cosponsorCol = `${c}_cosponsor`;
-        const didCosponsor = Number((row as any)[cosponsorCol] ?? 0) === 1;
-
-        const categories = (meta?.categories || "")
-          .split(";")
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        // Check for preferred pair waiver
-        const isPreferred = meta ? isTrue((meta as any).preferred) : false;
-        let waiver = false;
-        if (!notApplicable && meta?.pair_key && !isPreferred && !(val > 0)) {
-          for (const other of billCols) {
-            if (other === c) continue;
-            const m2 = metaByCol.get(other);
-            if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
-              const v2 = Number((row as any)[other] ?? 0);
-              if (v2 > 0) { waiver = true; break; }
-            }
-          }
-        }
-
-        // Determine if member took the "good" action
-        // For most bills: val > 0 means they did the right thing
-        // For no_cosponsor_benefit bills: need to check actual cosponsor status
-        const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
-                                   meta?.no_cosponsor_benefit === 1 ||
-                                   meta?.no_cosponsor_benefit === '1';
-        const actionType = (meta as { action_types?: string })?.action_types || '';
-        const isCosponsor = actionType.includes('cosponsor');
-        const position = (meta?.position_to_score || '').toUpperCase();
-        const isSupport = position === 'SUPPORT';
-
-        // Determine if member took the "good" action
-        // For cosponsor bills, check against actual cosponsor status and NIAC position
-        // For vote bills, val > 0 means they took the good action
-        let ok = false;
-        if (!notApplicable) {
-          if (isCosponsor) {
-            // For cosponsor bills, determine based on NIAC position
-            if (isSupport) {
-              // We support cosponsorship: cosponsoring is good
-              ok = didCosponsor;
-            } else {
-              // We oppose cosponsorship: not cosponsoring is good
-              ok = !didCosponsor;
-            }
-          } else {
-            // For vote bills and other actions, val > 0 means good action
-            ok = val > 0;
-          }
-        }
-
-        return {
-          col: c,
-          meta,
-          val,
-          categories,
-          notApplicable,
-          waiver,
-          wasAbsent,
-          didCosponsor,
-          ok,
-        };
-      })
-      .filter((it) => it.meta && !it.notApplicable)
-      .sort((a, b) => {
-        // Sort by first category alphabetically
-        const catA = a.categories[0] || "";
-        const catB = b.categories[0] || "";
-        const catCompare = catA.localeCompare(catB);
-        if (catCompare !== 0) return catCompare;
-
-        // Then sort alphabetically by display name
-        // Use natural sort to handle numbers correctly (e.g., #1 before #2)
-        const nameA = a.meta?.display_name || a.meta?.short_title || a.col;
-        const nameB = b.meta?.display_name || b.meta?.short_title || b.col;
-        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
-      });
-  }, [billCols, metaByCol, row]);
-
-  // Filter items based on selected category
-  const items = selectedCategory
-    ? allItems.filter((it) => it.categories.some((c) => c === selectedCategory))
-    : allItems;
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20 dark:bg-black/50 z-[100]"
-        onClick={onClose}
-      />
-      {/* Modal */}
-      <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
-          {/* Header */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 relative">
-            {/* Action buttons - positioned in top-right corner */}
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => router.push(`/member/${row.bioguide_id}`)}
-                title="Open in new tab"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={onClose}
-                title="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Top row: photo, name, badges */}
-            <div className="flex items-center gap-3 pr-20">
-              {row.photo_url ? (
-                <img
-                  src={String(row.photo_url)}
-                  alt=""
-                  className="h-32 w-32 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-                />
-              ) : (
-                <div className="h-32 w-32 rounded-full bg-slate-300 dark:bg-white/10" />
-              )}
-              <div className="flex-1">
-                <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
-                  {(() => {
-                    if (row.chamber === "SENATE") return "Senator";
-                    if (row.chamber === "HOUSE") {
-                      const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
-                      const state = stateCodeOf(row.state);
-                      return delegateStates.includes(state) ? "Delegate" : "Representative";
-                    }
-                    return "";
-                  })()}
-                </div>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    {(() => {
-                      const fullName = String(row.full_name || "");
-                      const commaIndex = fullName.indexOf(",");
-                      if (commaIndex > -1) {
-                        const first = fullName.slice(commaIndex + 1).trim();
-                        const last = fullName.slice(0, commaIndex).trim();
-                        return `${first} ${last}`;
-                      }
-                      return fullName;
-                    })()}
-                  </div>
-                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 flex-wrap">
-                  <span
-                    className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                    style={{
-                      color: "#64748b",
-                      backgroundColor: `${chamberColor(row.chamber)}20`,
-                    }}
-                  >
-                    {row.chamber === "HOUSE"
-                      ? "House"
-                      : row.chamber === "SENATE"
-                      ? "Senate"
-                      : row.chamber || ""}
-                  </span>
-                  <span
-                    className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
-                    style={partyBadgeStyle(row.party)}
-                  >
-                    {partyLabel(row.party)}
-                  </span>
-                  <span>{stateCodeOf(row.state)}{row.chamber === "HOUSE" ? `-${row.district || '1'}` : ""}</span>
-                </div>
-              </div>
-
-              {/* Contact Information - hide on narrow screens */}
-              {(row.office_phone || row.office_address) && (
-                <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2 hidden md:block">
-                  {row.office_phone && (
-                    <div>
-                      <div className="font-medium mb-0.5">Washington Office Phone</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                    </div>
-                  )}
-                  {row.office_address && (
-                    <div>
-                      <div className="font-medium mb-0.5">Washington Office Address</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Contact Information - show below on narrow screens */}
-            {(row.office_phone || row.office_address) && (
-              <div className="text-xs text-slate-600 dark:text-slate-400 mt-4 md:hidden">
-                <div className="flex gap-6">
-                  {row.office_phone && (
-                    <div>
-                      <div className="font-medium mb-0.5">Washington Office Phone</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                    </div>
-                  )}
-                  {row.office_address && (
-                    <div>
-                      <div className="font-medium mb-0.5">Washington Office Address</div>
-                      <div className="text-slate-700 dark:text-slate-200">{row.office_address}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {/* Issue Grades - collapsible */}
-            <div className="mb-6">
-              <div
-                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                onClick={() => setGradesExpanded(!gradesExpanded)}
-              >
-                Issue Grades
-                <svg
-                  viewBox="0 0 20 20"
-                  className={clsx("h-4 w-4 ml-auto transition-transform", gradesExpanded && "rotate-180")}
-                  aria-hidden="true"
-                  role="img"
-                >
-                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              {gradesExpanded && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Overall Grade card */}
-              <button
-                onClick={() => {
-                  setSelectedCategory(null);
-                  setVotesActionsExpanded(true);
-                  // Scroll to Votes & Actions section after a brief delay
-                  setTimeout(() => {
-                    votesActionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
-                className={clsx(
-                  "rounded-lg border p-3 text-left transition cursor-pointer",
-                  selectedCategory === null
-                    ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                    : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                )}
-              >
-                <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Overall Grade</div>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                    {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
-                  </div>
-                  <GradeChip grade={String(row.Grade || "N/A")} />
-                </div>
-              </button>
-
-              {categories.filter(cat => cat !== "AIPAC").map((category) => {
-                const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
-                const totalField = `Total_${fieldSuffix}` as keyof Row;
-                const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
-                const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-
-                return (
-                  <button
-                    key={category}
-                    onClick={() => {
-                      setSelectedCategory(selectedCategory === category ? null : category);
-                      // Expand Votes & Actions section
-                      setVotesActionsExpanded(true);
-                      // Scroll to Votes & Actions section after a brief delay
-                      setTimeout(() => {
-                        votesActionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }, 100);
-                    }}
-                    className={clsx(
-                      "rounded-lg border p-3 text-left transition cursor-pointer",
-                      selectedCategory === category
-                        ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                        : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
-                    )}
-                  >
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category}</div>
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs tabular text-slate-700 dark:text-slate-300">
-                        {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
-                      </div>
-                      <GradeChip grade={String(row[gradeField] || "N/A")} />
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Endorsements card */}
-              {(() => {
-                // Check if member has reject AIPAC commitment text (takes priority)
-                const rejectCommitment = row.reject_aipac_commitment;
-                const rejectLink = row.reject_aipac_link;
-                const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
-
-                const aipac = isAipacEndorsed(pacData);
-                const dmfi = isDmfiEndorsed(pacData);
-
-                return (
-                  <button
-                    onClick={() => {
-                      if (!hasRejectCommitment && (aipac || dmfi)) {
-                        setLobbySupportExpanded(true);
-                        // Scroll to section after a brief delay
-                        setTimeout(() => {
-                          lobbySupportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 100);
-                      }
-                    }}
-                    className={clsx(
-                      "rounded-lg border p-3 text-left transition",
-                      (!hasRejectCommitment && (aipac || dmfi))
-                        ? "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
-                        : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-default"
-                    )}
-                  >
-                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">AIPAC/DMFI</div>
-                    {hasRejectCommitment ? (
-                      <div className="flex items-center gap-1.5">
-                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
-                        </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300 font-bold line-clamp-2">
-                          {rejectLink && String(rejectLink).startsWith('http') ? (
-                            <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
-                              {rejectCommitment}
-                            </a>
-                          ) : (
-                            rejectCommitment
-                          )}
-                        </span>
-                      </div>
-                    ) : aipac || dmfi ? (
-                      <div className="flex items-center gap-1.5">
-                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                        </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300">
-                          {aipac && dmfi ? "Supported by AIPAC and DMFI" : aipac ? "Supported by AIPAC" : "Supported by DMFI"}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                        </svg>
-                        <span className="text-xs text-slate-700 dark:text-slate-300">Not supported by AIPAC or DMFI</span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })()}
-                </div>
-              )}
-            </div>
-
-            {/* Support from AIPAC and Affiliates */}
-            {(() => {
-              const aipac = isAipacEndorsed(pacData);
-              const dmfi = isDmfiEndorsed(pacData);
-
-              if (!aipac && !dmfi) return null;
-
-              return (
-              <div className="mb-6" ref={lobbySupportRef}>
-                <div
-                  className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                  onClick={() => setLobbySupportExpanded(!lobbySupportExpanded)}
-                >
-                  Support from AIPAC and Affiliates
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={clsx("h-4 w-4 ml-auto transition-transform", lobbySupportExpanded && "rotate-180")}
-                    aria-hidden="true"
-                    role="img"
-                  >
-                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                {lobbySupportExpanded && (
-                  <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                    {pacData ? (
-                      <>
-                        {(() => {
-                          // Check if there's ANY financial data across all years
-                          const hasAnyFinancialData =
-                            pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                            pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                            pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                            pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                            pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                            pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
-                            pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
-                            pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
-
-                          if (!hasAnyFinancialData) {
-                            // No financial data, show endorsement message
-                            return (
-                              <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                                {aipac && (
-                                  <div>
-                                    <span className="font-semibold">Endorsed by AIPAC</span> (American Israel Public Affairs Committee)
-                                  </div>
-                                )}
-                                {dmfi && (
-                                  <div>
-                                    <span className="font-semibold">Endorsed by DMFI</span> (Democratic Majority For Israel)
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-
-                          // Has financial data, show the detailed breakdown
-                          return null;
-                        })()}
-                      </>
-                    ) : null}
-                    {pacData && (() => {
-                      // Check if there's ANY financial data to show detailed sections
-                      const hasAnyFinancialData =
-                        pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                        pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                        pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                        pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                        pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                        pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
-                        pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
-                        pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
-
-                      if (!hasAnyFinancialData) return null;
-
-                      return (
-                      <div className="space-y-6">
-                        {/* 2026 Election Section (2025 data) */}
-                        {(() => {
-                          // Only show if there's actual financial data (not just endorsement)
-                          const has2025Data = pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 || pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 || pacData.dmfi_direct_2025 > 0;
-
-                          if (!has2025Data) return null;
-
-                          return (
-                            <div>
-                              <div className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-[#E7ECF2] dark:border-white/20">2026 Election</div>
-                              <div className="space-y-4">
-                                {/* AIPAC 2025/2026 */}
-                                {(pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 || pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.aipac_total_2025 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_total_2025.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_direct_amount_2025 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_direct_amount_2025.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_earmark_amount_2025 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Earmarked:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_earmark_amount_2025.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {(pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0) && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${(pacData.aipac_ie_total_2025 || pacData.aipac_ie_support_2025).toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* DMFI 2025/2026 */}
-                                {(pacData.dmfi_total_2025 > 0 || pacData.dmfi_direct_2025 > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">DMFI (Democratic Majority For Israel)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.dmfi_total_2025 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_total_2025.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.dmfi_direct_2025 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_direct_2025.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-
-                        {/* 2024 Election Section */}
-                        {(() => {
-                          // Only show if there's actual financial data (not just endorsement)
-                          const has2024Data = pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 || pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 || pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0;
-
-                          if (!has2024Data) return null;
-
-                          return (
-                            <div>
-                              <div className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-[#E7ECF2] dark:border-white/20">2024 Election</div>
-                              <div className="space-y-4">
-                                {/* AIPAC 2024 */}
-                                {(pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 || pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.aipac_total > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_total.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_direct_amount > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_direct_amount.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_earmark_amount > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Earmarked:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_earmark_amount.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {(pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0) && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${(pacData.aipac_ie_total || pacData.aipac_ie_support).toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* DMFI 2024 */}
-                                {(pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">DMFI (Democratic Majority For Israel)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.dmfi_total > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_total.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.dmfi_direct > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_direct.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {(pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0) && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${(pacData.dmfi_ie_total || pacData.dmfi_ie_support).toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-
-                        {/* 2022 Election Section */}
-                        {(() => {
-                          const has2022Data = pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 || pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 || pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_total_2022 > 0 || pacData.dmfi_ie_support_2022 > 0;
-
-                          if (!has2022Data) return null;
-
-                          return (
-                            <div>
-                              <div className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-[#E7ECF2] dark:border-white/20">2022 Election</div>
-                              <div className="space-y-4">
-                                {/* AIPAC 2022 */}
-                                {(pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 || pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.aipac_total_2022 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_total_2022.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_direct_amount_2022 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_direct_amount_2022.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.aipac_earmark_amount_2022 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Earmarked:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.aipac_earmark_amount_2022.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {(pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0) && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${(pacData.aipac_ie_total_2022 || pacData.aipac_ie_support_2022).toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* DMFI 2022 */}
-                                {(pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_total_2022 > 0 || pacData.dmfi_ie_support_2022 > 0) && (
-                                  <div>
-                                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">DMFI (Democratic Majority For Israel)</div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.dmfi_total_2022 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Total:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_total_2022.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {pacData.dmfi_direct_2022 > 0 && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Direct:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${pacData.dmfi_direct_2022.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {(pacData.dmfi_ie_total_2022 > 0 || pacData.dmfi_ie_support_2022 > 0) && (
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-600 dark:text-slate-400">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700 dark:text-slate-200">${(pacData.dmfi_ie_total_2022 || pacData.dmfi_ie_support_2022).toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      );
-                    })()}
-                    {!pacData && (
-                      <div className="text-xs text-slate-500 dark:text-slate-500">Loading PAC data...</div>
-                    )}
-                  </div>
-                )}
-              </div>
-              );
-            })()}
-
-            {/* Votes & Actions */}
-            <div className="mb-6" ref={votesActionsRef}>
-              <div
-                className="text-sm font-semibold mb-3 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
-                onClick={() => setVotesActionsExpanded(!votesActionsExpanded)}
-              >
-                Votes & Actions
-                <svg
-                  viewBox="0 0 20 20"
-                  className={clsx("h-4 w-4 ml-auto transition-transform", votesActionsExpanded && "rotate-180")}
-                  aria-hidden="true"
-                  role="img"
-                >
-                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              {votesActionsExpanded && (
-                <div className="space-y-4">
-                  {(() => {
-                    // Group items by category
-                    const itemsByCategory = new Map<string, typeof items>();
-                    items.forEach((it) => {
-                      it.categories.forEach((cat) => {
-                        if (!itemsByCategory.has(cat)) {
-                          itemsByCategory.set(cat, []);
-                        }
-                        itemsByCategory.get(cat)!.push(it);
-                      });
-                    });
-
-                    // Sort categories alphabetically
-                    const sortedCategories = Array.from(itemsByCategory.keys()).sort();
-
-                    return sortedCategories.map((category) => {
-                      const categoryItems = itemsByCategory.get(category) || [];
-
-                      // Sort bills within category alphabetically by display name
-                      categoryItems.sort((a, b) => {
-                        const nameA = a.meta?.display_name || a.meta?.short_title || a.meta?.bill_number || a.col;
-                        const nameB = b.meta?.display_name || b.meta?.short_title || b.meta?.bill_number || b.col;
-                        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
-                      });
-
-                      // Get grade for this category
-                      const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
-                      const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-                      const grade = String(row[gradeField] || "N/A");
-
-                      return (
-                        <div key={category} className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">{category}</div>
-                            <GradeChip grade={grade} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {categoryItems.map((it) => (
-                              <div
-                                key={it.col}
-                                className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-700 p-3 cursor-pointer hover:border-[#4B8CFB] transition"
-                                onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
-                              >
-                                <div className="text-[13px] font-medium leading-tight text-slate-700 dark:text-slate-200 mb-2">
-                                  {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
-                                </div>
-                                <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-                                  <span className="font-medium">NIAC Position:</span> {formatPositionTooltip(it.meta)}
-                                </div>
-                                {(() => {
-                                  const voteInfo = extractVoteInfo(it.meta);
-                                  return (
-                                    <>
-                                      {voteInfo.voteResult && voteInfo.voteDate ? (
-                                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-                                          <span className="font-medium">Date of Vote:</span> {voteInfo.voteResult} on {voteInfo.voteDate}
-                                        </div>
-                                      ) : voteInfo.dateIntroduced ? (
-                                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mb-2">
-                                          <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
-                                        </div>
-                                      ) : null}
-                                    </>
-                                  );
-                                })()}
-                                {it.meta && (it.meta as { action_types?: string }).action_types && (
-                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                                    <div className="mt-0.5">
-                                      {it.wasAbsent ? (
-                                        <span className="text-base leading-none text-slate-400 dark:text-slate-500">—</span>
-                                      ) : it.waiver ? (
-                                        <span className="text-base leading-none text-slate-400 dark:text-slate-500">—</span>
-                                      ) : (
-                                        <VoteIcon ok={it.ok} />
-                                      )}
-                                    </div>
-                                    <span className="font-medium">
-                                      {(() => {
-                                        if (it.wasAbsent) {
-                                          return "Did not vote/voted present";
-                                        }
-
-                                        const gotPoints = it.val > 0;
-
-                                        // Format points display with +/- notation
-                                        let pointsDisplay = '';
-                                        if (it.val !== undefined) {
-                                          if (it.val > 0) {
-                                            pointsDisplay = ` (+${it.val.toFixed(0)} pts)`;
-                                          } else if (it.val < 0) {
-                                            pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
-                                          } else {
-                                            // val === 0
-                                            const actionType = (it.meta as { action_types?: string })?.action_types || '';
-                                            const isCosponsor = actionType.includes('cosponsor');
-                                            const position = (it.meta?.position_to_score || '').toUpperCase();
-                                            const isSupport = position === 'SUPPORT';
-                                            const noCosponsorBenefit = it.meta?.no_cosponsor_benefit === true ||
-                                                                       it.meta?.no_cosponsor_benefit === 1 ||
-                                                                       it.meta?.no_cosponsor_benefit === '1';
-
-                                            // For no_cosponsor_benefit bills we oppose, not cosponsoring gives 0 points
-                                            if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor) {
-                                              pointsDisplay = ' (0 pts)';
-                                            } else {
-                                              const maxPoints = Number(it.meta?.points ?? 0);
-                                              pointsDisplay = ` (-${maxPoints} pts)`;
-                                            }
-                                          }
-                                        }
-
-                                        // Determine specific action based on actual action taken
-                                        const actionType = (it.meta as { action_types?: string })?.action_types || '';
-                                        const isCosponsor = actionType.includes('cosponsor');
-                                        const isVote = actionType.includes('vote');
-
-                                        let actionDescription = '';
-                                        if (isCosponsor) {
-                                          // For cosponsor bills, use the actual cosponsor status
-                                          actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
-                                        } else if (isVote) {
-                                          // For vote bills, infer from points (val > 0 = voted the way we wanted)
-                                          const position = (it.meta?.position_to_score || '').toUpperCase();
-                                          const isSupport = position === 'SUPPORT';
-                                          if (isSupport) {
-                                            actionDescription = gotPoints ? 'Voted in favor' : 'Voted against';
-                                          } else {
-                                            actionDescription = gotPoints ? 'Voted against' : 'Voted in favor';
-                                          }
-                                        } else {
-                                          // Fallback for other action types
-                                          actionDescription = gotPoints ? 'Support' : 'Oppose';
-                                        }
-
-                                        return `${actionDescription}${pointsDisplay}`;
-                                      })()}
-                                    </span>
-                                  </div>
-                                )}
-                                {it.meta?.notes && (
-                                  <div className="text-[11px] mt-2 text-slate-700 dark:text-slate-200 border-t border-[#E7ECF2] dark:border-white/10 pt-2">
-                                    {it.meta.notes}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                  {!items.length && (
-                    <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                      No relevant bills/actions for current filters.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
   );
 }
 

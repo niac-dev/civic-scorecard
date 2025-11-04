@@ -506,10 +506,10 @@ export default function MemberPage() {
                 <img
                   src={String(row.photo_url)}
                   alt=""
-                  className="h-32 w-32 rounded-full object-cover bg-slate-200"
+                  className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200"
                 />
               ) : (
-                <div className="h-32 w-32 rounded-full bg-slate-300" />
+                <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300" />
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">

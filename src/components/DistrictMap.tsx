@@ -938,7 +938,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
       {/* Fixed tooltip in upper right corner */}
       {tooltipContent && (
         <div
-          className="absolute top-4 right-4 z-20 rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] shadow-xl max-w-2xl"
+          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-white/10 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-2xl"
           style={{ transform: 'scale(1.5)', transformOrigin: 'top right' }}
           dangerouslySetInnerHTML={{ __html: tooltipContent }}
         />

@@ -3,86 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import { loadData } from "@/lib/loadCsv";
 import type { Row } from "@/lib/types";
 import clsx from "clsx";
-
-function stateCodeOf(s: string | undefined): string {
-  const STATES: { code: string; name: string }[] = [
-    { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
-    { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
-    { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" }, { code: "DC", name: "District of Columbia" },
-    { code: "FL", name: "Florida" }, { code: "GA", name: "Georgia" }, { code: "HI", name: "Hawaii" },
-    { code: "ID", name: "Idaho" }, { code: "IL", name: "Illinois" }, { code: "IN", name: "Indiana" },
-    { code: "IA", name: "Iowa" }, { code: "KS", name: "Kansas" }, { code: "KY", name: "Kentucky" },
-    { code: "LA", name: "Louisiana" }, { code: "ME", name: "Maine" }, { code: "MD", name: "Maryland" },
-    { code: "MA", name: "Massachusetts" }, { code: "MI", name: "Michigan" }, { code: "MN", name: "Minnesota" },
-    { code: "MS", name: "Mississippi" }, { code: "MO", name: "Missouri" }, { code: "MT", name: "Montana" },
-    { code: "NE", name: "Nebraska" }, { code: "NV", name: "Nevada" }, { code: "NH", name: "New Hampshire" },
-    { code: "NJ", name: "New Jersey" }, { code: "NM", name: "New Mexico" }, { code: "NY", name: "New York" },
-    { code: "NC", name: "North Carolina" }, { code: "ND", name: "North Dakota" }, { code: "OH", name: "Ohio" },
-    { code: "OK", name: "Oklahoma" }, { code: "OR", name: "Oregon" }, { code: "PA", name: "Pennsylvania" },
-    { code: "RI", name: "Rhode Island" }, { code: "SC", name: "South Carolina" }, { code: "SD", name: "South Dakota" },
-    { code: "TN", name: "Tennessee" }, { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" },
-    { code: "VT", name: "Vermont" }, { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" },
-    { code: "WV", name: "West Virginia" }, { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" },
-  ];
-
-  const NAME_TO_CODE: Record<string, string> = Object.fromEntries(
-    STATES.flatMap(({ code, name }) => [
-      [name.toLowerCase(), code],
-      [code.toLowerCase(), code],
-    ])
-  );
-
-  const raw = (s ?? "").trim();
-  if (!raw) return "";
-  if (/^[A-Za-z]{2}$/.test(raw)) return raw.toUpperCase();
-  return NAME_TO_CODE[raw.toLowerCase()] ?? raw.toUpperCase();
-}
-
-function partyLabel(p?: string) {
-  const raw = (p ?? "").trim();
-  if (!raw) return "";
-  const s = raw.toLowerCase();
-  if (s.startsWith("democ")) return "Democrat";
-  return raw
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function partyBadgeStyle(p?: string) {
-  const label = partyLabel(p).toLowerCase();
-  const base =
-    label.startsWith("rep") ? "#EF4444" :
-    label.startsWith("dem") ? "#3B82F6" :
-    label.startsWith("ind") ? "#10B981" :
-    "#94A3B8";
-  return {
-    color: base,
-    backgroundColor: `${base}1A`,
-    borderColor: `${base}66`,
-  };
-}
-
-function isTruthy(v: unknown): boolean {
-  if (v === 1 || v === '1' || v === true) return true;
-  if (typeof v === 'number' && v > 0) return true;
-  if (typeof v === 'string') {
-    if (v.toLowerCase() === "true") return true;
-    const num = parseFloat(v);
-    if (!isNaN(num) && num > 0) return true;
-  }
-  return false;
-}
-
-function gradeColor(grade: string): string {
-  const g = (grade || "").trim().toUpperCase();
-  if (g === "A" || g === "A+") return "#10B981"; // green
-  if (g === "A-" || g === "B+" || g === "B") return "#3B82F6"; // blue
-  if (g === "B-" || g === "C+") return "#F59E0B"; // amber
-  if (g === "C" || g === "C-") return "#EF4444"; // red
-  if (g === "D" || g === "F") return "#991B1B"; // dark red
-  return "#94A3B8"; // gray
-}
+import { MemberCard } from "@/components/MemberCard";
+import { MemberModal } from "@/components/MemberModal";
+import { isTruthy, partyLabel } from "@/lib/utils";
 
 export default function AipacPage() {
   const [supported, setSupported] = useState<Row[]>([]);
@@ -91,6 +14,7 @@ export default function AipacPage() {
   const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [chamberFilter, setChamberFilter] = useState<string>("");
+  const [selectedMember, setSelectedMember] = useState<Row | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -243,7 +167,7 @@ export default function AipacPage() {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {housemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} />
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} showAipacBadges={true} />
                               ))}
                             </div>
                           </div>
@@ -255,7 +179,7 @@ export default function AipacPage() {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {senatemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} />
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} showAipacBadges={true} />
                               ))}
                             </div>
                           </div>
@@ -301,7 +225,7 @@ export default function AipacPage() {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {housemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} />
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} showAipacBadges={true} />
                               ))}
                             </div>
                           </div>
@@ -313,7 +237,7 @@ export default function AipacPage() {
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {senatemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} />
+                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} showAipacBadges={true} />
                               ))}
                             </div>
                           </div>
@@ -327,58 +251,14 @@ export default function AipacPage() {
           </div>
         </div>
       </div>
-    </>
-  );
-}
 
-function MemberCard({ member }: { member: Row }) {
-  return (
-    <a
-      href={`/member/${member.bioguide_id}`}
-      className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
-    >
-      {member.photo_url ? (
-        <img
-          src={String(member.photo_url)}
-          alt=""
-          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+      {/* Member Popup Modal */}
+      {selectedMember && (
+        <MemberModal
+          row={selectedMember}
+          onClose={() => setSelectedMember(null)}
         />
-      ) : (
-        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
       )}
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate flex items-center gap-2">
-          <span>{member.full_name}</span>
-          {member["Grade: Overall"] && (
-            <span
-              className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
-              style={{ backgroundColor: gradeColor(String(member["Grade: Overall"])) }}
-            >
-              {member["Grade: Overall"]}
-            </span>
-          )}
-        </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-          <span
-            className="px-1 py-0.5 rounded text-[10px] font-medium"
-            style={partyBadgeStyle(member.party)}
-          >
-            {partyLabel(member.party)}
-          </span>
-          {" "}{stateCodeOf(member.state)}
-          {/* Show AIPAC/DMFI badges */}
-          {isTruthy(member.aipac_supported) && (
-            <span className="text-[9px] px-1 py-0.5 rounded bg-red-900 dark:bg-red-900 text-white dark:text-white">
-              AIPAC
-            </span>
-          )}
-          {isTruthy(member.dmfi_supported) && (
-            <span className="text-[9px] px-1 py-0.5 rounded bg-blue-900 dark:bg-blue-900 text-white dark:text-white">
-              DMFI
-            </span>
-          )}
-        </div>
-      </div>
-    </a>
+    </>
   );
 }
