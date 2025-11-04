@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
+import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
 import USMap from "@/components/USMap";
-import Papa from "papaparse";
 import { MemberModal } from "@/components/MemberModal";
 
 import clsx from "clsx";
@@ -229,50 +229,6 @@ function isTruthy(v: unknown): boolean {
   return false;
 }
 
-// Check if member is endorsed by AIPAC based on PAC data (any election cycle)
-function isAipacEndorsed(pacData: PacData | undefined): boolean {
-  if (!pacData) return false;
-  return (
-    pacData.aipac_featured === 1 ||
-    // 2024 cycle
-    pacData.aipac_direct_amount > 0 ||
-    pacData.aipac_earmark_amount > 0 ||
-    pacData.aipac_ie_support > 0 ||
-    // 2025 cycle
-    pacData.aipac_direct_amount_2025 > 0 ||
-    pacData.aipac_earmark_amount_2025 > 0 ||
-    pacData.aipac_ie_support_2025 > 0 ||
-    // 2022 cycle
-    pacData.aipac_direct_amount_2022 > 0 ||
-    pacData.aipac_earmark_amount_2022 > 0 ||
-    pacData.aipac_ie_support_2022 > 0
-  );
-}
-
-// Check if member is endorsed by DMFI based on PAC data (any election cycle)
-function isDmfiEndorsed(pacData: PacData | undefined): boolean {
-  if (!pacData) return false;
-
-  // If DMFI has actual financial support in any cycle, return true
-  if (
-    // 2024 cycle
-    pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0 ||
-    // 2025 cycle
-    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-    // 2022 cycle
-    pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_support_2022 > 0
-  ) {
-    return true;
-  }
-
-  // If DMFI website === 1 but no DMFI financial support, check if there's ANY financial support from AIPAC
-  if (pacData.dmfi_website === 1) {
-    // Use the isAipacEndorsed function which now checks all cycles
-    return isAipacEndorsed(pacData);
-  }
-
-  return false;
-}
 
 // Determine which election year to display (prefer 2024, then 2025, then 2022 if 2024 has no $ data)
 function getElectionYear(pacData: PacData | undefined): "2024" | "2025" | "2022" | null {
@@ -331,163 +287,6 @@ function partyBadgeStyle(p?: string) {
     backgroundColor: `${base}1A`, // ~10% alpha
     borderColor: `${base}66`,     // ~40% alpha
   };
-}
-
-interface PacData {
-  bioguide_id: string;
-  full_name: string;
-  // 2024 data
-  aipac_featured: number;
-  aipac_direct_amount: number;
-  aipac_earmark_amount: number;
-  aipac_ie_support: number;
-  aipac_ie_total: number;
-  aipac_total: number;
-  dmfi_website: number;
-  dmfi_direct: number;
-  dmfi_ie_support: number;
-  dmfi_ie_total: number;
-  dmfi_total: number;
-  // 2025 data
-  aipac_direct_amount_2025: number;
-  aipac_earmark_amount_2025: number;
-  aipac_ie_support_2025: number;
-  aipac_ie_total_2025: number;
-  aipac_total_2025: number;
-  aipac_supported_2025: number;
-  dmfi_direct_2025: number;
-  dmfi_total_2025: number;
-  dmfi_supported_2025: number;
-  // 2022 data
-  aipac_direct_amount_2022: number;
-  aipac_earmark_amount_2022: number;
-  aipac_ie_support_2022: number;
-  aipac_ie_total_2022: number;
-  aipac_total_2022: number;
-  dmfi_direct_2022: number;
-  dmfi_ie_support_2022: number;
-  dmfi_ie_total_2022: number;
-  dmfi_total_2022: number;
-}
-
-async function loadPacData(): Promise<Map<string, PacData>> {
-  const [response2024, response2025, response2022] = await Promise.all([
-    fetch('/data/pac_data.csv'),
-    fetch('/data/pac_data_2025.csv'),
-    fetch('/data/pac_data_2022.csv')
-  ]);
-  const [text2024, text2025, text2022] = await Promise.all([
-    response2024.text(),
-    response2025.text(),
-    response2022.text()
-  ]);
-
-  return new Promise((resolve) => {
-    // First parse 2024 data
-    Papa.parse<Record<string, string>>(text2024, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results2024) => {
-        const map = new Map<string, PacData>();
-
-        // Load 2024 data
-        results2024.data.forEach((row) => {
-          const bioguide_id = row.bioguide_id;
-          if (!bioguide_id) return;
-
-          map.set(bioguide_id, {
-            bioguide_id,
-            full_name: row.full_name || '',
-            aipac_featured: parseFloat(row.aipac_featured) || 0,
-            aipac_direct_amount: parseFloat(row.aipac_direct_amount) || 0,
-            aipac_earmark_amount: parseFloat(row.aipac_earmark_amount) || 0,
-            aipac_ie_support: parseFloat(row.aipac_ie_support) || 0,
-            aipac_ie_total: parseFloat(row.aipac_ie_total) || 0,
-            aipac_total: parseFloat(row.aipac_total) || 0,
-            dmfi_website: parseFloat(row.dmfi_website) || 0,
-            dmfi_direct: parseFloat(row.dmfi_direct) || 0,
-            dmfi_ie_support: parseFloat(row.dmfi_ie_support) || 0,
-            dmfi_ie_total: parseFloat(row.dmfi_ie_total) || 0,
-            dmfi_total: parseFloat(row.dmfi_total) || 0,
-            // Initialize 2025 data as 0
-            aipac_direct_amount_2025: 0,
-            aipac_earmark_amount_2025: 0,
-            aipac_ie_support_2025: 0,
-            aipac_ie_total_2025: 0,
-            aipac_total_2025: 0,
-            aipac_supported_2025: 0,
-            dmfi_direct_2025: 0,
-            dmfi_total_2025: 0,
-            dmfi_supported_2025: 0,
-            // Initialize 2022 data as 0
-            aipac_direct_amount_2022: 0,
-            aipac_earmark_amount_2022: 0,
-            aipac_ie_support_2022: 0,
-            aipac_ie_total_2022: 0,
-            aipac_total_2022: 0,
-            dmfi_direct_2022: 0,
-            dmfi_ie_support_2022: 0,
-            dmfi_ie_total_2022: 0,
-            dmfi_total_2022: 0,
-          });
-        });
-
-        // Then parse and merge 2025 data
-        Papa.parse<Record<string, string>>(text2025, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results2025) => {
-            results2025.data.forEach((row) => {
-              const bioguide_id = row.bioguide_id;
-              if (!bioguide_id) return;
-
-              const existing = map.get(bioguide_id);
-              if (existing) {
-                // Merge 2025 data into existing record
-                existing.aipac_direct_amount_2025 = parseFloat(row.aipac_direct_amount_2025) || 0;
-                existing.aipac_earmark_amount_2025 = parseFloat(row.aipac_earmark_amount_2025) || 0;
-                existing.aipac_ie_support_2025 = parseFloat(row.aipac_ie_support_2025) || 0;
-                existing.aipac_ie_total_2025 = parseFloat(row.aipac_ie_total_2025) || 0;
-                existing.aipac_total_2025 = parseFloat(row.aipac_total_2025) || 0;
-                existing.aipac_supported_2025 = parseFloat(row.aipac_supported_2025) || 0;
-                existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct_2025) || 0;
-                existing.dmfi_total_2025 = parseFloat(row.dmfi_total_2025) || 0;
-                existing.dmfi_supported_2025 = parseFloat(row.dmfi_supported_2025) || 0;
-              }
-            });
-
-            // Finally parse and merge 2022 data
-            Papa.parse<Record<string, string>>(text2022, {
-              header: true,
-              skipEmptyLines: true,
-              complete: (results2022) => {
-                results2022.data.forEach((row) => {
-                  const bioguide_id = row.bioguide_id;
-                  if (!bioguide_id) return;
-
-                  const existing = map.get(bioguide_id);
-                  if (existing) {
-                    // Merge 2022 data into existing record
-                    existing.aipac_direct_amount_2022 = parseFloat(row.aipac_direct_amount_2022) || 0;
-                    existing.aipac_earmark_amount_2022 = parseFloat(row.aipac_earmark_amount_2022) || 0;
-                    existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support_2022) || 0;
-                    existing.aipac_ie_total_2022 = parseFloat(row.aipac_ie_total_2022) || 0;
-                    existing.aipac_total_2022 = parseFloat(row.aipac_total_2022) || 0;
-                    existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct_2022) || 0;
-                    existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support_2022) || 0;
-                    existing.dmfi_ie_total_2022 = parseFloat(row.dmfi_ie_total_2022) || 0;
-                    existing.dmfi_total_2022 = parseFloat(row.dmfi_total_2022) || 0;
-                  }
-                });
-
-                resolve(map);
-              }
-            });
-          }
-        });
-      }
-    });
-  });
 }
 
 function ZipcodeSearch() {
@@ -802,10 +601,10 @@ export default function Page() {
 
         const pacA = pacDataMap.get(String(a.bioguide_id));
         const pacB = pacDataMap.get(String(b.bioguide_id));
-        const aipacA = isAipacEndorsed(pacA);
-        const dmfiA = isDmfiEndorsed(pacA);
-        const aipacB = isAipacEndorsed(pacB);
-        const dmfiB = isDmfiEndorsed(pacB);
+        const aipacA = isAipacEndorsed(pacA, a.aipac_supported);
+        const dmfiA = isDmfiEndorsed(pacA, a.dmfi_supported);
+        const aipacB = isAipacEndorsed(pacB, b.aipac_supported);
+        const dmfiB = isDmfiEndorsed(pacB, b.dmfi_supported);
 
         // Assign priority (lower number = better/higher priority)
         // 1. Custom reject commitment
@@ -1815,8 +1614,8 @@ export default function Page() {
                           }
 
                           const pacData = pacDataMap.get(String(r.bioguide_id));
-                          const aipac = isAipacEndorsed(pacData);
-                          const dmfi = isDmfiEndorsed(pacData);
+                          const aipac = isAipacEndorsed(pacData, r.aipac_supported);
+                          const dmfi = isDmfiEndorsed(pacData, r.dmfi_supported);
 
                           if (aipac && dmfi) {
                             return (
@@ -2255,8 +2054,8 @@ export default function Page() {
                     }
 
                     const pacData = pacDataMap.get(String(r.bioguide_id));
-                    const aipac = isAipacEndorsed(pacData);
-                    const dmfi = isDmfiEndorsed(pacData);
+                    const aipac = isAipacEndorsed(pacData, r.aipac_supported);
+                    const dmfi = isDmfiEndorsed(pacData, r.dmfi_supported);
 
                     if (aipac && dmfi) {
                       return (

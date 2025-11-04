@@ -26,7 +26,7 @@ export default function AipacPage() {
 
       rows.forEach((row) => {
         const pacData = pacDataMap.get(String(row.bioguide_id));
-        const hasSupport = isAipacEndorsed(pacData) || isDmfiEndorsed(pacData);
+        const hasSupport = isAipacEndorsed(pacData, row.aipac_supported) || isDmfiEndorsed(pacData, row.dmfi_supported);
         if (hasSupport) {
           supportedList.push(row);
         } else {

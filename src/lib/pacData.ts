@@ -11,11 +11,13 @@ export interface PacData {
   aipac_ie_support: number;
   aipac_ie_total: number;
   aipac_total: number;
+  aipac_supported: number; // Flag to determine if we should show AIPAC support
   dmfi_website: number;
   dmfi_direct: number;
   dmfi_ie_support: number;
   dmfi_ie_total: number;
   dmfi_total: number;
+  dmfi_supported: number; // Flag to determine if we should show DMFI support
   // 2025 data
   aipac_direct_amount_2025: number;
   aipac_earmark_amount_2025: number;
@@ -32,10 +34,12 @@ export interface PacData {
   aipac_ie_support_2022: number;
   aipac_ie_total_2022: number;
   aipac_total_2022: number;
+  aipac_supported_2022: number;
   dmfi_direct_2022: number;
   dmfi_ie_support_2022: number;
   dmfi_ie_total_2022: number;
   dmfi_total_2022: number;
+  dmfi_supported_2022: number;
 }
 
 export async function loadPacData(): Promise<Map<string, PacData>> {
@@ -72,11 +76,13 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
             aipac_ie_support: parseFloat(row.aipac_ie_support) || 0,
             aipac_ie_total: parseFloat(row.aipac_ie_total) || 0,
             aipac_total: parseFloat(row.aipac_total) || 0,
+            aipac_supported: parseFloat(row.aipac_supported) || 0,
             dmfi_website: parseFloat(row.dmfi_website) || 0,
             dmfi_direct: parseFloat(row.dmfi_direct) || 0,
             dmfi_ie_support: parseFloat(row.dmfi_ie_support) || 0,
             dmfi_ie_total: parseFloat(row.dmfi_ie_total) || 0,
             dmfi_total: parseFloat(row.dmfi_total) || 0,
+            dmfi_supported: parseFloat(row.dmfi_supported) || 0,
             // Initialize 2025 data as 0
             aipac_direct_amount_2025: 0,
             aipac_earmark_amount_2025: 0,
@@ -93,10 +99,12 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
             aipac_ie_support_2022: 0,
             aipac_ie_total_2022: 0,
             aipac_total_2022: 0,
+            aipac_supported_2022: 0,
             dmfi_direct_2022: 0,
             dmfi_ie_support_2022: 0,
             dmfi_ie_total_2022: 0,
             dmfi_total_2022: 0,
+            dmfi_supported_2022: 0,
           });
         });
 
@@ -131,11 +139,13 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                   aipac_ie_support: 0,
                   aipac_ie_total: 0,
                   aipac_total: 0,
+                  aipac_supported: 0,
                   dmfi_website: 0,
                   dmfi_direct: 0,
                   dmfi_ie_support: 0,
                   dmfi_ie_total: 0,
                   dmfi_total: 0,
+                  dmfi_supported: 0,
                   aipac_direct_amount_2025: parseFloat(row.aipac_direct_amount_2025) || 0,
                   aipac_earmark_amount_2025: parseFloat(row.aipac_earmark_amount_2025) || 0,
                   aipac_ie_support_2025: parseFloat(row.aipac_ie_support_2025) || 0,
@@ -150,10 +160,12 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                   aipac_ie_support_2022: 0,
                   aipac_ie_total_2022: 0,
                   aipac_total_2022: 0,
+                  aipac_supported_2022: 0,
                   dmfi_direct_2022: 0,
                   dmfi_ie_support_2022: 0,
                   dmfi_ie_total_2022: 0,
                   dmfi_total_2022: 0,
+                  dmfi_supported_2022: 0,
                 });
               }
             });
@@ -174,10 +186,12 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                     existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support_2022) || 0;
                     existing.aipac_ie_total_2022 = parseFloat(row.aipac_ie_total_2022) || 0;
                     existing.aipac_total_2022 = parseFloat(row.aipac_total_2022) || 0;
+                    existing.aipac_supported_2022 = parseFloat(row.aipac_supported_2022) || 0;
                     existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct_2022) || 0;
                     existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support_2022) || 0;
                     existing.dmfi_ie_total_2022 = parseFloat(row.dmfi_ie_total_2022) || 0;
                     existing.dmfi_total_2022 = parseFloat(row.dmfi_total_2022) || 0;
+                    existing.dmfi_supported_2022 = parseFloat(row.dmfi_supported_2022) || 0;
                   } else {
                     // Create new entry if not in 2024/2025 data
                     map.set(bioguide_id, {
@@ -189,11 +203,13 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                       aipac_ie_support: 0,
                       aipac_ie_total: 0,
                       aipac_total: 0,
+                      aipac_supported: 0,
                       dmfi_website: 0,
                       dmfi_direct: 0,
                       dmfi_ie_support: 0,
                       dmfi_ie_total: 0,
                       dmfi_total: 0,
+                      dmfi_supported: 0,
                       aipac_direct_amount_2025: 0,
                       aipac_earmark_amount_2025: 0,
                       aipac_ie_support_2025: 0,
@@ -208,10 +224,12 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                       aipac_ie_support_2022: parseFloat(row.aipac_ie_support_2022) || 0,
                       aipac_ie_total_2022: parseFloat(row.aipac_ie_total_2022) || 0,
                       aipac_total_2022: parseFloat(row.aipac_total_2022) || 0,
+                      aipac_supported_2022: parseFloat(row.aipac_supported_2022) || 0,
                       dmfi_direct_2022: parseFloat(row.dmfi_direct_2022) || 0,
                       dmfi_ie_support_2022: parseFloat(row.dmfi_ie_support_2022) || 0,
                       dmfi_ie_total_2022: parseFloat(row.dmfi_ie_total_2022) || 0,
                       dmfi_total_2022: parseFloat(row.dmfi_total_2022) || 0,
+                      dmfi_supported_2022: parseFloat(row.dmfi_supported_2022) || 0,
                     });
                   }
                 });
@@ -226,8 +244,23 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
   });
 }
 
-export function isAipacEndorsed(pacData: PacData | undefined): boolean {
+export function isAipacEndorsed(pacData: PacData | undefined, aipacSupportedFlag?: string | number | boolean): boolean {
   if (!pacData) return false;
+
+  // Use the flag from scores_wide.csv if provided, otherwise check pac_data supported flags
+  let isSupported = false;
+  if (aipacSupportedFlag !== undefined) {
+    // Flag from scores_wide.csv (primary source of truth)
+    isSupported = Number(aipacSupportedFlag) === 1 || aipacSupportedFlag === true || aipacSupportedFlag === '1';
+  } else {
+    // Fallback to pac_data.csv flags (for backward compatibility)
+    isSupported = pacData.aipac_supported === 1 || pacData.aipac_supported_2025 === 1 || pacData.aipac_supported_2022 === 1;
+  }
+
+  // If not supported, return false regardless of donation data
+  if (!isSupported) return false;
+
+  // Check if there's actual support data in any cycle
   return (
     pacData.aipac_featured === 1 ||
     // 2024 cycle
@@ -245,18 +278,33 @@ export function isAipacEndorsed(pacData: PacData | undefined): boolean {
   );
 }
 
-export function isDmfiEndorsed(pacData: PacData | undefined): boolean {
+export function isDmfiEndorsed(pacData: PacData | undefined, dmfiSupportedFlag?: string | number | boolean): boolean {
   if (!pacData) return false;
 
-  // If DMFI has actual financial support in any cycle, return true
+  // Use the flag from scores_wide.csv if provided, otherwise check pac_data supported flags
+  let isSupported = false;
+  if (dmfiSupportedFlag !== undefined) {
+    // Flag from scores_wide.csv (primary source of truth)
+    isSupported = Number(dmfiSupportedFlag) === 1 || dmfiSupportedFlag === true || dmfiSupportedFlag === '1';
+  } else {
+    // Fallback to pac_data.csv flags (for backward compatibility)
+    isSupported = pacData.dmfi_supported === 1 || pacData.dmfi_supported_2025 === 1 || pacData.dmfi_supported_2022 === 1;
+  }
+
+  // If not supported, return false regardless of donation data
+  if (!isSupported) return false;
+
+  // Check if there's actual support data in any cycle
   return (
     // 2024 cycle
-    pacData.dmfi_direct > 0 || pacData.dmfi_ie_support > 0 ||
+    pacData.dmfi_website === 1 ||
+    pacData.dmfi_direct > 0 ||
+    pacData.dmfi_ie_support > 0 ||
     // 2025 cycle
-    pacData.dmfi_direct_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
+    pacData.dmfi_direct_2025 > 0 ||
+    pacData.dmfi_total_2025 > 0 ||
     // 2022 cycle
-    pacData.dmfi_direct_2022 > 0 || pacData.dmfi_ie_support_2022 > 0 ||
-    // Listed on DMFI website
-    pacData.dmfi_website === 1
+    pacData.dmfi_direct_2022 > 0 ||
+    pacData.dmfi_ie_support_2022 > 0
   );
 }

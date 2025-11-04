@@ -374,8 +374,8 @@ export function MemberModal({
                   const hasRejectCommitment = !!(row.reject_commitment && String(row.reject_commitment).trim());
                   const rejectCommitment = String(row.reject_commitment || "").trim();
                   const rejectLink = row.reject_commitment_link;
-                  const aipac = isAipacEndorsed(pacData);
-                  const dmfi = isDmfiEndorsed(pacData);
+                  const aipac = isAipacEndorsed(pacData, row.aipac_supported);
+                  const dmfi = isDmfiEndorsed(pacData, row.dmfi_supported);
 
                   return (
                     <button
@@ -423,8 +423,8 @@ export function MemberModal({
 
                     {/* AIPAC/DMFI Content */}
                     {(() => {
-                      const aipac = isAipacEndorsed(pacData);
-                      const dmfi = isDmfiEndorsed(pacData);
+                      const aipac = isAipacEndorsed(pacData, row.aipac_supported);
+                      const dmfi = isDmfiEndorsed(pacData, row.dmfi_supported);
 
                       if (!aipac && !dmfi) {
                         return (
