@@ -1217,8 +1217,25 @@ export default function Page() {
   }, [rows]);
 
   return (
-    <div className="space-y-4">
-      <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
+    <div className="space-y-0">
+      {/* Header Band */}
+      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-6 border-b border-[#001a2e] dark:border-white/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
+          <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer">
+            <img
+              src="https://niacouncil.org/wp-content/uploads/2020/05/NIAC-Action-Negative-over-Transparent-Small@2x-e1588645480145.png"
+              alt="NIAC Action"
+              className="h-10 md:h-12 cursor-pointer hover:opacity-80 transition-opacity"
+            />
+          </a>
+          <h1 className="text-xl md:text-2xl font-bold text-white">
+            Congressional Scorecard
+          </h1>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4 md:p-6">
+        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
       {selected && (
         <MemberModal
           row={selected}
@@ -2306,6 +2323,7 @@ export default function Page() {
         </div>
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -2616,6 +2634,11 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Update search type when view mode changes
+  useEffect(() => {
+    setSearchType(isMapView ? "zip" : "name");
+  }, [isMapView]);
 
   const handleZipSearch = async () => {
     if (!searchValue.trim()) return;
