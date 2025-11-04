@@ -111,15 +111,15 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
 
               const existing = map.get(bioguide_id);
               if (existing) {
-                existing.aipac_direct_amount_2025 = parseFloat(row.aipac_direct_amount) || 0;
-                existing.aipac_earmark_amount_2025 = parseFloat(row.aipac_earmark_amount) || 0;
-                existing.aipac_ie_support_2025 = parseFloat(row.aipac_ie_support) || 0;
-                existing.aipac_ie_total_2025 = parseFloat(row.aipac_ie_total) || 0;
-                existing.aipac_total_2025 = parseFloat(row.aipac_total) || 0;
-                existing.aipac_supported_2025 = parseFloat(row.aipac_supported) || 0;
-                existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct) || 0;
-                existing.dmfi_total_2025 = parseFloat(row.dmfi_total) || 0;
-                existing.dmfi_supported_2025 = parseFloat(row.dmfi_supported) || 0;
+                existing.aipac_direct_amount_2025 = parseFloat(row.aipac_direct_amount_2025) || 0;
+                existing.aipac_earmark_amount_2025 = parseFloat(row.aipac_earmark_amount_2025) || 0;
+                existing.aipac_ie_support_2025 = parseFloat(row.aipac_ie_support_2025) || 0;
+                existing.aipac_ie_total_2025 = parseFloat(row.aipac_ie_total_2025) || 0;
+                existing.aipac_total_2025 = parseFloat(row.aipac_total_2025) || 0;
+                existing.aipac_supported_2025 = parseFloat(row.aipac_supported_2025) || 0;
+                existing.dmfi_direct_2025 = parseFloat(row.dmfi_direct_2025) || 0;
+                existing.dmfi_total_2025 = parseFloat(row.dmfi_total_2025) || 0;
+                existing.dmfi_supported_2025 = parseFloat(row.dmfi_supported_2025) || 0;
               } else {
                 // Create new entry if not in 2024 data
                 map.set(bioguide_id, {
@@ -136,15 +136,15 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                   dmfi_ie_support: 0,
                   dmfi_ie_total: 0,
                   dmfi_total: 0,
-                  aipac_direct_amount_2025: parseFloat(row.aipac_direct_amount) || 0,
-                  aipac_earmark_amount_2025: parseFloat(row.aipac_earmark_amount) || 0,
-                  aipac_ie_support_2025: parseFloat(row.aipac_ie_support) || 0,
-                  aipac_ie_total_2025: parseFloat(row.aipac_ie_total) || 0,
-                  aipac_total_2025: parseFloat(row.aipac_total) || 0,
-                  aipac_supported_2025: parseFloat(row.aipac_supported) || 0,
-                  dmfi_direct_2025: parseFloat(row.dmfi_direct) || 0,
-                  dmfi_total_2025: parseFloat(row.dmfi_total) || 0,
-                  dmfi_supported_2025: parseFloat(row.dmfi_supported) || 0,
+                  aipac_direct_amount_2025: parseFloat(row.aipac_direct_amount_2025) || 0,
+                  aipac_earmark_amount_2025: parseFloat(row.aipac_earmark_amount_2025) || 0,
+                  aipac_ie_support_2025: parseFloat(row.aipac_ie_support_2025) || 0,
+                  aipac_ie_total_2025: parseFloat(row.aipac_ie_total_2025) || 0,
+                  aipac_total_2025: parseFloat(row.aipac_total_2025) || 0,
+                  aipac_supported_2025: parseFloat(row.aipac_supported_2025) || 0,
+                  dmfi_direct_2025: parseFloat(row.dmfi_direct_2025) || 0,
+                  dmfi_total_2025: parseFloat(row.dmfi_total_2025) || 0,
+                  dmfi_supported_2025: parseFloat(row.dmfi_supported_2025) || 0,
                   aipac_direct_amount_2022: 0,
                   aipac_earmark_amount_2022: 0,
                   aipac_ie_support_2022: 0,
@@ -169,15 +169,15 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
 
                   const existing = map.get(bioguide_id);
                   if (existing) {
-                    existing.aipac_direct_amount_2022 = parseFloat(row.aipac_direct_amount) || 0;
-                    existing.aipac_earmark_amount_2022 = parseFloat(row.aipac_earmark_amount) || 0;
-                    existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support) || 0;
-                    existing.aipac_ie_total_2022 = parseFloat(row.aipac_ie_total) || 0;
-                    existing.aipac_total_2022 = parseFloat(row.aipac_total) || 0;
-                    existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct) || 0;
-                    existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support) || 0;
-                    existing.dmfi_ie_total_2022 = parseFloat(row.dmfi_ie_total) || 0;
-                    existing.dmfi_total_2022 = parseFloat(row.dmfi_total) || 0;
+                    existing.aipac_direct_amount_2022 = parseFloat(row.aipac_direct_amount_2022) || 0;
+                    existing.aipac_earmark_amount_2022 = parseFloat(row.aipac_earmark_amount_2022) || 0;
+                    existing.aipac_ie_support_2022 = parseFloat(row.aipac_ie_support_2022) || 0;
+                    existing.aipac_ie_total_2022 = parseFloat(row.aipac_ie_total_2022) || 0;
+                    existing.aipac_total_2022 = parseFloat(row.aipac_total_2022) || 0;
+                    existing.dmfi_direct_2022 = parseFloat(row.dmfi_direct_2022) || 0;
+                    existing.dmfi_ie_support_2022 = parseFloat(row.dmfi_ie_support_2022) || 0;
+                    existing.dmfi_ie_total_2022 = parseFloat(row.dmfi_ie_total_2022) || 0;
+                    existing.dmfi_total_2022 = parseFloat(row.dmfi_total_2022) || 0;
                   } else {
                     // Create new entry if not in 2024/2025 data
                     map.set(bioguide_id, {
@@ -203,15 +203,15 @@ export async function loadPacData(): Promise<Map<string, PacData>> {
                       dmfi_direct_2025: 0,
                       dmfi_total_2025: 0,
                       dmfi_supported_2025: 0,
-                      aipac_direct_amount_2022: parseFloat(row.aipac_direct_amount) || 0,
-                      aipac_earmark_amount_2022: parseFloat(row.aipac_earmark_amount) || 0,
-                      aipac_ie_support_2022: parseFloat(row.aipac_ie_support) || 0,
-                      aipac_ie_total_2022: parseFloat(row.aipac_ie_total) || 0,
-                      aipac_total_2022: parseFloat(row.aipac_total) || 0,
-                      dmfi_direct_2022: parseFloat(row.dmfi_direct) || 0,
-                      dmfi_ie_support_2022: parseFloat(row.dmfi_ie_support) || 0,
-                      dmfi_ie_total_2022: parseFloat(row.dmfi_ie_total) || 0,
-                      dmfi_total_2022: parseFloat(row.dmfi_total) || 0,
+                      aipac_direct_amount_2022: parseFloat(row.aipac_direct_amount_2022) || 0,
+                      aipac_earmark_amount_2022: parseFloat(row.aipac_earmark_amount_2022) || 0,
+                      aipac_ie_support_2022: parseFloat(row.aipac_ie_support_2022) || 0,
+                      aipac_ie_total_2022: parseFloat(row.aipac_ie_total_2022) || 0,
+                      aipac_total_2022: parseFloat(row.aipac_total_2022) || 0,
+                      dmfi_direct_2022: parseFloat(row.dmfi_direct_2022) || 0,
+                      dmfi_ie_support_2022: parseFloat(row.dmfi_ie_support_2022) || 0,
+                      dmfi_ie_total_2022: parseFloat(row.dmfi_ie_total_2022) || 0,
+                      dmfi_total_2022: parseFloat(row.dmfi_total_2022) || 0,
                     });
                   }
                 });

@@ -581,9 +581,18 @@ export default function Page() {
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
   const [selectedElection, setSelectedElection] = useState<"2024" | "2025" | "2022">("2024");
+  const [isMobile, setIsMobile] = useState(false);
 
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Track mobile viewport for responsive column widths
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Scroll to top when filters change (but not when categories change)
   useEffect(() => {
@@ -1142,8 +1151,10 @@ export default function Page() {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "minmax(140px, 140px)").join(" ");
     const gradesPart = gradeColumns.map(() => "minmax(120px, 120px)").join(" ");
-    // Member column: 50vw on small screens (max 50% of viewport), 300px on larger screens
-    const memberCol = "min(50vw, 300px)";
+    // Member column: narrower on mobile (no photos, stacked names), wider on desktop
+    // Mobile: min 120px to fit stacked names, max 35vw to save space
+    // Desktop: fixed 300px for comfortable reading with photos
+    const memberCol = isMobile ? "minmax(120px, min(35vw, 160px))" : "300px";
     // In summary mode: member col + grade cols + endorsements col + total/max/percent
     if (f.viewMode === "summary") {
       return `${memberCol} ${gradesPart} minmax(240px, 240px) minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
@@ -1160,7 +1171,7 @@ export default function Page() {
     }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
     return `${memberCol} ${gradesPart} ${billsPart} 16rem minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
-  }, [billCols, gradeColumns, f.viewMode, f.categories]);
+  }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile]);
 
   // Calculate average grades per state for map coloring
   const stateColors = useMemo(() => {
@@ -1644,18 +1655,18 @@ export default function Page() {
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
-                {/* Photo - smaller on phones, normal on tablets/desktop */}
+                {/* Photo - hidden on mobile, visible on tablets/desktop */}
                 {r.photo_url ? (
                   <img
                     src={String(r.photo_url)}
                     alt=""
-                    className="h-10 w-10 md:h-[68px] md:w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                    className="hidden md:block h-[68px] w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                   />
                 ) : (
-                  <div className="h-10 w-10 md:h-[68px] md:w-[68px] rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                  <div className="hidden md:block h-[68px] w-[68px] rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                 )}
 
-                {/* Text content - normal behavior on tablets/desktop, scrolls on phones */}
+                {/* Text content - wraps on mobile, single line on desktop */}
                 <div className="flex flex-col justify-center min-w-0">
                   <div className="text-[8px] md:text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5 hidden md:block">
                     {(() => {
@@ -1668,14 +1679,20 @@ export default function Page() {
                       return "";
                     })()}
                   </div>
-                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-white mb-0.5 md:mb-1">
+                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-white mb-0.5 md:mb-1 md:truncate">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
                       if (commaIndex > -1) {
                         const first = fullName.slice(commaIndex + 1).trim();
                         const last = fullName.slice(0, commaIndex).trim();
-                        return `${first} ${last}`;
+                        return (
+                          <>
+                            <span className="block md:inline">{first}</span>
+                            <span className="hidden md:inline"> </span>
+                            <span className="block md:inline">{last}</span>
+                          </>
+                        );
                       }
                       return fullName;
                     })()}
@@ -2108,7 +2125,7 @@ export default function Page() {
                         >
                           {meta.display_name || meta.short_title || c}
                         </a>
-                        <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">
+                        <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
                         </div>
                         {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
@@ -2313,8 +2330,8 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
     <div className="mb-1 space-y-2">
       {/* First row: Map/Scorecard/Issues buttons */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Desktop: Show both buttons (>450px) */}
-        <div className="min-[450px]:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+        {/* Desktop: Show both text buttons (≥768px) */}
+        <div className="md:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
           <button
             onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
             className={clsx(
@@ -2341,28 +2358,37 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           </button>
         </div>
 
-        {/* Very narrow screens: Show dropdown (<450px) */}
-        <select
-          className={clsx(
-            "max-[449px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
-            (f.viewMode === "map" || f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category")
-              ? "bg-[#4B8CFB] text-white"
-              : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
-          )}
-          value={f.viewMode === "map" ? "map" : (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") ? "scorecard" : ""}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "map") {
-              f.set({ viewMode: "map", categories: new Set(), state: "" });
-            } else if (value === "scorecard") {
-              f.set({ viewMode: "summary", categories: new Set() });
-            }
-          }}
-        >
-          <option value="">View</option>
-          <option value="map">Map</option>
-          <option value="scorecard">Scorecard</option>
-        </select>
+        {/* Mobile: Show icon buttons (<768px) */}
+        <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+          <button
+            onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
+            className={clsx(
+              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
+              f.viewMode === "map"
+                ? "bg-[#4B8CFB] text-white"
+                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
+            )}
+            title="Map view"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
+            className={clsx(
+              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
+              f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category"
+                ? "bg-[#4B8CFB] text-white"
+                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
+            )}
+            title="Scorecard view"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+        </div>
 
         {/* Desktop: Show individual issue buttons (≥985px) - Hide in map mode */}
         {f.viewMode !== "map" && (
@@ -2706,7 +2732,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
                 handleSearch();
               }
             }}
-            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent min-w-[250px]"
+            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[250px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
           />
         </div>
         {loading ? (

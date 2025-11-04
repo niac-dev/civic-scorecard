@@ -104,8 +104,16 @@ export function MemberModal({
       .map((c) => {
         const meta = metaByCol.get(c);
         const inferredChamber = inferChamber(meta, c);
-        const notApplicable = inferredChamber && inferredChamber !== row.chamber;
-        const val = Number((row as Record<string, unknown>)[c] ?? 0);
+        let notApplicable = inferredChamber && inferredChamber !== row.chamber;
+
+        // Check raw value before converting to number
+        const rawVal = (row as Record<string, unknown>)[c];
+        const val = Number(rawVal ?? 0);
+
+        // For manual actions like committee votes, null/undefined/empty means not applicable (not on committee)
+        if (meta?.type === 'MANUAL' && (rawVal === null || rawVal === undefined || rawVal === '')) {
+          notApplicable = true;
+        }
 
         // Check if member was absent for this vote
         const absentCol = `${c}_absent`;
@@ -166,7 +174,14 @@ export function MemberModal({
           ok,
         };
       })
-      .filter((it) => it.meta && !it.notApplicable);
+      .filter((it) => {
+        // Keep items with metadata
+        if (!it.meta) return false;
+        // Always show Iran committee vote even if not applicable (to show "not on committee" message)
+        if (it.col === 'Banning_Travel_to_Iran_Committee_Vote') return true;
+        // Filter out other not applicable items
+        return !it.notApplicable;
+      });
   }, [billCols, metaByCol, row]);
 
   // Filter items based on selected category
@@ -312,7 +327,7 @@ export function MemberModal({
                   className={clsx(
                     "rounded-lg border p-3 text-left transition w-full",
                     hasVotesActions ? "cursor-pointer" : "cursor-default",
-                    selectedCategory === null && hasVotesActions
+                    selectedCategory === null && !showAipacSection && hasVotesActions
                       ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
                       : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
@@ -759,7 +774,9 @@ export function MemberModal({
                           {it.meta && (it.meta as { action_types?: string }).action_types && (
                             <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                               <div className="mt-0.5">
-                                {it.wasAbsent ? (
+                                {it.notApplicable ? (
+                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                                ) : it.wasAbsent ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.waiver ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
@@ -773,7 +790,13 @@ export function MemberModal({
                                     return "Did not vote/voted present";
                                   }
 
-                                  const gotPoints = it.val > 0;
+                                  const actionType = (it.meta as { action_types?: string })?.action_types || '';
+                                  const isCosponsor = actionType.includes('cosponsor');
+                                  const isVote = actionType.includes('vote');
+                                  const isManual = it.meta?.type === 'MANUAL';
+                                  const position = (it.meta?.position_to_score || '').toUpperCase();
+                                  const isSupport = position === 'SUPPORT';
+                                  const maxPoints = Number(it.meta?.points || 0);
 
                                   // Format points display with +/- notation
                                   let pointsDisplay = '';
@@ -783,11 +806,57 @@ export function MemberModal({
                                     } else if (it.val < 0) {
                                       pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
                                     } else {
-                                      pointsDisplay = ' (0 pts)';
+                                      // When they get 0 points, show the negative impact (0 out of maxPoints = -maxPoints)
+                                      pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : ' (0 pts)';
                                     }
                                   }
 
-                                  const actionDescription = gotPoints ? 'Support' : 'Oppose';
+                                  // Action-specific description
+                                  let actionDescription = '';
+
+                                  // Special handling for Banning Travel to Iran Committee Vote (3-tier manual action)
+                                  if (it.col === 'Banning_Travel_to_Iran_Committee_Vote' && isManual) {
+                                    // Check if member was on the committee (notApplicable means they weren't)
+                                    if (it.notApplicable) {
+                                      actionDescription = 'Not applicable, not on the committee';
+                                      pointsDisplay = '';
+                                    } else if (it.val >= 4) {
+                                      actionDescription = 'Voted against banning travel to Iran';
+                                      pointsDisplay = ' (+4 pts)';
+                                    } else if (it.val >= 2) {
+                                      actionDescription = 'Tried to remove Iran ban but ultimately voted yes';
+                                      pointsDisplay = ' (+2 pts)';
+                                    } else {
+                                      actionDescription = 'Voted to ban travel to Iran';
+                                      pointsDisplay = ' (-4 pts)';
+                                    }
+                                  }
+                                  // General 3-tier manual action handling (for future bills)
+                                  else if (isManual && maxPoints >= 4 && !isCosponsor && !isVote) {
+                                    // Check if this is a 3-tier action by looking at point distribution
+                                    if (it.val >= maxPoints) {
+                                      actionDescription = 'Took strongest action';
+                                    } else if (it.val >= maxPoints / 2 && it.val < maxPoints) {
+                                      actionDescription = 'Took partial action';
+                                    } else {
+                                      actionDescription = 'Did not take action';
+                                    }
+                                  }
+                                  else if (isCosponsor) {
+                                    actionDescription = it.didCosponsor ? 'Cosponsored' : 'Did not cosponsor';
+                                  } else if (isVote) {
+                                    // For votes, determine what they actually voted based on NIAC position and whether they got points
+                                    if (isSupport) {
+                                      // NIAC supports: getting points = voted YES, no points = voted NO
+                                      actionDescription = it.ok ? 'Voted in favor' : 'Voted against';
+                                    } else {
+                                      // NIAC opposes: getting points = voted NO, no points = voted YES
+                                      actionDescription = it.ok ? 'Voted against' : 'Voted in favor';
+                                    }
+                                  } else {
+                                    actionDescription = it.ok ? 'Support' : 'Oppose';
+                                  }
+
                                   return `${actionDescription}${pointsDisplay}`;
                                 })()}
                               </span>

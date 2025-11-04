@@ -26,7 +26,7 @@ export const useFilters = create<FiltersState>((set) => ({
   state: "",
   search: "",
   categories: new Set<string>(),
-  viewMode: "map",
+  viewMode: typeof window !== "undefined" && window.innerWidth < 768 ? "summary" : "map",
   myLawmakers: [],
   billColumn: "",
 

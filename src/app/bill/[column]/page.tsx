@@ -254,7 +254,9 @@ export default function BillPage() {
       });
 
       // Check if this is a manual action with a pair_key (for three-group display)
-      const hasPairedGroups = billMeta.type === "MANUAL" && billMeta.pair_key && isTrue((billMeta as Record<string, unknown>).preferred);
+      // Also special case for Banning Travel to Iran Committee Vote
+      const hasPairedGroups = (billMeta.type === "MANUAL" && billMeta.pair_key && isTrue((billMeta as Record<string, unknown>).preferred)) ||
+                              column === 'Banning_Travel_to_Iran_Committee_Vote';
 
       if (hasPairedGroups) {
         // Split members based on their actual score for this manual action
@@ -290,11 +292,12 @@ export default function BillPage() {
           }
 
           // Group by score
-          if (val === 4) {
+          if (val >= 4) {
             bestGroup.push(row);
-          } else if (val === 2) {
+          } else if (val >= 2) {
             middleGrp.push(row);
-          } else if (val === 0) {
+          } else {
+            // 0 or negative points (e.g., -4)
             worstGroup.push(row);
           }
         });
@@ -356,8 +359,9 @@ export default function BillPage() {
   const position = (meta.position_to_score || '').toUpperCase();
   const isSupport = position === 'SUPPORT';
 
-  // Check if this is a paired manual action
-  const hasPairedGroups = meta.type === "MANUAL" && meta.pair_key && isTrue((meta as Record<string, unknown>).preferred);
+  // Check if this is a paired manual action or the special Iran vote case
+  const hasPairedGroups = (meta.type === "MANUAL" && meta.pair_key && isTrue((meta as Record<string, unknown>).preferred)) ||
+                          column === 'Banning_Travel_to_Iran_Committee_Vote';
   const pairedBillName = hasPairedGroups
     ? ((meta.pair_key || "").split("|").map(s => s.trim()).find(c => c !== column) || "")
     : "";
@@ -378,7 +382,15 @@ export default function BillPage() {
   let secondIsGood = false;
   let thirdIsGood = false;
 
-  if (hasPairedGroups) {
+  // Special handling for Banning Travel to Iran Committee Vote
+  if (column === 'Banning_Travel_to_Iran_Committee_Vote') {
+    firstLabel = 'Voted against banning travel to Iran (+4 pts)';
+    secondLabel = 'Tried to remove Iran ban but ultimately voted yes (+2 pts)';
+    thirdLabel = 'Voted to ban travel to Iran (-4 pts)';
+    firstIsGood = true;
+    secondIsGood = true;
+    thirdIsGood = false;
+  } else if (hasPairedGroups) {
     // Three-group display for paired manual actions
     // Labels based on score and position
     if (isSupport) {

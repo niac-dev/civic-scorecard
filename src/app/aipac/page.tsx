@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { loadData } from "@/lib/loadCsv";
+import { loadPacData, isAipacEndorsed, isDmfiEndorsed } from "@/lib/pacData";
 import type { Row } from "@/lib/types";
 import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
-import { isTruthy, partyLabel } from "@/lib/utils";
+import { partyLabel } from "@/lib/utils";
 
 export default function AipacPage() {
   const [supported, setSupported] = useState<Row[]>([]);
@@ -18,13 +19,14 @@ export default function AipacPage() {
 
   useEffect(() => {
     (async () => {
-      const { rows } = await loadData();
+      const [{ rows }, pacDataMap] = await Promise.all([loadData(), loadPacData()]);
 
       const supportedList: Row[] = [];
       const notSupportedList: Row[] = [];
 
       rows.forEach((row) => {
-        const hasSupport = isTruthy(row.aipac_supported) || isTruthy(row.dmfi_supported);
+        const pacData = pacDataMap.get(String(row.bioguide_id));
+        const hasSupport = isAipacEndorsed(pacData) || isDmfiEndorsed(pacData);
         if (hasSupport) {
           supportedList.push(row);
         } else {

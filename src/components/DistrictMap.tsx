@@ -701,17 +701,25 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                     return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 500;`;
                   };
 
+                  // Detect theme - check both class and computed background color
+                  const hasDarkClass = document.documentElement.classList.contains('dark');
+                  const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+                  const isDarkMode = hasDarkClass || bodyBg.includes('11, 18, 32'); // Check for dark bg color
+                  // Dark mode needs white text, light mode needs dark text
+                  const primaryTextColor = isDarkMode ? '#ffffff' : '#334155';
+                  const secondaryTextColor = isDarkMode ? '#ffffff' : '#475569';
+
                   let html = '';
 
                   if (isBothMode) {
                     // Both mode: Just show state and average grade
                     html = `
                       <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                        <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;">
+                        <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 8px;">
                           ${stateName}
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="font-size: 12px; color: #cbd5e1; font-weight: 500;">Average Grade:</span>
+                          <span style="font-size: 12px; color: ${secondaryTextColor}; font-weight: 500;">Average Grade:</span>
                           <span style="${getGradeChipStyle(avgGrade)}">${avgGrade}</span>
                         </div>
                       </div>
@@ -731,7 +739,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                           ` : `
                             <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
                           `}
-                          <div style="font-size: 13px; font-weight: 600; color: #e2e8f0;">
+                          <div style="font-size: 13px; font-weight: 600; color: ${primaryTextColor};">
                             ${senator.full_name}
                           </div>
                         </div>
@@ -744,7 +752,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
                     html = `
                       <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 220px;">
-                        <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px;">
+                        <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 4px;">
                           ${stateName}
                         </div>
                         ${senatorsHtml}
@@ -809,12 +817,20 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                     .join(" ");
                 };
 
+                // Detect theme - check both class and computed background color
+                const hasDarkClass = document.documentElement.classList.contains('dark');
+                const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+                const isDarkMode = hasDarkClass || bodyBg.includes('11, 18, 32'); // Check for dark bg color
+                // Dark mode needs white text, light mode needs dark text
+                const primaryTextColor = isDarkMode ? '#ffffff' : '#334155';
+                const secondaryTextColor = isDarkMode ? '#ffffff' : '#475569';
+
                 const html = `
                   <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                    <div style="font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 2px;">
+                    <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 2px;">
                       ${stateName}
                     </div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">
+                    <div style="font-size: 12px; color: ${secondaryTextColor}; margin-bottom: 8px;">
                       ${districtDisplay}
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
@@ -827,7 +843,7 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                       ` : `
                         <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
                       `}
-                      <div style="font-size: 13px; font-weight: 600; color: #e2e8f0;">
+                      <div style="font-size: 13px; font-weight: 600; color: ${primaryTextColor};">
                         ${member.full_name}
                       </div>
                     </div>
