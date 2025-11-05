@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { loadData } from "@/lib/loadCsv";
+import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
@@ -145,13 +145,18 @@ export default function BillPage() {
   const [thirdExpanded, setThirdExpanded] = useState<boolean>(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [chamberFilter, setChamberFilter] = useState<string>("");
+  const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     (async () => {
-      const { rows, columns, metaByCol, categories } = await loadData();
+      const [{ rows, columns, metaByCol, categories }, manualMeta] = await Promise.all([
+        loadData(),
+        loadManualScoringMeta()
+      ]);
       setAllColumns(columns);
       setMetaByCol(metaByCol);
       setCategories(categories);
+      setManualScoringMeta(manualMeta);
       const billMeta = metaByCol.get(column);
 
       if (!billMeta) {
@@ -255,7 +260,10 @@ export default function BillPage() {
 
       // Check if this is a manual action with a pair_key (for three-group display)
       // Also special case for Banning Travel to Iran Committee Vote
-      const hasPairedGroups = (billMeta.type === "MANUAL" && billMeta.pair_key && isTrue((billMeta as Record<string, unknown>).preferred)) ||
+      // For manual actions with 3 tiers (max 4 points), we have paired groups
+      const isThreeTierManualData = billMeta.type === "MANUAL" && Number(billMeta.points) === 4;
+      const hasPairedGroups = isThreeTierManualData ||
+                              (billMeta.type === "MANUAL" && billMeta.pair_key && isTrue((billMeta as Record<string, unknown>).preferred)) ||
                               column === 'Banning_Travel_to_Iran_Committee_Vote';
 
       if (hasPairedGroups) {
@@ -284,6 +292,18 @@ export default function BillPage() {
 
           const val = Number(rawVal);
 
+          // Debug logging for first few members
+          if (bestGroup.length + middleGrp.length + worstGroup.length < 5) {
+            console.log('Processing member:', {
+              name: row.full_name,
+              rawVal,
+              val,
+              type: typeof rawVal,
+              valGte4: val >= 4,
+              valGte2: val >= 2
+            });
+          }
+
           // Skip absent members
           const absentCol = `${column}_absent`;
           const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
@@ -300,6 +320,14 @@ export default function BillPage() {
             // 0 or negative points (e.g., -4)
             worstGroup.push(row);
           }
+        });
+
+        console.log('Grouping results:', {
+          column,
+          bestGroupSize: bestGroup.length,
+          middleGrpSize: middleGrp.length,
+          worstGroupSize: worstGroup.length,
+          middleGroupSample: middleGrp.slice(0, 3).map(r => ({ name: r.full_name, val: r[column] }))
         });
 
         setSupporters(bestGroup.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
@@ -360,7 +388,10 @@ export default function BillPage() {
   const isSupport = position === 'SUPPORT';
 
   // Check if this is a paired manual action or the special Iran vote case
-  const hasPairedGroups = (meta.type === "MANUAL" && meta.pair_key && isTrue((meta as Record<string, unknown>).preferred)) ||
+  // For manual actions with 3 tiers (max 4 points), we have paired groups
+  const isThreeTierManual = meta.type === "MANUAL" && Number(meta.points) === 4;
+  const hasPairedGroups = isThreeTierManual ||
+                          (meta.type === "MANUAL" && meta.pair_key && isTrue((meta as Record<string, unknown>).preferred)) ||
                           column === 'Banning_Travel_to_Iran_Committee_Vote';
   const pairedBillName = hasPairedGroups
     ? ((meta.pair_key || "").split("|").map(s => s.trim()).find(c => c !== column) || "")
@@ -392,25 +423,45 @@ export default function BillPage() {
     thirdIsGood = false;
   } else if (hasPairedGroups) {
     // Three-group display for paired manual actions
-    // Labels based on score and position
-    if (isSupport) {
-      // Position is SUPPORT
-      // 4 points = Supported, 2 points = Somewhat supported, 0 points = Opposed
-      firstLabel = 'Supported (4 points)';
-      secondLabel = 'Somewhat Supported (2 points)';
-      thirdLabel = 'Opposed (0 points)';
+    // Check if we have custom scoring descriptions for this action
+    const displayLabel = meta.display_name || meta.short_title || column;
+    const firstKey = `${displayLabel}|4`;
+    const secondKey = `${displayLabel}|2`;
+    const thirdKey = `${displayLabel}|0`;
+
+    const hasCustomDescriptions = manualScoringMeta.has(firstKey) &&
+                                   manualScoringMeta.has(secondKey) &&
+                                   manualScoringMeta.has(thirdKey);
+
+    if (hasCustomDescriptions) {
+      // Use custom descriptions from manual_scoring_meta.csv
+      firstLabel = `${manualScoringMeta.get(firstKey)} (+4 pts)`;
+      secondLabel = `${manualScoringMeta.get(secondKey)} (+2 pts)`;
+      thirdLabel = `${manualScoringMeta.get(thirdKey)} (-4 pts)`;
       firstIsGood = true;
       secondIsGood = true;
       thirdIsGood = false;
     } else {
-      // Position is OPPOSE
-      // 4 points = Opposed, 2 points = Somewhat opposed, 0 points = Supported
-      firstLabel = 'Opposed (4 points)';
-      secondLabel = 'Somewhat Opposed (2 points)';
-      thirdLabel = 'Supported (0 points)';
-      firstIsGood = true;
-      secondIsGood = true;
-      thirdIsGood = false;
+      // Fall back to generic labels based on score and position
+      if (isSupport) {
+        // Position is SUPPORT
+        // 4 points = Supported, 2 points = Somewhat supported, 0 points = Opposed
+        firstLabel = 'Supported (4 points)';
+        secondLabel = 'Somewhat Supported (2 points)';
+        thirdLabel = 'Opposed (0 points)';
+        firstIsGood = true;
+        secondIsGood = true;
+        thirdIsGood = false;
+      } else {
+        // Position is OPPOSE
+        // 4 points = Opposed, 2 points = Somewhat opposed, 0 points = Supported
+        firstLabel = 'Opposed (4 points)';
+        secondLabel = 'Somewhat Opposed (2 points)';
+        thirdLabel = 'Supported (0 points)';
+        firstIsGood = true;
+        secondIsGood = true;
+        thirdIsGood = false;
+      }
     }
   } else if (isCosponsor) {
     // For cosponsor bills, val in CSV is the raw action (1 = cosponsored, 0 = didn't)
@@ -981,6 +1032,7 @@ export default function BillPage() {
           billCols={allColumns}
           metaByCol={metaByCol}
           categories={categories}
+          manualScoringMeta={manualScoringMeta}
           onClose={() => setSelectedMember(null)}
         />
       )}

@@ -18,13 +18,36 @@ import {
 } from "@/lib/pacData";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
 
-function formatPositionLegislation(meta: Meta | undefined): string {
+function formatPositionLegislation(
+  meta: Meta | undefined,
+  score?: number,
+  manualScoringMeta?: Map<string, string>
+): string {
   const position = (meta?.position_to_score || '').toUpperCase();
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
   const isVote = actionType.includes('vote');
   const isSupport = position === 'SUPPORT';
+  const isManual = meta?.type === 'MANUAL';
   const pointsValue = meta?.points ? Number(meta.points).toFixed(0) : '';
+
+  // For manual actions with custom descriptions, check if we have a custom description
+  if (isManual && score !== undefined && manualScoringMeta) {
+    const displayLabel = meta?.display_name || meta?.short_title || meta?.column || '';
+    const scoreKey = `${displayLabel}|${score}`;
+    const customDescription = manualScoringMeta.get(scoreKey);
+
+    if (customDescription) {
+      // Return custom description with points
+      if (score >= 4) {
+        return `${customDescription} (+${score} pts)`;
+      } else if (score >= 2) {
+        return `${customDescription} (+${score} pts)`;
+      } else {
+        return `${customDescription} (-${pointsValue} pts)`;
+      }
+    }
+  }
 
   // For cosponsor bills, check no_cosponsor_benefit flag
   const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
@@ -59,6 +82,7 @@ interface MemberModalProps {
   billCols?: string[];
   metaByCol?: Map<string, Meta>;
   categories?: string[];
+  manualScoringMeta?: Map<string, string>;
   onClose: () => void;
 }
 
@@ -67,6 +91,7 @@ export function MemberModal({
   billCols = [],
   metaByCol = new Map(),
   categories = [],
+  manualScoringMeta = new Map(),
   onClose,
 }: MemberModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -188,6 +213,15 @@ export function MemberModal({
   const items = selectedCategory
     ? allItems.filter((it) => it.categories.some((c) => c === selectedCategory))
     : allItems;
+
+  // Debug: Log when AIPAC category is selected
+  if (selectedCategory === "AIPAC") {
+    console.log('AIPAC category selected!', {
+      selectedCategory,
+      pacDataExists: !!pacData,
+      itemsCount: items.length
+    });
+  }
 
   // Check if we should render the Votes & Actions section
   const hasVotesActions = billCols && billCols.length > 0 && metaByCol && categories;
@@ -425,70 +459,77 @@ export function MemberModal({
                     {(() => {
                       const aipac = isAipacEndorsed(pacData, row.aipac_supported);
                       const dmfi = isDmfiEndorsed(pacData, row.dmfi_supported);
+                      const hasSupport = aipac || dmfi;
 
-                      if (!aipac && !dmfi) {
-                        return (
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
-                            No AIPAC or DMFI support data available.
-                          </div>
-                        );
-                      }
+                      // Check if there's ANY financial data across all years
+                      const hasAnyFinancialData = pacData && (
+                        pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
+                        pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
+                        pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
+                        pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
+                        pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
+                        pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
+                        pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
+                        pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0
+                      );
 
                       return (
-                        <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
-                          {pacData ? (
-                            <>
-                              {(() => {
-                                // Check if there's ANY financial data across all years
-                                const hasAnyFinancialData =
-                                  pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                                  pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                                  pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                                  pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                                  pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                                  pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
-                                  pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
-                                  pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
-
-                                if (!hasAnyFinancialData) {
-                                  // No financial data, show endorsement message
-                                  return (
-                                    <div className="text-xs text-slate-700 dark:text-slate-200 space-y-2">
-                                      {aipac && (
-                                        <div>
-                                          <span className="font-semibold">Endorsed by AIPAC</span> (American Israel Public Affairs Committee)
-                                        </div>
-                                      )}
-                                      {dmfi && (
-                                        <div>
-                                          <span className="font-semibold">Endorsed by DMFI</span> (Democratic Majority For Israel)
-                                        </div>
-                                      )}
+                        <>
+                          {/* Always show status message at the top */}
+                          <div className="py-3 flex items-start gap-3 mb-4">
+                            <div className="mt-0.5">
+                              <VoteIcon ok={!hasSupport} />
+                            </div>
+                            <div className="flex-1">
+                              {row.reject_aipac_commitment ? (
+                                // Custom message takes priority
+                                <>
+                                  <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    {row.reject_aipac_commitment}
+                                  </div>
+                                  {row.reject_aipac_link && (
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                      <a
+                                        href={String(row.reject_aipac_link)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#4B8CFB] hover:text-[#3a7de8] underline"
+                                      >
+                                        Learn more
+                                      </a>
                                     </div>
-                                  );
-                                }
+                                  )}
+                                </>
+                              ) : (
+                                // Default message based on support status
+                                <>
+                                  <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    {!hasSupport ? "Not supported by AIPAC or DMFI" :
+                                     aipac && dmfi ? "Supported by AIPAC and DMFI" :
+                                     aipac ? "Supported by AIPAC" :
+                                     "Supported by DMFI"}
+                                  </div>
+                                  {!hasSupport && row.reject_aipac_link && (
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                      <a
+                                        href={String(row.reject_aipac_link)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#4B8CFB] hover:text-[#3a7de8] underline"
+                                      >
+                                        View commitment to reject AIPAC
+                                      </a>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
 
-                                // Has financial data, show the detailed breakdown
-                                return null;
-                              })()}
-                            </>
-                          ) : null}
-                          {pacData && (() => {
-                            // Check if there's ANY financial data to show detailed sections
-                            const hasAnyFinancialData =
-                              pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                              pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                              pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                              pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                              pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                              pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
-                              pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
-                              pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
-
-                            if (!hasAnyFinancialData) return null;
-
-                            return (
-                            <div className="space-y-6">
+                          {/* Financial data breakdown if available */}
+                          {hasAnyFinancialData && (
+                            <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                              <div className="space-y-6">
                               {/* 2026 Election Section (2025 data) */}
                               {(() => {
                                 // Only show if there's actual financial data (not just endorsement)
@@ -706,13 +747,13 @@ export function MemberModal({
                                   </div>
                                 );
                               })()}
+                              </div>
                             </div>
-                          );
-                        })()}
-                          {!pacData && (
-                            <div className="text-xs text-slate-500 dark:text-slate-500">Loading PAC data...</div>
                           )}
-                        </div>
+                          {!pacData && (
+                            <div className="text-xs text-slate-500 dark:text-slate-500 mt-4">Loading PAC data...</div>
+                          )}
+                        </>
                       );
                     })()}
                   </div>
@@ -753,6 +794,51 @@ export function MemberModal({
                     })()}
 
                     <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
+                    {/* Show AIPAC/DMFI status when AIPAC category is selected */}
+                    {selectedCategory === "AIPAC" && pacData && (() => {
+                      const hasAipacSupport = isAipacEndorsed(pacData, row.aipac_supported);
+                      const hasDmfiSupport = isDmfiEndorsed(pacData, row.dmfi_supported);
+                      const hasAnySupport = hasAipacSupport || hasDmfiSupport;
+
+                      console.log('AIPAC status section:', {
+                        selectedCategory,
+                        pacDataExists: !!pacData,
+                        hasAipacSupport,
+                        hasDmfiSupport,
+                        hasAnySupport,
+                        aipacSupportedFlag: row.aipac_supported,
+                        dmfiSupportedFlag: row.dmfi_supported
+                      });
+
+                      return (
+                        <div className="py-3 flex items-start gap-3 bg-slate-50 dark:bg-white/5 -mx-2 px-2 rounded mb-2">
+                          <div className="mt-0.5">
+                            <VoteIcon ok={!hasAnySupport} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                              {!hasAnySupport ? "Not supported by AIPAC or DMFI" :
+                               hasAipacSupport && hasDmfiSupport ? "Supported by AIPAC and DMFI" :
+                               hasAipacSupport ? "Supported by AIPAC" :
+                               "Supported by DMFI"}
+                            </div>
+                            {row.reject_aipac_link && (
+                              <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                <a
+                                  href={String(row.reject_aipac_link)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#4B8CFB] hover:text-[#3a7de8] underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {row.reject_aipac_commitment || "View commitment"}
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {items.length === 0 && (
                       <div className="py-4 text-sm text-slate-500 dark:text-slate-400">
                         {selectedCategory ? `No votes/actions for ${selectedCategory}` : "No votes/actions found"}
@@ -769,7 +855,7 @@ export function MemberModal({
                             {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
                           </div>
                           <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                            <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta)}
+                            <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta, it.val, manualScoringMeta)}
                           </div>
                           {it.meta && (it.meta as { action_types?: string }).action_types && (
                             <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
@@ -797,6 +883,9 @@ export function MemberModal({
                                   const position = (it.meta?.position_to_score || '').toUpperCase();
                                   const isSupport = position === 'SUPPORT';
                                   const maxPoints = Number(it.meta?.points || 0);
+                                  const noCosponsorBenefit = it.meta?.no_cosponsor_benefit === true ||
+                                                             it.meta?.no_cosponsor_benefit === 1 ||
+                                                             it.meta?.no_cosponsor_benefit === '1';
 
                                   // Format points display with +/- notation
                                   let pointsDisplay = '';
@@ -806,13 +895,27 @@ export function MemberModal({
                                     } else if (it.val < 0) {
                                       pointsDisplay = ` (${it.val.toFixed(0)} pts)`;
                                     } else {
-                                      // When they get 0 points, show the negative impact (0 out of maxPoints = -maxPoints)
-                                      pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : ' (0 pts)';
+                                      // When they get 0 points, check if this is a no_cosponsor_benefit scenario
+                                      // For bills we oppose with no_cosponsor_benefit, not cosponsoring gives 0 points (neutral, not a penalty)
+                                      if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor) {
+                                        pointsDisplay = ' (0 pts)';
+                                      } else {
+                                        // Otherwise, 0 points means they missed getting points (show negative impact)
+                                        pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : ' (0 pts)';
+                                      }
                                     }
                                   }
 
                                   // Action-specific description
                                   let actionDescription = '';
+
+                                  // Try to get custom scoring description for manual actions with 3 tiers
+                                  let customDescription = '';
+                                  if (isManual && maxPoints >= 4 && !isCosponsor && !isVote && !it.notApplicable) {
+                                    const displayLabel = it.meta?.display_name || it.meta?.short_title || it.col;
+                                    const scoreKey = `${displayLabel}|${it.val}`;
+                                    customDescription = manualScoringMeta.get(scoreKey) || '';
+                                  }
 
                                   // Special handling for Banning Travel to Iran Committee Vote (3-tier manual action)
                                   if (it.col === 'Banning_Travel_to_Iran_Committee_Vote' && isManual) {
@@ -820,6 +923,10 @@ export function MemberModal({
                                     if (it.notApplicable) {
                                       actionDescription = 'Not applicable, not on the committee';
                                       pointsDisplay = '';
+                                    } else if (customDescription) {
+                                      // Use custom description if available
+                                      actionDescription = customDescription;
+                                      // Points already set above
                                     } else if (it.val >= 4) {
                                       actionDescription = 'Voted against banning travel to Iran';
                                       pointsDisplay = ' (+4 pts)';
@@ -831,19 +938,25 @@ export function MemberModal({
                                       pointsDisplay = ' (-4 pts)';
                                     }
                                   }
-                                  // General 3-tier manual action handling (for future bills)
+                                  // General 3-tier manual action handling (for all manual actions)
                                   else if (isManual && maxPoints >= 4 && !isCosponsor && !isVote) {
-                                    // Check if this is a 3-tier action by looking at point distribution
-                                    if (it.val >= maxPoints) {
-                                      actionDescription = 'Took strongest action';
-                                    } else if (it.val >= maxPoints / 2 && it.val < maxPoints) {
-                                      actionDescription = 'Took partial action';
+                                    if (customDescription) {
+                                      // Use custom description if available
+                                      actionDescription = customDescription;
+                                      // Points already set above
                                     } else {
-                                      actionDescription = 'Did not take action';
+                                      // Fall back to generic descriptions
+                                      if (it.val >= maxPoints) {
+                                        actionDescription = 'Took strongest action';
+                                      } else if (it.val >= maxPoints / 2 && it.val < maxPoints) {
+                                        actionDescription = 'Took partial action';
+                                      } else {
+                                        actionDescription = 'Did not take action';
+                                      }
                                     }
                                   }
                                   else if (isCosponsor) {
-                                    actionDescription = it.didCosponsor ? 'Cosponsored' : 'Did not cosponsor';
+                                    actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                                   } else if (isVote) {
                                     // For votes, determine what they actually voted based on NIAC position and whether they got points
                                     if (isSupport) {

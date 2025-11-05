@@ -67,6 +67,13 @@ export type Row = {
   [billOrManual: string]: string | number | undefined | boolean;
 };
 
+/** Manual scoring metadata from manual_scoring_meta.csv */
+export type ManualScoringMeta = {
+  label: string; // Display name of the manual action
+  score: number; // Score value (e.g., 4.0, 2.0, 0.0)
+  custom_scoring_description: string; // Custom description for this score tier
+};
+
 // If other files still import ColumnMeta, keep this alias for backwards-compat:
 export type ColumnMeta = {
   column: string;
@@ -79,6 +86,6 @@ export type ColumnMeta = {
   position_to_score: string;
   /** same string for all items in the group (e.g. the two similar measures) */
   pair_key?: string;
-  /** mark the “better” one in the pair */
+  /** mark the "better" one in the pair */
   preferred?: boolean;
 };

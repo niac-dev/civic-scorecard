@@ -1,539 +1,539 @@
-bioguide_id,full_name,first_name,last_name,chamber,state,party,photo_url,aipac_supported,dmfi_supported,aipac_pac_direct,dmfi_pac_direct,aipac_ie_support,aipac_ie_oppose_opponent,dmfi_ie_support,dmfi_ie_oppose_opponent,aipac_total,dmfi_total,total_israel_lobby,office_phone,office_address,district,official_website
-F000481,"Figures, Shomari",,,HOUSE,Alabama,Democratic,https://www.congress.gov/img/member/68013eaa4e51529406f18e42_200.jpg,1,1,5000.0,1000.0,0.0,0.0,1400.0,0.0,5000.0,2400.0,7400.0,202-225-4931,225 Cannon House Office Building,2,https://figures.house.gov
-M001212,"Moore, Barry",,,HOUSE,Alabama,Republican,https://www.congress.gov/img/member/m001212_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2901,1511 Longworth House Office Building,1,https://barrymoore.house.gov
-S001220,"Strong, Dale W.",,,HOUSE,Alabama,Republican,https://www.congress.gov/img/member/s001220_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4801,449 Cannon House Office Building,5,https://strong.house.gov
-P000609,"Palmer, Gary J.",,,HOUSE,Alabama,Republican,https://www.congress.gov/img/member/p000609_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4921,170 Cannon House Office Building,6,https://palmer.house.gov
-S001185,"Sewell, Terri A.",,,HOUSE,Alabama,Democratic,https://www.congress.gov/img/member/s001185_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2665,1035 Longworth House Office Building,7,https://sewell.house.gov
-A000055,"Aderholt, Robert B.",,,HOUSE,Alabama,Republican,https://www.congress.gov/img/member/a000055_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4876,272 Cannon House Office Building,4,https://aderholt.house.gov
-R000575,"Rogers, Mike D.",,,HOUSE,Alabama,Republican,https://www.congress.gov/img/member/116_rp_al_3_rogers_mike_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3261,2469 Rayburn House Office Building,3,https://mikerogers.house.gov
-T000278,"Tuberville, Tommy",,,SENATE,Alabama,Republican,https://www.congress.gov/img/member/t000278_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4124,455 Russell Senate Office Building,,https://www.tuberville.senate.gov
-B001319,"Britt, Katie Boyd",,,SENATE,Alabama,Republican,https://www.congress.gov/img/member/b001319_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5744,416 Russell Senate Office Building,,https://www.britt.senate.gov
-B001323,"Begich, Nicholas J.",,,HOUSE,Alaska,Republican,https://www.congress.gov/img/member/6774217e0b34857ecc909040_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5765,153 Cannon House Office Building,,https://begich.house.gov
-S001198,"Sullivan, Dan",,,SENATE,Alaska,Republican,https://www.congress.gov/img/member/s001198_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3004,706 Hart Senate Office Building,,https://www.sullivan.senate.gov
-M001153,"Murkowski, Lisa",,,SENATE,Alaska,Republican,https://www.congress.gov/img/member/m001153_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6665,522 Hart Senate Office Building,,https://www.murkowski.senate.gov
-R000600,"Radewagen, Aumua Amata Coleman",,,HOUSE,American Samoa,Republican,https://www.congress.gov/img/member/r000600_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8577,2001 Rayburn House Office Building,,https://radewagen.house.gov
-C001132,"Crane, Elijah",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/c001132_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3361,307 Cannon House Office Building,2,https://crane.house.gov
-C001133,"Ciscomani, Juan",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/c001133_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2542,461 Cannon House Office Building,6,https://ciscomani.house.gov
-S001211,"Stanton, Greg",,,HOUSE,Arizona,Democratic,https://www.congress.gov/img/member/s001211_200.jpg,1,1,10000.0,3000.0,0.0,0.0,1608.0,0.0,10000.0,4608.0,14608.0,202-225-9888,207 Cannon House Office Building,4,https://stanton.house.gov
-S001183,"Schweikert, David",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/s001183_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2190,166 Cannon House Office Building,1,https://schweikert.house.gov
-G000565,"Gosar, Paul A.",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/g000565_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2315,2057 Rayburn House Office Building,9,https://gosar.house.gov
-B001302,"Biggs, Andy",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/b001302_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2635,464 Cannon House Office Building,5,https://biggs.house.gov
-H001098,"Hamadeh, Abraham J.",,,HOUSE,Arizona,Republican,https://www.congress.gov/img/member/67742a6f0b34857ecc9090c5_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4576,1722 Longworth House Office Building,8,https://hamadeh.house.gov
-A000381,"Ansari, Yassamin",,,HOUSE,Arizona,Democratic,https://www.congress.gov/img/member/67741fc30b34857ecc90902e_200.jpg,0,1,0.0,5000.0,0.0,0.0,464943.0,166539.0,0.0,636482.0,636482.0,202-225-4065,1432 Longworth House Office Building,3,https://ansari.house.gov
-K000377,"Kelly, Mark",,,SENATE,Arizona,Democratic,https://www.congress.gov/img/member/k000377_200.jpg,0,1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2235,516 Hart Senate Office Building,,https://www.kelly.senate.gov
-G000574,"Gallego, Ruben",,,SENATE,Arizona,Democratic,https://www.congress.gov/img/member/c6870f487cf4bc9a568d8afbe61d754b_200.jpg,0,0,0.0,0.0,0.0,0.0,1608.0,0.0,0.0,1608.0,1608.0,202-224-4521,302 Hart Senate Office Building,,https://www.gallego.senate.gov
-W000821,"Westerman, Bruce",,,HOUSE,Arkansas,Republican,https://www.congress.gov/img/member/w000821_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3772,202 Cannon House Office Building,4,https://westerman.house.gov
-H001072,"Hill, J. French",,,HOUSE,Arkansas,Republican,https://www.congress.gov/img/member/h001072_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2506,1533 Longworth House Office Building,2,https://hill.house.gov
-W000809,"Womack, Steve",,,HOUSE,Arkansas,Republican,https://www.congress.gov/img/member/117_rp_ar_3_womack_steve_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-4301,2412 Rayburn House Office Building,3,https://womack.house.gov
-C001087,"Crawford, Eric A. ""Rick""",,,HOUSE,Arkansas,Republican,https://www.congress.gov/img/member/c001087_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4076,2422 Rayburn House Office Building,1,https://crawford.house.gov
-C001095,"Cotton, Tom",,,SENATE,Arkansas,Republican,https://www.congress.gov/img/member/c001095_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2353,326 Russell Senate Office Building,,https://www.cotton.senate.gov
-B001236,"Boozman, John",,,SENATE,Arkansas,Republican,https://www.congress.gov/img/member/b001236_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4843,555 Dirksen Senate Office Building,,https://www.boozman.senate.gov/public
-W000830,"Whitesides, George",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/68dc43db199559bad714973d_200.jpg,0,1,0.0,1000.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,202-225-1956,1504 Longworth House Office Building,27,https://whitesides.house.gov
-F000483,"Friedman, Laura",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/677427070b34857ecc9090a1_200.jpg,1,1,5000.0,1000.0,0.0,0.0,0.0,0.0,5000.0,1000.0,6000.0,202-225-4176,1517 Longworth House Office Building,30,https://friedman.house.gov
-F000480,"Fong, Vince",,,HOUSE,California,Republican,https://www.congress.gov/img/member/669ff04f5d19788d1f2034aa_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2915,243 Cannon House Office Building,20,https://fong.house.gov
-C001123,"Cisneros, Gilbert Ray",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/6807d8d63e52ea7df920ef05_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5256,2463 Rayburn House Office Building,31,https://cisneros.house.gov
-M001225,"Mullin, Kevin",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/m001225_200.jpg,1,0,5000.0,0.0,-86.0,0.0,0.0,0.0,4914.0,0.0,4914.0,202-225-3531,1404 Longworth House Office Building,15,https://kevinmullin.house.gov
-K000401,"Kiley, Kevin",,,HOUSE,California,Republican,https://www.congress.gov/img/member/k000401_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2523,2445 Rayburn House Office Building,3,https://kiley.house.gov
-K000400,"Kamlager-Dove, Sydney",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/k000400_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-7084,144 Cannon House Office Building,37,https://kamlager-dove.house.gov
-G000598,"Garcia, Robert",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/g000598_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-7924,109 Cannon House Office Building,42,https://robertgarcia.house.gov
-O000019,"Obernolte, Jay",,,HOUSE,California,Republican,https://www.congress.gov/img/member/o000019_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5861,2433 Rayburn House Office Building,23,https://obernolte.house.gov
-K000397,"Kim, Young",,,HOUSE,California,Republican,https://www.congress.gov/img/member/k000397_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4111,2439 Rayburn House Office Building,40,https://youngkim.house.gov
-J000305,"Jacobs, Sara",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/j000305_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2040,2348 Rayburn House Office Building,51,https://sarajacobs.house.gov
-H001090,"Harder, Josh",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/h001090_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4540,209 Cannon House Office Building,9,https://harder.house.gov
-P000613,"Panetta, Jimmy",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/116_rp_ca_20_panetta_jimmy_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-2861,200 Cannon House Office Building,19,https://panetta.house.gov
-L000582,"Lieu, Ted",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/l000582_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3976,2454 Rayburn House Office Building,36,https://lieu.house.gov
-A000371,"Aguilar, Pete",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/a000371_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-3201,108 Cannon House Office Building,33,https://aguilar.house.gov
-D000623,"DeSaulnier, Mark",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/115_rp_ca_11_desaulnier_mark_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2095,2134 Rayburn House Office Building,10,https://desaulnier.house.gov
-P000608,"Peters, Scott H.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/p000608_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-0508,2369 Rayburn House Office Building,50,https://scottpeters.house.gov
-V000130,"Vargas, Juan",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/v000130_200.jpg,1,1,5000.0,2000.0,0.0,0.0,1290.0,0.0,5000.0,3290.0,8290.0,202-225-8045,2467 Rayburn House Office Building,52,https://vargas.house.gov
-T000472,"Takano, Mark",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/t000472_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2305,2078 Rayburn House Office Building,39,https://takano.house.gov
-R000599,"Ruiz, Raul",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/66e1aec832c796cea99fe06f_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5330,2342 Rayburn House Office Building,25,https://ruiz.house.gov
-V000129,"Valadao, David G.",,,HOUSE,California,Republican,https://www.congress.gov/img/member/v000129_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4695,2465 Rayburn House Office Building,22,https://valadao.house.gov
-S001193,"Swalwell, Eric",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/s001193_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5065,174 Cannon House Office Building,14,https://swalwell.house.gov
-B001287,"Bera, Ami",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/b001287_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5716,172 Cannon House Office Building,6,https://bera.house.gov
-G000559,"Garamendi, John",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/g000559_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1880,2428 Rayburn House Office Building,8,https://garamendi.house.gov
-C001080,"Chu, Judy",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/c001080_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5464,2423 Rayburn House Office Building,28,https://chu.house.gov
-M001177,"McClintock, Tom",,,HOUSE,California,Republican,https://www.congress.gov/img/member/m001177_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2511,2256 Rayburn House Office Building,5,https://mcclintock.house.gov
-M001163,"Matsui, Doris O.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/m001163_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7163,2206 Rayburn House Office Building,7,https://matsui.house.gov
-P000197,"Pelosi, Nancy",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/p000197_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4965,1236 Longworth House Office Building,11,https://pelosi.house.gov
-T000460,"Thompson, Mike",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/116_rp_ca_5_thompson_mike_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3311,268 Cannon House Office Building,4,https://mikethompson.house.gov
-S000344,"Sherman, Brad",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/s000344_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-5911,2365 Rayburn House Office Building,32,https://sherman.house.gov
-C001059,"Costa, Jim",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/116_rp_ca_16_costa_jim_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-3341,2081 Rayburn House Office Building,21,https://costa.house.gov
-I000056,"Issa, Darrell",,,HOUSE,California,Republican,https://www.congress.gov/img/member/i000056_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5672,2108 Rayburn House Office Building,48,https://issa.house.gov
-C000059,"Calvert, Ken",,,HOUSE,California,Republican,https://www.congress.gov/img/member/c000059_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1986,2205 Rayburn House Office Building,41,https://calvert.house.gov
-L000397,"Lofgren, Zoe",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/671024d7ec807bca66057fcb_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3072,1401 Longworth House Office Building,18,https://lofgren.house.gov
-L000593,"Levin, Mike",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/l000593_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-3906,2352 Rayburn House Office Building,49,https://levin.house.gov
-G000585,"Gomez, Jimmy",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/115_rp_ca_34_gomez_jimmy_200.jpg,1,1,10000.0,5000.0,1723988.0,576451.0,0.0,0.0,2310439.0,5000.0,2315439.0,202-225-6235,506 Cannon House Office Building,34,https://gomez.house.gov
-C001110,"Correa, J. Luis",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/115_rp_ca_46_correa_j_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2965,2082 Rayburn House Office Building,46,https://correa.house.gov
-B001300,"Barragán, Nanette Diaz",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/b001300_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-8220,2312 Rayburn House Office Building,44,https://barragan.house.gov
-C001112,"Carbajal, Salud O.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/115_rp_ca_24_carbajal_salud_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3601,2331 Rayburn House Office Building,24,https://carbajal.house.gov
-M001241,"Min, Dave",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/67744ed90b34857ecc909155_200.jpg,0,1,0.0,2000.0,0.0,0.0,0.0,0.0,0.0,2000.0,2000.0,202-225-5611,1034 Longworth House Office Building,47,https://min.house.gov
-K000389,"Khanna, Ro",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/k000389_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2631,306 Cannon House Office Building,17,https://khanna.house.gov
-T000474,"Torres, Norma J.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/t000474_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6161,2227 Rayburn House Office Building,35,https://torres.house.gov
-T000491,"Tran, Derek",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/6774606d0b34857ecc9091a9_200.jpg,0,1,0.0,1000.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,202-225-2415,1127 Longworth House Office Building,45,https://tran.house.gov
-B001285,"Brownley, Julia",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/68000188f22eaf56065817e8_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5811,2262 Rayburn House Office Building,26,https://juliabrownley.house.gov
-H001068,"Huffman, Jared",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/h001068_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5161,2330 Rayburn House Office Building,2,https://huffman.house.gov
-L000578,"LaMalfa, Doug",,,HOUSE,California,Republican,https://www.congress.gov/img/member/l000578_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3076,408 Cannon House Office Building,1,https://lamalfa.house.gov
-W000187,"Waters, Maxine",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/w000187_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2201,2221 Rayburn House Office Building,43,https://waters.house.gov
-S001156,"Sánchez, Linda T.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/116_rp_ca_38_snchez_linda_200.jpg,1,0,9000.0,0.0,0.0,0.0,0.0,0.0,9000.0,0.0,9000.0,202-225-6676,2309 Rayburn House Office Building,38,https://lindasanchez.house.gov
-S001231,"Simon, Lateefah",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/67745f940b34857ecc909197_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2661,1023 Longworth House Office Building,12,https://simon.house.gov
-R000620,"Rivas, Luz M.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/67745d860b34857ecc90916d_200.jpg,1,1,5000.0,2000.0,0.0,0.0,0.0,0.0,5000.0,2000.0,7000.0,202-225-6131,1319 Longworth House Office Building,29,https://rivas.house.gov
-L000607,"Liccardo, Sam T.",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/6774305d0b34857ecc90910d_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8104,1117 Longworth House Office Building,16,https://liccardo.house.gov
-G000605,"Gray, Adam",,,HOUSE,California,Democratic,https://www.congress.gov/img/member/67742a160b34857ecc9090bf_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1947,1230 Longworth House Office Building,13,https://gray.house.gov
-S001150,"Schiff, Adam B.",,,SENATE,California,Democratic,https://www.congress.gov/img/member/677d870dfdb6cf36bbb649b3_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3841,112 Hart Senate Office Building,,https://www.schiff.senate.gov
-P000145,"Padilla, Alex",,,SENATE,California,Democratic,https://www.congress.gov/img/member/p000145_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3553,331 Hart Senate Office Building,,https://www.padilla.senate.gov
-E000300,"Evans, Gabe",,,HOUSE,Colorado,Republican,https://www.congress.gov/img/member/677425730b34857ecc909083_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5625,1229 Longworth House Office Building,8,https://gabeevans.house.gov
-C001137,"Crank, Jeff",,,HOUSE,Colorado,Republican,https://www.congress.gov/img/member/677424810b34857ecc909071_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4422,1029 Longworth House Office Building,5,https://crank.house.gov
-B000825,"Boebert, Lauren",,,HOUSE,Colorado,Republican,https://www.congress.gov/img/member/b000825_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4761,1713 Longworth House Office Building,4,https://boebert.house.gov
-P000620,"Pettersen, Brittany",,,HOUSE,Colorado,Democratic,https://www.congress.gov/img/member/p000620_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-2645,348 Cannon House Office Building,7,https://pettersen.house.gov
-C001121,"Crow, Jason",,,HOUSE,Colorado,Democratic,https://www.congress.gov/img/member/c001121_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-7882,1323 Longworth House Office Building,6,https://crow.house.gov
-N000191,"Neguse, Joe",,,HOUSE,Colorado,Democratic,https://www.congress.gov/img/member/n000191_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2161,2400 Rayburn House Office Building,2,https://neguse.house.gov
-H001100,"Hurd, Jeff",,,HOUSE,Colorado,Republican,https://www.congress.gov/img/member/67742c5e0b34857ecc9090d1_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4676,1641 Longworth House Office Building,3,https://hurd.house.gov
-D000197,"DeGette, Diana",,,HOUSE,Colorado,Democratic,https://www.congress.gov/img/member/116_rp_co_1_degette_diana_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4431,2111 Rayburn House Office Building,1,https://degette.house.gov
-H000273,"Hickenlooper, John W.",,,SENATE,Colorado,Democratic,https://www.congress.gov/img/member/h000273_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5941,316 Hart Senate Office Building,,https://www.hickenlooper.senate.gov
-B001267,"Bennet, Michael F.",,,SENATE,Colorado,Democratic,https://www.congress.gov/img/member/b001267_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5852,261 Russell Senate Office Building,,https://www.bennet.senate.gov
-H001081,"Hayes, Jahana",,,HOUSE,Connecticut,Democratic,https://www.congress.gov/img/member/h001081_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4476,2049 Rayburn House Office Building,5,https://hayes.house.gov
-H001047,"Himes, James A.",,,HOUSE,Connecticut,Democratic,https://www.congress.gov/img/member/h001047_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5541,2137 Rayburn House Office Building,4,https://himes.house.gov
-C001069,"Courtney, Joe",,,HOUSE,Connecticut,Democratic,https://www.congress.gov/img/member/c001069_200.jpg,1,0,6000.0,0.0,0.0,0.0,0.0,0.0,6000.0,0.0,6000.0,202-225-2076,2449 Rayburn House Office Building,2,https://courtney.house.gov
-L000557,"Larson, John B.",,,HOUSE,Connecticut,Democratic,https://www.congress.gov/img/member/l000557_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2265,1501 Longworth House Office Building,1,https://larson.house.gov
-D000216,"DeLauro, Rosa L.",,,HOUSE,Connecticut,Democratic,https://www.congress.gov/img/member/116_rp_ct_3_delauro_rosa_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3661,2413 Rayburn House Office Building,3,https://delauro.house.gov
-M001169,"Murphy, Christopher",,,SENATE,Connecticut,Democratic,https://www.congress.gov/img/member/m001169_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4041,136 Hart Senate Office Building,,https://www.murphy.senate.gov
-B001277,"Blumenthal, Richard",,,SENATE,Connecticut,Democratic,https://www.congress.gov/img/member/b001277_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2823,503 Hart Senate Office Building,,https://www.blumenthal.senate.gov
-M001238,"McBride, Sarah",,,HOUSE,Delaware,Democratic,https://www.congress.gov/img/member/67744b460b34857ecc909143_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-4165,1306 Longworth House Office Building,,https://mcbride.house.gov
-C001088,"Coons, Christopher A.",,,SENATE,Delaware,Democratic,https://www.congress.gov/img/member/c001088_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5042,218 Russell Senate Office Building,,https://www.coons.senate.gov
-B001303,"Blunt Rochester, Lisa",,,SENATE,Delaware,Democratic,https://www.congress.gov/img/member/b001303_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2441,513 Hart Senate Office Building,,https://www.bluntrochester.senate.gov
-N000147,"Norton, Eleanor Holmes",,,HOUSE,District of Columbia,Democratic,https://www.congress.gov/img/member/116_dg_dc_norton_eleanor_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8050,2136 Rayburn House Office Building,,https://norton.house.gov
-F000484,"Fine, Randy",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/67efda8c1b05a5a598f7fde0_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2706,244 Cannon House Office Building,6,https://fine.house.gov
-P000622,"Patronis, Jimmy",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/67efdb991b05a5a598f7fde9_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4136,2021 Rayburn House Office Building,1,https://patronis.house.gov
-H001099,"Haridopolos, Mike",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/67742ab50b34857ecc9090cb_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3671,1039 Longworth House Office Building,8,https://haridopolos.house.gov
-F000472,"Franklin, Scott",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/f000472_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1252,2301 Rayburn House Office Building,18,https://franklin.house.gov
-M001217,"Moskowitz, Jared",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/m001217_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-3001,242 Cannon House Office Building,23,https://moskowitz.house.gov
-M001216,"Mills, Cory",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/m001216_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4035,346 Cannon House Office Building,7,https://mills.house.gov
-L000596,"Luna, Anna Paulina",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/l000596_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5961,226 Cannon House Office Building,13,https://luna.house.gov
-L000597,"Lee, Laurel M.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/l000597_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5626,2464 Rayburn House Office Building,15,https://laurellee.house.gov
-F000476,"Frost, Maxwell",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/f000476_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2176,1224 Longworth House Office Building,10,https://frost.house.gov
-G000593,"Gimenez, Carlos A.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/g000593_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2778,448 Cannon House Office Building,28,https://gimenez.house.gov
-M001199,"Mast, Brian J.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/116_rp_fl_18_mast_brian_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3026,2182 Rayburn House Office Building,21,https://mast.house.gov
-R000609,"Rutherford, John H.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/r000609_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2501,1711 Longworth House Office Building,5,https://rutherford.house.gov
-F000462,"Frankel, Lois",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/f000462_200.jpg,1,1,10000.0,3000.0,0.0,0.0,0.0,0.0,10000.0,3000.0,13000.0,202-225-9890,2305 Rayburn House Office Building,22,https://frankel.house.gov
-W000797,"Wasserman Schultz, Debbie",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/116_rp_fl_23_wassermanschultz_debbie_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-7931,270 Cannon House Office Building,25,https://wassermanschultz.house.gov
-D000600,"Diaz-Balart, Mario",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/116_rp_fl_25_diazbalart_mario_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4211,374 Cannon House Office Building,26,https://mariodiazbalart.house.gov
-B001314,"Bean, Aaron",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/b001314_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-0123,2459 Rayburn House Office Building,4,https://bean.house.gov
-C001127,"Cherfilus-McCormick, Sheila",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/c001127_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-1313,2442 Rayburn House Office Building,20,https://cherfilus-mccormick.house.gov
-S000168,"Salazar, Maria Elvira",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/s000168_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3931,2162 Rayburn House Office Building,27,https://salazar.house.gov
-D000032,"Donalds, Byron",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/d000032_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2536,1710 Longworth House Office Building,19,https://donalds.house.gov
-C001039,"Cammack, Kat",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/c001039_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5744,2421 Rayburn House Office Building,3,https://cammack.house.gov
-S001214,"Steube, W. Gregory",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/s001214_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5792,2457 Rayburn House Office Building,17,https://steube.house.gov
-S001200,"Soto, Darren",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/115_rp_fl_9_soto_darren_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-9889,2353 Rayburn House Office Building,9,https://soto.house.gov
-D000628,"Dunn, Neal P.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/115_rp_fl_2_dunn_neal_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5235,466 Cannon House Office Building,2,https://dunn.house.gov
-W000806,"Webster, Daniel",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/w000806_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1002,2184 Rayburn House Office Building,11,https://webster.house.gov
-W000808,"Wilson, Frederica S.",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/w000808_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4506,2080 Rayburn House Office Building,24,https://wilson.house.gov
-B001260,"Buchanan, Vern",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/b001260_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5015,2409 Rayburn House Office Building,16,https://buchanan.house.gov
-C001066,"Castor, Kathy",,,HOUSE,Florida,Democratic,https://www.congress.gov/img/member/c001066_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3376,2188 Rayburn House Office Building,14,https://castor.house.gov
-B001257,"Bilirakis, Gus M.",,,HOUSE,Florida,Republican,https://www.congress.gov/img/member/117_rp_fl_12_bilirakis_gus_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5755,2306 Rayburn House Office Building,12,https://bilirakis.house.gov
-S001217,"Scott, Rick",,,SENATE,Florida,Republican,https://www.congress.gov/img/member/s001217_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5274,110 Hart Senate Office Building,,https://www.rickscott.senate.gov
-M001244,"Moody, Ashley",,,SENATE,Florida,Republican,,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3041,387 Russell Senate Office Building,,https://www.moody.senate.gov
-M001218,"McCormick, Richard",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/m001218_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4272,1719 Longworth House Office Building,7,https://mccormick.house.gov
-J000311,"Jack, Brian",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/67742e330b34857ecc9090ef_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-5901,1320 Longworth House Office Building,3,https://jack.house.gov
-G000596,"Greene, Marjorie Taylor",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/g000596_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5211,2201 Rayburn House Office Building,14,https://greene.house.gov
-M001208,"McBath, Lucy",,,HOUSE,Georgia,Democratic,https://www.congress.gov/img/member/m001208_200.jpg,1,1,10000.0,1000.0,0.0,0.0,1392.0,0.0,10000.0,2392.0,12392.0,202-225-4501,2246 Rayburn House Office Building,6,https://mcbath.house.gov
-C001129,"Collins, Mike",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/c001129_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4101,2351 Rayburn House Office Building,10,https://collins.house.gov
-W000788,"Williams, Nikema",,,HOUSE,Georgia,Democratic,https://www.congress.gov/img/member/w000788_200.jpg,1,0,10000.0,0.0,0.0,0.0,1392.0,0.0,10000.0,1392.0,11392.0,202-225-3801,1406 Longworth House Office Building,5,https://nikemawilliams.house.gov
-C001116,"Clyde, Andrew S.",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/c001116_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-9893,445 Cannon House Office Building,9,https://clyde.house.gov
-A000372,"Allen, Rick W.",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/a000372_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2823,462 Cannon House Office Building,12,https://allen.house.gov
-L000583,"Loudermilk, Barry",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/115_rp_ga_11_loudermilk_barry_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2931,2133 Rayburn House Office Building,11,https://loudermilk.house.gov
-C001103,"Carter, Earl L. ""Buddy""",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/c001103_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5831,2432 Rayburn House Office Building,1,https://buddycarter.house.gov
-S001189,"Scott, Austin",,,HOUSE,Georgia,Republican,https://www.congress.gov/img/member/s001189_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6531,2185 Rayburn House Office Building,8,https://austinscott.house.gov
-S001157,"Scott, David",,,HOUSE,Georgia,Democratic,https://www.congress.gov/img/member/116_rp_ga_13_scott_david_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2939,468 Cannon House Office Building,13,https://davidscott.house.gov
-J000288,"Johnson, Henry C. ""Hank""",,,HOUSE,Georgia,Democratic,https://www.congress.gov/img/member/j000288_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1605,2240 Rayburn House Office Building,4,https://hankjohnson.house.gov
-B000490,"Bishop, Sanford D.",,,HOUSE,Georgia,Democratic,https://www.congress.gov/img/member/b000490_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3631,2407 Rayburn House Office Building,2,https://bishop.house.gov
-W000790,"Warnock, Raphael G.",,,SENATE,Georgia,Democratic,https://www.congress.gov/img/member/w000790_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3643,717 Hart Senate Office Building,,https://www.warnock.senate.gov
-O000174,"Ossoff, Jon",,,SENATE,Georgia,Democratic,https://www.congress.gov/img/member/o000174_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3521,317 Hart Senate Office Building,,https://www.ossoff.senate.gov
-M001219,"Moylan, James C.",,,HOUSE,Guam,Republican,https://www.congress.gov/img/member/m001219_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1188,228 Cannon House Office Building,,https://moylan.house.gov
-T000487,"Tokuda, Jill N.",,,HOUSE,Hawaii,Democratic,https://www.congress.gov/img/member/t000487_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4906,1027 Longworth House Office Building,2,https://tokuda.house.gov
-C001055,"Case, Ed",,,HOUSE,Hawaii,Democratic,https://www.congress.gov/img/member/c001055_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2726,2210 Rayburn House Office Building,1,https://case.house.gov
-S001194,"Schatz, Brian",,,SENATE,Hawaii,Democratic,https://www.congress.gov/img/member/s001194_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3934,722 Hart Senate Office Building,,https://www.schatz.senate.gov
-H001042,"Hirono, Mazie K.",,,SENATE,Hawaii,Democratic,https://www.congress.gov/img/member/h001042_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6361,109 Hart Senate Office Building,,https://www.hirono.senate.gov
-F000469,"Fulcher, Russ",,,HOUSE,Idaho,Republican,https://www.congress.gov/img/member/f000469_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6611,1514 Longworth House Office Building,1,https://fulcher.house.gov
-S001148,"Simpson, Michael K.",,,HOUSE,Idaho,Republican,https://www.congress.gov/img/member/678152c81f9ad6ea6fb1eb7f_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5531,2084 Rayburn House Office Building,2,https://simpson.house.gov
-R000584,"Risch, James E.",,,SENATE,Idaho,Republican,https://www.congress.gov/img/member/r000584_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2752,483 Russell Senate Office Building,,https://www.risch.senate.gov
-C000880,"Crapo, Mike",,,SENATE,Idaho,Republican,https://www.congress.gov/img/member/c000880_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6142,239 Dirksen Senate Office Building,,https://www.crapo.senate.gov
-S001225,"Sorensen, Eric",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/s001225_200.jpg,1,1,5000.0,5000.0,0.0,0.0,0.0,0.0,5000.0,5000.0,10000.0,202-225-5905,1314 Longworth House Office Building,17,https://sorensen.house.gov
-R000617,"Ramirez, Delia C.",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/684c2356333714e4aee2e1fd_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5701,1523 Longworth House Office Building,3,https://ramirez.house.gov
-J000309,"Jackson, Jonathan L.",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/j000309_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4372,1632 Longworth House Office Building,1,https://jonathanjackson.house.gov
-B001315,"Budzinski, Nikki",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/b001315_200.jpg,1,1,5000.0,5000.0,0.0,0.0,2800.0,0.0,5000.0,7800.0,12800.0,202-225-2371,1717 Longworth House Office Building,13,https://budzinski.house.gov
-L000585,"LaHood, Darin",,,HOUSE,Illinois,Republican,https://www.congress.gov/img/member/115_rp_il_18_lahood_darin_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6201,503 Cannon House Office Building,16,https://lahood.house.gov
-M001211,"Miller, Mary E.",,,HOUSE,Illinois,Republican,https://www.congress.gov/img/member/m001211_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5271,1740 Longworth House Office Building,15,https://marymiller.house.gov
-G000586,"García, Jesús G. ""Chuy""",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/g000586_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8203,2334 Rayburn House Office Building,4,https://chuygarcia.house.gov
-U000040,"Underwood, Lauren",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/u000040_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2976,2228 Rayburn House Office Building,14,https://underwood.house.gov
-C001117,"Casten, Sean",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/c001117_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4561,2440 Rayburn House Office Building,6,https://casten.house.gov
-K000391,"Krishnamoorthi, Raja",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/k000391_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3711,2367 Rayburn House Office Building,8,https://krishnamoorthi.house.gov
-S001190,"Schneider, Bradley Scott",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/s001190_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4835,300 Cannon House Office Building,10,https://schneider.house.gov
-B001295,"Bost, Mike",,,HOUSE,Illinois,Republican,https://www.congress.gov/img/member/b001295_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5661,352 Cannon House Office Building,12,https://bost.house.gov
-K000385,"Kelly, Robin L.",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/116_rp_il_2_kelly_robin_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-0773,2329 Rayburn House Office Building,2,https://robinkelly.house.gov
-Q000023,"Quigley, Mike",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/q000023_200.jpg,1,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4061,2083 Rayburn House Office Building,5,https://quigley.house.gov
-F000454,"Foster, Bill",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/f000454_200.jpg,0,0,0.0,0.0,0.0,0.0,40851.0,0.0,0.0,40851.0,40851.0,202-225-3515,2366 Rayburn House Office Building,11,https://foster.house.gov
-S001145,"Schakowsky, Janice D.",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/116_rp_il_9_schakowsky_janice_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2111,2408 Rayburn House Office Building,9,https://schakowsky.house.gov
-D000096,"Davis, Danny K.",,,HOUSE,Illinois,Democratic,https://www.congress.gov/img/member/116_rp_il_7_davis_danny_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5006,2159 Rayburn House Office Building,7,https://davis.house.gov
-D000622,"Duckworth, Tammy",,,SENATE,Illinois,Democratic,https://www.congress.gov/img/member/d000622_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2854,524 Hart Senate Office Building,,https://www.duckworth.senate.gov
-D000563,"Durbin, Richard J.",,,SENATE,Illinois,Democratic,https://www.congress.gov/img/member/d000563_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2152,711 Hart Senate Office Building,,https://www.durbin.senate.gov
-S001229,"Shreve, Jefferson",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/67745f0e0b34857ecc90918b_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3021,224 Cannon House Office Building,6,https://shreve.house.gov
-M001233,"Messmer, Mark B.",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/677448630b34857ecc909125_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4636,1208 Longworth House Office Building,8,https://messmer.house.gov
-S001188,"Stutzman, Marlin A.",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/67745e7e0b34857ecc90917f_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4436,404 Cannon House Office Building,3,https://stutzman.house.gov
-H001093,"Houchin, Erin",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/h001093_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5315,342 Cannon House Office Building,9,https://houchin.house.gov
-Y000067,"Yakym, Rudy",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/y000067_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3915,349 Cannon House Office Building,2,https://yakym.house.gov
-S000929,"Spartz, Victoria",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/s000929_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2276,1609 Longworth House Office Building,5,https://spartz.house.gov
-M001214,"Mrvan, Frank J.",,,HOUSE,Indiana,Democratic,https://www.congress.gov/img/member/m001214_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2461,2441 Rayburn House Office Building,1,https://mrvan.house.gov
-B001307,"Baird, James R.",,,HOUSE,Indiana,Republican,https://www.congress.gov/img/member/b001307_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5037,2303 Rayburn House Office Building,4,https://baird.house.gov
-C001072,"Carson, André",,,HOUSE,Indiana,Democratic,https://www.congress.gov/img/member/c001072_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4011,2135 Rayburn House Office Building,7,https://carson.house.gov
-Y000064,"Young, Todd",,,SENATE,Indiana,Republican,https://www.congress.gov/img/member/y000064_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5623,185 Dirksen Senate Office Building,,https://www.young.senate.gov
-B001299,"Banks, Jim",,,SENATE,Indiana,Republican,https://www.congress.gov/img/member/677d83cbfdb6cf36bbb64998_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4814,303 Hart Senate Office Building,,https://www.banks.senate.gov
-N000193,"Nunn, Zachary",,,HOUSE,Iowa,Republican,https://www.congress.gov/img/member/n000193_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5476,1410 Longworth House Office Building,3,https://nunn.house.gov
-M001215,"Miller-Meeks, Mariannette",,,HOUSE,Iowa,Republican,https://www.congress.gov/img/member/m001215_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6576,504 Cannon House Office Building,1,https://millermeeks.house.gov
-H001091,"Hinson, Ashley",,,HOUSE,Iowa,Republican,https://www.congress.gov/img/member/677ed0c7514c773869b6b920_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2911,2458 Rayburn House Office Building,2,https://hinson.house.gov
-F000446,"Feenstra, Randy",,,HOUSE,Iowa,Republican,https://www.congress.gov/img/member/f000446_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4426,2434 Rayburn House Office Building,4,https://feenstra.house.gov
-G000386,"Grassley, Chuck",,,SENATE,Iowa,Republican,https://www.congress.gov/img/member/g000386_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3744,135 Hart Senate Office Building,,https://www.grassley.senate.gov
-E000295,"Ernst, Joni",,,SENATE,Iowa,Republican,https://www.congress.gov/img/member/e000295_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3254,260 Russell Senate Office Building,,https://www.ernst.senate.gov
-S001228,"Schmidt, Derek",,,HOUSE,Kansas,Republican,https://www.congress.gov/img/member/67745ec50b34857ecc909185_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-6601,1223 Longworth House Office Building,2,https://schmidt.house.gov
-M000871,"Mann, Tracey",,,HOUSE,Kansas,Republican,https://www.congress.gov/img/member/m000871_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2715,344 Cannon House Office Building,1,https://mann.house.gov
-D000629,"Davids, Sharice",,,HOUSE,Kansas,Democratic,https://www.congress.gov/img/member/d000629_200.jpg,1,1,10000.0,3000.0,0.0,0.0,0.0,0.0,10000.0,3000.0,13000.0,202-225-2865,2435 Rayburn House Office Building,3,https://davids.house.gov
-E000298,"Estes, Ron",,,HOUSE,Kansas,Republican,https://www.congress.gov/img/member/e000298_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6216,2234 Rayburn House Office Building,4,https://estes.house.gov
-M000934,"Moran, Jerry",,,SENATE,Kansas,Republican,https://www.congress.gov/img/member/m000934_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6521,521 Dirksen Senate Office Building,,https://www.moran.senate.gov
-M001198,"Marshall, Roger",,,SENATE,Kansas,Republican,https://www.congress.gov/img/member/m001198_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4774,479a Russell Senate Office Building,,https://www.marshall.senate.gov
-M001220,"McGarvey, Morgan",,,HOUSE,Kentucky,Democratic,https://www.congress.gov/img/member/m001220_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5401,1527 Longworth House Office Building,3,https://mcgarvey.house.gov
-C001108,"Comer, James",,,HOUSE,Kentucky,Republican,https://www.congress.gov/img/member/c001108_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3115,2410 Rayburn House Office Building,1,https://comer.house.gov
-B001282,"Barr, Andy",,,HOUSE,Kentucky,Republican,https://www.congress.gov/img/member/b001282_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4706,2430 Rayburn House Office Building,6,https://barr.house.gov
-M001184,"Massie, Thomas",,,HOUSE,Kentucky,Republican,https://www.congress.gov/img/member/m001184_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3465,2371 Rayburn House Office Building,4,https://massie.house.gov
-G000558,"Guthrie, Brett",,,HOUSE,Kentucky,Republican,https://www.congress.gov/img/member/g000558_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3501,2161 Rayburn House Office Building,2,https://guthrie.house.gov
-R000395,"Rogers, Harold",,,HOUSE,Kentucky,Republican,https://www.congress.gov/img/member/r000395_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4601,2406 Rayburn House Office Building,5,https://halrogers.house.gov
-P000603,"Paul, Rand",,,SENATE,Kentucky,Republican,https://www.congress.gov/img/member/p000603_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4343,295 Russell Senate Office Building,,https://www.paul.senate.gov
-M000355,"McConnell, Mitch",,,SENATE,Kentucky,Republican,https://www.congress.gov/img/member/m000355_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2541,317 Russell Senate Office Building,,https://www.mcconnell.senate.gov
-F000110,"Fields, Cleo",,,HOUSE,Louisiana,Democratic,https://www.congress.gov/img/member/677426250b34857ecc90908f_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3901,2349 Rayburn House Office Building,6,https://fields.house.gov
-C001125,"Carter, Troy A.",,,HOUSE,Louisiana,Democratic,https://www.congress.gov/img/member/c001125_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6636,442 Cannon House Office Building,2,https://troycarter.house.gov
-L000595,"Letlow, Julia",,,HOUSE,Louisiana,Republican,https://www.congress.gov/img/member/l000595_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-8490,142 Cannon House Office Building,5,https://letlow.house.gov
-J000299,"Johnson, Mike",,,HOUSE,Louisiana,Republican,https://www.congress.gov/img/member/67ffcb2af22eaf56065817c4_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2777,521 Cannon House Office Building,4,https://mikejohnson.house.gov
-H001077,"Higgins, Clay",,,HOUSE,Louisiana,Republican,https://www.congress.gov/img/member/h001077_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2031,572 Cannon House Office Building,3,https://clayhiggins.house.gov
-S001176,"Scalise, Steve",,,HOUSE,Louisiana,Republican,https://www.congress.gov/img/member/s001176_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3015,266 Cannon House Office Building,1,https://scalise.house.gov
-K000393,"Kennedy, John",,,SENATE,Louisiana,Republican,https://www.congress.gov/img/member/k000393_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4623,437 Russell Senate Office Building,,https://www.kennedy.senate.gov/public
-C001075,"Cassidy, Bill",,,SENATE,Louisiana,Republican,https://www.congress.gov/img/member/c001075_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5824,455 Dirksen Senate Office Building,,https://www.cassidy.senate.gov
-G000592,"Golden, Jared F.",,,HOUSE,Maine,Democratic,https://www.congress.gov/img/member/g000592_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-6306,1107 Longworth House Office Building,2,https://golden.house.gov
-P000597,"Pingree, Chellie",,,HOUSE,Maine,Democratic,https://www.congress.gov/img/member/p000597_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6116,2354 Rayburn House Office Building,1,https://pingree.house.gov
-K000383,"King, Angus S., Jr.",,,SENATE,Maine,Independent,https://www.congress.gov/img/member/k000383_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5344,133 Hart Senate Office Building,,https://www.king.senate.gov
-C001035,"Collins, Susan M.",,,SENATE,Maine,Republican,https://www.congress.gov/img/member/c001035_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2523,413 Dirksen Senate Office Building,,https://www.collins.senate.gov
-O000176,"Olszewski, Johnny",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/67744f4e0b34857ecc90915b_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3061,1339 Longworth House Office Building,2,https://olszewski.house.gov
-M001232,"McClain Delaney, April",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/677446d80b34857ecc90911f_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-2721,1130 Longworth House Office Building,6,https://mcclaindelaney.house.gov
-E000301,"Elfreth, Sarah",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/677425dc0b34857ecc909089_200.jpg,1,1,5000.0,1000.0,4217711.0,0.0,2125.0,0.0,4222711.0,3125.0,4225836.0,202-225-4016,1213 Longworth House Office Building,3,https://elfreth.house.gov
-I000058,"Ivey, Glenn",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/i000058_200.jpg,1,0,10000.0,0.0,-5521.0,0.0,2125.0,0.0,4479.0,2125.0,6604.0,202-225-8699,1610 Longworth House Office Building,4,https://ivey.house.gov
-M000687,"Mfume, Kweisi",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/m000687_200.jpg,1,1,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4741,2263 Rayburn House Office Building,7,https://mfume.house.gov
-R000606,"Raskin, Jamie",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/r000606_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5341,2242 Rayburn House Office Building,8,https://raskin.house.gov
-H001052,"Harris, Andy",,,HOUSE,Maryland,Republican,https://www.congress.gov/img/member/117_rp_md_1_harris_andy_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5311,1536 Longworth House Office Building,1,https://harris.house.gov
-H000874,"Hoyer, Steny H.",,,HOUSE,Maryland,Democratic,https://www.congress.gov/img/member/116_rp_md_5_hoyer_steny_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-4131,1705 Longworth House Office Building,5,https://hoyer.house.gov
-V000128,"Van Hollen, Chris",,,SENATE,Maryland,Democratic,https://www.congress.gov/img/member/v000128_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4654,730 Hart Senate Office Building,,https://www.vanhollen.senate.gov
-A000382,"Alsobrooks, Angela D.",,,SENATE,Maryland,Democratic,https://www.congress.gov/img/member/67acdbbf044eb506e25958f2_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4524,374 Russell Senate Office Building,,https://www.alsobrooks.senate.gov
-A000148,"Auchincloss, Jake",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/67817e391f9ad6ea6fb1ebda_200.jpg,1,1,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5931,1524 Longworth House Office Building,4,https://auchincloss.house.gov
-P000617,"Pressley, Ayanna",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/p000617_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5111,402 Cannon House Office Building,7,https://pressley.house.gov
-T000482,"Trahan, Lori",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/t000482_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3411,2233 Rayburn House Office Building,3,https://trahan.house.gov
-M001196,"Moulton, Seth",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/m001196_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-8020,1126 Longworth House Office Building,6,https://moulton.house.gov
-C001101,"Clark, Katherine M.",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/c001101_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2836,2368 Rayburn House Office Building,5,https://katherineclark.house.gov
-K000375,"Keating, William R.",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/k000375_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3111,2372 Rayburn House Office Building,9,https://keating.house.gov
-M000312,"McGovern, James P.",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/117_rp_ma_2_mcgovern_james_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6101,370 Cannon House Office Building,2,https://mcgovern.house.gov
-N000015,"Neal, Richard E.",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/n000015_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5601,372 Cannon House Office Building,1,https://neal.house.gov
-L000562,"Lynch, Stephen F.",,,HOUSE,Massachusetts,Democratic,https://www.congress.gov/img/member/l000562_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8273,2109 Rayburn House Office Building,8,https://lynch.house.gov
-W000817,"Warren, Elizabeth",,,SENATE,Massachusetts,Democratic,https://www.congress.gov/img/member/w000817_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4543,311 Hart Senate Office Building,,https://www.warren.senate.gov
-M000133,"Markey, Edward J.",,,SENATE,Massachusetts,Democratic,https://www.congress.gov/img/member/m000133_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2742,255 Dirksen Senate Office Building,,https://www.markey.senate.gov
-M001237,"McDonald Rivet, Kristen",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/67744afa0b34857ecc90913d_200.jpg,0,1,0.0,2000.0,0.0,0.0,0.0,0.0,0.0,2000.0,2000.0,202-225-3611,1408 Longworth House Office Building,8,https://mcdonaldrivet.house.gov
-B001321,"Barrett, Tom",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/6774207d0b34857ecc909034_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4872,1232 Longworth House Office Building,7,https://barrett.house.gov
-T000488,"Thanedar, Shri",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/68122bf2246d1b6bd8d9f6a2_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5802,154 Cannon House Office Building,13,https://thanedar.house.gov
-S001221,"Scholten, Hillary J.",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/s001221_200.jpg,1,1,10000.0,3000.0,0.0,0.0,0.0,0.0,10000.0,3000.0,13000.0,202-225-3831,1317 Longworth House Office Building,3,https://scholten.house.gov
-J000307,"James, John",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/j000307_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4961,1519 Longworth House Office Building,10,https://james.house.gov
-M001136,"McClain, Lisa C.",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/677836d41658e791a384976d_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2106,562 Cannon House Office Building,9,https://mcclain.house.gov
-T000481,"Tlaib, Rashida",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/t000481_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5126,2438 Rayburn House Office Building,12,https://tlaib.house.gov
-D000624,"Dingell, Debbie",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/d000624_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4071,102 Cannon House Office Building,6,https://debbiedingell.house.gov
-M001194,"Moolenaar, John R.",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/m001194_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3561,246 Cannon House Office Building,2,https://moolenaar.house.gov
-H001058,"Huizenga, Bill",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/h001058_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4401,2232 Rayburn House Office Building,4,https://huizenga.house.gov
-W000798,"Walberg, Tim",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/w000798_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6276,2266 Rayburn House Office Building,5,https://walberg.house.gov
-S001215,"Stevens, Haley M.",,,HOUSE,Michigan,Democratic,https://www.congress.gov/img/member/s001215_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-8171,2411 Rayburn House Office Building,11,https://stevens.house.gov
-B001301,"Bergman, Jack",,,HOUSE,Michigan,Republican,https://www.congress.gov/img/member/b001301_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4735,566 Cannon House Office Building,1,https://bergman.house.gov
-S001208,"Slotkin, Elissa",,,SENATE,Michigan,Democratic,https://www.congress.gov/img/member/s001208_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4822,291 Russell Senate Office Building,,https://www.slotkin.senate.gov
-P000595,"Peters, Gary C.",,,SENATE,Michigan,Democratic,https://www.congress.gov/img/member/p000595_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6221,724 Hart Senate Office Building,,https://www.peters.senate.gov
-M001234,"Morrison, Kelly",,,HOUSE,Minnesota,Democratic,https://www.congress.gov/img/member/677449a70b34857ecc90912b_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2871,1205 Longworth House Office Building,3,https://morrison.house.gov
-F000475,"Finstad, Brad",,,HOUSE,Minnesota,Republican,https://www.congress.gov/img/member/f000475_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2472,2418 Rayburn House Office Building,1,https://finstad.house.gov
-F000470,"Fischbach, Michelle",,,HOUSE,Minnesota,Republican,https://www.congress.gov/img/member/f000470_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2165,2229 Rayburn House Office Building,7,https://fischbach.house.gov
-C001119,"Craig, Angie",,,HOUSE,Minnesota,Democratic,https://www.congress.gov/img/member/c001119_200.jpg,1,1,5000.0,5000.0,0.0,0.0,1060.0,0.0,5000.0,6060.0,11060.0,202-225-2271,2052 Rayburn House Office Building,2,https://craig.house.gov
-S001212,"Stauber, Pete",,,HOUSE,Minnesota,Republican,https://www.congress.gov/img/member/s001212_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6211,145 Cannon House Office Building,8,https://stauber.house.gov
-O000173,"Omar, Ilhan",,,HOUSE,Minnesota,Democratic,https://www.congress.gov/img/member/o000173_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4755,1730 Longworth House Office Building,5,https://omar.house.gov
-E000294,"Emmer, Tom",,,HOUSE,Minnesota,Republican,https://www.congress.gov/img/member/e000294_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2331,326 Cannon House Office Building,6,https://emmer.house.gov
-M001143,"McCollum, Betty",,,HOUSE,Minnesota,Democratic,https://www.congress.gov/img/member/116_rp_mn_4_mccollum_betty_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6631,2426 Rayburn House Office Building,4,https://mccollum.house.gov
-S001203,"Smith, Tina",,,SENATE,Minnesota,Democratic,https://www.congress.gov/img/member/s001203_200.jpg,0,1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5641,720 Hart Senate Office Building,,https://www.smith.senate.gov
-K000367,"Klobuchar, Amy",,,SENATE,Minnesota,Democratic,https://www.congress.gov/img/member/k000367_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3244,425 Dirksen Senate Office Building,,https://www.klobuchar.senate.gov
-E000235,"Ezell, Mike",,,HOUSE,Mississippi,Republican,https://www.congress.gov/img/member/e000235_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5772,443 Cannon House Office Building,4,https://ezell.house.gov
-G000591,"Guest, Michael",,,HOUSE,Mississippi,Republican,https://www.congress.gov/img/member/g000591_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5031,450 Cannon House Office Building,3,https://guest.house.gov
-K000388,"Kelly, Trent",,,HOUSE,Mississippi,Republican,https://www.congress.gov/img/member/116_rp_ms_1_kelly_trent_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4306,2243 Rayburn House Office Building,1,https://trentkelly.house.gov
-T000193,"Thompson, Bennie G.",,,HOUSE,Mississippi,Democratic,https://www.congress.gov/img/member/t000193_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5876,2466 Rayburn House Office Building,2,https://benniethompson.house.gov
-W000437,"Wicker, Roger F.",,,SENATE,Mississippi,Republican,https://www.congress.gov/img/member/f49ac425119375e9fe6a075762734079_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6253,425 Russell Senate Office Building,,https://www.wicker.senate.gov
-H001079,"Hyde-Smith, Cindy",,,SENATE,Mississippi,Republican,https://www.congress.gov/img/member/h001079_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5054,528 Hart Senate Office Building,,https://www.hydesmith.senate.gov
-O000177,"Onder, Robert F.",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/67744f970b34857ecc909161_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2956,1113 Longworth House Office Building,3,https://onder.house.gov
-B001324,"Bell, Wesley",,,HOUSE,Missouri,Democratic,https://www.congress.gov/img/member/677422240b34857ecc90904a_200.jpg,1,1,5000.0,5000.0,3356270.0,5242242.0,477753.0,0.0,8603512.0,482753.0,9086265.0,202-225-2406,1429 Longworth House Office Building,1,https://bell.house.gov
-B001316,"Burlison, Eric",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/b001316_200.jpg,1,0,7000.0,0.0,0.0,0.0,0.0,0.0,7000.0,0.0,7000.0,202-225-6536,1108 Longworth House Office Building,7,https://burlison.house.gov
-A000379,"Alford, Mark",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/a000379_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2876,328 Cannon House Office Building,4,https://alford.house.gov
-S001195,"Smith, Jason",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/s001195_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4404,1011 Longworth House Office Building,8,https://jasonsmith.house.gov
-W000812,"Wagner, Ann",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/w000812_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1621,2350 Rayburn House Office Building,2,https://wagner.house.gov
-C001061,"Cleaver, Emanuel",,,HOUSE,Missouri,Democratic,https://www.congress.gov/img/member/116_rp_mo_5_cleaver_emanuel_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4535,2217 Rayburn House Office Building,5,https://cleaver.house.gov
-G000546,"Graves, Sam",,,HOUSE,Missouri,Republican,https://www.congress.gov/img/member/g000546_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-7041,1135 Longworth House Office Building,6,https://graves.house.gov
-S001227,"Schmitt, Eric",,,SENATE,Missouri,Republican,https://www.congress.gov/img/member/b66a0806e77f63e862391b15a0b1f753_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5721,404 Russell Senate Office Building,,https://www.schmitt.senate.gov
-H001089,"Hawley, Josh",,,SENATE,Missouri,Republican,https://www.congress.gov/img/member/h001089_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6154,381 Russell Senate Office Building,,https://www.hawley.senate.gov
-D000634,"Downing, Troy",,,HOUSE,Montana,Republican,https://www.congress.gov/img/member/677424da0b34857ecc909077_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3211,1529 Longworth House Office Building,2,https://downing.house.gov
-Z000018,"Zinke, Ryan K.",,,HOUSE,Montana,Republican,https://www.congress.gov/img/member/117_rp_mt_1_zinke_ryan_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5628,512 Cannon House Office Building,1,https://zinke.house.gov
-S001232,"Sheehy, Tim",,,SENATE,Montana,Republican,https://www.congress.gov/img/member/677d8231fdb6cf36bbb6498b_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2644,124 Russell Senate Office Building,,https://www.sheehy.senate.gov
-D000618,"Daines, Steve",,,SENATE,Montana,Republican,https://www.congress.gov/img/member/d000618_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2651,320 Hart Senate Office Building,,https://www.daines.senate.gov
-F000474,"Flood, Mike",,,HOUSE,Nebraska,Republican,https://www.congress.gov/img/member/67b4de4a61bd80d04553b0a5_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4806,343 Cannon House Office Building,1,https://flood.house.gov
-B001298,"Bacon, Don",,,HOUSE,Nebraska,Republican,https://www.congress.gov/img/member/115_rp_ne_2_bacon_don_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4155,2104 Rayburn House Office Building,2,https://bacon.house.gov
-S001172,"Smith, Adrian",,,HOUSE,Nebraska,Republican,https://www.congress.gov/img/member/s001172_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6435,502 Cannon House Office Building,3,https://adriansmith.house.gov
-R000618,"Ricketts, Pete",,,SENATE,Nebraska,Republican,https://www.congress.gov/img/member/r000618_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4224,139 Russell Senate Office Building,,https://www.ricketts.senate.gov
-F000463,"Fischer, Deb",,,SENATE,Nebraska,Republican,https://www.congress.gov/img/member/669ec7925d19788d1f2034a1_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6551,448 Russell Senate Office Building,,https://www.fischer.senate.gov
-L000590,"Lee, Susie",,,HOUSE,Nevada,Democratic,https://www.congress.gov/img/member/l000590_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-3252,365 Cannon House Office Building,3,https://susielee.house.gov
-H001066,"Horsford, Steven",,,HOUSE,Nevada,Democratic,https://www.congress.gov/img/member/h001066_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-9894,406 Cannon House Office Building,4,https://horsford.house.gov
-A000369,"Amodei, Mark E.",,,HOUSE,Nevada,Republican,https://www.congress.gov/img/member/a000369_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6155,104 Cannon House Office Building,2,https://amodei.house.gov
-T000468,"Titus, Dina",,,HOUSE,Nevada,Democratic,https://www.congress.gov/img/member/6809296b6c2e6631263de728_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-5965,2370 Rayburn House Office Building,1,https://titus.house.gov
-R000608,"Rosen, Jacky",,,SENATE,Nevada,Democratic,https://www.congress.gov/img/member/r000608_200.jpg,0,0,0.0,0.0,0.0,0.0,102300.0,95700.0,0.0,198000.0,198000.0,202-224-6244,713 Hart Senate Office Building,,https://www.rosen.senate.gov
-C001113,"Cortez Masto, Catherine",,,SENATE,Nevada,Democratic,https://www.congress.gov/img/member/c001113_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3542,309 Hart Senate Office Building,,https://www.cortezmasto.senate.gov
-G000604,"Goodlander, Maggie",,,HOUSE,New Hampshire,Democratic,https://www.congress.gov/img/member/678ff62d66bf616cf1a7ce13_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5206,223 Cannon House Office Building,2,https://goodlander.house.gov
-P000614,"Pappas, Chris",,,HOUSE,New Hampshire,Democratic,https://www.congress.gov/img/member/p000614_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-5456,452 Cannon House Office Building,1,https://pappas.house.gov
-S001181,"Shaheen, Jeanne",,,SENATE,New Hampshire,Democratic,https://www.congress.gov/img/member/s001181_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2841,506 Hart Senate Office Building,,https://www.shaheen.senate.gov
-H001076,"Hassan, Margaret Wood",,,SENATE,New Hampshire,Democratic,https://www.congress.gov/img/member/h001076_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3324,324 Hart Senate Office Building,,https://www.hassan.senate.gov
-P000621,"Pou, Nellie",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/67745d3b0b34857ecc909167_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5751,1007 Longworth House Office Building,9,https://pou.house.gov
-C001136,"Conaway, Herbert C.",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/6774243a0b34857ecc90906b_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4765,1022 Longworth House Office Building,3,https://conaway.house.gov
-M001229,"McIver, LaMonica",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/681dfed94fc893ce843e24b8_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3436,426 Cannon House Office Building,10,https://mciver.house.gov
-M001226,"Menendez, Robert",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/681231f6246d1b6bd8d9f6b4_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-7919,2453 Rayburn House Office Building,8,https://menendez.house.gov
-K000398,"Kean, Thomas H.",,,HOUSE,New Jersey,Republican,https://www.congress.gov/img/member/k000398_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5361,251 Cannon House Office Building,7,https://kean.house.gov
-V000133,"Van Drew, Jefferson",,,HOUSE,New Jersey,Republican,https://www.congress.gov/img/member/67c0c39d53fe81a4b3c0cac1_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6572,2447 Rayburn House Office Building,2,https://vandrew.house.gov
-S001207,"Sherrill, Mikie",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/s001207_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5034,1427 Longworth House Office Building,11,https://sherrill.house.gov
-G000583,"Gottheimer, Josh",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/115_rp_nj_5_gottheimer_josh_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-4465,106 Cannon House Office Building,5,https://gottheimer.house.gov
-W000822,"Watson Coleman, Bonnie",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/w000822_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5801,168 Cannon House Office Building,12,https://watsoncoleman.house.gov
-N000188,"Norcross, Donald",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/n000188_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6501,2427 Rayburn House Office Building,1,https://norcross.house.gov
-P000034,"Pallone, Frank",,,HOUSE,New Jersey,Democratic,https://www.congress.gov/img/member/p000034_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4671,2107 Rayburn House Office Building,6,https://pallone.house.gov
-S000522,"Smith, Christopher H.",,,HOUSE,New Jersey,Republican,https://www.congress.gov/img/member/s000522_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3765,2373 Rayburn House Office Building,4,https://chrissmith.house.gov
-K000394,"Kim, Andy",,,SENATE,New Jersey,Democratic,https://www.congress.gov/img/member/677d84cbfdb6cf36bbb649a1_200.jpg,0,1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4744,520 Hart Senate Office Building,,https://www.kim.senate.gov
-B001288,"Booker, Cory A.",,,SENATE,New Jersey,Democratic,https://www.congress.gov/img/member/b001288_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3224,306 Hart Senate Office Building,,https://www.booker.senate.gov
-V000136,"Vasquez, Gabe",,,HOUSE,New Mexico,Democratic,https://www.congress.gov/img/member/v000136_200.jpg,0,1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2365,322 Cannon House Office Building,2,https://vasquez.house.gov
-S001218,"Stansbury, Melanie A.",,,HOUSE,New Mexico,Democratic,https://www.congress.gov/img/member/s001218_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6316,1421 Longworth House Office Building,1,https://stansbury.house.gov
-L000273,"Leger Fernandez, Teresa",,,HOUSE,New Mexico,Democratic,https://www.congress.gov/img/member/l000273_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6190,2417 Rayburn House Office Building,3,https://fernandez.house.gov
-L000570,"Luján, Ben Ray",,,SENATE,New Mexico,Democratic,https://www.congress.gov/img/member/l000570_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6621,498 Russell Senate Office Building,,https://www.lujan.senate.gov
-H001046,"Heinrich, Martin",,,SENATE,New Mexico,Democratic,https://www.congress.gov/img/member/h001046_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5521,709 Hart Senate Office Building,,https://www.heinrich.senate.gov
-R000622,"Riley, Josh",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/67745e360b34857ecc909179_200.jpg,0,1,0.0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,5000.0,202-225-5441,128 Cannon House Office Building,19,https://riley.house.gov
-M001231,"Mannion, John W.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/677446860b34857ecc909119_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3701,1516 Longworth House Office Building,22,https://mannion.house.gov
-L000606,"Latimer, George",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/6774301b0b34857ecc909107_200.jpg,1,1,10000.0,1000.0,4728158.0,9865477.0,914851.0,95244.0,14603635.0,1011095.0,15614730.0,202-225-2464,1507 Longworth House Office Building,16,https://latimer.house.gov
-G000602,"Gillen, Laura",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/677427de0b34857ecc9090ad_200.jpg,0,1,0.0,5000.0,0.0,0.0,11550.0,52847.0,0.0,69397.0,69397.0,202-225-5516,428 Cannon House Office Building,4,https://gillen.house.gov
-K000402,"Kennedy, Timothy M.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/668e9306658443009a697c8c_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-3306,423 Cannon House Office Building,26,https://kennedy.house.gov
-S001201,"Suozzi, Thomas R.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/116_rp_ny_3_suozzi_thomas_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3335,203 Cannon House Office Building,3,https://suozzi.house.gov
-L000599,"Lawler, Michael",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/l000599_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6506,324 Cannon House Office Building,17,https://lawler.house.gov
-L000600,"Langworthy, Nicholas A.",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/680901e76c2e6631263de716_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3161,422 Cannon House Office Building,23,https://langworthy.house.gov
-L000598,"LaLota, Nick",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/l000598_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3826,122 Cannon House Office Building,1,https://lalota.house.gov
-G000599,"Goldman, Daniel S.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/g000599_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7944,245 Cannon House Office Building,10,https://goldman.house.gov
-R000579,"Ryan, Patrick",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/r000579_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5614,1708 Longworth House Office Building,18,https://patryan.house.gov
-T000478,"Tenney, Claudia",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/t000478_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3665,2230 Rayburn House Office Building,24,https://tenney.house.gov
-N000002,"Nadler, Jerrold",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/n000002_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5635,2132 Rayburn House Office Building,12,https://nadler.house.gov
-T000486,"Torres, Ritchie",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/t000486_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-4361,1414 Longworth House Office Building,15,https://ritchietorres.house.gov
-M000317,"Malliotakis, Nicole",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/m000317_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3371,1124 Longworth House Office Building,11,https://malliotakis.house.gov
-G000597,"Garbarino, Andrew R.",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/g000597_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7896,2344 Rayburn House Office Building,2,https://garbarino.house.gov
-O000172,"Ocasio-Cortez, Alexandria",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/o000172_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3965,250 Cannon House Office Building,14,https://ocasio-cortez.house.gov
-M001206,"Morelle, Joseph D.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/67ffc962f22eaf56065817bb_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-3615,570 Cannon House Office Building,25,https://morelle.house.gov
-E000297,"Espaillat, Adriano",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/e000297_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-4365,2332 Rayburn House Office Building,13,https://espaillat.house.gov
-S001196,"Stefanik, Elise M.",,,HOUSE,New York,Republican,https://www.congress.gov/img/member/s001196_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-4611,2211 Rayburn House Office Building,21,https://stefanik.house.gov
-C001067,"Clarke, Yvette D.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/674dfc6b5c48ff736e6e1762_200.jpg,1,0,1000.0,0.0,0.0,0.0,0.0,0.0,1000.0,0.0,1000.0,202-225-6231,2058 Rayburn House Office Building,9,https://clarke.house.gov
-T000469,"Tonko, Paul",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/t000469_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5076,2269 Rayburn House Office Building,20,https://tonko.house.gov
-M001137,"Meeks, Gregory W.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/m001137_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-3461,2310 Rayburn House Office Building,5,https://meeks.house.gov
-V000081,"Velázquez, Nydia M.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/v000081_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2361,2302 Rayburn House Office Building,7,https://velazquez.house.gov
-J000294,"Jeffries, Hakeem S.",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/j000294_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-5936,2267 Rayburn House Office Building,8,https://jeffries.house.gov
-M001188,"Meng, Grace",,,HOUSE,New York,Democratic,https://www.congress.gov/img/member/m001188_200.jpg,1,1,4500.0,1000.0,0.0,0.0,0.0,0.0,4500.0,1000.0,5500.0,202-225-2601,2468 Rayburn House Office Building,6,https://meng.house.gov
-S000148,"Schumer, Charles E.",,,SENATE,New York,Democratic,https://www.congress.gov/img/member/s000148_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6542,322 Hart Senate Office Building,,https://www.schumer.senate.gov
-G000555,"Gillibrand, Kirsten E.",,,SENATE,New York,Democratic,https://www.congress.gov/img/member/g000555_200.jpg,1,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4451,478 Russell Senate Office Building,,https://www.gillibrand.senate.gov
-M001240,"McDowell, Addison P.",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/67744e930b34857ecc90914f_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3065,1032 Longworth House Office Building,6,https://mcdowell.house.gov
-M001236,"Moore, Tim",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/67744a540b34857ecc909137_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5634,1424 Longworth House Office Building,14,https://timmoore.house.gov
-K000405,"Knott, Brad",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/67742fc60b34857ecc909101_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4531,1239 Longworth House Office Building,13,https://knott.house.gov
-H001102,"Harris, Mark",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/67742d1b0b34857ecc9090dd_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1976,126 Cannon House Office Building,8,https://markharris.house.gov
-H001101,"Harrigan, Pat",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/67742ca40b34857ecc9090d7_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2576,1233 Longworth House Office Building,10,https://harrigan.house.gov
-F000477,"Foushee, Valerie P.",,,HOUSE,North Carolina,Democratic,https://www.congress.gov/img/member/68122e57246d1b6bd8d9f6ab_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-1784,2452 Rayburn House Office Building,4,https://foushee.house.gov
-E000246,"Edwards, Chuck",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/e000246_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6401,1505 Longworth House Office Building,11,https://edwards.house.gov
-D000230,"Davis, Donald G.",,,HOUSE,North Carolina,Democratic,https://www.congress.gov/img/member/d000230_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3101,1123 Longworth House Office Building,1,https://dondavis.house.gov
-H001067,"Hudson, Richard",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/h001067_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3715,2112 Rayburn House Office Building,9,https://hudson.house.gov
-R000305,"Ross, Deborah K.",,,HOUSE,North Carolina,Democratic,https://www.congress.gov/img/member/r000305_200.jpg,1,1,10000.0,2000.0,0.0,0.0,0.0,0.0,10000.0,2000.0,12000.0,202-225-3032,1221 Longworth House Office Building,2,https://ross.house.gov
-M001210,"Murphy, Gregory F.",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/m001210_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3415,407 Cannon House Office Building,3,https://murphy.house.gov
-R000603,"Rouzer, David",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/r000603_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2731,2333 Rayburn House Office Building,7,https://rouzer.house.gov
-A000370,"Adams, Alma S.",,,HOUSE,North Carolina,Democratic,https://www.congress.gov/img/member/a000370_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1510,2436 Rayburn House Office Building,12,https://adams.house.gov
-F000450,"Foxx, Virginia",,,HOUSE,North Carolina,Republican,https://www.congress.gov/img/member/116_rp_nc_5_foxx_virginia_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2071,2462 Rayburn House Office Building,5,https://foxx.house.gov
-T000476,"Tillis, Thomas",,,SENATE,North Carolina,Republican,https://www.congress.gov/img/member/t000476_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6342,113 Dirksen Senate Office Building,,https://www.tillis.senate.gov
-B001305,"Budd, Ted",,,SENATE,North Carolina,Republican,https://www.congress.gov/img/member/b001305_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3154,354 Russell Senate Office Building,,https://www.budd.senate.gov
-F000482,"Fedorchak, Julie",,,HOUSE,North Dakota,Republican,https://www.congress.gov/img/member/677426c20b34857ecc90909b_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2611,1607 Longworth House Office Building,,https://fedorchak.house.gov
-H001061,"Hoeven, John",,,SENATE,North Dakota,Republican,https://www.congress.gov/img/member/h001061_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2551,338 Russell Senate Office Building,,https://www.hoeven.senate.gov
-C001096,"Cramer, Kevin",,,SENATE,North Dakota,Republican,https://www.congress.gov/img/member/c001096_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2043,313 Hart Senate Office Building,,https://www.cramer.senate.gov
-K000404,"King-Hinds, Kimberlyn",,,HOUSE,Northern Mariana Islands,Republican,https://www.congress.gov/img/member/67742f0a0b34857ecc9090fb_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2646,425 Cannon House Office Building,,https://king-hinds.house.gov
-T000490,"Taylor, David J.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/677460190b34857ecc9091a3_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3164,325 Cannon House Office Building,2,https://taylor.house.gov
-R000619,"Rulli, Michael A.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/668e9425658443009a697c95_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5705,421 Cannon House Office Building,6,https://rulli.house.gov
-S001223,"Sykes, Emilia Strong",,,HOUSE,Ohio,Democratic,https://www.congress.gov/img/member/s001223_200.jpg,1,1,15000.0,5000.0,0.0,0.0,0.0,0.0,15000.0,5000.0,20000.0,202-225-6265,1217 Longworth House Office Building,13,https://sykes.house.gov
-M001222,"Miller, Max L.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/680908fb6c2e6631263de71f_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3876,143 Cannon House Office Building,7,https://maxmiller.house.gov
-L000601,"Landsman, Greg",,,HOUSE,Ohio,Democratic,https://www.congress.gov/img/member/l000601_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-2216,2244 Rayburn House Office Building,1,https://landsman.house.gov
-C001126,"Carey, Mike",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/c001126_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2015,1433 Longworth House Office Building,15,https://carey.house.gov
-B001313,"Brown, Shontel M.",,,HOUSE,Ohio,Democratic,https://www.congress.gov/img/member/b001313_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-7032,2455 Rayburn House Office Building,11,https://shontelbrown.house.gov
-B001306,"Balderson, Troy",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/116_rp_oh_12_balderson_troy_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5355,2429 Rayburn House Office Building,12,https://balderson.house.gov
-D000626,"Davidson, Warren",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/115_rp_oh_8_davidson_warren_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6205,2113 Rayburn House Office Building,8,https://davidson.house.gov
-T000463,"Turner, Michael R.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/68014c674e51529406f18e56_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6465,2183 Rayburn House Office Building,10,https://turner.house.gov
-J000295,"Joyce, David P.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/j000295_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5731,2065 Rayburn House Office Building,14,https://joyce.house.gov
-B001281,"Beatty, Joyce",,,HOUSE,Ohio,Democratic,https://www.congress.gov/img/member/b001281_200.jpg,1,1,5000.0,2000.0,0.0,0.0,1320.0,0.0,5000.0,3320.0,8320.0,202-225-4324,2079 Rayburn House Office Building,3,https://beatty.house.gov
-L000566,"Latta, Robert E.",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/l000566_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6405,2470 Rayburn House Office Building,5,https://latta.house.gov
-J000289,"Jordan, Jim",,,HOUSE,Ohio,Republican,https://www.congress.gov/img/member/j000289_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2676,2056 Rayburn House Office Building,4,https://jordan.house.gov
-K000009,"Kaptur, Marcy",,,HOUSE,Ohio,Democratic,https://www.congress.gov/img/member/k000009_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4146,2314 Rayburn House Office Building,9,https://kaptur.house.gov
-M001242,"Moreno, Bernie",,,SENATE,Ohio,Republican,https://www.congress.gov/img/member/67c8694e6159152e59828afb_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2315,284 Russell Senate Office Building,,https://www.moreno.senate.gov
-H001104,"Husted, Jon",,,SENATE,Ohio,Republican,https://www.congress.gov/img/member/67f0316b1b05a5a598f7fdf3_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3353,304 Russell Senate Office Building,,https://www.husted.senate.gov
-B001317,"Brecheen, Josh",,,HOUSE,Oklahoma,Republican,https://www.congress.gov/img/member/b001317_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2701,351 Cannon House Office Building,2,https://brecheen.house.gov
-B000740,"Bice, Stephanie I.",,,HOUSE,Oklahoma,Republican,https://www.congress.gov/img/member/b000740_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2132,2402 Rayburn House Office Building,5,https://bice.house.gov
-H001082,"Hern, Kevin",,,HOUSE,Oklahoma,Republican,https://www.congress.gov/img/member/h001082_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2211,171 Cannon House Office Building,1,https://hern.house.gov
-L000491,"Lucas, Frank D.",,,HOUSE,Oklahoma,Republican,https://www.congress.gov/img/member/116_rp_ok_3_lucas_frank_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5565,2405 Rayburn House Office Building,3,https://lucas.house.gov
-C001053,"Cole, Tom",,,HOUSE,Oklahoma,Republican,https://www.congress.gov/img/member/c001053_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6165,2207 Rayburn House Office Building,4,https://cole.house.gov
-M001190,"Mullin, Markwayne",,,SENATE,Oklahoma,Republican,https://www.congress.gov/img/member/m001190_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4721,330 Hart Senate Office Building,,https://www.mullin.senate.gov
-L000575,"Lankford, James",,,SENATE,Oklahoma,Republican,https://www.congress.gov/img/member/l000575_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5754,731 Hart Senate Office Building,,https://www.lankford.senate.gov
-D000635,"Dexter, Maxine",,,HOUSE,Oregon,Democratic,https://www.congress.gov/img/member/677425260b34857ecc90907d_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4811,1207 Longworth House Office Building,3,https://dexter.house.gov
-B001326,"Bynum, Janelle S.",,,HOUSE,Oregon,Democratic,https://www.congress.gov/img/member/677423150b34857ecc909059_200.jpg,0,1,0.0,8000.0,0.0,0.0,0.0,0.0,0.0,8000.0,8000.0,202-225-5711,1508 Longworth House Office Building,5,https://bynum.house.gov
-S001226,"Salinas, Andrea",,,HOUSE,Oregon,Democratic,https://www.congress.gov/img/member/s001226_200.jpg,1,1,10000.0,3000.0,0.0,0.0,0.0,0.0,10000.0,3000.0,13000.0,202-225-5643,403 Cannon House Office Building,6,https://salinas.house.gov
-H001094,"Hoyle, Val T.",,,HOUSE,Oregon,Democratic,https://www.congress.gov/img/member/h001094_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6416,1620 Longworth House Office Building,4,https://hoyle.house.gov
-B000668,"Bentz, Cliff",,,HOUSE,Oregon,Republican,https://www.congress.gov/img/member/b000668_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6730,409 Cannon House Office Building,2,https://bentz.house.gov
-B001278,"Bonamici, Suzanne",,,HOUSE,Oregon,Democratic,https://www.congress.gov/img/member/b001278_200.jpg,1,0,1000.0,0.0,0.0,0.0,0.0,0.0,1000.0,0.0,1000.0,202-225-0855,2231 Rayburn House Office Building,1,https://bonamici.house.gov
-W000779,"Wyden, Ron",,,SENATE,Oregon,Democratic,https://www.congress.gov/img/member/w000779_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5244,221 Dirksen Senate Office Building,,https://www.wyden.senate.gov
-M001176,"Merkley, Jeff",,,SENATE,Oregon,Democratic,https://www.congress.gov/img/member/m001176_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3753,531 Hart Senate Office Building,,https://www.merkley.senate.gov
-M001230,"Mackenzie, Ryan",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/677430a40b34857ecc909113_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6411,121 Cannon House Office Building,7,https://mackenzie.house.gov
-B001327,"Bresnahan, Robert P.",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/6774236f0b34857ecc90905f_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5546,1133 Longworth House Office Building,8,https://bresnahan.house.gov
-L000602,"Lee, Summer L.",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/l000602_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2135,2437 Rayburn House Office Building,12,https://summerlee.house.gov
-D000530,"Deluzio, Christopher R.",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/d000530_200.jpg,1,1,5000.0,5000.0,0.0,0.0,0.0,0.0,5000.0,5000.0,10000.0,202-225-2301,1222 Longworth House Office Building,17,https://deluzio.house.gov
-S001205,"Scanlon, Mary Gay",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/116_rp_pa_5_scanlon_mary_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2011,1214 Longworth House Office Building,5,https://scanlon.house.gov
-R000610,"Reschenthaler, Guy",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/r000610_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2065,2209 Rayburn House Office Building,14,https://reschenthaler.house.gov
-J000302,"Joyce, John",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/j000302_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2431,2102 Rayburn House Office Building,13,https://johnjoyce.house.gov
-M001204,"Meuser, Daniel",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/6776ebbf4f8a93753830ca7d_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6511,350 Cannon House Office Building,9,https://meuser.house.gov
-H001085,"Houlahan, Chrissy",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/681bc0e6b763f94d6e471f50_200.jpg,1,0,10000.0,0.0,0.0,0.0,2500.0,0.0,10000.0,2500.0,12500.0,202-225-4315,1727 Longworth House Office Building,6,https://houlahan.house.gov
-D000631,"Dean, Madeleine",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/d000631_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4731,150 Cannon House Office Building,4,https://dean.house.gov
-S001199,"Smucker, Lloyd",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/s001199_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2411,302 Cannon House Office Building,11,https://smucker.house.gov
-E000296,"Evans, Dwight",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/115_rp_pa_2_evans_dwight_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4001,1105 Longworth House Office Building,3,https://evans.house.gov
-B001296,"Boyle, Brendan F.",,,HOUSE,Pennsylvania,Democratic,https://www.congress.gov/img/member/115_rp_pa_13_boyle_brendan_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6111,1502 Longworth House Office Building,2,https://boyle.house.gov
-P000605,"Perry, Scott",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/677ec7d3514c773869b6b915_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5836,2160 Rayburn House Office Building,10,https://perry.house.gov
-K000376,"Kelly, Mike",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/k000376_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5406,1707 Longworth House Office Building,16,https://kelly.house.gov
-T000467,"Thompson, Glenn",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/115_rp_pa_5_thompson_glenn_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5121,400 Cannon House Office Building,15,https://thompson.house.gov
-F000466,"Fitzpatrick, Brian K.",,,HOUSE,Pennsylvania,Republican,https://www.congress.gov/img/member/116_rp_pa_1_fitzpatrick_brian_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4276,271 Cannon House Office Building,1,https://fitzpatrick.house.gov
-M001243,"McCormick, David",,,SENATE,Pennsylvania,Republican,https://www.congress.gov/img/member/677d85e0fdb6cf36bbb649aa_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6324,702 Hart Senate Office Building,,https://www.mccormick.senate.gov
-F000479,"Fetterman, John",,,SENATE,Pennsylvania,Democratic,https://www.congress.gov/img/member/f000479_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4254,142 Russell Senate Office Building,,https://www.fetterman.senate.gov
-H001103,"Hernández, Pablo Jose",,,HOUSE,Puerto Rico,Democratic,https://www.congress.gov/img/member/67742d980b34857ecc9090e3_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2615,1419 Longworth House Office Building,,https://hernandez.house.gov
-A000380,"Amo, Gabe",,,HOUSE,Rhode Island,Democratic,https://www.congress.gov/img/member/669ace45fa2fb0d731226768_200.jpg,1,1,15000.0,1000.0,0.0,0.0,2800.0,0.0,15000.0,3800.0,18800.0,202-225-4911,1119 Longworth House Office Building,1,https://amo.house.gov
-M001223,"Magaziner, Seth",,,HOUSE,Rhode Island,Democratic,https://www.congress.gov/img/member/m001223_200.jpg,1,1,5000.0,1000.0,0.0,0.0,1300.0,0.0,5000.0,2300.0,7300.0,202-225-2735,252 Cannon House Office Building,2,https://magaziner.house.gov
-W000802,"Whitehouse, Sheldon",,,SENATE,Rhode Island,Democratic,https://www.congress.gov/img/member/w000802_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2921,530 Hart Senate Office Building,,https://www.whitehouse.senate.gov
-R000122,"Reed, Jack",,,SENATE,Rhode Island,Democratic,https://www.congress.gov/img/member/r000122_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4642,728 Hart Senate Office Building,,https://www.reed.senate.gov
-B001325,"Biggs, Sheri",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/677422990b34857ecc909052_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5301,1530 Longworth House Office Building,3,https://sheribiggs.house.gov
-F000478,"Fry, Russell",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/f000478_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-9895,345 Cannon House Office Building,7,https://fry.house.gov
-M000194,"Mace, Nancy",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/m000194_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3176,1728 Longworth House Office Building,1,https://mace.house.gov
-T000480,"Timmons, William R.",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/t000480_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6030,267 Cannon House Office Building,4,https://timmons.house.gov
-N000190,"Norman, Ralph",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/n000190_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5501,569 Cannon House Office Building,5,https://norman.house.gov
-W000795,"Wilson, Joe",,,HOUSE,South Carolina,Republican,https://www.congress.gov/img/member/116_rp_sc_2_wilson_joe_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2452,1436 Longworth House Office Building,2,https://joewilson.house.gov
-C000537,"Clyburn, James E.",,,HOUSE,South Carolina,Democratic,https://www.congress.gov/img/member/c000537_200.jpg,1,1,5000.0,1000.0,0.0,0.0,0.0,0.0,5000.0,1000.0,6000.0,202-225-3315,274 Cannon House Office Building,6,https://clyburn.house.gov
-S001184,"Scott, Tim",,,SENATE,South Carolina,Republican,https://www.congress.gov/img/member/s001184_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6121,104 Hart Senate Office Building,,https://www.scott.senate.gov
-G000359,"Graham, Lindsey",,,SENATE,South Carolina,Republican,https://www.congress.gov/img/member/g000359_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5972,211 Russell Senate Office Building,,https://www.lgraham.senate.gov/public
-J000301,"Johnson, Dusty",,,HOUSE,South Dakota,Republican,https://www.congress.gov/img/member/j000301_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2801,1714 Longworth House Office Building,,https://dustyjohnson.house.gov
-T000250,"Thune, John",,,SENATE,South Dakota,Republican,https://www.congress.gov/img/member/t000250_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2321,511 Dirksen Senate Office Building,,https://www.thune.senate.gov
-R000605,"Rounds, Mike",,,SENATE,South Dakota,Republican,https://www.congress.gov/img/member/r000605_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5842,716 Hart Senate Office Building,,https://www.rounds.senate.gov
-O000175,"Ogles, Andrew",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/o000175_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4311,151 Cannon House Office Building,5,https://ogles.house.gov
-H001086,"Harshbarger, Diana",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/h001086_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6356,167 Cannon House Office Building,1,https://harshbarger.house.gov
-R000612,"Rose, John W.",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/r000612_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4231,2238 Rayburn House Office Building,6,https://johnrose.house.gov
-B001309,"Burchett, Tim",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/b001309_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5435,1122 Longworth House Office Building,2,https://burchett.house.gov
-K000392,"Kustoff, David",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/116_rp_tn_8_kustoff_david_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4714,560 Cannon House Office Building,8,https://kustoff.house.gov
-D000616,"DesJarlais, Scott",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/d000616_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-6831,2304 Rayburn House Office Building,4,https://desjarlais.house.gov
-F000459,"Fleischmann, Charles J. ""Chuck""",,,HOUSE,Tennessee,Republican,https://www.congress.gov/img/member/f000459_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3271,2187 Rayburn House Office Building,3,https://fleischmann.house.gov
-C001068,"Cohen, Steve",,,HOUSE,Tennessee,Democratic,https://www.congress.gov/img/member/c001068_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3265,2268 Rayburn House Office Building,9,https://cohen.house.gov
-H000601,"Hagerty, Bill",,,SENATE,Tennessee,Republican,https://www.congress.gov/img/member/h000601_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4944,251 Russell Senate Office Building,,https://www.hagerty.senate.gov
-B001243,"Blackburn, Marsha",,,SENATE,Tennessee,Republican,https://www.congress.gov/img/member/b001243_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3344,357 Dirksen Senate Office Building,,https://www.blackburn.senate.gov
-J000310,"Johnson, Julie",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/67742df60b34857ecc9090e9_200.jpg,1,1,5000.0,1000.0,0.0,0.0,1950.0,0.0,5000.0,2950.0,7950.0,202-225-2231,221 Cannon House Office Building,32,https://juliejohnson.house.gov
-G000603,"Gill, Brandon",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/677428ac0b34857ecc9090b3_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7772,1305 Longworth House Office Building,26,https://gill.house.gov
-G000601,"Goldman, Craig A.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/6774277d0b34857ecc9090a7_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5071,1716 Longworth House Office Building,12,https://craiggoldman.house.gov
-S001224,"Self, Keith",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/s001224_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4201,1030 Longworth House Office Building,3,https://keithself.house.gov
-M001224,"Moran, Nathaniel",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/680008c5f22eaf56065817f4_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3035,1605 Longworth House Office Building,1,https://moran.house.gov
-L000603,"Luttrell, Morgan",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/l000603_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4901,444 Cannon House Office Building,8,https://luttrell.house.gov
-H001095,"Hunt, Wesley",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/h001095_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5646,1520 Longworth House Office Building,38,https://hunt.house.gov
-D000594,"De La Cruz, Monica",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/66d9fd54f440bf1dc174fbf6_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-9901,1415 Longworth House Office Building,15,https://delacruz.house.gov
-C001130,"Crockett, Jasmine",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/c001130_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8885,1616 Longworth House Office Building,30,https://crockett.house.gov
-C001131,"Casar, Greg",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/c001131_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-5645,446 Cannon House Office Building,35,https://casar.house.gov
-G000581,"Gonzalez, Vicente",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/115_rp_tx_15_gonzalez_vicente_200.jpg,1,0,6000.0,0.0,0.0,0.0,0.0,0.0,6000.0,0.0,6000.0,202-225-2531,1201 Longworth House Office Building,34,https://gonzalez.house.gov
-G000553,"Green, Al",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/116_rp_tx_9_green_al_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-7508,2347 Rayburn House Office Building,9,https://algreen.house.gov
-D000399,"Doggett, Lloyd",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/d000399_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4865,2307 Rayburn House Office Building,37,https://doggett.house.gov
-E000071,"Ellzey, Jake",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/e000071_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2002,1721 Longworth House Office Building,6,https://ellzey.house.gov
-V000134,"Van Duyne, Beth",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/677461060b34857ecc9091af_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6605,1725 Longworth House Office Building,24,https://vanduyne.house.gov
-N000026,"Nehls, Troy E.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/n000026_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5951,1104 Longworth House Office Building,22,https://nehls.house.gov
-J000304,"Jackson, Ronny",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/j000304_200.jpg,1,0,20000.0,0.0,0.0,0.0,0.0,0.0,20000.0,0.0,20000.0,202-225-3706,125 Cannon House Office Building,13,https://jackson.house.gov
-G000594,"Gonzales, Tony",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/g000594_200.jpg,1,0,15000.0,0.0,0.0,1061281.0,0.0,0.0,1076281.0,0.0,1076281.0,202-225-4511,2239 Rayburn House Office Building,23,https://gonzales.house.gov
-S000250,"Sessions, Pete",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/115_rp_tx_32_sessions_pete_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6105,2204 Rayburn House Office Building,17,https://sessions.house.gov
-P000048,"Pfluger, August",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/p000048_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3605,2202 Rayburn House Office Building,11,https://pfluger.house.gov
-F000246,"Fallon, Pat",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/f000246_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6673,2416 Rayburn House Office Building,4,https://fallon.house.gov
-G000587,"Garcia, Sylvia R.",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/g000587_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-1688,2419 Rayburn House Office Building,29,https://sylviagarcia.house.gov
-R000614,"Roy, Chip",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/r000614_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4236,103 Cannon House Office Building,21,https://roy.house.gov
-E000299,"Escobar, Veronica",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/e000299_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4831,2448 Rayburn House Office Building,16,https://escobar.house.gov
-F000468,"Fletcher, Lizzie",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/67813f931f9ad6ea6fb1eb6f_200.jpg,1,1,10000.0,2000.0,0.0,0.0,6727.0,3737.0,10000.0,12464.0,22464.0,202-225-2571,2004 Rayburn House Office Building,7,https://fletcher.house.gov
-G000589,"Gooden, Lance",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/g000589_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-3484,2431 Rayburn House Office Building,5,https://gooden.house.gov
-C001120,"Crenshaw, Dan",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/c001120_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-6565,248 Cannon House Office Building,2,https://crenshaw.house.gov
-C001115,"Cloud, Michael",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/115_rp_tx_27_cloud_michael_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7742,304 Cannon House Office Building,27,https://cloud.house.gov
-A000375,"Arrington, Jodey C.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/115_rp_tx_19_arrington_jodey_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4005,1111 Longworth House Office Building,19,https://arrington.house.gov
-B001291,"Babin, Brian",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/b001291_200.jpg,1,0,6000.0,0.0,0.0,0.0,0.0,0.0,6000.0,0.0,6000.0,202-225-1555,2236 Rayburn House Office Building,36,https://babin.house.gov
-V000131,"Veasey, Marc A.",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/v000131_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-9897,2186 Rayburn House Office Building,33,https://veasey.house.gov
-W000816,"Williams, Roger",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/w000816_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-9896,2336 Rayburn House Office Building,25,https://williams.house.gov
-C001091,"Castro, Joaquin",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/c001091_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3236,2241 Rayburn House Office Building,20,https://castro.house.gov
-W000814,"Weber, Randy K. Sr.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/w000814_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2831,107 Cannon House Office Building,14,https://weber.house.gov
-C001063,"Cuellar, Henry",,,HOUSE,Texas,Democratic,https://www.congress.gov/img/member/116_rp_tx_28_cuellar_henry_200.jpg,1,0,10000.0,0.0,-15369.0,0.0,0.0,0.0,-5369.0,0.0,-5369.0,202-225-1640,2308 Rayburn House Office Building,28,https://cuellar.house.gov
-M001157,"McCaul, Michael T.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/116_rp_tx_10_mccaul_michael_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-2401,2300 Rayburn House Office Building,10,https://mccaul.house.gov
-C001051,"Carter, John R.",,,HOUSE,Texas,Republican,https://www.congress.gov/img/member/c001051_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3864,2208 Rayburn House Office Building,31,https://carter.house.gov
-C001098,"Cruz, Ted",,,SENATE,Texas,Republican,https://www.congress.gov/img/member/c001098_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5922,167 Russell Senate Office Building,,https://www.cruz.senate.gov
-C001056,"Cornyn, John",,,SENATE,Texas,Republican,https://www.congress.gov/img/member/c001056_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2934,517 Hart Senate Office Building,,https://www.cornyn.senate.gov
-K000403,"Kennedy, Mike",,,HOUSE,Utah,Republican,https://www.congress.gov/img/member/67742e7c0b34857ecc9090f5_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-7751,1626 Longworth House Office Building,3,https://mikekennedy.house.gov
-M001228,"Maloy, Celeste",,,HOUSE,Utah,Republican,https://www.congress.gov/img/member/m001228_200.jpg,1,0,15000.0,0.0,0.0,0.0,0.0,0.0,15000.0,0.0,15000.0,202-225-9730,249 Cannon House Office Building,2,https://maloy.house.gov
-O000086,"Owens, Burgess",,,HOUSE,Utah,Republican,https://www.congress.gov/img/member/o000086_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3011,309 Cannon House Office Building,4,https://owens.house.gov
-M001213,"Moore, Blake D.",,,HOUSE,Utah,Republican,https://www.congress.gov/img/member/m001213_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-0453,1131 Longworth House Office Building,1,https://blakemoore.house.gov
-L000577,"Lee, Mike",,,SENATE,Utah,Republican,https://www.congress.gov/img/member/l000577_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5444,363 Russell Senate Office Building,,https://www.lee.senate.gov
-C001114,"Curtis, John R.",,,SENATE,Utah,Republican,https://www.congress.gov/img/member/1b9d1007d6895a37da28a67cd8149803_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5251,502 Hart Senate Office Building,,https://www.curtis.senate.gov
-B001318,"Balint, Becca",,,HOUSE,Vermont,Democratic,https://www.congress.gov/img/member/b001318_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4115,1510 Longworth House Office Building,,https://balint.house.gov
-W000800,"Welch, Peter",,,SENATE,Vermont,Democratic,https://www.congress.gov/img/member/fd3cb364b8bf93c25834cff750637802_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4242,115 Russell Senate Office Building,,https://www.welch.senate.gov
-S000033,"Sanders, Bernard",,,SENATE,Vermont,Independent,https://www.congress.gov/img/member/s000033_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5141,332 Dirksen Senate Office Building,,https://www.sanders.senate.gov
-P000610,"Plaskett, Stacey E.",,,HOUSE,Virgin Islands,Democratic,https://www.congress.gov/img/member/116_dg_vi_plaskett_stacey_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1790,2059 Rayburn House Office Building,,https://plaskett.house.gov
-V000138,"Vindman, Eugene Simon",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/6774617a0b34857ecc9091b5_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2815,1005 Longworth House Office Building,7,https://vindman.house.gov
-S001230,"Subramanyam, Suhas",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/6797be8bc75fbc6f720e476a_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5136,1009 Longworth House Office Building,10,https://subramanyam.house.gov
-M001239,"McGuire, John J.",,,HOUSE,Virginia,Republican,https://www.congress.gov/img/member/67744ba20b34857ecc909149_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4711,1013 Longworth House Office Building,5,https://mcguire.house.gov
-M001227,"McClellan, Jennifer L.",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/m001227_200.jpg,1,1,10000.0,1000.0,0.0,0.0,0.0,0.0,10000.0,1000.0,11000.0,202-225-6365,1628 Longworth House Office Building,4,https://mcclellan.house.gov
-K000399,"Kiggans, Jennifer A.",,,HOUSE,Virginia,Republican,https://www.congress.gov/img/member/66b0ce45b0288a917d98f619_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4215,152 Cannon House Office Building,2,https://kiggans.house.gov
-C001118,"Cline, Ben",,,HOUSE,Virginia,Republican,https://www.congress.gov/img/member/c001118_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-5431,2443 Rayburn House Office Building,6,https://cline.house.gov
-W000831,"Walkinshaw, James R.",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/68c1bd4ca929c5b98220e069_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-1492,2265 Rayburn House Office Building,11,
-B001292,"Beyer, Donald S.",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/b001292_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4376,1226 Longworth House Office Building,8,https://beyer.house.gov
-W000804,"Wittman, Robert J.",,,HOUSE,Virginia,Republican,https://www.congress.gov/img/member/w000804_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-4261,2055 Rayburn House Office Building,1,https://wittman.house.gov
-G000568,"Griffith, H. Morgan",,,HOUSE,Virginia,Republican,https://www.congress.gov/img/member/68094df86c2e6631263de737_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3861,2110 Rayburn House Office Building,9,https://morgangriffith.house.gov
-S000185,"Scott, Robert C. ""Bobby""",,,HOUSE,Virginia,Democratic,https://www.congress.gov/img/member/s000185_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-8351,2328 Rayburn House Office Building,3,https://bobbyscott.house.gov
-W000805,"Warner, Mark R.",,,SENATE,Virginia,Democratic,https://www.congress.gov/img/member/w000805_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2023,703 Hart Senate Office Building,,https://www.warner.senate.gov
-K000384,"Kaine, Tim",,,SENATE,Virginia,Democratic,https://www.congress.gov/img/member/k000384_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-4024,231 Russell Senate Office Building,,https://www.kaine.senate.gov
-B001322,"Baumgartner, Michael",,,HOUSE,Washington,Republican,https://www.congress.gov/img/member/6774212e0b34857ecc90903a_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2006,124 Cannon House Office Building,5,https://baumgartner.house.gov
-G000600,"Perez, Marie Gluesenkamp",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/g000600_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-3536,1431 Longworth House Office Building,3,https://gluesenkampperez.house.gov
-S001159,"Strickland, Marilyn",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/s001159_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-9740,1724 Longworth House Office Building,10,https://strickland.house.gov
-S001216,"Schrier, Kim",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/s001216_200.jpg,1,1,10000.0,5000.0,0.0,0.0,0.0,0.0,10000.0,5000.0,15000.0,202-225-7761,1110 Longworth House Office Building,8,https://schrier.house.gov
-J000298,"Jayapal, Pramila",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/116_rp_wa_7_jayapal_pramila_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-3106,2346 Rayburn House Office Building,7,https://jayapal.house.gov
-N000189,"Newhouse, Dan",,,HOUSE,Washington,Republican,https://www.congress.gov/img/member/116_rp_wa_4_newhouse_dan_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5816,460 Cannon House Office Building,4,https://newhouse.house.gov
-D000617,"DelBene, Suzan K.",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/d000617_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-6311,2311 Rayburn House Office Building,1,https://delbene.house.gov
-R000621,"Randall, Emily",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/67745dcf0b34857ecc909173_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5916,1531 Longworth House Office Building,6,https://randall.house.gov
-S000510,"Smith, Adam",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/116_rp_wa_9_smith_adam_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-8901,2264 Rayburn House Office Building,9,https://adamsmith.house.gov
-L000560,"Larsen, Rick",,,HOUSE,Washington,Democratic,https://www.congress.gov/img/member/116_rp_wa_2_larsen_rick_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2605,2163 Rayburn House Office Building,2,https://larsen.house.gov
-M001111,"Murray, Patty",,,SENATE,Washington,Democratic,https://www.congress.gov/img/member/1b52ad6d215684d847d1c2bf28b9b262_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-2621,154 Russell Senate Office Building,,https://www.murray.senate.gov
-C000127,"Cantwell, Maria",,,SENATE,Washington,Democratic,https://www.congress.gov/img/member/c000127_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3441,511 Hart Senate Office Building,,https://www.cantwell.senate.gov
-M001235,"Moore, Riley M.",,,HOUSE,West Virginia,Republican,https://www.congress.gov/img/member/677449fd0b34857ecc909131_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2711,1337 Longworth House Office Building,2,https://rileymoore.house.gov
-M001205,"Miller, Carol D.",,,HOUSE,West Virginia,Republican,https://www.congress.gov/img/member/m001205_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-3452,465 Cannon House Office Building,1,https://miller.house.gov
-J000312,"Justice, James C.",,,SENATE,West Virginia,Republican,https://www.congress.gov/img/member/67c86b5e6159152e59828b1a_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3954,G12 Dirksen Senate Office Building,,https://www.justice.senate.gov
-C001047,"Capito, Shelley Moore",,,SENATE,West Virginia,Republican,https://www.congress.gov/img/member/c001047_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6472,170 Russell Senate Office Building,,https://www.capito.senate.gov
-W000829,"Wied, Tony",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/6734b6724c72e343a6aff9e6_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5665,424 Cannon House Office Building,8,https://wied.house.gov
-V000135,"Van Orden, Derrick",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/v000135_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5506,1513 Longworth House Office Building,3,https://vanorden.house.gov
-F000471,"Fitzgerald, Scott",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/f000471_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-5101,2444 Rayburn House Office Building,5,https://fitzgerald.house.gov
-T000165,"Tiffany, Thomas P.",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/t000165_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3365,451 Cannon House Office Building,7,https://tiffany.house.gov
-S001213,"Steil, Bryan",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/s001213_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-3031,1526 Longworth House Office Building,1,https://steil.house.gov
-G000576,"Grothman, Glenn",,,HOUSE,Wisconsin,Republican,https://www.congress.gov/img/member/116_rp_wi_6_grothman_glenn_200.jpg,1,0,10000.0,0.0,0.0,0.0,0.0,0.0,10000.0,0.0,10000.0,202-225-2476,1211 Longworth House Office Building,6,https://grothman.house.gov
-P000607,"Pocan, Mark",,,HOUSE,Wisconsin,Democratic,https://www.congress.gov/img/member/p000607_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-2906,1026 Longworth House Office Building,2,https://pocan.house.gov
-M001160,"Moore, Gwen",,,HOUSE,Wisconsin,Democratic,https://www.congress.gov/img/member/116_rp_wi_4_moore_gwen_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-225-4572,2252 Rayburn House Office Building,4,https://gwenmoore.house.gov
-J000293,"Johnson, Ron",,,SENATE,Wisconsin,Republican,https://www.congress.gov/img/member/j000293_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5323,328 Hart Senate Office Building,,https://www.ronjohnson.senate.gov
-B001230,"Baldwin, Tammy",,,SENATE,Wisconsin,Democratic,https://www.congress.gov/img/member/b001230_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-5653,141 Hart Senate Office Building,,https://www.baldwin.senate.gov
-H001096,"Hageman, Harriet M.",,,HOUSE,Wyoming,Republican,https://www.congress.gov/img/member/h001096_200.jpg,1,0,5000.0,0.0,0.0,0.0,0.0,0.0,5000.0,0.0,5000.0,202-225-2311,1227 Longworth House Office Building,,https://hageman.house.gov
-L000571,"Lummis, Cynthia M.",,,SENATE,Wyoming,Republican,https://www.congress.gov/img/member/l000571_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-3424,127a Russell Senate Office Building,,https://www.lummis.senate.gov
-B001261,"Barrasso, John",,,SENATE,Wyoming,Republican,https://www.congress.gov/img/member/b001261_200.jpg,0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,202-224-6441,307 Dirksen Senate Office Building,,https://www.barrasso.senate.gov
+bioguide_id,full_name,first_name,last_name,chamber,state,district,party,govtrack_id,opensecrets_id,fec_ids,twitter,official_website,photo_url,aipac_supported,dmfi_supported
+F000481,"Figures, Shomari",,,HOUSE,Alabama,,Democratic,,,,,,https://www.congress.gov/img/member/68013eaa4e51529406f18e42_200.jpg,1,1
+M001212,"Moore, Barry",,,HOUSE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/m001212_200.jpg,1,0
+S001220,"Strong, Dale W.",,,HOUSE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/s001220_200.jpg,1,0
+P000609,"Palmer, Gary J.",,,HOUSE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/p000609_200.jpg,1,0
+S001185,"Sewell, Terri A.",,,HOUSE,Alabama,,Democratic,,,,,,https://www.congress.gov/img/member/s001185_200.jpg,1,0
+A000055,"Aderholt, Robert B.",,,HOUSE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/a000055_200.jpg,1,0
+R000575,"Rogers, Mike D.",,,HOUSE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_al_3_rogers_mike_200.jpg,1,0
+T000278,"Tuberville, Tommy",,,SENATE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/t000278_200.jpg,1,0
+B001319,"Britt, Katie Boyd",,,SENATE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/b001319_200.jpg,0,0
+B001323,"Begich, Nicholas J.",,,HOUSE,Alaska,,Republican,,,,,,https://www.congress.gov/img/member/6774217e0b34857ecc909040_200.jpg,0,0
+S001198,"Sullivan, Dan",,,SENATE,Alaska,,Republican,,,,,,https://www.congress.gov/img/member/s001198_200.jpg,1,0
+M001153,"Murkowski, Lisa",,,SENATE,Alaska,,Republican,,,,,,https://www.congress.gov/img/member/m001153_200.jpg,0,0
+R000600,"Radewagen, Aumua Amata Coleman",,,HOUSE,American Samoa,,Republican,,,,,,https://www.congress.gov/img/member/r000600_200.jpg,0,0
+C001132,"Crane, Elijah",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/c001132_200.jpg,0,0
+C001133,"Ciscomani, Juan",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/c001133_200.jpg,1,0
+S001211,"Stanton, Greg",,,HOUSE,Arizona,,Democratic,,,,,,https://www.congress.gov/img/member/s001211_200.jpg,1,1
+S001183,"Schweikert, David",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/s001183_200.jpg,1,0
+G000565,"Gosar, Paul A.",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/g000565_200.jpg,0,0
+B001302,"Biggs, Andy",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/b001302_200.jpg,1,0
+H001098,"Hamadeh, Abraham J.",,,HOUSE,Arizona,,Republican,,,,,,https://www.congress.gov/img/member/67742a6f0b34857ecc9090c5_200.jpg,0,0
+A000381,"Ansari, Yassamin",,,HOUSE,Arizona,,Democratic,,,,,,https://www.congress.gov/img/member/67741fc30b34857ecc90902e_200.jpg,0,1
+K000377,"Kelly, Mark",,,SENATE,Arizona,,Democratic,,,,,,https://www.congress.gov/img/member/k000377_200.jpg,1,1
+G000574,"Gallego, Ruben",,,SENATE,Arizona,,Democratic,,,,,,https://www.congress.gov/img/member/c6870f487cf4bc9a568d8afbe61d754b_200.jpg,1,1
+W000821,"Westerman, Bruce",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/w000821_200.jpg,1,0
+H001072,"Hill, J. French",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/h001072_200.jpg,0,0
+W000809,"Womack, Steve",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_ar_3_womack_steve_200.jpg,1,0
+C001087,"Crawford, Eric A. ""Rick""",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/c001087_200.jpg,0,0
+C001095,"Cotton, Tom",,,SENATE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/c001095_200.jpg,1,0
+B001236,"Boozman, John",,,SENATE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/b001236_200.jpg,0,0
+W000830,"Whitesides, George",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/68dc43db199559bad714973d_200.jpg,0,1
+F000483,"Friedman, Laura",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/677427070b34857ecc9090a1_200.jpg,1,1
+F000480,"Fong, Vince",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/669ff04f5d19788d1f2034aa_200.jpg,1,0
+C001123,"Cisneros, Gilbert Ray",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/6807d8d63e52ea7df920ef05_200.jpg,1,1
+M001225,"Mullin, Kevin",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/m001225_200.jpg,1,1
+K000401,"Kiley, Kevin",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/k000401_200.jpg,1,0
+K000400,"Kamlager-Dove, Sydney",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/k000400_200.jpg,0,0
+G000598,"Garcia, Robert",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/g000598_200.jpg,1,1
+O000019,"Obernolte, Jay",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/o000019_200.jpg,1,0
+K000397,"Kim, Young",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/k000397_200.jpg,1,0
+J000305,"Jacobs, Sara",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/j000305_200.jpg,0,0
+H001090,"Harder, Josh",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/h001090_200.jpg,1,1
+P000613,"Panetta, Jimmy",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ca_20_panetta_jimmy_200.jpg,1,1
+L000582,"Lieu, Ted",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/l000582_200.jpg,1,1
+A000371,"Aguilar, Pete",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/a000371_200.jpg,1,1
+D000623,"DeSaulnier, Mark",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_ca_11_desaulnier_mark_200.jpg,0,0
+P000608,"Peters, Scott H.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/p000608_200.jpg,0,0
+V000130,"Vargas, Juan",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/v000130_200.jpg,1,1
+T000472,"Takano, Mark",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/t000472_200.jpg,0,0
+R000599,"Ruiz, Raul",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/66e1aec832c796cea99fe06f_200.jpg,1,0
+V000129,"Valadao, David G.",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/v000129_200.jpg,1,0
+S001193,"Swalwell, Eric",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/s001193_200.jpg,1,0
+B001287,"Bera, Ami",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/b001287_200.jpg,1,1
+G000559,"Garamendi, John",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/g000559_200.jpg,0,0
+C001080,"Chu, Judy",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/c001080_200.jpg,0,0
+M001177,"McClintock, Tom",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/m001177_200.jpg,1,0
+M001163,"Matsui, Doris O.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/m001163_200.jpg,1,0
+P000197,"Pelosi, Nancy",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/p000197_200.jpg,1,1
+T000460,"Thompson, Mike",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ca_5_thompson_mike_200.jpg,0,0
+S000344,"Sherman, Brad",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/s000344_200.jpg,1,1
+C001059,"Costa, Jim",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ca_16_costa_jim_200.jpg,1,1
+I000056,"Issa, Darrell",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/i000056_200.jpg,1,0
+C000059,"Calvert, Ken",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/c000059_200.jpg,1,0
+L000397,"Lofgren, Zoe",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/671024d7ec807bca66057fcb_200.jpg,0,0
+L000593,"Levin, Mike",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/l000593_200.jpg,1,1
+G000585,"Gomez, Jimmy",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_ca_34_gomez_jimmy_200.jpg,1,1
+C001110,"Correa, J. Luis",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_ca_46_correa_j_200.jpg,0,0
+B001300,"Barragán, Nanette Diaz",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/b001300_200.jpg,0,0
+C001112,"Carbajal, Salud O.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_ca_24_carbajal_salud_200.jpg,0,0
+M001241,"Min, Dave",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/67744ed90b34857ecc909155_200.jpg,0,1
+K000389,"Khanna, Ro",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/k000389_200.jpg,0,0
+T000474,"Torres, Norma J.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/t000474_200.jpg,1,0
+T000491,"Tran, Derek",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/6774606d0b34857ecc9091a9_200.jpg,0,1
+B001285,"Brownley, Julia",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/68000188f22eaf56065817e8_200.jpg,1,0
+H001068,"Huffman, Jared",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/h001068_200.jpg,0,0
+L000578,"LaMalfa, Doug",,,HOUSE,California,,Republican,,,,,,https://www.congress.gov/img/member/l000578_200.jpg,1,0
+W000187,"Waters, Maxine",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/w000187_200.jpg,0,0
+S001156,"Sánchez, Linda T.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ca_38_snchez_linda_200.jpg,0,0
+S001231,"Simon, Lateefah",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/67745f940b34857ecc909197_200.jpg,0,0
+R000620,"Rivas, Luz M.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/67745d860b34857ecc90916d_200.jpg,1,1
+L000607,"Liccardo, Sam T.",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/6774305d0b34857ecc90910d_200.jpg,0,0
+G000605,"Gray, Adam",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/67742a160b34857ecc9090bf_200.jpg,0,0
+S001150,"Schiff, Adam B.",,,SENATE,California,,Democratic,,,,,,https://www.congress.gov/img/member/677d870dfdb6cf36bbb649b3_200.jpg,1,1
+P000145,"Padilla, Alex",,,SENATE,California,,Democratic,,,,,,https://www.congress.gov/img/member/p000145_200.jpg,0,1
+E000300,"Evans, Gabe",,,HOUSE,Colorado,,Republican,,,,,,https://www.congress.gov/img/member/677425730b34857ecc909083_200.jpg,1,0
+C001137,"Crank, Jeff",,,HOUSE,Colorado,,Republican,,,,,,https://www.congress.gov/img/member/677424810b34857ecc909071_200.jpg,1,0
+B000825,"Boebert, Lauren",,,HOUSE,Colorado,,Republican,,,,,,https://www.congress.gov/img/member/b000825_200.jpg,0,0
+P000620,"Pettersen, Brittany",,,HOUSE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/p000620_200.jpg,1,1
+C001121,"Crow, Jason",,,HOUSE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/c001121_200.jpg,1,1
+N000191,"Neguse, Joe",,,HOUSE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/n000191_200.jpg,1,0
+H001100,"Hurd, Jeff",,,HOUSE,Colorado,,Republican,,,,,,https://www.congress.gov/img/member/67742c5e0b34857ecc9090d1_200.jpg,1,0
+D000197,"DeGette, Diana",,,HOUSE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_co_1_degette_diana_200.jpg,0,0
+H000273,"Hickenlooper, John W.",,,SENATE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/h000273_200.jpg,1,1
+B001267,"Bennet, Michael F.",,,SENATE,Colorado,,Democratic,,,,,,https://www.congress.gov/img/member/b001267_200.jpg,0,1
+H001081,"Hayes, Jahana",,,HOUSE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/h001081_200.jpg,1,1
+H001047,"Himes, James A.",,,HOUSE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/h001047_200.jpg,1,0
+C001069,"Courtney, Joe",,,HOUSE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/c001069_200.jpg,1,0
+L000557,"Larson, John B.",,,HOUSE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/l000557_200.jpg,1,1
+D000216,"DeLauro, Rosa L.",,,HOUSE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ct_3_delauro_rosa_200.jpg,1,0
+M001169,"Murphy, Christopher",,,SENATE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/m001169_200.jpg,1,0
+B001277,"Blumenthal, Richard",,,SENATE,Connecticut,,Democratic,,,,,,https://www.congress.gov/img/member/b001277_200.jpg,0,0
+M001238,"McBride, Sarah",,,HOUSE,Delaware,,Democratic,,,,,,https://www.congress.gov/img/member/67744b460b34857ecc909143_200.jpg,1,1
+C001088,"Coons, Christopher A.",,,SENATE,Delaware,,Democratic,,,,,,https://www.congress.gov/img/member/c001088_200.jpg,1,0
+B001303,"Blunt Rochester, Lisa",,,SENATE,Delaware,,Democratic,,,,,,https://www.congress.gov/img/member/b001303_200.jpg,0,0
+N000147,"Norton, Eleanor Holmes",,,HOUSE,District of Columbia,,Democratic,,,,,,https://www.congress.gov/img/member/116_dg_dc_norton_eleanor_200.jpg,0,0
+F000484,"Fine, Randy",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/67efda8c1b05a5a598f7fde0_200.jpg,0,0
+P000622,"Patronis, Jimmy",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/67efdb991b05a5a598f7fde9_200.jpg,0,0
+H001099,"Haridopolos, Mike",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/67742ab50b34857ecc9090cb_200.jpg,1,0
+F000472,"Franklin, Scott",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/f000472_200.jpg,1,0
+M001217,"Moskowitz, Jared",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/m001217_200.jpg,1,1
+M001216,"Mills, Cory",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/m001216_200.jpg,1,0
+L000596,"Luna, Anna Paulina",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/l000596_200.jpg,1,0
+L000597,"Lee, Laurel M.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/l000597_200.jpg,1,0
+F000476,"Frost, Maxwell",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/f000476_200.jpg,0,0
+G000593,"Gimenez, Carlos A.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/g000593_200.jpg,1,0
+M001199,"Mast, Brian J.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_fl_18_mast_brian_200.jpg,1,0
+R000609,"Rutherford, John H.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/r000609_200.jpg,1,0
+F000462,"Frankel, Lois",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/f000462_200.jpg,1,1
+W000797,"Wasserman Schultz, Debbie",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_fl_23_wassermanschultz_debbie_200.jpg,1,1
+D000600,"Diaz-Balart, Mario",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_fl_25_diazbalart_mario_200.jpg,1,0
+B001314,"Bean, Aaron",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/b001314_200.jpg,1,0
+C001127,"Cherfilus-McCormick, Sheila",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/c001127_200.jpg,1,1
+S000168,"Salazar, Maria Elvira",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/s000168_200.jpg,1,0
+D000032,"Donalds, Byron",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/d000032_200.jpg,1,0
+C001039,"Cammack, Kat",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/c001039_200.jpg,1,0
+S001214,"Steube, W. Gregory",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/s001214_200.jpg,0,0
+S001200,"Soto, Darren",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_fl_9_soto_darren_200.jpg,1,1
+D000628,"Dunn, Neal P.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_fl_2_dunn_neal_200.jpg,1,0
+W000806,"Webster, Daniel",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/w000806_200.jpg,1,0
+W000808,"Wilson, Frederica S.",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/w000808_200.jpg,1,1
+B001260,"Buchanan, Vern",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/b001260_200.jpg,1,0
+C001066,"Castor, Kathy",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/c001066_200.jpg,1,1
+B001257,"Bilirakis, Gus M.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_fl_12_bilirakis_gus_200.jpg,1,0
+S001217,"Scott, Rick",,,SENATE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/s001217_200.jpg,1,0
+M001244,"Moody, Ashley",,,SENATE,Florida,,Republican,,,,,,,0,0
+M001218,"McCormick, Richard",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/m001218_200.jpg,1,0
+J000311,"Jack, Brian",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/67742e330b34857ecc9090ef_200.jpg,1,0
+G000596,"Greene, Marjorie Taylor",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/g000596_200.jpg,0,0
+M001208,"McBath, Lucy",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/m001208_200.jpg,1,1
+C001129,"Collins, Mike",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/c001129_200.jpg,1,0
+W000788,"Williams, Nikema",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/w000788_200.jpg,1,1
+C001116,"Clyde, Andrew S.",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/c001116_200.jpg,0,0
+A000372,"Allen, Rick W.",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/a000372_200.jpg,1,0
+L000583,"Loudermilk, Barry",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_ga_11_loudermilk_barry_200.jpg,1,0
+C001103,"Carter, Earl L. ""Buddy""",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/c001103_200.jpg,0,0
+S001189,"Scott, Austin",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/s001189_200.jpg,1,0
+S001157,"Scott, David",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ga_13_scott_david_200.jpg,1,1
+J000288,"Johnson, Henry C. ""Hank""",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/j000288_200.jpg,0,0
+B000490,"Bishop, Sanford D.",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/b000490_200.jpg,1,1
+W000790,"Warnock, Raphael G.",,,SENATE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/w000790_200.jpg,0,1
+O000174,"Ossoff, Jon",,,SENATE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/o000174_200.jpg,0,1
+M001219,"Moylan, James C.",,,HOUSE,Guam,,Republican,,,,,,https://www.congress.gov/img/member/m001219_200.jpg,0,0
+T000487,"Tokuda, Jill N.",,,HOUSE,Hawaii,,Democratic,,,,,,https://www.congress.gov/img/member/t000487_200.jpg,0,0
+C001055,"Case, Ed",,,HOUSE,Hawaii,,Democratic,,,,,,https://www.congress.gov/img/member/c001055_200.jpg,1,0
+S001194,"Schatz, Brian",,,SENATE,Hawaii,,Democratic,,,,,,https://www.congress.gov/img/member/s001194_200.jpg,0,0
+H001042,"Hirono, Mazie K.",,,SENATE,Hawaii,,Democratic,,,,,,https://www.congress.gov/img/member/h001042_200.jpg,0,0
+F000469,"Fulcher, Russ",,,HOUSE,Idaho,,Republican,,,,,,https://www.congress.gov/img/member/f000469_200.jpg,1,0
+S001148,"Simpson, Michael K.",,,HOUSE,Idaho,,Republican,,,,,,https://www.congress.gov/img/member/678152c81f9ad6ea6fb1eb7f_200.jpg,1,0
+R000584,"Risch, James E.",,,SENATE,Idaho,,Republican,,,,,,https://www.congress.gov/img/member/r000584_200.jpg,1,0
+C000880,"Crapo, Mike",,,SENATE,Idaho,,Republican,,,,,,https://www.congress.gov/img/member/c000880_200.jpg,0,0
+S001225,"Sorensen, Eric",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/s001225_200.jpg,1,1
+R000617,"Ramirez, Delia C.",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/684c2356333714e4aee2e1fd_200.jpg,0,0
+J000309,"Jackson, Jonathan L.",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/j000309_200.jpg,1,0
+B001315,"Budzinski, Nikki",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/b001315_200.jpg,1,1
+L000585,"LaHood, Darin",,,HOUSE,Illinois,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_il_18_lahood_darin_200.jpg,1,0
+M001211,"Miller, Mary E.",,,HOUSE,Illinois,,Republican,,,,,,https://www.congress.gov/img/member/m001211_200.jpg,1,0
+G000586,"García, Jesús G. ""Chuy""",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/g000586_200.jpg,0,0
+U000040,"Underwood, Lauren",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/u000040_200.jpg,0,1
+C001117,"Casten, Sean",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/c001117_200.jpg,0,1
+K000391,"Krishnamoorthi, Raja",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/k000391_200.jpg,1,1
+S001190,"Schneider, Bradley Scott",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/s001190_200.jpg,1,0
+B001295,"Bost, Mike",,,HOUSE,Illinois,,Republican,,,,,,https://www.congress.gov/img/member/b001295_200.jpg,1,0
+K000385,"Kelly, Robin L.",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_il_2_kelly_robin_200.jpg,1,0
+Q000023,"Quigley, Mike",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/q000023_200.jpg,1,0
+F000454,"Foster, Bill",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/f000454_200.jpg,0,1
+S001145,"Schakowsky, Janice D.",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_il_9_schakowsky_janice_200.jpg,0,0
+D000096,"Davis, Danny K.",,,HOUSE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_il_7_davis_danny_200.jpg,1,0
+D000622,"Duckworth, Tammy",,,SENATE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/d000622_200.jpg,0,0
+D000563,"Durbin, Richard J.",,,SENATE,Illinois,,Democratic,,,,,,https://www.congress.gov/img/member/d000563_200.jpg,0,0
+S001229,"Shreve, Jefferson",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/67745f0e0b34857ecc90918b_200.jpg,1,0
+M001233,"Messmer, Mark B.",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/677448630b34857ecc909125_200.jpg,1,0
+S001188,"Stutzman, Marlin A.",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/67745e7e0b34857ecc90917f_200.jpg,1,0
+H001093,"Houchin, Erin",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/h001093_200.jpg,1,0
+Y000067,"Yakym, Rudy",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/y000067_200.jpg,1,0
+S000929,"Spartz, Victoria",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/s000929_200.jpg,1,0
+M001214,"Mrvan, Frank J.",,,HOUSE,Indiana,,Democratic,,,,,,https://www.congress.gov/img/member/m001214_200.jpg,1,0
+B001307,"Baird, James R.",,,HOUSE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/b001307_200.jpg,1,0
+C001072,"Carson, André",,,HOUSE,Indiana,,Democratic,,,,,,https://www.congress.gov/img/member/c001072_200.jpg,0,0
+Y000064,"Young, Todd",,,SENATE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/y000064_200.jpg,0,0
+B001299,"Banks, Jim",,,SENATE,Indiana,,Republican,,,,,,https://www.congress.gov/img/member/677d83cbfdb6cf36bbb64998_200.jpg,1,0
+N000193,"Nunn, Zachary",,,HOUSE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/n000193_200.jpg,1,0
+M001215,"Miller-Meeks, Mariannette",,,HOUSE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/m001215_200.jpg,1,0
+H001091,"Hinson, Ashley",,,HOUSE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/677ed0c7514c773869b6b920_200.jpg,1,0
+F000446,"Feenstra, Randy",,,HOUSE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/f000446_200.jpg,1,0
+G000386,"Grassley, Chuck",,,SENATE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/g000386_200.jpg,0,0
+E000295,"Ernst, Joni",,,SENATE,Iowa,,Republican,,,,,,https://www.congress.gov/img/member/e000295_200.jpg,1,0
+S001228,"Schmidt, Derek",,,HOUSE,Kansas,,Republican,,,,,,https://www.congress.gov/img/member/67745ec50b34857ecc909185_200.jpg,1,0
+M000871,"Mann, Tracey",,,HOUSE,Kansas,,Republican,,,,,,https://www.congress.gov/img/member/m000871_200.jpg,1,0
+D000629,"Davids, Sharice",,,HOUSE,Kansas,,Democratic,,,,,,https://www.congress.gov/img/member/d000629_200.jpg,1,1
+E000298,"Estes, Ron",,,HOUSE,Kansas,,Republican,,,,,,https://www.congress.gov/img/member/e000298_200.jpg,1,0
+M000934,"Moran, Jerry",,,SENATE,Kansas,,Republican,,,,,,https://www.congress.gov/img/member/m000934_200.jpg,0,0
+M001198,"Marshall, Roger",,,SENATE,Kansas,,Republican,,,,,,https://www.congress.gov/img/member/m001198_200.jpg,1,0
+M001220,"McGarvey, Morgan",,,HOUSE,Kentucky,,Democratic,,,,,,https://www.congress.gov/img/member/m001220_200.jpg,1,1
+C001108,"Comer, James",,,HOUSE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/c001108_200.jpg,1,0
+B001282,"Barr, Andy",,,HOUSE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/b001282_200.jpg,1,0
+M001184,"Massie, Thomas",,,HOUSE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/m001184_200.jpg,0,0
+G000558,"Guthrie, Brett",,,HOUSE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/g000558_200.jpg,1,0
+R000395,"Rogers, Harold",,,HOUSE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/r000395_200.jpg,1,0
+P000603,"Paul, Rand",,,SENATE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/p000603_200.jpg,0,0
+M000355,"McConnell, Mitch",,,SENATE,Kentucky,,Republican,,,,,,https://www.congress.gov/img/member/m000355_200.jpg,0,0
+F000110,"Fields, Cleo",,,HOUSE,Louisiana,,Democratic,,,,,,https://www.congress.gov/img/member/677426250b34857ecc90908f_200.jpg,0,0
+C001125,"Carter, Troy A.",,,HOUSE,Louisiana,,Democratic,,,,,,https://www.congress.gov/img/member/c001125_200.jpg,1,0
+L000595,"Letlow, Julia",,,HOUSE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/l000595_200.jpg,1,0
+J000299,"Johnson, Mike",,,HOUSE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/67ffcb2af22eaf56065817c4_200.jpg,1,0
+H001077,"Higgins, Clay",,,HOUSE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/h001077_200.jpg,1,0
+S001176,"Scalise, Steve",,,HOUSE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/s001176_200.jpg,1,0
+K000393,"Kennedy, John",,,SENATE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/k000393_200.jpg,0,0
+C001075,"Cassidy, Bill",,,SENATE,Louisiana,,Republican,,,,,,https://www.congress.gov/img/member/c001075_200.jpg,1,0
+G000592,"Golden, Jared F.",,,HOUSE,Maine,,Democratic,,,,,,https://www.congress.gov/img/member/g000592_200.jpg,1,1
+P000597,"Pingree, Chellie",,,HOUSE,Maine,,Democratic,,,,,,https://www.congress.gov/img/member/p000597_200.jpg,0,0
+K000383,"King, Angus S., Jr.",,,SENATE,Maine,,Independent,,,,,,https://www.congress.gov/img/member/k000383_200.jpg,1,0
+C001035,"Collins, Susan M.",,,SENATE,Maine,,Republican,,,,,,https://www.congress.gov/img/member/c001035_200.jpg,1,0
+O000176,"Olszewski, Johnny",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/67744f4e0b34857ecc90915b_200.jpg,0,1
+M001232,"McClain Delaney, April",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/677446d80b34857ecc90911f_200.jpg,0,1
+E000301,"Elfreth, Sarah",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/677425dc0b34857ecc909089_200.jpg,1,1
+I000058,"Ivey, Glenn",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/i000058_200.jpg,1,1
+M000687,"Mfume, Kweisi",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/m000687_200.jpg,1,1
+R000606,"Raskin, Jamie",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/r000606_200.jpg,0,0
+H001052,"Harris, Andy",,,HOUSE,Maryland,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_md_1_harris_andy_200.jpg,1,0
+H000874,"Hoyer, Steny H.",,,HOUSE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_md_5_hoyer_steny_200.jpg,1,1
+V000128,"Van Hollen, Chris",,,SENATE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/v000128_200.jpg,0,0
+A000382,"Alsobrooks, Angela D.",,,SENATE,Maryland,,Democratic,,,,,,https://www.congress.gov/img/member/67acdbbf044eb506e25958f2_200.jpg,0,1
+A000148,"Auchincloss, Jake",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/67817e391f9ad6ea6fb1ebda_200.jpg,1,1
+P000617,"Pressley, Ayanna",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/p000617_200.jpg,0,0
+T000482,"Trahan, Lori",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/t000482_200.jpg,0,0
+M001196,"Moulton, Seth",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/m001196_200.jpg,1,1
+C001101,"Clark, Katherine M.",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/c001101_200.jpg,1,1
+K000375,"Keating, William R.",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/k000375_200.jpg,1,0
+M000312,"McGovern, James P.",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/117_rp_ma_2_mcgovern_james_200.jpg,0,0
+N000015,"Neal, Richard E.",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/n000015_200.jpg,1,1
+L000562,"Lynch, Stephen F.",,,HOUSE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/l000562_200.jpg,0,0
+W000817,"Warren, Elizabeth",,,SENATE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/w000817_200.jpg,0,0
+M000133,"Markey, Edward J.",,,SENATE,Massachusetts,,Democratic,,,,,,https://www.congress.gov/img/member/m000133_200.jpg,0,0
+M001237,"McDonald Rivet, Kristen",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/67744afa0b34857ecc90913d_200.jpg,0,1
+B001321,"Barrett, Tom",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/6774207d0b34857ecc909034_200.jpg,0,0
+T000488,"Thanedar, Shri",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/68122bf2246d1b6bd8d9f6a2_200.jpg,1,0
+S001221,"Scholten, Hillary J.",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/s001221_200.jpg,1,1
+J000307,"James, John",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/j000307_200.jpg,1,0
+M001136,"McClain, Lisa C.",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/677836d41658e791a384976d_200.jpg,1,0
+T000481,"Tlaib, Rashida",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/t000481_200.jpg,0,0
+D000624,"Dingell, Debbie",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/d000624_200.jpg,0,0
+M001194,"Moolenaar, John R.",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/m001194_200.jpg,1,0
+H001058,"Huizenga, Bill",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/h001058_200.jpg,1,0
+W000798,"Walberg, Tim",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/w000798_200.jpg,1,0
+S001215,"Stevens, Haley M.",,,HOUSE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/s001215_200.jpg,1,1
+B001301,"Bergman, Jack",,,HOUSE,Michigan,,Republican,,,,,,https://www.congress.gov/img/member/b001301_200.jpg,1,0
+S001208,"Slotkin, Elissa",,,SENATE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/s001208_200.jpg,0,0
+P000595,"Peters, Gary C.",,,SENATE,Michigan,,Democratic,,,,,,https://www.congress.gov/img/member/p000595_200.jpg,0,0
+M001234,"Morrison, Kelly",,,HOUSE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/677449a70b34857ecc90912b_200.jpg,0,0
+F000475,"Finstad, Brad",,,HOUSE,Minnesota,,Republican,,,,,,https://www.congress.gov/img/member/f000475_200.jpg,1,0
+F000470,"Fischbach, Michelle",,,HOUSE,Minnesota,,Republican,,,,,,https://www.congress.gov/img/member/f000470_200.jpg,1,0
+C001119,"Craig, Angie",,,HOUSE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/c001119_200.jpg,1,1
+S001212,"Stauber, Pete",,,HOUSE,Minnesota,,Republican,,,,,,https://www.congress.gov/img/member/s001212_200.jpg,1,0
+O000173,"Omar, Ilhan",,,HOUSE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/o000173_200.jpg,0,0
+E000294,"Emmer, Tom",,,HOUSE,Minnesota,,Republican,,,,,,https://www.congress.gov/img/member/e000294_200.jpg,1,0
+M001143,"McCollum, Betty",,,HOUSE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_mn_4_mccollum_betty_200.jpg,0,0
+S001203,"Smith, Tina",,,SENATE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/s001203_200.jpg,0,1
+K000367,"Klobuchar, Amy",,,SENATE,Minnesota,,Democratic,,,,,,https://www.congress.gov/img/member/k000367_200.jpg,1,0
+E000235,"Ezell, Mike",,,HOUSE,Mississippi,,Republican,,,,,,https://www.congress.gov/img/member/e000235_200.jpg,1,0
+G000591,"Guest, Michael",,,HOUSE,Mississippi,,Republican,,,,,,https://www.congress.gov/img/member/g000591_200.jpg,1,0
+K000388,"Kelly, Trent",,,HOUSE,Mississippi,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_ms_1_kelly_trent_200.jpg,1,0
+T000193,"Thompson, Bennie G.",,,HOUSE,Mississippi,,Democratic,,,,,,https://www.congress.gov/img/member/t000193_200.jpg,0,0
+W000437,"Wicker, Roger F.",,,SENATE,Mississippi,,Republican,,,,,,https://www.congress.gov/img/member/f49ac425119375e9fe6a075762734079_200.jpg,1,0
+H001079,"Hyde-Smith, Cindy",,,SENATE,Mississippi,,Republican,,,,,,https://www.congress.gov/img/member/h001079_200.jpg,0,0
+O000177,"Onder, Robert F.",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/67744f970b34857ecc909161_200.jpg,1,0
+B001324,"Bell, Wesley",,,HOUSE,Missouri,,Democratic,,,,,,https://www.congress.gov/img/member/677422240b34857ecc90904a_200.jpg,1,1
+B001316,"Burlison, Eric",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/b001316_200.jpg,1,0
+A000379,"Alford, Mark",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/a000379_200.jpg,1,0
+S001195,"Smith, Jason",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/s001195_200.jpg,1,0
+W000812,"Wagner, Ann",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/w000812_200.jpg,1,0
+C001061,"Cleaver, Emanuel",,,HOUSE,Missouri,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_mo_5_cleaver_emanuel_200.jpg,1,0
+G000546,"Graves, Sam",,,HOUSE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/g000546_200.jpg,1,0
+S001227,"Schmitt, Eric",,,SENATE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/b66a0806e77f63e862391b15a0b1f753_200.jpg,0,0
+H001089,"Hawley, Josh",,,SENATE,Missouri,,Republican,,,,,,https://www.congress.gov/img/member/h001089_200.jpg,1,0
+D000634,"Downing, Troy",,,HOUSE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/677424da0b34857ecc909077_200.jpg,1,0
+Z000018,"Zinke, Ryan K.",,,HOUSE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_mt_1_zinke_ryan_200.jpg,1,0
+S001232,"Sheehy, Tim",,,SENATE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/677d8231fdb6cf36bbb6498b_200.jpg,0,0
+D000618,"Daines, Steve",,,SENATE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/d000618_200.jpg,1,0
+F000474,"Flood, Mike",,,HOUSE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/67b4de4a61bd80d04553b0a5_200.jpg,1,0
+B001298,"Bacon, Don",,,HOUSE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_ne_2_bacon_don_200.jpg,1,0
+S001172,"Smith, Adrian",,,HOUSE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/s001172_200.jpg,1,0
+R000618,"Ricketts, Pete",,,SENATE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/r000618_200.jpg,1,0
+F000463,"Fischer, Deb",,,SENATE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/669ec7925d19788d1f2034a1_200.jpg,1,0
+L000590,"Lee, Susie",,,HOUSE,Nevada,,Democratic,,,,,,https://www.congress.gov/img/member/l000590_200.jpg,1,1
+H001066,"Horsford, Steven",,,HOUSE,Nevada,,Democratic,,,,,,https://www.congress.gov/img/member/h001066_200.jpg,1,1
+A000369,"Amodei, Mark E.",,,HOUSE,Nevada,,Republican,,,,,,https://www.congress.gov/img/member/a000369_200.jpg,1,0
+T000468,"Titus, Dina",,,HOUSE,Nevada,,Democratic,,,,,,https://www.congress.gov/img/member/6809296b6c2e6631263de728_200.jpg,1,1
+R000608,"Rosen, Jacky",,,SENATE,Nevada,,Democratic,,,,,,https://www.congress.gov/img/member/r000608_200.jpg,1,1
+C001113,"Cortez Masto, Catherine",,,SENATE,Nevada,,Democratic,,,,,,https://www.congress.gov/img/member/c001113_200.jpg,0,1
+G000604,"Goodlander, Maggie",,,HOUSE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/678ff62d66bf616cf1a7ce13_200.jpg,1,0
+P000614,"Pappas, Chris",,,HOUSE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/p000614_200.jpg,1,1
+S001181,"Shaheen, Jeanne",,,SENATE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/s001181_200.jpg,0,1
+H001076,"Hassan, Margaret Wood",,,SENATE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/h001076_200.jpg,0,0
+P000621,"Pou, Nellie",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/67745d3b0b34857ecc909167_200.jpg,0,1
+C001136,"Conaway, Herbert C.",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/6774243a0b34857ecc90906b_200.jpg,1,1
+M001229,"McIver, LaMonica",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/681dfed94fc893ce843e24b8_200.jpg,0,0
+M001226,"Menendez, Robert",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/681231f6246d1b6bd8d9f6b4_200.jpg,1,1
+K000398,"Kean, Thomas H.",,,HOUSE,New Jersey,,Republican,,,,,,https://www.congress.gov/img/member/k000398_200.jpg,1,0
+V000133,"Van Drew, Jefferson",,,HOUSE,New Jersey,,Republican,,,,,,https://www.congress.gov/img/member/67c0c39d53fe81a4b3c0cac1_200.jpg,1,0
+S001207,"Sherrill, Mikie",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/s001207_200.jpg,1,1
+G000583,"Gottheimer, Josh",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_nj_5_gottheimer_josh_200.jpg,1,1
+W000822,"Watson Coleman, Bonnie",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/w000822_200.jpg,0,0
+N000188,"Norcross, Donald",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/n000188_200.jpg,1,1
+P000034,"Pallone, Frank",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/p000034_200.jpg,1,0
+S000522,"Smith, Christopher H.",,,HOUSE,New Jersey,,Republican,,,,,,https://www.congress.gov/img/member/s000522_200.jpg,1,0
+K000394,"Kim, Andy",,,SENATE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/677d84cbfdb6cf36bbb649a1_200.jpg,0,1
+B001288,"Booker, Cory A.",,,SENATE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/b001288_200.jpg,1,1
+V000136,"Vasquez, Gabe",,,HOUSE,New Mexico,,Democratic,,,,,,https://www.congress.gov/img/member/v000136_200.jpg,0,0
+S001218,"Stansbury, Melanie A.",,,HOUSE,New Mexico,,Democratic,,,,,,https://www.congress.gov/img/member/s001218_200.jpg,0,0
+L000273,"Leger Fernandez, Teresa",,,HOUSE,New Mexico,,Democratic,,,,,,https://www.congress.gov/img/member/l000273_200.jpg,0,1
+L000570,"Luján, Ben Ray",,,SENATE,New Mexico,,Democratic,,,,,,https://www.congress.gov/img/member/l000570_200.jpg,0,0
+H001046,"Heinrich, Martin",,,SENATE,New Mexico,,Democratic,,,,,,https://www.congress.gov/img/member/h001046_200.jpg,0,0
+R000622,"Riley, Josh",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/67745e360b34857ecc909179_200.jpg,1,1
+M001231,"Mannion, John W.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/677446860b34857ecc909119_200.jpg,0,0
+L000606,"Latimer, George",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/6774301b0b34857ecc909107_200.jpg,1,1
+G000602,"Gillen, Laura",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/677427de0b34857ecc9090ad_200.jpg,1,1
+K000402,"Kennedy, Timothy M.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/668e9306658443009a697c8c_200.jpg,1,1
+S001201,"Suozzi, Thomas R.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ny_3_suozzi_thomas_200.jpg,1,1
+L000599,"Lawler, Michael",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/l000599_200.jpg,1,0
+L000600,"Langworthy, Nicholas A.",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/680901e76c2e6631263de716_200.jpg,1,0
+L000598,"LaLota, Nick",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/l000598_200.jpg,1,0
+G000599,"Goldman, Daniel S.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/g000599_200.jpg,1,1
+R000579,"Ryan, Patrick",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/r000579_200.jpg,1,1
+T000478,"Tenney, Claudia",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/t000478_200.jpg,1,0
+N000002,"Nadler, Jerrold",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/n000002_200.jpg,1,0
+T000486,"Torres, Ritchie",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/t000486_200.jpg,1,1
+M000317,"Malliotakis, Nicole",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/m000317_200.jpg,1,0
+G000597,"Garbarino, Andrew R.",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/g000597_200.jpg,1,0
+O000172,"Ocasio-Cortez, Alexandria",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/o000172_200.jpg,0,0
+M001206,"Morelle, Joseph D.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/67ffc962f22eaf56065817bb_200.jpg,1,1
+E000297,"Espaillat, Adriano",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/e000297_200.jpg,1,1
+S001196,"Stefanik, Elise M.",,,HOUSE,New York,,Republican,,,,,,https://www.congress.gov/img/member/s001196_200.jpg,1,0
+C001067,"Clarke, Yvette D.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/674dfc6b5c48ff736e6e1762_200.jpg,1,0
+T000469,"Tonko, Paul",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/t000469_200.jpg,0,0
+M001137,"Meeks, Gregory W.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/m001137_200.jpg,1,1
+V000081,"Velázquez, Nydia M.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/v000081_200.jpg,0,0
+J000294,"Jeffries, Hakeem S.",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/j000294_200.jpg,1,1
+M001188,"Meng, Grace",,,HOUSE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/m001188_200.jpg,1,1
+S000148,"Schumer, Charles E.",,,SENATE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/s000148_200.jpg,1,0
+G000555,"Gillibrand, Kirsten E.",,,SENATE,New York,,Democratic,,,,,,https://www.congress.gov/img/member/g000555_200.jpg,1,1
+M001240,"McDowell, Addison P.",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/67744e930b34857ecc90914f_200.jpg,1,0
+M001236,"Moore, Tim",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/67744a540b34857ecc909137_200.jpg,1,0
+K000405,"Knott, Brad",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/67742fc60b34857ecc909101_200.jpg,1,0
+H001102,"Harris, Mark",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/67742d1b0b34857ecc9090dd_200.jpg,1,0
+H001101,"Harrigan, Pat",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/67742ca40b34857ecc9090d7_200.jpg,1,0
+F000477,"Foushee, Valerie P.",,,HOUSE,North Carolina,,Democratic,,,,,,https://www.congress.gov/img/member/68122e57246d1b6bd8d9f6ab_200.jpg,1,1
+E000246,"Edwards, Chuck",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/e000246_200.jpg,1,0
+D000230,"Davis, Donald G.",,,HOUSE,North Carolina,,Democratic,,,,,,https://www.congress.gov/img/member/d000230_200.jpg,1,1
+H001067,"Hudson, Richard",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/h001067_200.jpg,1,0
+R000305,"Ross, Deborah K.",,,HOUSE,North Carolina,,Democratic,,,,,,https://www.congress.gov/img/member/r000305_200.jpg,1,1
+M001210,"Murphy, Gregory F.",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/m001210_200.jpg,1,0
+R000603,"Rouzer, David",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/r000603_200.jpg,1,0
+A000370,"Adams, Alma S.",,,HOUSE,North Carolina,,Democratic,,,,,,https://www.congress.gov/img/member/a000370_200.jpg,0,0
+F000450,"Foxx, Virginia",,,HOUSE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_nc_5_foxx_virginia_200.jpg,1,0
+T000476,"Tillis, Thomas",,,SENATE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/t000476_200.jpg,1,0
+B001305,"Budd, Ted",,,SENATE,North Carolina,,Republican,,,,,,https://www.congress.gov/img/member/b001305_200.jpg,0,0
+F000482,"Fedorchak, Julie",,,HOUSE,North Dakota,,Republican,,,,,,https://www.congress.gov/img/member/677426c20b34857ecc90909b_200.jpg,1,0
+H001061,"Hoeven, John",,,SENATE,North Dakota,,Republican,,,,,,https://www.congress.gov/img/member/h001061_200.jpg,0,0
+C001096,"Cramer, Kevin",,,SENATE,North Dakota,,Republican,,,,,,https://www.congress.gov/img/member/c001096_200.jpg,1,0
+K000404,"King-Hinds, Kimberlyn",,,HOUSE,Northern Mariana Islands,,Republican,,,,,,https://www.congress.gov/img/member/67742f0a0b34857ecc9090fb_200.jpg,0,0
+T000490,"Taylor, David J.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/677460190b34857ecc9091a3_200.jpg,1,0
+R000619,"Rulli, Michael A.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/668e9425658443009a697c95_200.jpg,1,0
+S001223,"Sykes, Emilia Strong",,,HOUSE,Ohio,,Democratic,,,,,,https://www.congress.gov/img/member/s001223_200.jpg,1,1
+M001222,"Miller, Max L.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/680908fb6c2e6631263de71f_200.jpg,1,0
+L000601,"Landsman, Greg",,,HOUSE,Ohio,,Democratic,,,,,,https://www.congress.gov/img/member/l000601_200.jpg,1,1
+C001126,"Carey, Mike",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/c001126_200.jpg,1,0
+B001313,"Brown, Shontel M.",,,HOUSE,Ohio,,Democratic,,,,,,https://www.congress.gov/img/member/b001313_200.jpg,1,1
+B001306,"Balderson, Troy",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_oh_12_balderson_troy_200.jpg,1,0
+D000626,"Davidson, Warren",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_oh_8_davidson_warren_200.jpg,0,0
+T000463,"Turner, Michael R.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/68014c674e51529406f18e56_200.jpg,1,0
+J000295,"Joyce, David P.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/j000295_200.jpg,1,0
+B001281,"Beatty, Joyce",,,HOUSE,Ohio,,Democratic,,,,,,https://www.congress.gov/img/member/b001281_200.jpg,1,1
+L000566,"Latta, Robert E.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/l000566_200.jpg,1,0
+J000289,"Jordan, Jim",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/j000289_200.jpg,1,0
+K000009,"Kaptur, Marcy",,,HOUSE,Ohio,,Democratic,,,,,,https://www.congress.gov/img/member/k000009_200.jpg,0,0
+M001242,"Moreno, Bernie",,,SENATE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/67c8694e6159152e59828afb_200.jpg,0,0
+H001104,"Husted, Jon",,,SENATE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/67f0316b1b05a5a598f7fdf3_200.jpg,0,0
+B001317,"Brecheen, Josh",,,HOUSE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/b001317_200.jpg,1,0
+B000740,"Bice, Stephanie I.",,,HOUSE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/b000740_200.jpg,1,0
+H001082,"Hern, Kevin",,,HOUSE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/h001082_200.jpg,1,0
+L000491,"Lucas, Frank D.",,,HOUSE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_ok_3_lucas_frank_200.jpg,1,0
+C001053,"Cole, Tom",,,HOUSE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/c001053_200.jpg,1,0
+M001190,"Mullin, Markwayne",,,SENATE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/m001190_200.jpg,1,0
+L000575,"Lankford, James",,,SENATE,Oklahoma,,Republican,,,,,,https://www.congress.gov/img/member/l000575_200.jpg,1,0
+D000635,"Dexter, Maxine",,,HOUSE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/677425260b34857ecc90907d_200.jpg,0,0
+B001326,"Bynum, Janelle S.",,,HOUSE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/677423150b34857ecc909059_200.jpg,0,1
+S001226,"Salinas, Andrea",,,HOUSE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/s001226_200.jpg,1,1
+H001094,"Hoyle, Val T.",,,HOUSE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/h001094_200.jpg,0,1
+B000668,"Bentz, Cliff",,,HOUSE,Oregon,,Republican,,,,,,https://www.congress.gov/img/member/b000668_200.jpg,1,0
+B001278,"Bonamici, Suzanne",,,HOUSE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/b001278_200.jpg,1,0
+W000779,"Wyden, Ron",,,SENATE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/w000779_200.jpg,0,0
+M001176,"Merkley, Jeff",,,SENATE,Oregon,,Democratic,,,,,,https://www.congress.gov/img/member/m001176_200.jpg,0,0
+M001230,"Mackenzie, Ryan",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/677430a40b34857ecc909113_200.jpg,0,0
+B001327,"Bresnahan, Robert P.",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/6774236f0b34857ecc90905f_200.jpg,1,0
+L000602,"Lee, Summer L.",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/l000602_200.jpg,0,0
+D000530,"Deluzio, Christopher R.",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/d000530_200.jpg,1,1
+S001205,"Scanlon, Mary Gay",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_pa_5_scanlon_mary_200.jpg,0,0
+R000610,"Reschenthaler, Guy",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/r000610_200.jpg,1,0
+J000302,"Joyce, John",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/j000302_200.jpg,0,0
+M001204,"Meuser, Daniel",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/6776ebbf4f8a93753830ca7d_200.jpg,1,0
+H001085,"Houlahan, Chrissy",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/681bc0e6b763f94d6e471f50_200.jpg,1,1
+D000631,"Dean, Madeleine",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/d000631_200.jpg,0,0
+S001199,"Smucker, Lloyd",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/s001199_200.jpg,1,0
+E000296,"Evans, Dwight",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_pa_2_evans_dwight_200.jpg,0,0
+B001296,"Boyle, Brendan F.",,,HOUSE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_pa_13_boyle_brendan_200.jpg,1,1
+P000605,"Perry, Scott",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/677ec7d3514c773869b6b915_200.jpg,1,0
+K000376,"Kelly, Mike",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/k000376_200.jpg,1,0
+T000467,"Thompson, Glenn",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_pa_5_thompson_glenn_200.jpg,1,0
+F000466,"Fitzpatrick, Brian K.",,,HOUSE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_pa_1_fitzpatrick_brian_200.jpg,1,0
+M001243,"McCormick, David",,,SENATE,Pennsylvania,,Republican,,,,,,https://www.congress.gov/img/member/677d85e0fdb6cf36bbb649aa_200.jpg,0,0
+F000479,"Fetterman, John",,,SENATE,Pennsylvania,,Democratic,,,,,,https://www.congress.gov/img/member/f000479_200.jpg,0,1
+H001103,"Hernández, Pablo Jose",,,HOUSE,Puerto Rico,,Democratic,,,,,,https://www.congress.gov/img/member/67742d980b34857ecc9090e3_200.jpg,0,0
+A000380,"Amo, Gabe",,,HOUSE,Rhode Island,,Democratic,,,,,,https://www.congress.gov/img/member/669ace45fa2fb0d731226768_200.jpg,1,1
+M001223,"Magaziner, Seth",,,HOUSE,Rhode Island,,Democratic,,,,,,https://www.congress.gov/img/member/m001223_200.jpg,1,1
+W000802,"Whitehouse, Sheldon",,,SENATE,Rhode Island,,Democratic,,,,,,https://www.congress.gov/img/member/w000802_200.jpg,1,0
+R000122,"Reed, Jack",,,SENATE,Rhode Island,,Democratic,,,,,,https://www.congress.gov/img/member/r000122_200.jpg,1,1
+B001325,"Biggs, Sheri",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/677422990b34857ecc909052_200.jpg,1,0
+F000478,"Fry, Russell",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/f000478_200.jpg,1,0
+M000194,"Mace, Nancy",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/m000194_200.jpg,1,0
+T000480,"Timmons, William R.",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/t000480_200.jpg,1,0
+N000190,"Norman, Ralph",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/n000190_200.jpg,1,0
+W000795,"Wilson, Joe",,,HOUSE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_sc_2_wilson_joe_200.jpg,1,0
+C000537,"Clyburn, James E.",,,HOUSE,South Carolina,,Democratic,,,,,,https://www.congress.gov/img/member/c000537_200.jpg,1,1
+S001184,"Scott, Tim",,,SENATE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/s001184_200.jpg,0,0
+G000359,"Graham, Lindsey",,,SENATE,South Carolina,,Republican,,,,,,https://www.congress.gov/img/member/g000359_200.jpg,1,0
+J000301,"Johnson, Dusty",,,HOUSE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/j000301_200.jpg,1,0
+T000250,"Thune, John",,,SENATE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/t000250_200.jpg,0,0
+R000605,"Rounds, Mike",,,SENATE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/r000605_200.jpg,1,0
+O000175,"Ogles, Andrew",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/o000175_200.jpg,1,0
+H001086,"Harshbarger, Diana",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/h001086_200.jpg,1,0
+R000612,"Rose, John W.",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/r000612_200.jpg,1,0
+B001309,"Burchett, Tim",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/b001309_200.jpg,1,0
+K000392,"Kustoff, David",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_tn_8_kustoff_david_200.jpg,1,0
+D000616,"DesJarlais, Scott",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/d000616_200.jpg,0,0
+F000459,"Fleischmann, Charles J. ""Chuck""",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/f000459_200.jpg,0,0
+C001068,"Cohen, Steve",,,HOUSE,Tennessee,,Democratic,,,,,,https://www.congress.gov/img/member/c001068_200.jpg,0,0
+H000601,"Hagerty, Bill",,,SENATE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/h000601_200.jpg,1,0
+B001243,"Blackburn, Marsha",,,SENATE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/b001243_200.jpg,1,0
+J000310,"Johnson, Julie",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/67742df60b34857ecc9090e9_200.jpg,1,1
+G000603,"Gill, Brandon",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/677428ac0b34857ecc9090b3_200.jpg,1,0
+G000601,"Goldman, Craig A.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/6774277d0b34857ecc9090a7_200.jpg,1,0
+S001224,"Self, Keith",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/s001224_200.jpg,1,0
+M001224,"Moran, Nathaniel",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/680008c5f22eaf56065817f4_200.jpg,1,0
+L000603,"Luttrell, Morgan",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/l000603_200.jpg,1,0
+H001095,"Hunt, Wesley",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/h001095_200.jpg,1,0
+D000594,"De La Cruz, Monica",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/66d9fd54f440bf1dc174fbf6_200.jpg,1,0
+C001130,"Crockett, Jasmine",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/c001130_200.jpg,0,0
+C001131,"Casar, Greg",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/c001131_200.jpg,0,0
+G000581,"Gonzalez, Vicente",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/115_rp_tx_15_gonzalez_vicente_200.jpg,1,1
+G000553,"Green, Al",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_tx_9_green_al_200.jpg,0,0
+D000399,"Doggett, Lloyd",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/d000399_200.jpg,0,0
+E000071,"Ellzey, Jake",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/e000071_200.jpg,1,0
+V000134,"Van Duyne, Beth",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/677461060b34857ecc9091af_200.jpg,1,0
+N000026,"Nehls, Troy E.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/n000026_200.jpg,1,0
+J000304,"Jackson, Ronny",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/j000304_200.jpg,1,0
+G000594,"Gonzales, Tony",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/g000594_200.jpg,1,0
+S000250,"Sessions, Pete",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_tx_32_sessions_pete_200.jpg,1,0
+P000048,"Pfluger, August",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/p000048_200.jpg,1,0
+F000246,"Fallon, Pat",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/f000246_200.jpg,1,0
+G000587,"Garcia, Sylvia R.",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/g000587_200.jpg,1,0
+R000614,"Roy, Chip",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/r000614_200.jpg,0,0
+E000299,"Escobar, Veronica",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/e000299_200.jpg,0,0
+F000468,"Fletcher, Lizzie",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/67813f931f9ad6ea6fb1eb6f_200.jpg,1,1
+G000589,"Gooden, Lance",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/g000589_200.jpg,1,0
+C001120,"Crenshaw, Dan",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/c001120_200.jpg,1,0
+C001115,"Cloud, Michael",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_tx_27_cloud_michael_200.jpg,1,0
+A000375,"Arrington, Jodey C.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_tx_19_arrington_jodey_200.jpg,1,0
+B001291,"Babin, Brian",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/b001291_200.jpg,1,0
+V000131,"Veasey, Marc A.",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/v000131_200.jpg,1,0
+W000816,"Williams, Roger",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/w000816_200.jpg,1,0
+C001091,"Castro, Joaquin",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/c001091_200.jpg,0,0
+W000814,"Weber, Randy K. Sr.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/w000814_200.jpg,1,0
+C001063,"Cuellar, Henry",,,HOUSE,Texas,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_tx_28_cuellar_henry_200.jpg,1,0
+M001157,"McCaul, Michael T.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_tx_10_mccaul_michael_200.jpg,1,0
+C001051,"Carter, John R.",,,HOUSE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/c001051_200.jpg,1,0
+C001098,"Cruz, Ted",,,SENATE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/c001098_200.jpg,1,0
+C001056,"Cornyn, John",,,SENATE,Texas,,Republican,,,,,,https://www.congress.gov/img/member/c001056_200.jpg,1,0
+K000403,"Kennedy, Mike",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/67742e7c0b34857ecc9090f5_200.jpg,1,0
+M001228,"Maloy, Celeste",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/m001228_200.jpg,1,0
+O000086,"Owens, Burgess",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/o000086_200.jpg,1,0
+M001213,"Moore, Blake D.",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/m001213_200.jpg,1,0
+L000577,"Lee, Mike",,,SENATE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/l000577_200.jpg,0,0
+C001114,"Curtis, John R.",,,SENATE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/1b9d1007d6895a37da28a67cd8149803_200.jpg,1,0
+B001318,"Balint, Becca",,,HOUSE,Vermont,,Democratic,,,,,,https://www.congress.gov/img/member/b001318_200.jpg,0,0
+W000800,"Welch, Peter",,,SENATE,Vermont,,Democratic,,,,,,https://www.congress.gov/img/member/fd3cb364b8bf93c25834cff750637802_200.jpg,0,0
+S000033,"Sanders, Bernard",,,SENATE,Vermont,,Independent,,,,,,https://www.congress.gov/img/member/s000033_200.jpg,0,0
+P000610,"Plaskett, Stacey E.",,,HOUSE,Virgin Islands,,Democratic,,,,,,https://www.congress.gov/img/member/116_dg_vi_plaskett_stacey_200.jpg,0,0
+V000138,"Vindman, Eugene Simon",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/6774617a0b34857ecc9091b5_200.jpg,0,0
+S001230,"Subramanyam, Suhas",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/6797be8bc75fbc6f720e476a_200.jpg,1,0
+M001239,"McGuire, John J.",,,HOUSE,Virginia,,Republican,,,,,,https://www.congress.gov/img/member/67744ba20b34857ecc909149_200.jpg,1,0
+M001227,"McClellan, Jennifer L.",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/m001227_200.jpg,1,1
+K000399,"Kiggans, Jennifer A.",,,HOUSE,Virginia,,Republican,,,,,,https://www.congress.gov/img/member/66b0ce45b0288a917d98f619_200.jpg,1,0
+C001118,"Cline, Ben",,,HOUSE,Virginia,,Republican,,,,,,https://www.congress.gov/img/member/c001118_200.jpg,1,0
+W000831,"Walkinshaw, James R.",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/68c1bd4ca929c5b98220e069_200.jpg,0,0
+B001292,"Beyer, Donald S.",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/b001292_200.jpg,0,0
+W000804,"Wittman, Robert J.",,,HOUSE,Virginia,,Republican,,,,,,https://www.congress.gov/img/member/w000804_200.jpg,1,0
+G000568,"Griffith, H. Morgan",,,HOUSE,Virginia,,Republican,,,,,,https://www.congress.gov/img/member/68094df86c2e6631263de737_200.jpg,0,0
+S000185,"Scott, Robert C. ""Bobby""",,,HOUSE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/s000185_200.jpg,0,0
+W000805,"Warner, Mark R.",,,SENATE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/w000805_200.jpg,1,1
+K000384,"Kaine, Tim",,,SENATE,Virginia,,Democratic,,,,,,https://www.congress.gov/img/member/k000384_200.jpg,0,0
+B001322,"Baumgartner, Michael",,,HOUSE,Washington,,Republican,,,,,,https://www.congress.gov/img/member/6774212e0b34857ecc90903a_200.jpg,1,0
+G000600,"Perez, Marie Gluesenkamp",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/g000600_200.jpg,1,1
+S001159,"Strickland, Marilyn",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/s001159_200.jpg,1,1
+S001216,"Schrier, Kim",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/s001216_200.jpg,1,1
+J000298,"Jayapal, Pramila",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_wa_7_jayapal_pramila_200.jpg,0,0
+N000189,"Newhouse, Dan",,,HOUSE,Washington,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_wa_4_newhouse_dan_200.jpg,1,0
+D000617,"DelBene, Suzan K.",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/d000617_200.jpg,1,1
+R000621,"Randall, Emily",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/67745dcf0b34857ecc909173_200.jpg,1,0
+S000510,"Smith, Adam",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_wa_9_smith_adam_200.jpg,1,1
+L000560,"Larsen, Rick",,,HOUSE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_wa_2_larsen_rick_200.jpg,1,1
+M001111,"Murray, Patty",,,SENATE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/1b52ad6d215684d847d1c2bf28b9b262_200.jpg,0,1
+C000127,"Cantwell, Maria",,,SENATE,Washington,,Democratic,,,,,,https://www.congress.gov/img/member/c000127_200.jpg,1,0
+M001235,"Moore, Riley M.",,,HOUSE,West Virginia,,Republican,,,,,,https://www.congress.gov/img/member/677449fd0b34857ecc909131_200.jpg,1,0
+M001205,"Miller, Carol D.",,,HOUSE,West Virginia,,Republican,,,,,,https://www.congress.gov/img/member/m001205_200.jpg,1,0
+J000312,"Justice, James C.",,,SENATE,West Virginia,,Republican,,,,,,https://www.congress.gov/img/member/67c86b5e6159152e59828b1a_200.jpg,1,0
+C001047,"Capito, Shelley Moore",,,SENATE,West Virginia,,Republican,,,,,,https://www.congress.gov/img/member/c001047_200.jpg,1,0
+W000829,"Wied, Tony",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/6734b6724c72e343a6aff9e6_200.jpg,1,0
+V000135,"Van Orden, Derrick",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/v000135_200.jpg,1,0
+F000471,"Fitzgerald, Scott",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/f000471_200.jpg,1,0
+T000165,"Tiffany, Thomas P.",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/t000165_200.jpg,0,0
+S001213,"Steil, Bryan",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/s001213_200.jpg,1,0
+G000576,"Grothman, Glenn",,,HOUSE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/116_rp_wi_6_grothman_glenn_200.jpg,1,0
+P000607,"Pocan, Mark",,,HOUSE,Wisconsin,,Democratic,,,,,,https://www.congress.gov/img/member/p000607_200.jpg,0,0
+M001160,"Moore, Gwen",,,HOUSE,Wisconsin,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_wi_4_moore_gwen_200.jpg,0,0
+J000293,"Johnson, Ron",,,SENATE,Wisconsin,,Republican,,,,,,https://www.congress.gov/img/member/j000293_200.jpg,0,0
+B001230,"Baldwin, Tammy",,,SENATE,Wisconsin,,Democratic,,,,,,https://www.congress.gov/img/member/b001230_200.jpg,0,0
+H001096,"Hageman, Harriet M.",,,HOUSE,Wyoming,,Republican,,,,,,https://www.congress.gov/img/member/h001096_200.jpg,1,0
+L000571,"Lummis, Cynthia M.",,,SENATE,Wyoming,,Republican,,,,,,https://www.congress.gov/img/member/l000571_200.jpg,1,0
+B001261,"Barrasso, John",,,SENATE,Wyoming,,Republican,,,,,,https://www.congress.gov/img/member/b001261_200.jpg,1,0

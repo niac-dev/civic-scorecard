@@ -1,6 +1,6 @@
 // src/lib/loadCsv.ts
 import Papa from "papaparse";
-import type { Row, Meta } from "./types";
+import type { Row, Meta, ManualScoringMeta } from "./types";
 
 async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
   const res = await fetch(path, { cache: "no-store" });
@@ -102,4 +102,29 @@ export async function loadData(): Promise<{
   const categories = Array.from(catSet).sort();
 
   return { rows, columns, metaByCol, categories };
+}
+
+/**
+ * Load manual scoring metadata from manual_scoring_meta.csv
+ * Returns a Map from "label|score" to custom_scoring_description
+ */
+export async function loadManualScoringMeta(): Promise<Map<string, string>> {
+  const data = await fetchCSV<{ label: string; score: string; custom_scoring_description: string }>(
+    "/data/manual_scoring_meta.csv"
+  );
+
+  const map = new Map<string, string>();
+  data.forEach((row) => {
+    const label = row.label?.trim();
+    const score = parseFloat(row.score);
+    const description = row.custom_scoring_description?.trim();
+
+    if (label && !isNaN(score) && description) {
+      // Create a key combining label and score
+      const key = `${label}|${score}`;
+      map.set(key, description);
+    }
+  });
+
+  return map;
 }

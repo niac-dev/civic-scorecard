@@ -3,7 +3,7 @@
 "use client";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { loadData } from "@/lib/loadCsv";
+import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
@@ -367,12 +367,14 @@ export default function Page() {
   const [selected, setSelected] = useState<Row | null>(null);
   const [selectedCell, setSelectedCell] = useState<{rowId: string, col: string} | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
+  const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
 
   useEffect(() => { (async () => {
-    const [data, pacData] = await Promise.all([loadData(), loadPacData()]);
+    const [data, pacData, manualMeta] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta()]);
     const { rows, columns, metaByCol, categories } = data;
     setRows(rows); setCols(columns); setMeta(metaByCol); setCategories(categories);
     setPacDataMap(pacData);
+    setManualScoringMeta(manualMeta);
   })(); }, []);
 
   const f = useFilters();
@@ -1041,6 +1043,7 @@ export default function Page() {
           billCols={allBillCols}
           metaByCol={metaByCol}
           categories={categories}
+          manualScoringMeta={manualScoringMeta}
           onClose={() => setSelected(null)}
         />
       )}

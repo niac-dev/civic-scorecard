@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { loadData } from "@/lib/loadCsv";
+import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed } from "@/lib/pacData";
 import type { Row } from "@/lib/types";
 import clsx from "clsx";
@@ -16,10 +16,11 @@ export default function AipacPage() {
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [chamberFilter, setChamberFilter] = useState<string>("");
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
+  const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     (async () => {
-      const [{ rows }, pacDataMap] = await Promise.all([loadData(), loadPacData()]);
+      const [{ rows }, pacDataMap, manualMeta] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta()]);
 
       const supportedList: Row[] = [];
       const notSupportedList: Row[] = [];
@@ -36,6 +37,7 @@ export default function AipacPage() {
 
       setSupported(supportedList.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
       setNotSupported(notSupportedList.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
+      setManualScoringMeta(manualMeta);
     })();
   }, []);
 
@@ -258,6 +260,7 @@ export default function AipacPage() {
       {selectedMember && (
         <MemberModal
           row={selectedMember}
+          manualScoringMeta={manualScoringMeta}
           onClose={() => setSelectedMember(null)}
         />
       )}
