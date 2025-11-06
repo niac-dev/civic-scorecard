@@ -2015,6 +2015,9 @@ export default function Page() {
                             const capitalizedLastName = memberLastName.charAt(0).toUpperCase() + memberLastName.slice(1);
                             const title = r.chamber === "SENATE" ? "Sen." : "Rep.";
 
+                            // Lightweight variables for tooltip text (only computed when tooltip is open)
+                            const isVote = actionType.includes('vote');
+
                             if (notApplicable || manualActionNotApplicable) {
                               return <span className="text-xs text-slate-400">N/A</span>;
                             } else if (votedPresent) {
