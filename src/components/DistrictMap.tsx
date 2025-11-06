@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row } from '@/lib/types';
@@ -12,7 +12,7 @@ interface DistrictMapProps {
   chamber?: string; // "HOUSE" or "SENATE"
 }
 
-export default function DistrictMap({ members, onMemberClick, onStateClick, chamber }: DistrictMapProps) {
+function DistrictMap({ members, onMemberClick, onStateClick, chamber }: DistrictMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const popup = useRef<maplibregl.Popup | null>(null);
@@ -73,7 +73,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
       try {
         const isSenate = chamber === 'SENATE' || !chamber; // Both mode (no chamber) shows states too
         const isBothMode = !chamber; // Both mode when chamber is empty/undefined
-        console.log(`Starting to load ${isSenate ? 'state' : 'district'} data... (Both mode: ${isBothMode})`);
 
         // Load appropriate GeoJSON file based on chamber
         const dataUrl = isSenate
@@ -81,21 +80,12 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           : '/data/districts/congressional-districts-118th.geojson';    // District boundaries for House
 
         const response = await fetch(dataUrl);
-        console.log('Fetch response status:', response.status, response.ok);
 
         if (!response.ok) {
           throw new Error(`Failed to load ${isSenate ? 'state' : 'district'} data: ${response.status} ${response.statusText}`);
         }
 
         const geoJsonData = await response.json();
-
-        console.log('Loaded geo data:', {
-          type: geoJsonData.type,
-          featureCount: geoJsonData.features?.length,
-          firstFeature: geoJsonData.features?.[0],
-          sampleFeatureProperties: geoJsonData.features?.[0]?.properties,
-          sampleFeatureId: geoJsonData.features?.[0]?.id
-        });
 
         // Add data source
         map.current.addSource('districts', {
@@ -201,10 +191,8 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           // For Senate or Both mode: group members by state and calculate average grade
           const membersByState: Record<string, Row[]> = {};
 
-          console.log('Processing members for state view. Total members:', members.length);
           const senateMembersCount = members.filter(m => m.chamber === 'SENATE').length;
           const houseMembersCount = members.filter(m => m.chamber === 'HOUSE').length;
-          console.log('Senate members found:', senateMembersCount, 'House members found:', houseMembersCount);
 
           members.forEach((member) => {
             // In Both mode, include all members; in Senate mode, only senators
@@ -212,7 +200,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
               const state = member.state;
               const fips = getStateFips(state);
 
-              console.log('Processing member:', member.full_name, 'Chamber:', member.chamber, 'State:', state, 'FIPS:', fips, 'Grade:', member.Grade);
 
               if (fips) {
                 if (!membersByState[fips]) {
@@ -223,7 +210,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             }
           });
 
-          console.log('States with members:', Object.keys(membersByState).length);
 
           // Calculate average grade for each state
           Object.entries(membersByState).forEach(([fips, stateMembers]) => {
@@ -261,11 +247,9 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
 
               districtGrades[fips] = avgGrade;
               districtMembers[fips] = stateMembers;
-              console.log('Mapped state:', fips, 'Avg Grade:', avgGrade, 'Members:', stateMembers.map(m => `${m.full_name} (${m.chamber})`));
             }
           });
 
-          console.log('State grades mapped:', Object.keys(districtGrades).length);
         } else {
           // For House: map districts to individual representatives
           members.forEach((member) => {
@@ -273,23 +257,18 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
               const state = member.state;
               const district = String(member.district || '');
 
-              console.log('Processing member:', member.full_name, 'State:', state, 'District:', district);
 
               const fips = getStateFips(state);
-              console.log('State:', state, 'FIPS:', fips);
               if (fips) {
                 const districtNum = district === '' ? '00' : district.padStart(2, '0');
                 const districtKey = `${fips}${districtNum}`;
                 const grade = String(member.Grade || 'N/A');
                 districtGrades[districtKey] = grade;
                 districtMembers[districtKey] = member;
-                console.log('Mapped district:', districtKey, 'Grade:', grade);
               }
             }
           });
 
-          console.log('District grades mapped:', Object.keys(districtGrades).length);
-          console.log('Sample mappings:', Object.entries(districtGrades).slice(0, 5));
         }
 
         // Create FIPS to state abbr reverse lookup for Senate matching
@@ -338,14 +317,11 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
             }
             matchExpression.push(matchKey);
             matchExpression.push(gradeColors[grade] || '#9ca3af');
-            console.log(`Added ${isSenate ? 'state' : 'district'} to match:`, matchKey, '→', grade, '→', gradeColors[grade]);
           });
 
           // Add fallback color (required)
           matchExpression.push('#e5e7eb'); // default gray for areas without data
 
-          console.log('Match expression has', (matchExpression.length - 3) / 2, isSenate ? 'states' : 'districts');
-          console.log('Full match expression:', JSON.stringify(matchExpression, null, 2));
           fillColor = matchExpression;
         } else {
           // If no grades mapped, just use a default color
@@ -363,7 +339,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
           }
         });
 
-        console.log('Added districts-fill layer with fillColor:', typeof fillColor === 'string' ? fillColor : 'expression');
 
         // Add border layer for districts
         map.current.addLayer({
@@ -886,7 +861,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
                 const stateMembers = districtMembers[stateFips];
                 const stateAbbr = fipsToState[stateFips];
 
-                console.log('Clicked state:', stateName, 'FIPS:', stateFips, 'Abbr:', stateAbbr, 'Members:', Array.isArray(stateMembers) ? stateMembers.map(m => m.full_name) : 'none');
 
                 // Both mode and Senate mode: navigate to state summary view
                 if (stateAbbr && onStateClick) {
@@ -903,7 +877,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
               const districtKey = `${stateFips}${cd}`;
               const member = districtMembers[districtKey];
 
-              console.log('Clicked district:', districtKey, 'Member:', !Array.isArray(member) ? member?.full_name : 'error');
 
               if (member && !Array.isArray(member) && onMemberClick) {
                 onMemberClick(member);
@@ -962,3 +935,6 @@ export default function DistrictMap({ members, onMemberClick, onStateClick, cham
     </div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders when props haven't changed
+export default memo(DistrictMap);

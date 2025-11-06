@@ -3,7 +3,11 @@ import Papa from "papaparse";
 import type { Row, Meta, ManualScoringMeta } from "./types";
 
 async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
-  const res = await fetch(path, { cache: "force-cache" });
+  // Cache busting using DATA_VERSION environment variable
+  // Increment NEXT_PUBLIC_DATA_VERSION in .env.local when CSV files are updated
+  const version = process.env.NEXT_PUBLIC_DATA_VERSION || "1";
+  const urlWithVersion = `${path}?v=${version}`;
+  const res = await fetch(urlWithVersion, { cache: "force-cache" });
   const text = await res.text();
   const parsed = Papa.parse<T>(text, { header: true, skipEmptyLines: true });
   return (parsed.data as T[]) || [];

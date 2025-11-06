@@ -2,6 +2,7 @@
 
 "use client";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
@@ -1230,7 +1231,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ touchAction: 'pan-x pan-y' }} onScroll={handleScroll}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" onScroll={handleScroll}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
@@ -1929,10 +1930,40 @@ export default function Page() {
                 const bioguideId = String(r.bioguide_id || "");
                 const isTooltipOpen = selectedCell?.rowId === bioguideId && selectedCell?.col === c;
 
+                // Generate tooltip text for native title attribute
+                let tooltipText = "";
+                if (notApplicable || manualActionNotApplicable) {
+                  tooltipText = "Not applicable";
+                } else if (votedPresent) {
+                  tooltipText = "Voted Present";
+                } else if (wasAbsent) {
+                  tooltipText = "Did not vote";
+                } else if (showDashForPreferredPair) {
+                  tooltipText = "Not penalized";
+                } else {
+                  const isVote = actionType.includes('vote');
+                  const position = (meta?.position_to_score || '').toUpperCase();
+                  const isSupport = position === 'SUPPORT';
+
+                  if (isCosponsor) {
+                    tooltipText = didCosponsor ? "Cosponsored" : "Has not cosponsored";
+                  } else if (isVote) {
+                    if (isSupport) {
+                      tooltipText = memberOk ? "Voted in favor" : "Voted against";
+                    } else {
+                      tooltipText = memberOk ? "Voted against" : "Voted in favor";
+                    }
+                  } else {
+                    tooltipText = memberOk ? "Supported" : "Opposed";
+                  }
+                }
+                tooltipText += " · click for more";
+
                 return (
                   <div
                     key={c}
                     className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    title={tooltipText}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCell(isTooltipOpen ? null : { rowId: bioguideId, col: c });
@@ -1950,16 +1981,20 @@ export default function Page() {
                       <VoteIcon ok={memberOk} />
                     )}
 
-                    {/* Small hover tooltip - only shown when main tooltip is closed */}
-                    {!isTooltipOpen && (
-                      <div className="opacity-0 group-hover/cell:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white text-[10px] whitespace-nowrap transition-opacity duration-200 delay-700 shadow-sm border border-slate-200 dark:border-slate-600">
-                        Click to learn more
-                      </div>
-                    )}
 
                     {/* Tooltip - shown on click */}
-                    {isTooltipOpen && meta && (
-                      <div className="pointer-events-auto absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-xl">
+                    {isTooltipOpen && meta && typeof document !== 'undefined' && createPortal(
+                      <>
+                        {/* Backdrop overlay */}
+                        <div
+                          className="fixed inset-0 bg-black/30 z-[99]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCell(null);
+                          }}
+                        />
+                        {/* Centered tooltip modal */}
+                        <div className="pointer-events-auto fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[28rem] max-w-[90vw] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-2xl">
                         {/* Close button */}
                         <button
                           onClick={(e) => {
@@ -1987,7 +2022,7 @@ export default function Page() {
                         <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
                         </div>
-                        {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
+                        {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
                         {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
                         {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -2017,9 +2052,23 @@ export default function Page() {
 
                             // Lightweight variables for tooltip text (only computed when tooltip is open)
                             const isVote = actionType.includes('vote');
+                            const position = (meta?.position_to_score || '').toUpperCase();
+                            const isSupport = position === 'SUPPORT';
 
                             if (notApplicable || manualActionNotApplicable) {
-                              return <span className="text-xs text-slate-400">N/A</span>;
+                              let naReason = "";
+                              if (notApplicable) {
+                                // Different chamber - show which chamber the bill is for
+                                const billChamber = inferredChamber === "HOUSE" ? "House" : "Senate";
+                                naReason = `N/A - ${billChamber} only`;
+                              } else if (manualActionNotApplicable) {
+                                // Manual action member wasn't eligible for - check if it's a committee vote
+                                // Use meta.action_types directly to avoid scope issues
+                                const metaActionTypes = ((meta as { action_types?: string })?.action_types || '').toLowerCase();
+                                const isCommitteeVote = metaActionTypes.includes('committee vote') || metaActionTypes.includes('committee');
+                                naReason = isCommitteeVote ? "N/A - Not on committee" : "N/A - Not eligible";
+                              }
+                              return <span className="text-xs text-slate-400">{naReason}</span>;
                             } else if (votedPresent) {
                               return (
                                 <>
@@ -2056,7 +2105,11 @@ export default function Page() {
                                       isCosponsor
                                         ? (didCosponsor ? "cosponsored" : "has not cosponsored")
                                         : isVote
-                                          ? (memberOk ? "voted in favor" : "voted against")
+                                          ? (
+                                            isSupport
+                                              ? (memberOk ? "voted in favor" : "voted against")
+                                              : (memberOk ? "voted against" : "voted in favor")
+                                          )
                                           : (memberOk ? "supported" : "opposed")
                                     }
                                   </span>
@@ -2065,7 +2118,9 @@ export default function Page() {
                             }
                           })()}
                         </div>
-                      </div>
+                        </div>
+                      </>,
+                      document.body
                     )}
                   </div>
                 );
@@ -2815,7 +2870,7 @@ function Header({
           <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">
             <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
           </div>
-          {meta.analysis && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.analysis}</div>}
+          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
           {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
           {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
             <div className="mt-2 flex flex-wrap gap-1">

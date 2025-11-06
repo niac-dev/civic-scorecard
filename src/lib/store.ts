@@ -20,13 +20,30 @@ type FiltersState = {
   clearCategories: () => void;
 };
 
+// Helper to get initial viewMode based on localStorage
+function getInitialViewMode(): "summary" | "all" | "category" | "map" {
+  if (typeof window === "undefined") return "summary";
+
+  // Check if user has visited before
+  const hasVisited = localStorage.getItem("hasVisitedScorecard");
+
+  if (!hasVisited) {
+    // First visit - default to map view
+    localStorage.setItem("hasVisitedScorecard", "true");
+    return "map";
+  }
+
+  // Returning user - default to summary (scorecard view)
+  return "summary";
+}
+
 export const useFilters = create<FiltersState>((set) => ({
   chamber: "",
   party: "",
   state: "",
   search: "",
   categories: new Set<string>(),
-  viewMode: typeof window !== "undefined" && window.innerWidth < 768 ? "summary" : "map",
+  viewMode: getInitialViewMode(),
   myLawmakers: [],
   billColumn: "",
 
