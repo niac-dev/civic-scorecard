@@ -1169,13 +1169,13 @@ export default function Page() {
   return (
     <div className="space-y-0">
       {/* Header Band */}
-      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-6 border-b border-[#001a2e] dark:border-white/10">
+      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-3 md:px-4 border-b border-[#001a2e] dark:border-white/10">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
-          <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer">
+          <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img
               src="https://niacouncil.org/wp-content/uploads/2020/05/NIAC-Action-Negative-over-Transparent-Small@2x-e1588645480145.png"
               alt="NIAC Action"
-              className="h-10 md:h-12 cursor-pointer hover:opacity-80 transition-opacity"
+              className="h-10 md:h-12 w-auto block cursor-pointer hover:opacity-80 transition-opacity"
             />
           </a>
           <h1 className="text-xl md:text-2xl font-bold text-white">
@@ -1184,7 +1184,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="space-y-4 p-4 md:p-6">
+      <div className="space-y-2 px-0 pt-2 pb-4 md:p-3">
         <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
       {selected && (
         <MemberModal
@@ -1202,7 +1202,7 @@ export default function Page() {
         {/* Map View */}
         <div
           className={clsx(
-            "card p-6 transition-all duration-500 ease-in-out",
+            "card rounded-lg md:rounded-2xl p-0 md:p-4 transition-all duration-500 ease-in-out",
             f.viewMode === "map"
               ? "translate-x-0 opacity-100"
               : "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
@@ -1225,13 +1225,13 @@ export default function Page() {
         {/* Table View */}
         <div
           className={clsx(
-            "card overflow-visible transition-all duration-500 ease-in-out",
+            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out",
             f.viewMode !== "map"
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" onScroll={handleScroll}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-lg md:rounded-2xl" onScroll={handleScroll}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
