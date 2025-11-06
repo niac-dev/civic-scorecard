@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
@@ -11,6 +11,10 @@ import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
 
 import clsx from "clsx";
+
+// Virtual scrolling configuration
+const ROW_HEIGHT = 85; // Approximate height of each row in pixels
+const OVERSCAN = 5; // Number of extra rows to render above/below visible area
 
 // --- States helper (dropdown + normalization) ---
 const STATES: { code: string; name: string }[] = [
@@ -386,6 +390,9 @@ export default function Page() {
 
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Virtual scrolling state
+  const [scrollTop, setScrollTop] = useState(0);
 
   // Track mobile viewport for responsive column widths
   useEffect(() => {
@@ -803,6 +810,41 @@ export default function Page() {
     });
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
+  // Virtual scrolling: calculate which rows to actually render
+  const { visibleRows, totalHeight, offsetY, startIndex, endIndex } = useMemo(() => {
+    const totalRows = sorted.length;
+    const containerHeight = tableScrollRef.current?.clientHeight || 700;
+
+    // Calculate which rows are visible based on scroll position
+    const startIdx = Math.floor(scrollTop / ROW_HEIGHT);
+    const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT);
+
+    // Add overscan to reduce flickering
+    const start = Math.max(0, startIdx - OVERSCAN);
+    const end = Math.min(totalRows, startIdx + visibleCount + OVERSCAN);
+
+    // Slice the sorted array to only visible rows
+    const visible = sorted.slice(start, end);
+
+    // Calculate total height and offset for positioning
+    const total = totalRows * ROW_HEIGHT;
+    const offset = start * ROW_HEIGHT;
+
+    return {
+      visibleRows: visible,
+      totalHeight: total,
+      offsetY: offset,
+      startIndex: start,
+      endIndex: end
+    };
+  }, [sorted, scrollTop]);
+
+  // Scroll handler for virtual scrolling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    setScrollTop(target.scrollTop);
+  }, []);
+
   // All columns for the member card (chamber-filtered only, not category-filtered)
   const allBillCols = useMemo(() => {
     let out = cols;
@@ -1017,6 +1059,112 @@ export default function Page() {
     return colors;
   }, [rows]);
 
+  // PERFORMANCE: Compute tooltip data ONLY for the currently selected cell
+  // This memo only runs when selectedCell changes, not on every render
+  const selectedCellTooltipData = useMemo(() => {
+    if (!selectedCell) return null;
+
+    const row = visibleRows.find(r => String(r.bioguide_id) === selectedCell.rowId);
+    if (!row) return null;
+
+    const c = selectedCell.col;
+    const valRaw = (row as Record<string, unknown>)[c];
+    const val = Number(valRaw ?? 0);
+    const meta = metaByCol.get(c);
+    if (!meta) return null;
+
+    // Now compute the expensive stuff ONCE for this selected cell
+    const absentCol = `${c}_absent`;
+    const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+    const cosponsorCol = `${c}_cosponsor`;
+    const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
+
+    // Check for dash in preferred pairs (expensive loop - only run for selected cell)
+    let showDashForPreferredPair = false;
+    if (meta.pair_key && !isTrue((meta as any).preferred)) {
+      for (const other of billCols) {
+        if (other === c) continue;
+        const m2 = metaByCol.get(other);
+        if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
+          const v2 = Number((row as any)[other] ?? 0);
+          if (v2 > 0) {
+            showDashForPreferredPair = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Calculate max points (expensive loop - only run for selected cell)
+    let maxPoints = Number(meta.points ?? 0);
+    if (meta.pair_key) {
+      let pairMax = 0;
+      let otherItemMax = 0;
+      for (const other of cols) {
+        const m2 = metaByCol.get(other);
+        if (m2?.pair_key === meta.pair_key) {
+          const otherMax = maxPointsByCol.get(other) || 0;
+          if (otherMax > pairMax) pairMax = otherMax;
+          if (other !== c) otherItemMax = otherMax;
+        }
+      }
+
+      const thisItemMax = maxPointsByCol.get(c) || 0;
+      const isPreferred = isTrue((meta as any).preferred);
+
+      if (isPreferred) {
+        maxPoints = val > 0 ? pairMax : pairMax - otherItemMax;
+      } else {
+        maxPoints = thisItemMax;
+      }
+    }
+
+    const actionType = (meta as { action_types?: string })?.action_types || '';
+    const isCosponsor = actionType.includes('cosponsor');
+    const isVote = actionType.includes('vote');
+    const position = (meta.position_to_score || '').toUpperCase();
+    const isSupport = position === 'SUPPORT';
+    const noCosponsorBenefit = meta.no_cosponsor_benefit === true || meta.no_cosponsor_benefit === 1 || meta.no_cosponsor_benefit === '1';
+
+    // Determine action description
+    let actionDescription = '';
+    if (isCosponsor) {
+      actionDescription = didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+    } else if (isVote) {
+      const gotPoints = val > 0;
+      if (isSupport) {
+        actionDescription = gotPoints ? 'Voted in favor' : 'Voted against';
+      } else {
+        actionDescription = gotPoints ? 'Voted against' : 'Voted in favor';
+      }
+    } else {
+      actionDescription = val > 0 ? 'Support' : 'Oppose';
+    }
+
+    // Format points
+    let pointsText;
+    if (val > 0) {
+      pointsText = `+${val.toFixed(0)} points`;
+    } else if (val < 0) {
+      pointsText = `${val.toFixed(0)} points`;
+    } else {
+      if (isCosponsor && noCosponsorBenefit && !isSupport && !didCosponsor) {
+        pointsText = '0 points';
+      } else {
+        pointsText = `-${maxPoints} points`;
+      }
+    }
+
+    return {
+      row,
+      meta,
+      actionDescription,
+      pointsText,
+      wasAbsent,
+      showDashForPreferredPair
+    };
+  }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
+
   return (
     <div className="space-y-0">
       {/* Header Band */}
@@ -1082,7 +1230,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ touchAction: 'pan-x pan-y' }} onScroll={handleScroll}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
@@ -1458,8 +1606,10 @@ export default function Page() {
             )}
           </div>
 
-          {/* Rows */}
-          {sorted.map((r, i) => (
+          {/* Rows Container - Virtual Scrolling */}
+          <div style={{ height: totalHeight, position: 'relative', minWidth: 'max-content' }}>
+            <div style={{ transform: `translateY(${offsetY}px)`, willChange: 'transform', minWidth: 'max-content' }}>
+          {visibleRows.map((r, i) => (
             <div
               key={i}
               className={clsx(
@@ -1738,153 +1888,43 @@ export default function Page() {
                   );
                 }
 
-                // Regular bill columns
+                // Regular bill columns - LIGHTWEIGHT RENDERING ONLY
                 const valRaw = (r as Record<string, unknown>)[c];
                 const val = Number(valRaw ?? 0);
                 const meta = metaByCol.get(c);
 
-                // Check if member was absent for this vote
+                // LIGHTWEIGHT: Only compute what's needed for visual display
                 const absentCol = `${c}_absent`;
                 const wasAbsent = Number((r as Record<string, unknown>)[absentCol] ?? 0) === 1;
 
-                // Check if member cosponsored (for cosponsor bills)
                 const cosponsorCol = `${c}_cosponsor`;
                 const didCosponsor = Number((r as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
 
-                // Try to determine the chamber for this column (bill or manual action)
                 const inferredChamber = inferChamber(meta, c);
-
-                // If we can determine a chamber and it doesn't match member's chamber -> N/A
                 const notApplicable = inferredChamber && inferredChamber !== r.chamber;
 
-                // Check if this is a manual action that doesn't apply
-                // For manual actions: null/undefined/empty = not eligible (N/A)
-                // For manual actions: 0 = eligible but took opposing action (show X)
                 const isManualAction = meta?.type === "MANUAL";
                 const manualActionNotApplicable = isManualAction && (valRaw === null || valRaw === undefined || valRaw === '');
 
-                // Tooltip text
-                // --- NEW: dash if this is the lesser item in a preferred pair and member hit the preferred one ---
-                const showDashForPreferredPair = (() => {
-                  const isPreferred = meta ? isTrue((meta as any).preferred) : false;
-                  if (!meta?.pair_key || isPreferred || val > 0 || notApplicable) return false;
-                  // find any other column in the same pair that is marked preferred (preferred===true) and the member scored on it
-                  for (const other of billCols) {
-                    if (other === c) continue;
-                    const m2 = metaByCol.get(other);
-                    if (m2?.pair_key === meta.pair_key && isTrue((m2 as any).preferred)) {
-                      const v2 = Number((r as any)[other] ?? 0);
-                      if (v2 > 0) return true; // got the preferred one → show dash here
-                    }
-                  }
-                  return false;
-                })();
-
-                // Determine max points for this column
-                // For regular bills, max points is just the points value from metadata
-                // For pair_key items, the denominator depends on the item and whether they got points
-                let maxPoints = Number(meta?.points ?? 0);
-                if (meta?.pair_key) {
-                  // Find the highest max points among all items in the pair and the OTHER item's max
-                  let pairMax = 0;
-                  let otherItemMax = 0;
-                  for (const other of cols) {
-                    const m2 = metaByCol.get(other);
-                    if (m2?.pair_key === meta.pair_key) {
-                      const otherMax = maxPointsByCol.get(other) || 0;
-                      if (otherMax > pairMax) pairMax = otherMax;
-                      // If this is not the current column, track the other item's max
-                      if (other !== c) {
-                        otherItemMax = otherMax;
-                      }
-                    }
-                  }
-
-                  const thisItemMax = maxPointsByCol.get(c) || 0;
-                  const isPreferred = meta ? isTrue((meta as any).preferred) : false;
-
-                  if (isPreferred) {
-                    // Preferred item: if they got points show 10/10, if not show 0/7
-                    if (val > 0) {
-                      maxPoints = pairMax; // 10/10
-                    } else {
-                      maxPoints = pairMax - otherItemMax; // 0/7 (10 - 3, they can still get 3 from the other)
-                    }
-                  } else {
-                    // Non-preferred item: if they got points show 3/3, if not show 0/3
-                    maxPoints = thisItemMax; // Always use this item's own max (3)
-                  }
-                }
-
-                // Determine the action label based on action_types and position
+                // LIGHTWEIGHT: Quick check for icon display
                 const actionType = (meta as { action_types?: string })?.action_types || '';
-                const isVote = actionType.includes('vote');
                 const isCosponsor = actionType.includes('cosponsor');
                 const position = (meta?.position_to_score || '').toUpperCase();
                 const isSupport = position === 'SUPPORT';
-
-                // Check if member voted "present" - got partial points (non-zero but not full)
-                const fullPoints = Number(meta?.points ?? 0);
-                const votedPresent = !wasAbsent && isVote && val > 0 && val < fullPoints;
-
-                // Determine if member took the "good" action
                 const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
                                            meta?.no_cosponsor_benefit === 1 ||
                                            meta?.no_cosponsor_benefit === '1';
+
                 let memberOk = val > 0;
-                // Special handling for no_cosponsor_benefit bills we oppose
                 if (isCosponsor && noCosponsorBenefit && !isSupport) {
                   memberOk = !didCosponsor;
                 }
 
-                let title: string;
-                if (notApplicable) {
-                  title = "Not applicable (different chamber)";
-                } else if (manualActionNotApplicable) {
-                  title = "Not applicable";
-                } else if (votedPresent) {
-                  title = "Voted Present";
-                } else if (wasAbsent) {
-                  title = "Did not vote";
-                } else if (showDashForPreferredPair) {
-                  title = "Not penalized: preferred item supported";
-                } else {
-                  // Determine the specific action description based on actual action taken
-                  let actionDescription = '';
-                  if (isCosponsor) {
-                    // For cosponsor bills, use the _cosponsor column to determine actual action
-                    actionDescription = didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
-                  } else if (isVote) {
-                    // For vote bills, infer actual vote from points and NIAC position
-                    const gotPoints = val > 0;
-                    if (isSupport) {
-                      // We support: got points = voted in favor, no points = voted against
-                      actionDescription = gotPoints ? 'Voted in favor' : 'Voted against';
-                    } else {
-                      // We oppose: got points = voted against, no points = voted in favor
-                      actionDescription = gotPoints ? 'Voted against' : 'Voted in favor';
-                    }
-                  } else {
-                    // Fallback for other action types
-                    actionDescription = val > 0 ? 'Support' : 'Oppose';
-                  }
-                  // Format points: show as +X, -X, or 0
-                  let pointsText;
-                  if (val > 0) {
-                    pointsText = `+${val.toFixed(0)} points`;
-                  } else if (val < 0) {
-                    pointsText = `${val.toFixed(0)} points`;
-                  } else {
-                    // val = 0
-                    // For no_cosponsor_benefit bills we oppose, not cosponsoring gives 0 points (neutral)
-                    if (isCosponsor && noCosponsorBenefit && !isSupport && !didCosponsor) {
-                      pointsText = '0 points';
-                    } else {
-                      pointsText = `-${maxPoints} points`;
-                    }
-                  }
-                  title = `${actionDescription}, ${pointsText}`;
-                }
+                const fullPoints = Number(meta?.points ?? 0);
+                const votedPresent = !wasAbsent && actionType.includes('vote') && val > 0 && val < fullPoints;
+
+                // LIGHTWEIGHT: Only check if we need dash (simplified - no expensive loops)
+                const showDashForPreferredPair = meta?.pair_key && !isTrue((meta as any).preferred) && val === 0 && !notApplicable;
 
                 const bioguideId = String(r.bioguide_id || "");
                 const isTooltipOpen = selectedCell?.rowId === bioguideId && selectedCell?.col === c;
@@ -2122,6 +2162,8 @@ export default function Page() {
               )}
             </div>
           ))}
+            </div>
+          </div>
         </div>
         </div>
       </div>

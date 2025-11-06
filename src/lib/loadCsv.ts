@@ -3,7 +3,7 @@ import Papa from "papaparse";
 import type { Row, Meta, ManualScoringMeta } from "./types";
 
 async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
-  const res = await fetch(path, { cache: "no-store" });
+  const res = await fetch(path, { cache: "force-cache" });
   const text = await res.text();
   const parsed = Papa.parse<T>(text, { header: true, skipEmptyLines: true });
   return (parsed.data as T[]) || [];
