@@ -14,33 +14,13 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   const isCosponsor = actionType.includes('cosponsor');
   const isVote = actionType.includes('vote');
   const isSupport = position === 'SUPPORT';
-  const pointsValue = meta?.points ? Number(meta.points).toFixed(0) : '';
-
-  // For cosponsor bills, check no_cosponsor_benefit flag
-  const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
-                             meta?.no_cosponsor_benefit === 1 ||
-                             meta?.no_cosponsor_benefit === '1';
-
-  let points = '';
-  if (pointsValue) {
-    if (isCosponsor && !noCosponsorBenefit) {
-      // Cosponsors can get points either way
-      points = ` (+/- ${pointsValue} pts)`;
-    } else if (isCosponsor && noCosponsorBenefit) {
-      // Cosponsors can only lose points
-      points = ` (- ${pointsValue} pts)`;
-    } else {
-      // Regular points display
-      points = ` (${pointsValue} pts)`;
-    }
-  }
 
   if (isCosponsor) {
-    return isSupport ? `Support Cosponsorship${points}` : `Oppose Cosponsorship${points}`;
+    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
   } else if (isVote) {
-    return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
+    return isSupport ? 'Vote in Favor' : 'Vote Against';
   } else {
-    return isSupport ? `Support${points}` : `Oppose${points}`;
+    return isSupport ? 'Support' : 'Oppose';
   }
 }
 
@@ -511,15 +491,17 @@ export default function BillPage() {
         body {
           background: #F7F8FA !important;
         }
-        :root.dark body {
-          background: #0B1220 !important;
+        @media (prefers-color-scheme: dark) {
+          body {
+            background: #0B1220 !important;
+          }
         }
       `}} />
       <div className="min-h-screen bg-[#F7F8FA] dark:bg-[#0B1220] p-4">
         <div className="max-w-5xl mx-auto">
           <div className="card p-6">
             {/* Header */}
-            <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-white/10 pb-4">
+            <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-slate-800 pb-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-start gap-2">
                   {isSupport ? (
@@ -562,7 +544,7 @@ export default function BillPage() {
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
                 onClick={() => {
-                  router.back();
+                  router.push('/');
                 }}
               >
                 Close
@@ -576,7 +558,7 @@ export default function BillPage() {
                 Sponsor
               </h2>
               <div
-                className="flex items-center gap-3 p-3 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                className="flex items-center gap-3 p-3 rounded-lg border border-[#E7ECF2] dark:border-slate-800 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
                 onClick={() => setSelectedMember(sponsorMember)}
               >
                 {sponsorMember.photo_url ? (
@@ -816,7 +798,7 @@ export default function BillPage() {
                           </div>
                         )}
                         {housemembers.length > 0 && senatemembers.length > 0 && (
-                          <div className="border-t border-[#E7ECF2] dark:border-white/10 my-4"></div>
+                          <div className="border-t border-[#E7ECF2] dark:border-slate-800 my-4"></div>
                         )}
                         {senatemembers.length > 0 && (
                           <div>
@@ -902,7 +884,7 @@ export default function BillPage() {
                           </div>
                         )}
                         {housemembers.length > 0 && senatemembers.length > 0 && (
-                          <div className="border-t border-[#E7ECF2] dark:border-white/10 my-4"></div>
+                          <div className="border-t border-[#E7ECF2] dark:border-slate-800 my-4"></div>
                         )}
                         {senatemembers.length > 0 && (
                           <div>

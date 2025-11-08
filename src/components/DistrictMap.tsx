@@ -907,7 +907,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
   }, [members, onMemberClick, onStateClick, chamber]);
 
   return (
-    <div className="relative w-full h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-white/10">
+    <div className="relative w-full h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-[#0B1220] z-10">
           <div className="text-sm text-slate-500 dark:text-slate-400">Loading {chamber === 'SENATE' ? 'state map' : chamber === 'HOUSE' ? 'congressional districts' : 'state map'}...</div>
@@ -927,7 +927,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
       {/* Fixed tooltip in upper right corner */}
       {tooltipContent && (
         <div
-          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-white/10 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-2xl"
+          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-slate-900 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-2xl"
           style={{ transform: 'scale(1.5)', transformOrigin: 'top right' }}
           dangerouslySetInnerHTML={{ __html: tooltipContent }}
         />

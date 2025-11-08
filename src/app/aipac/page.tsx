@@ -27,7 +27,7 @@ export default function AipacPage() {
 
       rows.forEach((row) => {
         const pacData = pacDataMap.get(String(row.bioguide_id));
-        const hasSupport = isAipacEndorsed(pacData, row.aipac_supported) || isDmfiEndorsed(pacData, row.dmfi_supported);
+        const hasSupport = isAipacEndorsed(pacData) || isDmfiEndorsed(pacData);
         if (hasSupport) {
           supportedList.push(row);
         } else {
@@ -80,7 +80,7 @@ export default function AipacPage() {
         <div className="max-w-5xl mx-auto">
           <div className="card p-6">
             {/* Header */}
-            <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-white/10 pb-4">
+            <div className="flex items-start justify-between mb-6 border-b border-[#E7ECF2] dark:border-slate-900 pb-4">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                   AIPAC & DMFI Support

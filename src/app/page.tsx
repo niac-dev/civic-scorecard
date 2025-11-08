@@ -1169,7 +1169,7 @@ export default function Page() {
   return (
     <div className="space-y-0">
       {/* Header Band */}
-      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-3 md:px-4 border-b border-[#001a2e] dark:border-white/10">
+      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-3 md:px-4 border-b border-[#001a2e] dark:border-slate-900">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img
@@ -1234,13 +1234,13 @@ export default function Page() {
           <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-lg md:rounded-2xl" onScroll={handleScroll}>
             {/* Header */}
             <div
-              className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-white/10 shadow-sm"
+              className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
               style={{
                 gridTemplateColumns: gridTemplate,
               }}
             >
             <div
-              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-white/10 cursor-pointer group"
+              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group"
               onClick={() => {
                 if (sortCol === "__member") {
                   // Cycle: alphabet asc → alphabet desc → district asc → district desc → alphabet asc
@@ -1292,7 +1292,7 @@ export default function Page() {
                   <div
                     className={clsx(
                       "th text-center relative group",
-                      idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10"
+                      idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900"
                     )}
                   >
                     <div
@@ -1350,7 +1350,7 @@ export default function Page() {
 
                   {/* Endorsements column header - after Overall Grade in AIPAC view */}
                   {idx === 0 && f.categories.has("AIPAC") && (
-                    <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
+                    <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
                       {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
                       <div className="h-[4.5rem] flex items-start">
                         <span
@@ -1496,7 +1496,7 @@ export default function Page() {
             })}
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
-              <div className="th border-r border-[#E7ECF2] dark:border-white/10 group relative select-none flex flex-col">
+              <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
                 {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
                 <div className="h-[3.375rem] flex items-start">
                   <span
@@ -1539,7 +1539,7 @@ export default function Page() {
               <>
                 {/* Sortable score headers */}
                 <div
-                  className="th text-center cursor-pointer relative group border-l border-[#E7ECF2] dark:border-white/10"
+                  className="th text-center cursor-pointer relative group border-l border-[#E7ECF2] dark:border-slate-900"
                   title="Click to sort by Total (toggle high→low / low→high)"
                   onClick={() => {
                     const col = scoreSuffix ? `Total_${scoreSuffix}` : "Total";
@@ -1621,7 +1621,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-white/10"
+                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
                 title="Click to view details"
               >
@@ -1720,7 +1720,7 @@ export default function Page() {
                       key={gradeCol.field}
                       className={clsx(
                         "td flex items-center justify-center",
-                        idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-white/10",
+                        idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900",
                         isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
                       onClick={() => {
@@ -1741,7 +1741,7 @@ export default function Page() {
 
                     {/* Endorsements column - after Overall Grade in AIPAC view */}
                     {idx === 0 && f.categories.has("AIPAC") && (
-                      <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
+                      <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
                         {(() => {
                           // Check if member has reject AIPAC commitment text (takes priority)
                           const rejectCommitment = r.reject_aipac_commitment;
@@ -1831,7 +1831,7 @@ export default function Page() {
                   // Election column
                   if (c === "__election") {
                     return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-white/10">
+                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-slate-900">
                         {getElectionLabel(electionYear)}
                       </div>
                     );
@@ -1848,7 +1848,7 @@ export default function Page() {
                       totalSupport = (pacData?.aipac_total_2022 || 0) + (pacData?.dmfi_total_2022 || 0);
                     }
                     return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular font-medium border-b border-[#E7ECF2] dark:border-white/10">
+                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular font-medium border-b border-[#E7ECF2] dark:border-slate-900">
                         {totalSupport > 0 ? `$${totalSupport.toLocaleString()}` : "—"}
                       </div>
                     );
@@ -1883,7 +1883,7 @@ export default function Page() {
                   }
 
                   return (
-                    <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-white/10">
+                    <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-slate-900">
                       {amount > 0 ? `$${amount.toLocaleString()}` : "—"}
                     </div>
                   );
@@ -1962,7 +1962,7 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-white/10 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-slate-900 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     title={tooltipText}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1994,7 +1994,7 @@ export default function Page() {
                           }}
                         />
                         {/* Centered tooltip modal */}
-                        <div className="pointer-events-auto fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[28rem] max-w-[90vw] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-2xl">
+                        <div className="pointer-events-auto fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] w-[28rem] max-w-[90vw] rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-[#1a2332] p-3 shadow-2xl">
                         {/* Close button */}
                         <button
                           onClick={(e) => {
@@ -2044,7 +2044,7 @@ export default function Page() {
                         )}
 
                         {/* Member-specific action line */}
-                        <div className="mt-3 pt-3 border-t border-[#E7ECF2] dark:border-white/10 flex items-center gap-2">
+                        <div className="mt-3 pt-3 border-t border-[#E7ECF2] dark:border-slate-900 flex items-center gap-2">
                           {(() => {
                             const memberLastName = lastName(String(r.full_name || ""));
                             const capitalizedLastName = memberLastName.charAt(0).toUpperCase() + memberLastName.slice(1);
@@ -2128,7 +2128,7 @@ export default function Page() {
 
               {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
-                <div className="td border-r border-[#E7ECF2] dark:border-white/10 px-2 flex items-center">
+                <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
                   {(() => {
                     // Check if member has reject AIPAC commitment text (takes priority)
                     const rejectCommitment = r.reject_aipac_commitment;
@@ -2207,7 +2207,7 @@ export default function Page() {
               {/* Total/Max/Percent - shown for all views except AIPAC */}
               {!f.categories.has("AIPAC") && (
                 <>
-                  <div className="td tabular text-center font-medium flex items-center justify-center border-l border-[#E7ECF2] dark:border-white/10">
+                  <div className="td tabular text-center font-medium flex items-center justify-center border-l border-[#E7ECF2] dark:border-slate-900">
                     {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
                   </div>
                   <div className="td tabular text-center flex items-center justify-center">
@@ -2251,7 +2251,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
       {/* First row: Map/Scorecard/Issues buttons */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Desktop: Show both text buttons (≥768px) */}
-        <div className="md:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+        <div className="md:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
           <button
             onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
             className={clsx(
@@ -2279,7 +2279,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         </div>
 
         {/* Mobile: Show icon buttons (<768px) */}
-        <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-1">
+        <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
           <button
             onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
             className={clsx(
@@ -2314,7 +2314,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         {f.viewMode !== "map" && (
         <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
           {/* Border around issue buttons */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-900">
             {/* Individual issue buttons - bright blue when active */}
             <button
               onClick={() => f.set({ viewMode: "all", categories: new Set() })}
@@ -2657,7 +2657,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
                 handleSearch();
               }
             }}
-            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[250px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
+            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-slate-900 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[250px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
           />
         </div>
         {loading ? (
@@ -2700,7 +2700,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
       )}
 
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-white/10 rounded-lg shadow-lg p-4 min-w-[300px]">
+        <div className="absolute top-full mt-1 right-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-slate-900 rounded-lg shadow-lg p-4 min-w-[300px]">
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium mb-1 text-slate-700 dark:text-slate-300">
@@ -2771,7 +2771,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
                 {loading ? "Searching..." : "Search"}
               </button>
               <button
-                className="px-3 py-1.5 text-sm border border-[#E7ECF2] dark:border-white/10 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
+                className="px-3 py-1.5 text-sm border border-[#E7ECF2] dark:border-slate-900 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
                 onClick={() => {
                   setIsOpen(false);
                   setSearchValue("");
@@ -2860,7 +2860,7 @@ function Header({
 
       {/* Tooltip */}
       {meta && (
-        <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
+        <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
           <div className={clsx(
             (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
             "text-slate-900 dark:text-slate-100"
@@ -2907,7 +2907,7 @@ function Segmented({
 }) {
   const current = value || options[0];
   return (
-    <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-white/5 p-0.5">
+    <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
       {options.map((opt) => {
         const isActive = current === opt;
         return (

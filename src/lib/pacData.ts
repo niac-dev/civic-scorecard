@@ -294,10 +294,10 @@ export function isDmfiEndorsed(pacData: PacData | undefined, dmfiSupportedFlag?:
   // If not supported, return false regardless of donation data
   if (!isSupported) return false;
 
-  // Check if there's actual support data in any cycle
+  // Check if there's actual financial support data in any cycle
+  // Being on the website alone is not enough - there must be actual financial support
   return (
     // 2024 cycle
-    pacData.dmfi_website === 1 ||
     pacData.dmfi_direct > 0 ||
     pacData.dmfi_ie_support > 0 ||
     // 2025 cycle

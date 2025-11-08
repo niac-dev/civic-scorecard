@@ -14,7 +14,7 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
 
   return (
     <div
-      className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
+      className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
       onClick={onClick}
     >
       {member.photo_url ? (

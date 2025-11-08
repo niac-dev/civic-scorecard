@@ -29,51 +29,15 @@ function formatPositionLegislation(
   const isVote = actionType.includes('vote');
   const isSupport = position === 'SUPPORT';
   const isManual = meta?.type === 'MANUAL';
-  const pointsValue = meta?.points ? Number(meta.points).toFixed(0) : '';
 
-  // For manual actions with custom descriptions, check if we have a custom description
-  if (isManual && score !== undefined && manualScoringMeta) {
-    const displayLabel = meta?.display_name || meta?.short_title || meta?.column || '';
-    const scoreKey = `${displayLabel}|${score}`;
-    const customDescription = manualScoringMeta.get(scoreKey);
-
-    if (customDescription) {
-      // Return custom description with points
-      if (score >= 4) {
-        return `${customDescription} (+${score} pts)`;
-      } else if (score >= 2) {
-        return `${customDescription} (+${score} pts)`;
-      } else {
-        return `${customDescription} (-${pointsValue} pts)`;
-      }
-    }
-  }
-
-  // For cosponsor bills, check no_cosponsor_benefit flag
-  const noCosponsorBenefit = meta?.no_cosponsor_benefit === true ||
-                             meta?.no_cosponsor_benefit === 1 ||
-                             meta?.no_cosponsor_benefit === '1';
-
-  let points = '';
-  if (pointsValue) {
-    if (isCosponsor && !noCosponsorBenefit) {
-      // Cosponsors can get points either way
-      points = ` (+/- ${pointsValue} pts)`;
-    } else if (isCosponsor && noCosponsorBenefit) {
-      // Cosponsors can only lose points
-      points = ` (- ${pointsValue} pts)`;
-    } else {
-      // Regular points display
-      points = ` (${pointsValue} pts)`;
-    }
-  }
-
+  // For NIAC position, we always show NIAC's position, not the member's action
+  // So we don't use custom descriptions here
   if (isCosponsor) {
-    return isSupport ? `Support Cosponsorship${points}` : `Oppose Cosponsorship${points}`;
+    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
   } else if (isVote) {
-    return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
+    return isSupport ? 'Vote in Favor' : 'Vote Against';
   } else {
-    return isSupport ? `Support${points}` : `Oppose${points}`;
+    return isSupport ? 'Support' : 'Oppose';
   }
 }
 
@@ -97,6 +61,17 @@ export function MemberModal({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAipacSection, setShowAipacSection] = useState(false);
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
+  const actionsRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to actions section on mobile when category is clicked
+  const scrollToActions = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && actionsRef.current) {
+      // Small delay to ensure layout has settled
+      setTimeout(() => {
+        actionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
 
   // Load PAC data when component mounts
   useEffect(() => {
@@ -230,16 +205,37 @@ export function MemberModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/20 dark:bg-black/50 z-[100]"
+        className="fixed inset-0 bg-black/40 dark:bg-black/70 z-[100]"
         onClick={onClose}
       />
       {/* Modal */}
-      <div className="fixed inset-4 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-5xl my-4 rounded-2xl border border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800 shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-2rem)]">
+      <div className="fixed inset-2 md:inset-10 z-[110] flex items-start justify-center overflow-auto">
+        <div className="w-full max-w-5xl my-2 md:my-4 rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto flex flex-col max-h-[calc(100vh-1rem)] md:max-h-[calc(100vh-2rem)]">
           {/* Header */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-white/10 bg-white dark:bg-slate-800">
-            {/* Top row: photo, name, badges, and buttons */}
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative">
+            {/* Close button and external link - upper right corner */}
+            <div className="absolute top-4 right-4 flex gap-2 z-10">
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                title="Open in new tab"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                onClick={onClose}
+                title="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Top row: photo, name, badges */}
+            <div className="flex items-center gap-3 pr-24">
               {row.photo_url ? (
                 <img
                   src={String(row.photo_url)}
@@ -306,22 +302,6 @@ export function MemberModal({
                   )}
                 </div>
               )}
-
-              <button
-                className="ml-3 p-2 rounded-lg border border-[#E7ECF2] dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-                title="Open in new tab"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-              <button
-                className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={onClose}
-              >
-                Close
-              </button>
             </div>
 
             {/* Contact Information - show below on narrow screens */}
@@ -356,6 +336,7 @@ export function MemberModal({
                     if (hasVotesActions) {
                       setSelectedCategory(null);
                       setShowAipacSection(false);
+                      scrollToActions();
                     }
                   }}
                   className={clsx(
@@ -363,7 +344,7 @@ export function MemberModal({
                     hasVotesActions ? "cursor-pointer" : "cursor-default",
                     selectedCategory === null && !showAipacSection && hasVotesActions
                       ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                      : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                      : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
                 >
                   <div className="flex items-center justify-between">
@@ -385,6 +366,7 @@ export function MemberModal({
                         if (hasVotesActions) {
                           setSelectedCategory(selectedCategory === category ? null : category);
                           setShowAipacSection(false);
+                          scrollToActions();
                         }
                       }}
                       className={clsx(
@@ -392,7 +374,7 @@ export function MemberModal({
                         hasVotesActions ? "cursor-pointer" : "cursor-default",
                         selectedCategory === category && hasVotesActions
                           ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
-                          : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
+                          : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -408,20 +390,21 @@ export function MemberModal({
                   const hasRejectCommitment = !!(row.reject_commitment && String(row.reject_commitment).trim());
                   const rejectCommitment = String(row.reject_commitment || "").trim();
                   const rejectLink = row.reject_commitment_link;
-                  const aipac = isAipacEndorsed(pacData, row.aipac_supported);
-                  const dmfi = isDmfiEndorsed(pacData, row.dmfi_supported);
+                  const aipac = isAipacEndorsed(pacData);
+                  const dmfi = isDmfiEndorsed(pacData);
 
                   return (
                     <button
                       onClick={() => {
                         setShowAipacSection(true);
                         setSelectedCategory(null);
+                        scrollToActions();
                       }}
                       className={clsx(
                         "rounded-lg border p-3 text-left transition w-full",
                         showAipacSection
                           ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20 cursor-pointer"
-                          : "border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+                          : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -446,19 +429,19 @@ export function MemberModal({
               </div>
 
               {/* Right Column: Votes & Actions + AIPAC Support (2/3 width on desktop, full width on mobile) */}
-              <div className="w-full md:flex-1 space-y-6">
+              <div ref={actionsRef} className="w-full md:flex-1 space-y-6">
                 {/* Show AIPAC Support when AIPAC/DMFI button is clicked */}
                 {showAipacSection ? (
                   <div>
                     {/* AIPAC/DMFI Header */}
-                    <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-white/10">
+                    <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">AIPAC/DMFI Support</h3>
                     </div>
 
                     {/* AIPAC/DMFI Content */}
                     {(() => {
-                      const aipac = isAipacEndorsed(pacData, row.aipac_supported);
-                      const dmfi = isDmfiEndorsed(pacData, row.dmfi_supported);
+                      const aipac = isAipacEndorsed(pacData);
+                      const dmfi = isDmfiEndorsed(pacData);
                       const hasSupport = aipac || dmfi;
 
                       // Check if there's ANY financial data across all years
@@ -528,7 +511,7 @@ export function MemberModal({
 
                           {/* Financial data breakdown if available */}
                           {hasAnyFinancialData && (
-                            <div className="rounded-lg border border-[#E7ECF2] dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+                            <div className="rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 p-4">
                               <div className="space-y-6">
                               {/* 2026 Election Section (2025 data) */}
                               {(() => {
@@ -779,7 +762,7 @@ export function MemberModal({
                       }
 
                       return (
-                        <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-white/10">
+                        <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
                             <div className="flex items-center gap-3">
@@ -796,8 +779,8 @@ export function MemberModal({
                     <div className="divide-y divide-[#E7ECF2] dark:divide-white/10">
                     {/* Show AIPAC/DMFI status when AIPAC category is selected */}
                     {selectedCategory === "AIPAC" && pacData && (() => {
-                      const hasAipacSupport = isAipacEndorsed(pacData, row.aipac_supported);
-                      const hasDmfiSupport = isDmfiEndorsed(pacData, row.dmfi_supported);
+                      const hasAipacSupport = isAipacEndorsed(pacData);
+                      const hasDmfiSupport = isDmfiEndorsed(pacData);
                       const hasAnySupport = hasAipacSupport || hasDmfiSupport;
 
                       console.log('AIPAC status section:', {
@@ -805,9 +788,7 @@ export function MemberModal({
                         pacDataExists: !!pacData,
                         hasAipacSupport,
                         hasDmfiSupport,
-                        hasAnySupport,
-                        aipacSupportedFlag: row.aipac_supported,
-                        dmfiSupportedFlag: row.dmfi_supported
+                        hasAnySupport
                       });
 
                       return (
@@ -889,7 +870,61 @@ export function MemberModal({
 
                                   // Format points display with +/- notation
                                   let pointsDisplay = '';
-                                  if (it.val !== undefined) {
+
+                                  // Special handling for preferred pairs
+                                  if (isCosponsor && it.meta?.pair_key) {
+                                    const pairKey = it.meta.pair_key;
+                                    const isPreferred = isTrue((it.meta as Record<string, unknown>).preferred);
+
+                                    // Find both bills in the pair
+                                    let preferredCol = '';
+                                    let nonPreferredCol = '';
+                                    let preferredPoints = 0;
+                                    let nonPreferredPoints = 0;
+
+                                    for (const col of billCols) {
+                                      const pairMeta = metaByCol.get(col);
+                                      if (pairMeta?.pair_key === pairKey) {
+                                        if (isTrue((pairMeta as Record<string, unknown>).preferred)) {
+                                          preferredCol = col;
+                                          preferredPoints = Number(pairMeta.points || 0);
+                                        } else {
+                                          nonPreferredCol = col;
+                                          nonPreferredPoints = Number(pairMeta.points || 0);
+                                        }
+                                      }
+                                    }
+
+                                    // Check if they cosponsored each bill
+                                    const cosponsoredPreferred = preferredCol ? (Number((row as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1) : false;
+                                    const cosponsoredNonPreferred = nonPreferredCol ? (Number((row as Record<string, unknown>)[`${nonPreferredCol}_cosponsor`] ?? 0) === 1) : false;
+
+                                    if (isPreferred) {
+                                      // This is the preferred bill (H.Con.Res.38)
+                                      if (cosponsoredPreferred) {
+                                        pointsDisplay = ` (+${preferredPoints} pts)`;
+                                      } else {
+                                        // Didn't cosponsor preferred - show penalty
+                                        pointsDisplay = ` (-${preferredPoints} pts)`;
+                                      }
+                                    } else {
+                                      // This is the non-preferred bill (H.Con.Res.40)
+                                      if (cosponsoredPreferred) {
+                                        // They cosponsored the preferred bill, so they get credit here too
+                                        if (cosponsoredNonPreferred) {
+                                          pointsDisplay = ` (+${nonPreferredPoints} pts)`;
+                                        } else {
+                                          pointsDisplay = ` (+${nonPreferredPoints} pts)`; // Same points either way
+                                        }
+                                      } else if (cosponsoredNonPreferred) {
+                                        // Only cosponsored this bill, not the preferred one
+                                        pointsDisplay = ` (+${nonPreferredPoints} pts)`;
+                                      } else {
+                                        // Cosponsored neither
+                                        pointsDisplay = ` (-${nonPreferredPoints} pts)`;
+                                      }
+                                    }
+                                  } else if (it.val !== undefined) {
                                     if (it.val > 0) {
                                       pointsDisplay = ` (+${it.val.toFixed(0)} pts)`;
                                     } else if (it.val < 0) {
@@ -898,10 +933,10 @@ export function MemberModal({
                                       // When they get 0 points, check if this is a no_cosponsor_benefit scenario
                                       // For bills we oppose with no_cosponsor_benefit, not cosponsoring gives 0 points (neutral, not a penalty)
                                       if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor) {
-                                        pointsDisplay = ' (0 pts)';
+                                        pointsDisplay = ''; // Don't show (0 pts)
                                       } else {
                                         // Otherwise, 0 points means they missed getting points (show negative impact)
-                                        pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : ' (0 pts)';
+                                        pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : '';
                                       }
                                     }
                                   }
@@ -956,7 +991,36 @@ export function MemberModal({
                                     }
                                   }
                                   else if (isCosponsor) {
-                                    actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                    // Check if this is part of a preferred pair
+                                    if (it.meta?.pair_key) {
+                                      const pairKey = it.meta.pair_key;
+                                      const isPreferred = isTrue((it.meta as Record<string, unknown>).preferred);
+
+                                      if (!isPreferred) {
+                                        // This is the non-preferred bill
+                                        // Check if they cosponsored the preferred bill
+                                        let cosponsoredPreferred = false;
+                                        for (const col of billCols) {
+                                          const pairMeta = metaByCol.get(col);
+                                          if (pairMeta?.pair_key === pairKey && isTrue((pairMeta as Record<string, unknown>).preferred)) {
+                                            cosponsoredPreferred = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
+                                            break;
+                                          }
+                                        }
+
+                                        if (cosponsoredPreferred && !it.didCosponsor) {
+                                          actionDescription = 'Cosponsored preferred bill';
+                                        } else {
+                                          actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                        }
+                                      } else {
+                                        // Preferred bill - standard description
+                                        actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                      }
+                                    } else {
+                                      // Not a paired bill - standard description
+                                      actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                    }
                                   } else if (isVote) {
                                     // For votes, determine what they actually voted based on NIAC position and whether they got points
                                     if (isSupport) {
