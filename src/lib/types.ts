@@ -27,6 +27,9 @@ export type Meta = {
   pair_key?: string;
   points?: string | number; // total possible points for this action
   no_cosponsor_benefit?: boolean | number | string; // whether cosponsors can get positive points
+  vote_result?: string; // e.g., "Passed House | Passed Senate" or "Failed Senate"
+  vote_tallies?: string; // e.g., "Failed Senate: Nay: 83, Not Voting: 1, Present: 1, Yea: 15"
+  vote_date?: string; // e.g., "Senate: April 3, 2025,  03:24 PM" or "House: 9-Jan-2025 | Senate: 9-Jan-2025"
 };
 
 /** One member row from scores_wide.csv */

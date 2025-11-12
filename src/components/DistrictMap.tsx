@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row } from '@/lib/types';
+import { GRADE_COLORS } from '@/lib/utils';
 
 interface DistrictMapProps {
   members: Row[];
@@ -124,19 +125,19 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
         // Create a grade color map for districts (matching main app color scheme)
         const gradeColors: Record<string, string> = {
-          'A+': '#050a30',  // dark navy blue
-          'A': '#050a30',   // dark navy blue
-          'A-': '#050a30',  // dark navy blue
-          'B+': '#93c5fd',  // light blue
-          'B': '#93c5fd',   // light blue
-          'B-': '#93c5fd',  // light blue
-          'C+': '#b6dfcc',  // mint green
-          'C': '#b6dfcc',   // mint green
-          'C-': '#b6dfcc',  // mint green
-          'D+': '#D4B870',  // tan/gold
-          'D': '#D4B870',   // tan/gold
-          'D-': '#D4B870',  // tan/gold
-          'F': '#C38B32',   // bronze/gold
+          'A+': GRADE_COLORS.A,
+          'A': GRADE_COLORS.A,
+          'A-': GRADE_COLORS.A,
+          'B+': GRADE_COLORS.B,
+          'B': GRADE_COLORS.B,
+          'B-': GRADE_COLORS.B,
+          'C+': GRADE_COLORS.C,
+          'C': GRADE_COLORS.C,
+          'C-': GRADE_COLORS.C,
+          'D+': GRADE_COLORS.D,
+          'D': GRADE_COLORS.D,
+          'D-': GRADE_COLORS.D,
+          'F': GRADE_COLORS.F,
           'N/A': '#E5E7EB'  // gray
         };
 
@@ -728,11 +729,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
                   // Helper function to get grade chip styling
                   const getGradeChipStyle = (grade: string) => {
-                    const color = grade.startsWith("A") ? "#050a30"
-                      : grade.startsWith("B") ? "#93c5fd"
-                      : grade.startsWith("C") ? "#b6dfcc"
-                      : grade.startsWith("D") ? "#D4B870"
-                      : "#C38B32";
+                    const color = grade.startsWith("A") ? GRADE_COLORS.A
+                      : grade.startsWith("B") ? GRADE_COLORS.B
+                      : grade.startsWith("C") ? GRADE_COLORS.C
+                      : grade.startsWith("D") ? GRADE_COLORS.D
+                      : grade.startsWith("F") ? GRADE_COLORS.F
+                      : GRADE_COLORS.default;
                     const textColor = grade.startsWith("A") ? "#ffffff"
                       : "#4b5563";
                     return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; min-width: 44px;`;
@@ -846,11 +848,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
               if (member && !Array.isArray(member)) {
                 // Helper function to get grade chip styling
                 const getGradeChipStyle = (grade: string) => {
-                  const color = grade.startsWith("A") ? "#050a30"
-                    : grade.startsWith("B") ? "#93c5fd"
-                    : grade.startsWith("C") ? "#b6dfcc"
-                    : grade.startsWith("D") ? "#D4B870"
-                    : "#C38B32";
+                  const color = grade.startsWith("A") ? GRADE_COLORS.A
+                    : grade.startsWith("B") ? GRADE_COLORS.B
+                    : grade.startsWith("C") ? GRADE_COLORS.C
+                    : grade.startsWith("D") ? GRADE_COLORS.D
+                    : grade.startsWith("F") ? GRADE_COLORS.F
+                    : GRADE_COLORS.default;
                   const textColor = grade.startsWith("A") ? "#ffffff"
                     : "#4b5563";
                   return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; min-width: 44px;`;

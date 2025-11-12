@@ -1,6 +1,17 @@
 // src/lib/utils.ts
 // Shared utility functions for member display
 
+// ===== GRADE COLOR CONFIGURATION =====
+// Single source of truth for all grade colors across the app
+export const GRADE_COLORS = {
+  A: "#30558C",  // dark blue
+  B: "#93c5fd",  // light blue
+  C: "#b6dfcc",  // mint green
+  D: "#D4B870",  // tan/gold
+  F: "#C38B32",  // bronze/gold
+  default: "#94A3B8"  // gray for N/A or unknown
+} as const;
+
 const NAME_TO_CODE: Record<string, string> = {
   "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
   "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
@@ -51,12 +62,12 @@ export function partyBadgeStyle(p?: string) {
 
 export function gradeColor(grade: string): string {
   const g = (grade || "").trim().toUpperCase();
-  if (g.startsWith("A")) return "#30558C"; // dark blue (using CLAUDE.md color)
-  if (g.startsWith("B")) return "#93c5fd"; // light blue
-  if (g.startsWith("C")) return "#b6dfcc"; // mint green
-  if (g.startsWith("D")) return "#D4B870"; // tan/gold
-  if (g.startsWith("F")) return "#C38B32"; // bronze/gold
-  return "#94A3B8"; // gray
+  if (g.startsWith("A")) return GRADE_COLORS.A;
+  if (g.startsWith("B")) return GRADE_COLORS.B;
+  if (g.startsWith("C")) return GRADE_COLORS.C;
+  if (g.startsWith("D")) return GRADE_COLORS.D;
+  if (g.startsWith("F")) return GRADE_COLORS.F;
+  return GRADE_COLORS.default;
 }
 
 export function gradeTextColor(grade: string): string {
@@ -89,14 +100,104 @@ export function chamberColor(ch?: string): string {
 }
 
 export function inferChamber(meta: { bill_number?: string; chamber?: string } | undefined, col: string): "HOUSE" | "SENATE" | "" {
-  const bn = (meta?.bill_number || col || "").toString().trim();
-  const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
-  // If chamber is explicitly set to HOUSE or SENATE, use that
-  if (explicit === "HOUSE" || explicit === "SENATE") return explicit as "HOUSE" | "SENATE";
-  // Try to infer from bill number prefix
+  if (!meta) return "";
+
+  const bn = (meta.bill_number || col || "").toString().trim();
+  const chamberValue = meta.chamber;
+
+  // If chamber is explicitly HOUSE or SENATE, use that
+  if (chamberValue === "HOUSE") return "HOUSE";
+  if (chamberValue === "SENATE") return "SENATE";
+
+  // If chamber is explicitly empty string, it's multi-chamber
+  // Papa Parse with header:true converts empty CSV fields to empty strings
+  if (chamberValue === "") {
+    return "";
+  }
+
+  // Fallback: infer from bill number prefix
   if (bn.startsWith("H")) return "HOUSE";
   if (bn.startsWith("S")) return "SENATE";
-  // If we still can't determine and chamber is explicitly empty in metadata, it's multi-chamber
-  if (meta && meta.chamber !== undefined && explicit === "") return "";
+
   return "";
+}
+
+export function formatDate(dateStr: string): string {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const monthNameToNumber: Record<string, number> = {
+    'jan': 1, 'january': 1,
+    'feb': 2, 'february': 2,
+    'mar': 3, 'march': 3,
+    'apr': 4, 'april': 4,
+    'may': 5,
+    'jun': 6, 'june': 6,
+    'jul': 7, 'july': 7,
+    'aug': 8, 'august': 8,
+    'sep': 9, 'sept': 9, 'september': 9,
+    'oct': 10, 'october': 10,
+    'nov': 11, 'november': 11,
+    'dec': 12, 'december': 12
+  };
+
+  // Check for formats with dashes
+  if (dateStr.includes('-')) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      // Check if it's D-Mon-YYYY format (e.g., "9-Jan-2025")
+      if (isNaN(Number(parts[1]))) {
+        const day = parseInt(parts[0], 10);
+        const monthNum = monthNameToNumber[parts[1].toLowerCase()];
+        const year = parseInt(parts[2], 10);
+
+        if (monthNum && !isNaN(day) && !isNaN(year)) {
+          return `${monthNames[monthNum - 1]} ${day}, ${year}`;
+        }
+      } else {
+        // ISO format: YYYY-MM-DD
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+
+        if (month >= 1 && month <= 12) {
+          return `${monthNames[month - 1]} ${day}, ${year}`;
+        }
+      }
+    }
+  }
+
+  // Parse dates in format: M/D/YY or M/D/YYYY or MM/DD/YY or MM/DD/YYYY
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const month = parseInt(parts[0], 10);
+    const day = parseInt(parts[1], 10);
+    let year = parseInt(parts[2], 10);
+
+    // Convert 2-digit year to 4-digit
+    if (year < 100) {
+      year += year < 50 ? 2000 : 1900;
+    }
+
+    if (month >= 1 && month <= 12) {
+      return `${monthNames[month - 1]} ${day}, ${year}`;
+    }
+  }
+
+  return dateStr;
+}
+
+export function extractVoteInfo(meta: { vote_result?: string; vote_tallies?: string; vote_date?: string; introduced_date?: string } | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
+  if (!meta) return {};
+
+  // Use the exact language from vote_tallies as the status
+  const voteResult = meta.vote_tallies ? String(meta.vote_tallies).trim() : undefined;
+
+  // Get date introduced from metadata field
+  const dateIntroduced = meta.introduced_date;
+  const formattedIntroducedDate = dateIntroduced ? formatDate(dateIntroduced) : undefined;
+
+  return { voteResult, voteDate: undefined, dateIntroduced: formattedIntroducedDate };
 }
