@@ -698,12 +698,12 @@ export default function MemberPage() {
                         {(() => {
                           // Check if there's ANY financial data across all years
                           const hasAnyFinancialData =
-                            pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                            pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                            pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                            pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                            pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                            pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
+                            pacData.aipac_total_2026 > 0 || pacData.aipac_direct_amount_2026 > 0 || pacData.aipac_earmark_amount_2026 > 0 ||
+                            pacData.aipac_ie_total_2026 > 0 || pacData.aipac_ie_support_2026 > 0 || pacData.dmfi_total_2026 > 0 ||
+                            pacData.dmfi_direct_2026 > 0 || pacData.aipac_total_2024 > 0 || pacData.aipac_direct_amount_2024 > 0 ||
+                            pacData.aipac_earmark_amount_2024 > 0 || pacData.aipac_ie_total_2024 > 0 || pacData.aipac_ie_support_2024 > 0 ||
+                            pacData.dmfi_total_2024 > 0 || pacData.dmfi_direct_2024 > 0 || pacData.dmfi_ie_total_2024 > 0 ||
+                            pacData.dmfi_ie_support_2024 > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
                             pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
                             pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
 
@@ -733,12 +733,12 @@ export default function MemberPage() {
                     {pacData && (() => {
                       // Check if there's ANY financial data to show detailed sections
                       const hasAnyFinancialData =
-                        pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 ||
-                        pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 ||
-                        pacData.dmfi_direct_2025 > 0 || pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 ||
-                        pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 ||
-                        pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 ||
-                        pacData.dmfi_ie_support > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
+                        pacData.aipac_total_2026 > 0 || pacData.aipac_direct_amount_2026 > 0 || pacData.aipac_earmark_amount_2026 > 0 ||
+                        pacData.aipac_ie_total_2026 > 0 || pacData.aipac_ie_support_2026 > 0 || pacData.dmfi_total_2026 > 0 ||
+                        pacData.dmfi_direct_2026 > 0 || pacData.aipac_total_2024 > 0 || pacData.aipac_direct_amount_2024 > 0 ||
+                        pacData.aipac_earmark_amount_2024 > 0 || pacData.aipac_ie_total_2024 > 0 || pacData.aipac_ie_support_2024 > 0 ||
+                        pacData.dmfi_total_2024 > 0 || pacData.dmfi_direct_2024 > 0 || pacData.dmfi_ie_total_2024 > 0 ||
+                        pacData.dmfi_ie_support_2024 > 0 || pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 ||
                         pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0 ||
                         pacData.dmfi_total_2022 > 0 || pacData.dmfi_direct_2022 > 0;
 
@@ -746,65 +746,65 @@ export default function MemberPage() {
 
                       return (
                       <div className="space-y-6">
-                        {/* 2026 Election Section (2025 data) */}
+                        {/* 2026 Election Section */}
                         {(() => {
                           // Only show if there's actual financial data (not just endorsement)
-                          const has2025Data = pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 || pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0 || pacData.dmfi_total_2025 > 0 || pacData.dmfi_direct_2025 > 0;
+                          const has2026Data = pacData.aipac_total_2026 > 0 || pacData.aipac_direct_amount_2026 > 0 || pacData.aipac_earmark_amount_2026 > 0 || pacData.aipac_ie_total_2026 > 0 || pacData.aipac_ie_support_2026 > 0 || pacData.dmfi_total_2026 > 0 || pacData.dmfi_direct_2026 > 0;
 
-                          if (!has2025Data) return null;
+                          if (!has2026Data) return null;
 
                           return (
                             <div>
                               <div className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-[#E7ECF2]">2026 Election</div>
                               <div className="space-y-4">
-                                {/* AIPAC 2025/2026 */}
-                                {(pacData.aipac_total_2025 > 0 || pacData.aipac_direct_amount_2025 > 0 || pacData.aipac_earmark_amount_2025 > 0 || pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0) && (
+                                {/* AIPAC 2026 */}
+                                {aipac && (pacData.aipac_total_2026 > 0 || pacData.aipac_direct_amount_2026 > 0 || pacData.aipac_earmark_amount_2026 > 0 || pacData.aipac_ie_total_2026 > 0 || pacData.aipac_ie_support_2026 > 0) && (
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.aipac_total_2025 > 0 && (
+                                      {pacData.aipac_total_2026 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Total:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_total_2025.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_total_2026.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.aipac_direct_amount_2025 > 0 && (
+                                      {pacData.aipac_direct_amount_2026 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Direct:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_direct_amount_2025.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_direct_amount_2026.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.aipac_earmark_amount_2025 > 0 && (
+                                      {pacData.aipac_earmark_amount_2026 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Earmarked:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_earmark_amount_2025.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_earmark_amount_2026.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {(pacData.aipac_ie_total_2025 > 0 || pacData.aipac_ie_support_2025 > 0) && (
+                                      {(pacData.aipac_ie_total_2026 > 0 || pacData.aipac_ie_support_2026 > 0) && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700">${(pacData.aipac_ie_total_2025 || pacData.aipac_ie_support_2025).toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${(pacData.aipac_ie_total_2026 || pacData.aipac_ie_support_2026).toLocaleString()}</span>
                                         </div>
                                       )}
                                     </div>
                                   </div>
                                 )}
 
-                                {/* DMFI 2025/2026 */}
-                                {(pacData.dmfi_total_2025 > 0 || pacData.dmfi_direct_2025 > 0) && (
+                                {/* DMFI 2026 */}
+                                {(pacData.dmfi_total_2026 > 0 || pacData.dmfi_direct_2026 > 0) && (
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700 mb-2">DMFI (Democratic Majority For Israel)</div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.dmfi_total_2025 > 0 && (
+                                      {pacData.dmfi_total_2026 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Total:</span>
-                                          <span className="font-medium text-slate-700">${pacData.dmfi_total_2025.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.dmfi_total_2026.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.dmfi_direct_2025 > 0 && (
+                                      {pacData.dmfi_direct_2026 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Direct:</span>
-                                          <span className="font-medium text-slate-700">${pacData.dmfi_direct_2025.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.dmfi_direct_2026.toLocaleString()}</span>
                                         </div>
                                       )}
                                     </div>
@@ -818,7 +818,7 @@ export default function MemberPage() {
                         {/* 2024 Election Section */}
                         {(() => {
                           // Only show if there's actual financial data (not just endorsement)
-                          const has2024Data = pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 || pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0 || pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0;
+                          const has2024Data = pacData.aipac_total_2024 > 0 || pacData.aipac_direct_amount_2024 > 0 || pacData.aipac_earmark_amount_2024 > 0 || pacData.aipac_ie_total_2024 > 0 || pacData.aipac_ie_support_2024 > 0 || pacData.dmfi_total_2024 > 0 || pacData.dmfi_direct_2024 > 0 || pacData.dmfi_ie_total_2024 > 0 || pacData.dmfi_ie_support_2024 > 0;
 
                           if (!has2024Data) return null;
 
@@ -827,32 +827,32 @@ export default function MemberPage() {
                               <div className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-[#E7ECF2]">2024 Election</div>
                               <div className="space-y-4">
                                 {/* AIPAC 2024 */}
-                                {(pacData.aipac_total > 0 || pacData.aipac_direct_amount > 0 || pacData.aipac_earmark_amount > 0 || pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0) && (
+                                {aipac && (pacData.aipac_total_2024 > 0 || pacData.aipac_direct_amount_2024 > 0 || pacData.aipac_earmark_amount_2024 > 0 || pacData.aipac_ie_total_2024 > 0 || pacData.aipac_ie_support_2024 > 0) && (
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.aipac_total > 0 && (
+                                      {pacData.aipac_total_2024 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Total:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_total.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_total_2024.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.aipac_direct_amount > 0 && (
+                                      {pacData.aipac_direct_amount_2024 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Direct:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_direct_amount.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_direct_amount_2024.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.aipac_earmark_amount > 0 && (
+                                      {pacData.aipac_earmark_amount_2024 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Earmarked:</span>
-                                          <span className="font-medium text-slate-700">${pacData.aipac_earmark_amount.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.aipac_earmark_amount_2024.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {(pacData.aipac_ie_total > 0 || pacData.aipac_ie_support > 0) && (
+                                      {(pacData.aipac_ie_total_2024 > 0 || pacData.aipac_ie_support_2024 > 0) && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700">${(pacData.aipac_ie_total || pacData.aipac_ie_support).toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${(pacData.aipac_ie_total_2024 || pacData.aipac_ie_support_2024).toLocaleString()}</span>
                                         </div>
                                       )}
                                     </div>
@@ -860,26 +860,26 @@ export default function MemberPage() {
                                 )}
 
                                 {/* DMFI 2024 */}
-                                {(pacData.dmfi_total > 0 || pacData.dmfi_direct > 0 || pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0) && (
+                                {(pacData.dmfi_total_2024 > 0 || pacData.dmfi_direct_2024 > 0 || pacData.dmfi_ie_total_2024 > 0 || pacData.dmfi_ie_support_2024 > 0) && (
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700 mb-2">DMFI (Democratic Majority For Israel)</div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">
-                                      {pacData.dmfi_total > 0 && (
+                                      {pacData.dmfi_total_2024 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Total:</span>
-                                          <span className="font-medium text-slate-700">${pacData.dmfi_total.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.dmfi_total_2024.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {pacData.dmfi_direct > 0 && (
+                                      {pacData.dmfi_direct_2024 > 0 && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Direct:</span>
-                                          <span className="font-medium text-slate-700">${pacData.dmfi_direct.toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${pacData.dmfi_direct_2024.toLocaleString()}</span>
                                         </div>
                                       )}
-                                      {(pacData.dmfi_ie_total > 0 || pacData.dmfi_ie_support > 0) && (
+                                      {(pacData.dmfi_ie_total_2024 > 0 || pacData.dmfi_ie_support_2024 > 0) && (
                                         <div className="flex justify-between">
                                           <span className="text-slate-600">Independent Expenditures:</span>
-                                          <span className="font-medium text-slate-700">${(pacData.dmfi_ie_total || pacData.dmfi_ie_support).toLocaleString()}</span>
+                                          <span className="font-medium text-slate-700">${(pacData.dmfi_ie_total_2024 || pacData.dmfi_ie_support_2024).toLocaleString()}</span>
                                         </div>
                                       )}
                                     </div>
@@ -901,7 +901,7 @@ export default function MemberPage() {
                               <div className="text-xs font-bold text-slate-800 mb-3 pb-2 border-b border-[#E7ECF2]">2022 Election</div>
                               <div className="space-y-4">
                                 {/* AIPAC 2022 */}
-                                {(pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 || pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0) && (
+                                {aipac && (pacData.aipac_total_2022 > 0 || pacData.aipac_direct_amount_2022 > 0 || pacData.aipac_earmark_amount_2022 > 0 || pacData.aipac_ie_total_2022 > 0 || pacData.aipac_ie_support_2022 > 0) && (
                                   <div>
                                     <div className="text-xs font-semibold text-slate-700 mb-2">AIPAC (American Israel Public Affairs Committee)</div>
                                     <div className="grid grid-cols-2 gap-2 text-xs">

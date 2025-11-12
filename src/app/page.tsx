@@ -235,35 +235,35 @@ function isTruthy(v: unknown): boolean {
 }
 
 
-// Determine which election year to display (prefer 2024, then 2025, then 2022 if 2024 has no $ data)
-function getElectionYear(pacData: PacData | undefined): "2024" | "2025" | "2022" | null {
+// Determine which election year to display (prefer 2024, then 2026, then 2022 if 2024 has no $ data)
+function getElectionYear(pacData: PacData | undefined): "2024" | "2026" | "2022" | null {
   if (!pacData) return null;
 
   // Check if 2024 has any dollar amounts
-  const has2024Data = pacData.aipac_total > 0 || pacData.dmfi_total > 0;
+  const has2024Data = pacData.aipac_total_2024 > 0 || pacData.dmfi_total_2024 > 0;
 
-  // Check if 2025 has any dollar amounts
-  const has2025Data = pacData.aipac_total_2025 > 0 || pacData.dmfi_total_2025 > 0;
+  // Check if 2026 has any dollar amounts
+  const has2026Data = pacData.aipac_total_2026 > 0 || pacData.dmfi_total_2026 > 0;
 
   // Check if 2022 has any dollar amounts
   const has2022Data = pacData.aipac_total_2022 > 0 || pacData.dmfi_total_2022 > 0;
 
-  // Priority: 2024 > 2025 > 2022
+  // Priority: 2024 > 2026 > 2022
   if (has2024Data) return "2024";
-  if (has2025Data) return "2025";
+  if (has2026Data) return "2026";
   if (has2022Data) return "2022";
 
   // If no dollar data but we have endorsement data, check in priority order
   if (pacData.aipac_featured === 1 || pacData.dmfi_website === 1) return "2024";
-  if (pacData.aipac_supported_2025 === 1 || pacData.dmfi_supported_2025 === 1) return "2025";
+  if (pacData.aipac_supported_2026 === 1 || pacData.dmfi_supported_2026 === 1) return "2026";
 
   return null;
 }
 
 // Convert data year to election cycle label
-function getElectionLabel(year: "2024" | "2025" | "2022" | null): string {
+function getElectionLabel(year: "2024" | "2026" | "2022" | null): string {
   if (year === "2024") return "2024 Election";
-  if (year === "2025") return "2026 Election";
+  if (year === "2026") return "2026 Election";
   if (year === "2022") return "2022 Election";
   return "—";
 }
@@ -386,7 +386,7 @@ export default function Page() {
 
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
-  const [selectedElection, setSelectedElection] = useState<"2024" | "2025" | "2022">("2024");
+  const [selectedElection, setSelectedElection] = useState<"2024" | "2026" | "2022">("2024");
   const [isMobile, setIsMobile] = useState(false);
 
   // Ref for the scrollable table container
@@ -660,95 +660,95 @@ export default function Page() {
         if (sortCol === "__total_support") {
           // Use selectedElection for all members instead of individual years
           if (selectedElection === "2024") {
-            valA = (pacA?.aipac_total || 0) + (pacA?.dmfi_total || 0);
-            valB = (pacB?.aipac_total || 0) + (pacB?.dmfi_total || 0);
-          } else if (selectedElection === "2025") {
-            valA = (pacA?.aipac_total_2025 || 0) + (pacA?.dmfi_total_2025 || 0);
-            valB = (pacB?.aipac_total_2025 || 0) + (pacB?.dmfi_total_2025 || 0);
+            valA = (aipacA ? (pacA?.aipac_total_2024 || 0) : 0) + (dmfiA ? (pacA?.dmfi_total_2024 || 0) : 0);
+            valB = (aipacB ? (pacB?.aipac_total_2024 || 0) : 0) + (dmfiB ? (pacB?.dmfi_total_2024 || 0) : 0);
+          } else if (selectedElection === "2026") {
+            valA = (aipacA ? (pacA?.aipac_total_2026 || 0) : 0) + (dmfiA ? (pacA?.dmfi_total_2026 || 0) : 0);
+            valB = (aipacB ? (pacB?.aipac_total_2026 || 0) : 0) + (dmfiB ? (pacB?.dmfi_total_2026 || 0) : 0);
           } else if (selectedElection === "2022") {
-            valA = (pacA?.aipac_total_2022 || 0) + (pacA?.dmfi_total_2022 || 0);
-            valB = (pacB?.aipac_total_2022 || 0) + (pacB?.dmfi_total_2022 || 0);
+            valA = (aipacA ? (pacA?.aipac_total_2022 || 0) : 0) + (dmfiA ? (pacA?.dmfi_total_2022 || 0) : 0);
+            valB = (aipacB ? (pacB?.aipac_total_2022 || 0) : 0) + (dmfiB ? (pacB?.dmfi_total_2022 || 0) : 0);
           }
         } else if (sortCol === "__election") {
-          // Sort by election year (2024 first, then 2025, then 2022)
-          valA = selectedElection === "2024" ? 3 : selectedElection === "2025" ? 2 : selectedElection === "2022" ? 1 : 0;
-          valB = selectedElection === "2024" ? 3 : selectedElection === "2025" ? 2 : selectedElection === "2022" ? 1 : 0;
+          // Sort by election year (2024 first, then 2026, then 2022)
+          valA = selectedElection === "2024" ? 3 : selectedElection === "2026" ? 2 : selectedElection === "2022" ? 1 : 0;
+          valB = selectedElection === "2024" ? 3 : selectedElection === "2026" ? 2 : selectedElection === "2022" ? 1 : 0;
         } else if (sortCol === "__aipac_total") {
           if (selectedElection === "2024") {
-            valA = pacA?.aipac_total || 0;
-            valB = pacB?.aipac_total || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.aipac_total_2025 || 0;
-            valB = pacB?.aipac_total_2025 || 0;
+            valA = aipacA ? (pacA?.aipac_total_2024 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_total_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = aipacA ? (pacA?.aipac_total_2026 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_total_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.aipac_total_2022 || 0;
-            valB = pacB?.aipac_total_2022 || 0;
+            valA = aipacA ? (pacA?.aipac_total_2022 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_total_2022 || 0) : 0;
           }
         } else if (sortCol === "__dmfi_total") {
           if (selectedElection === "2024") {
-            valA = pacA?.dmfi_total || 0;
-            valB = pacB?.dmfi_total || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.dmfi_total_2025 || 0;
-            valB = pacB?.dmfi_total_2025 || 0;
+            valA = dmfiA ? (pacA?.dmfi_total_2024 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_total_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = dmfiA ? (pacA?.dmfi_total_2026 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_total_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.dmfi_total_2022 || 0;
-            valB = pacB?.dmfi_total_2022 || 0;
+            valA = dmfiA ? (pacA?.dmfi_total_2022 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_total_2022 || 0) : 0;
           }
         } else if (sortCol === "__aipac_direct") {
           if (selectedElection === "2024") {
-            valA = pacA?.aipac_direct_amount || 0;
-            valB = pacB?.aipac_direct_amount || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.aipac_direct_amount_2025 || 0;
-            valB = pacB?.aipac_direct_amount_2025 || 0;
+            valA = aipacA ? (pacA?.aipac_direct_amount_2024 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_direct_amount_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = aipacA ? (pacA?.aipac_direct_amount_2026 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_direct_amount_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.aipac_direct_amount_2022 || 0;
-            valB = pacB?.aipac_direct_amount_2022 || 0;
+            valA = aipacA ? (pacA?.aipac_direct_amount_2022 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_direct_amount_2022 || 0) : 0;
           }
         } else if (sortCol === "__dmfi_direct") {
           if (selectedElection === "2024") {
-            valA = pacA?.dmfi_direct || 0;
-            valB = pacB?.dmfi_direct || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.dmfi_direct_2025 || 0;
-            valB = pacB?.dmfi_direct_2025 || 0;
+            valA = dmfiA ? (pacA?.dmfi_direct_2024 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_direct_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = dmfiA ? (pacA?.dmfi_direct_2026 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_direct_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.dmfi_direct_2022 || 0;
-            valB = pacB?.dmfi_direct_2022 || 0;
+            valA = dmfiA ? (pacA?.dmfi_direct_2022 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_direct_2022 || 0) : 0;
           }
         } else if (sortCol === "__aipac_earmark") {
           if (selectedElection === "2024") {
-            valA = pacA?.aipac_earmark_amount || 0;
-            valB = pacB?.aipac_earmark_amount || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.aipac_earmark_amount_2025 || 0;
-            valB = pacB?.aipac_earmark_amount_2025 || 0;
+            valA = aipacA ? (pacA?.aipac_earmark_amount_2024 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_earmark_amount_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = aipacA ? (pacA?.aipac_earmark_amount_2026 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_earmark_amount_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.aipac_earmark_amount_2022 || 0;
-            valB = pacB?.aipac_earmark_amount_2022 || 0;
+            valA = aipacA ? (pacA?.aipac_earmark_amount_2022 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_earmark_amount_2022 || 0) : 0;
           }
         } else if (sortCol === "__aipac_ie") {
           if (selectedElection === "2024") {
-            valA = pacA?.aipac_ie_total || 0;
-            valB = pacB?.aipac_ie_total || 0;
-          } else if (selectedElection === "2025") {
-            valA = pacA?.aipac_ie_total_2025 || 0;
-            valB = pacB?.aipac_ie_total_2025 || 0;
+            valA = aipacA ? (pacA?.aipac_ie_total_2024 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_ie_total_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = aipacA ? (pacA?.aipac_ie_total_2026 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_ie_total_2026 || 0) : 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.aipac_ie_total_2022 || 0;
-            valB = pacB?.aipac_ie_total_2022 || 0;
+            valA = aipacA ? (pacA?.aipac_ie_total_2022 || 0) : 0;
+            valB = aipacB ? (pacB?.aipac_ie_total_2022 || 0) : 0;
           }
         } else if (sortCol === "__dmfi_ie") {
           if (selectedElection === "2024") {
-            valA = pacA?.dmfi_ie_total || 0;
-            valB = pacB?.dmfi_ie_total || 0;
-          } else if (selectedElection === "2025") {
-            valA = 0; // No dmfi_ie for 2025
+            valA = dmfiA ? (pacA?.dmfi_ie_total_2024 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_ie_total_2024 || 0) : 0;
+          } else if (selectedElection === "2026") {
+            valA = 0; // No dmfi_ie for 2026
             valB = 0;
           } else if (selectedElection === "2022") {
-            valA = pacA?.dmfi_ie_total_2022 || 0;
-            valB = pacB?.dmfi_ie_total_2022 || 0;
+            valA = dmfiA ? (pacA?.dmfi_ie_total_2022 || 0) : 0;
+            valB = dmfiB ? (pacB?.dmfi_ie_total_2022 || 0) : 0;
           }
         }
 
@@ -1184,7 +1184,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="space-y-2 px-0 pt-2 pb-4 md:p-3">
+      <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
         <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
       {selected && (
         <MemberModal
@@ -1231,7 +1231,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-lg md:rounded-2xl" onScroll={handleScroll}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" onScroll={handleScroll}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -1419,10 +1419,10 @@ export default function Page() {
                           className="text-sm font-normal bg-transparent border border-slate-300 dark:border-slate-600 rounded px-2 py-0.5 cursor-pointer hover:border-[#4B8CFB] dark:hover:border-[#4B8CFB] focus:outline-none focus:border-[#4B8CFB] dark:focus:border-[#4B8CFB]"
                           value={selectedElection}
                           onChange={(e) => {
-                            setSelectedElection(e.target.value as "2024" | "2025" | "2022");
+                            setSelectedElection(e.target.value as "2024" | "2026" | "2022");
                           }}
                         >
-                          <option value="2025">2026</option>
+                          <option value="2026">2026</option>
                           <option value="2024">2024</option>
                           <option value="2022">2022</option>
                         </select>
@@ -1715,9 +1715,8 @@ export default function Page() {
                 const isSummaryMode = f.viewMode === "summary";
 
                 return (
-                  <>
+                  <React.Fragment key={gradeCol.field}>
                     <div
-                      key={gradeCol.field}
                       className={clsx(
                         "td flex items-center justify-center",
                         idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900",
@@ -1816,7 +1815,7 @@ export default function Page() {
                         })()}
                       </div>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
 
@@ -1825,6 +1824,8 @@ export default function Page() {
                 // Handle AIPAC-specific columns
                 if (c.startsWith("__aipac_") || c.startsWith("__dmfi_") || c === "__total_support" || c === "__election") {
                   const pacData = pacDataMap.get(String(r.bioguide_id));
+                  const aipac = isAipacEndorsed(pacData, r.aipac_supported);
+                  const dmfi = isDmfiEndorsed(pacData, r.dmfi_supported);
                   // Use selectedElection instead of getElectionYear
                   const electionYear = selectedElection;
 
@@ -1841,11 +1842,11 @@ export default function Page() {
                   if (c === "__total_support") {
                     let totalSupport = 0;
                     if (electionYear === "2024") {
-                      totalSupport = (pacData?.aipac_total || 0) + (pacData?.dmfi_total || 0);
-                    } else if (electionYear === "2025") {
-                      totalSupport = (pacData?.aipac_total_2025 || 0) + (pacData?.dmfi_total_2025 || 0);
+                      totalSupport = (aipac ? (pacData?.aipac_total_2024 || 0) : 0) + (dmfi ? (pacData?.dmfi_total_2024 || 0) : 0);
+                    } else if (electionYear === "2026") {
+                      totalSupport = (aipac ? (pacData?.aipac_total_2026 || 0) : 0) + (dmfi ? (pacData?.dmfi_total_2026 || 0) : 0);
                     } else if (electionYear === "2022") {
-                      totalSupport = (pacData?.aipac_total_2022 || 0) + (pacData?.dmfi_total_2022 || 0);
+                      totalSupport = (aipac ? (pacData?.aipac_total_2022 || 0) : 0) + (dmfi ? (pacData?.dmfi_total_2022 || 0) : 0);
                     }
                     return (
                       <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular font-medium border-b border-[#E7ECF2] dark:border-slate-900">
@@ -1857,29 +1858,29 @@ export default function Page() {
                   // Monetary columns - use appropriate year's data
                   let amount = 0;
                   if (electionYear === "2024") {
-                    if (c === "__aipac_total") amount = pacData?.aipac_total || 0;
-                    else if (c === "__dmfi_total") amount = pacData?.dmfi_total || 0;
-                    else if (c === "__aipac_direct") amount = pacData?.aipac_direct_amount || 0;
-                    else if (c === "__dmfi_direct") amount = pacData?.dmfi_direct || 0;
-                    else if (c === "__aipac_earmark") amount = pacData?.aipac_earmark_amount || 0;
-                    else if (c === "__aipac_ie") amount = pacData?.aipac_ie_total || 0;
-                    else if (c === "__dmfi_ie") amount = pacData?.dmfi_ie_total || 0;
-                  } else if (electionYear === "2025") {
-                    if (c === "__aipac_total") amount = pacData?.aipac_total_2025 || 0;
-                    else if (c === "__dmfi_total") amount = pacData?.dmfi_total_2025 || 0;
-                    else if (c === "__aipac_direct") amount = pacData?.aipac_direct_amount_2025 || 0;
-                    else if (c === "__dmfi_direct") amount = pacData?.dmfi_direct_2025 || 0;
-                    else if (c === "__aipac_earmark") amount = pacData?.aipac_earmark_amount_2025 || 0;
-                    else if (c === "__aipac_ie") amount = pacData?.aipac_ie_total_2025 || 0;
-                    else if (c === "__dmfi_ie") amount = 0; // No dmfi_ie for 2025
+                    if (c === "__aipac_total") amount = aipac ? (pacData?.aipac_total_2024 || 0) : 0;
+                    else if (c === "__dmfi_total") amount = dmfi ? (pacData?.dmfi_total_2024 || 0) : 0;
+                    else if (c === "__aipac_direct") amount = aipac ? (pacData?.aipac_direct_amount_2024 || 0) : 0;
+                    else if (c === "__dmfi_direct") amount = dmfi ? (pacData?.dmfi_direct_2024 || 0) : 0;
+                    else if (c === "__aipac_earmark") amount = aipac ? (pacData?.aipac_earmark_amount_2024 || 0) : 0;
+                    else if (c === "__aipac_ie") amount = aipac ? (pacData?.aipac_ie_total_2024 || 0) : 0;
+                    else if (c === "__dmfi_ie") amount = dmfi ? (pacData?.dmfi_ie_total_2024 || 0) : 0;
+                  } else if (electionYear === "2026") {
+                    if (c === "__aipac_total") amount = aipac ? (pacData?.aipac_total_2026 || 0) : 0;
+                    else if (c === "__dmfi_total") amount = dmfi ? (pacData?.dmfi_total_2026 || 0) : 0;
+                    else if (c === "__aipac_direct") amount = aipac ? (pacData?.aipac_direct_amount_2026 || 0) : 0;
+                    else if (c === "__dmfi_direct") amount = dmfi ? (pacData?.dmfi_direct_2026 || 0) : 0;
+                    else if (c === "__aipac_earmark") amount = aipac ? (pacData?.aipac_earmark_amount_2026 || 0) : 0;
+                    else if (c === "__aipac_ie") amount = aipac ? (pacData?.aipac_ie_total_2026 || 0) : 0;
+                    else if (c === "__dmfi_ie") amount = 0; // No dmfi_ie for 2026
                   } else if (electionYear === "2022") {
-                    if (c === "__aipac_total") amount = pacData?.aipac_total_2022 || 0;
-                    else if (c === "__dmfi_total") amount = pacData?.dmfi_total_2022 || 0;
-                    else if (c === "__aipac_direct") amount = pacData?.aipac_direct_amount_2022 || 0;
-                    else if (c === "__dmfi_direct") amount = pacData?.dmfi_direct_2022 || 0;
-                    else if (c === "__aipac_earmark") amount = pacData?.aipac_earmark_amount_2022 || 0;
-                    else if (c === "__aipac_ie") amount = pacData?.aipac_ie_total_2022 || 0;
-                    else if (c === "__dmfi_ie") amount = pacData?.dmfi_ie_total_2022 || 0;
+                    if (c === "__aipac_total") amount = aipac ? (pacData?.aipac_total_2022 || 0) : 0;
+                    else if (c === "__dmfi_total") amount = dmfi ? (pacData?.dmfi_total_2022 || 0) : 0;
+                    else if (c === "__aipac_direct") amount = aipac ? (pacData?.aipac_direct_amount_2022 || 0) : 0;
+                    else if (c === "__dmfi_direct") amount = dmfi ? (pacData?.dmfi_direct_2022 || 0) : 0;
+                    else if (c === "__aipac_earmark") amount = aipac ? (pacData?.aipac_earmark_amount_2022 || 0) : 0;
+                    else if (c === "__aipac_ie") amount = aipac ? (pacData?.aipac_ie_total_2022 || 0) : 0;
+                    else if (c === "__dmfi_ie") amount = dmfi ? (pacData?.dmfi_ie_total_2022 || 0) : 0;
                   }
 
                   return (

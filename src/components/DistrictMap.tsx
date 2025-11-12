@@ -16,6 +16,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const popup = useRef<maplibregl.Popup | null>(null);
+  const hoveredFeatureId = useRef<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tooltipContent, setTooltipContent] = useState<string>('');
@@ -87,10 +88,38 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
         const geoJsonData = await response.json();
 
-        // Add data source
+        // Create new GeoJSON with unique IDs in properties for hover state tracking
+        const processedGeoJson = {
+          type: 'FeatureCollection',
+          features: geoJsonData.features.map((feature: any, index: number) => {
+            let customId;
+            if (isSenate) {
+              // For Senate, use state name as ID
+              customId = feature.properties?.name || `state-${index}`;
+            } else {
+              // For House, use STATEFP + CD118FP as ID
+              const statefp = feature.properties?.STATEFP || '';
+              const cd = feature.properties?.CD118FP || '';
+              customId = `${statefp}-${cd}`;
+            }
+            console.log('Set feature ID:', customId, 'for', feature.properties?.NAMELSAD);
+
+            return {
+              type: 'Feature',
+              properties: {
+                ...feature.properties,
+                customId: customId  // Store in properties so we can use promoteId
+              },
+              geometry: feature.geometry
+            };
+          })
+        };
+
+        // Add data source with promoteId to use our custom ID property
         map.current.addSource('districts', {
           type: 'geojson',
-          data: geoJsonData
+          data: processedGeoJson,
+          promoteId: 'customId'  // Use customId property as the feature ID
         });
 
         // Create a grade color map for districts (matching main app color scheme)
@@ -339,6 +368,21 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           }
         });
 
+        // Add hover highlight layer
+        map.current.addLayer({
+          id: 'districts-hover',
+          type: 'fill',
+          source: 'districts',
+          paint: {
+            'fill-color': '#ffffff',
+            'fill-opacity': [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              0.3,
+              0
+            ]
+          }
+        });
 
         // Add border layer for districts
         map.current.addLayer({
@@ -350,6 +394,34 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
             'line-width': 0.5
           }
         });
+
+        // Add state borders for House view
+        if (!isSenate) {
+          try {
+            const stateResponse = await fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json');
+            if (stateResponse.ok) {
+              const stateData = await stateResponse.json();
+              if (map.current) {
+                map.current.addSource('state-boundaries', {
+                  type: 'geojson',
+                  data: stateData
+                });
+
+                map.current.addLayer({
+                  id: 'state-borders',
+                  type: 'line',
+                  source: 'state-boundaries',
+                  paint: {
+                    'line-color': '#000000',
+                    'line-width': 1
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load state boundaries for House view', err);
+          }
+        }
 
         // Add major city labels with tier system for zoom-based display
         const majorCities = {
@@ -511,9 +583,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           }
         });
 
-        // Add state labels for Senate/Both view (added AFTER cities to render on top)
-        if (isSenate) {
-          // State name to abbreviation mapping
+        // Add state labels for all views (added AFTER cities to render on top)
+        // State name to abbreviation mapping
           const stateNameToAbbr: Record<string, string> = {
             'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
             'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
@@ -598,7 +669,6 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
               ]
             }
           });
-        }
 
         // Initialize popup
         popup.current = new maplibregl.Popup({
@@ -623,6 +693,22 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           map.current.getCanvas().style.cursor = 'pointer';
 
           const feature = e.features[0];
+
+          // Update hover state
+          if (feature.id !== undefined && feature.id !== hoveredFeatureId.current) {
+            console.log('Hovering feature ID:', feature.id, 'Properties:', feature.properties);
+            if (hoveredFeatureId.current !== null) {
+              map.current.setFeatureState(
+                { source: 'districts', id: hoveredFeatureId.current },
+                { hover: false }
+              );
+            }
+            hoveredFeatureId.current = feature.id;
+            map.current.setFeatureState(
+              { source: 'districts', id: feature.id },
+              { hover: true }
+            );
+          }
 
           if (isSenate) {
             // Senate or Both mode: show state and all lawmakers
@@ -837,6 +923,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
         map.current.on('mouseleave', 'districts-fill', () => {
           if (!map.current) return;
+
+          // Clear hover state
+          if (hoveredFeatureId.current !== null) {
+            map.current.setFeatureState(
+              { source: 'districts', id: hoveredFeatureId.current },
+              { hover: false }
+            );
+            hoveredFeatureId.current = null;
+          }
 
           map.current.getCanvas().style.cursor = '';
           setTooltipContent('');
