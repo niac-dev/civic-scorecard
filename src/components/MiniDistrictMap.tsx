@@ -512,7 +512,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 {member.chamber === 'HOUSE' ?
-                  `${stateCodeOf(member.state)}-${member.district}` :
+                  (member.district ? `${stateCodeOf(member.state)}-${member.district}` : `${stateCodeOf(member.state)}-At Large`) :
                   stateCodeOf(member.state)
                 }
               </div>
