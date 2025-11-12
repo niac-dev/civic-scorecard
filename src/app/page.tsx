@@ -653,6 +653,10 @@ export default function Page() {
       return [...filtered].sort((a, b) => {
         const pacA = pacDataMap.get(String(a.bioguide_id));
         const pacB = pacDataMap.get(String(b.bioguide_id));
+        const aipacA = isAipacEndorsed(pacA, a.aipac_supported);
+        const dmfiA = isDmfiEndorsed(pacA, a.dmfi_supported);
+        const aipacB = isAipacEndorsed(pacB, b.aipac_supported);
+        const dmfiB = isDmfiEndorsed(pacB, b.dmfi_supported);
 
         let valA = 0;
         let valB = 0;
