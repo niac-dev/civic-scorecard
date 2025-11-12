@@ -128,16 +128,43 @@ export function formatDate(dateStr: string): string {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Check for ISO format: YYYY-MM-DD
+  const monthNameToNumber: Record<string, number> = {
+    'jan': 1, 'january': 1,
+    'feb': 2, 'february': 2,
+    'mar': 3, 'march': 3,
+    'apr': 4, 'april': 4,
+    'may': 5,
+    'jun': 6, 'june': 6,
+    'jul': 7, 'july': 7,
+    'aug': 8, 'august': 8,
+    'sep': 9, 'sept': 9, 'september': 9,
+    'oct': 10, 'october': 10,
+    'nov': 11, 'november': 11,
+    'dec': 12, 'december': 12
+  };
+
+  // Check for formats with dashes
   if (dateStr.includes('-')) {
     const parts = dateStr.split('-');
     if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
+      // Check if it's D-Mon-YYYY format (e.g., "9-Jan-2025")
+      if (isNaN(Number(parts[1]))) {
+        const day = parseInt(parts[0], 10);
+        const monthNum = monthNameToNumber[parts[1].toLowerCase()];
+        const year = parseInt(parts[2], 10);
 
-      if (month >= 1 && month <= 12) {
-        return `${monthNames[month - 1]} ${day}, ${year}`;
+        if (monthNum && !isNaN(day) && !isNaN(year)) {
+          return `${monthNames[monthNum - 1]} ${day}, ${year}`;
+        }
+      } else {
+        // ISO format: YYYY-MM-DD
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+
+        if (month >= 1 && month <= 12) {
+          return `${monthNames[month - 1]} ${day}, ${year}`;
+        }
       }
     }
   }
@@ -162,39 +189,54 @@ export function formatDate(dateStr: string): string {
   return dateStr;
 }
 
-export function extractVoteInfo(meta: { description?: string; analysis?: string; introduced_date?: string } | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
+export function extractVoteInfo(meta: { vote_result?: string; vote_tallies?: string; vote_date?: string; introduced_date?: string } | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
   if (!meta) return {};
-
-  const description = String(meta.description || '');
-  const analysis = String(meta.analysis || '');
-  const combinedText = `${description} ${analysis}`;
-
-  // Extract vote results and dates
-  // Patterns: "failed 6-422 in a vote on 7/10/25", "Vote fails 15-83 on 4/3/25", "Voted down 47-53 on 6/27/25"
-  // "Passed 24-73 on 5/15/25", "passed the House 219-206 on 3/14/25"
-  const votePattern = /(?:failed?|passed?|voted\s+down|vote\s+fails?)\s+(?:the\s+(?:House|Senate)\s+)?(\d+-\d+)(?:\s+in\s+a\s+vote)?\s+on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
-  const match = combinedText.match(votePattern);
 
   let voteResult: string | undefined;
   let voteDate: string | undefined;
 
-  if (match) {
-    const votes = match[1]; // e.g., "6-422"
-    const date = match[2]; // e.g., "7/10/25"
+  // Use new dedicated vote fields if available
+  const voteResultField = meta.vote_result;
+  const voteTalliesField = meta.vote_tallies;
+  const voteDateField = meta.vote_date;
 
-    // Determine if it passed or failed based on context
-    const isPassed = /passed?/i.test(match[0]);
-    const isFailed = /failed?|voted\s+down|vote\s+fails?/i.test(match[0]);
+  if (voteResultField && voteTalliesField && voteDateField) {
+    // Extract vote counts from tallies
+    // Format: "Failed Senate: Nay: 83, Not Voting: 1, Present: 1, Yea: 15"
+    // or "Passed House: Nay: 138, Not Voting: 48, Present: 1, Yea: 242 | Passed Senate: ..."
 
-    if (isPassed) {
-      voteResult = `Passed ${votes}`;
-    } else if (isFailed) {
-      voteResult = `Failed ${votes}`;
-    } else {
-      voteResult = votes;
+    // For multi-chamber, just use the first one (or combine them)
+    const firstVote = String(voteTalliesField).split('|')[0].trim();
+
+    // Extract chamber, result, and vote counts
+    // Match pattern: "(Passed|Failed) (House|Senate): ... Yea: 123 ... Nay: 456"
+    const chamberMatch = firstVote.match(/(Passed|Failed)\s+(House|Senate):/i);
+    const yeaMatch = firstVote.match(/Yea:\s*(\d+)/i);
+    const nayMatch = firstVote.match(/Nay:\s*(\d+)/i);
+
+    if (chamberMatch && yeaMatch && nayMatch) {
+      const result = chamberMatch[1]; // "Passed" or "Failed"
+      const chamber = chamberMatch[2]; // "House" or "Senate"
+      const yeaCount = yeaMatch[1];
+      const nayCount = nayMatch[1];
+
+      voteResult = `${chamber} Vote: ${result} ${yeaCount}-${nayCount}`;
     }
 
-    voteDate = formatDate(date);
+    // Parse and format the date
+    // Format: "Senate: April 3, 2025,  03:24 PM" or "House: 9-Jan-2025 | Senate: 9-Jan-2025"
+    const firstDate = String(voteDateField).split('|')[0].trim();
+    // Remove chamber prefix if present
+    const dateOnly = firstDate.replace(/^(House|Senate):\s*/i, '').trim();
+
+    // Check if it's already in a nice format (contains month name)
+    if (/january|february|march|april|may|june|july|august|september|october|november|december/i.test(dateOnly)) {
+      // Already formatted nicely, just remove time if present
+      voteDate = dateOnly.replace(/,?\s*\d{1,2}:\d{2}\s*(AM|PM)?/i, '').trim();
+    } else {
+      // Try to parse and format it
+      voteDate = formatDate(dateOnly);
+    }
   }
 
   // Get date introduced from metadata field
