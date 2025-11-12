@@ -8,7 +8,7 @@ type FiltersState = {
   state: string;           // e.g. "WA"
   search: string;          // free-text member search
   categories: Set<string>; // selected category names
-  viewMode: "summary" | "all" | "category" | "map"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view
+  viewMode: "summary" | "all" | "category" | "map" | "tracker"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view, "tracker" = legislation tracker
   myLawmakers: string[];   // array of full names from address search
   billColumn: string;      // column name for bill search
 
@@ -21,7 +21,7 @@ type FiltersState = {
 };
 
 // Helper to get initial viewMode based on localStorage
-function getInitialViewMode(): "summary" | "all" | "category" | "map" {
+function getInitialViewMode(): "summary" | "all" | "category" | "map" | "tracker" {
   if (typeof window === "undefined") return "summary";
 
   // Check if user has visited before

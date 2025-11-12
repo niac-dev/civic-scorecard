@@ -1,16 +1,19 @@
 // src/components/GradeChip.tsx
 
+import { GRADE_COLORS } from "@/lib/utils";
+
 interface GradeChipProps {
   grade: string;
   isOverall?: boolean;
 }
 
 export function GradeChip({ grade, isOverall }: GradeChipProps) {
-  const color = grade.startsWith("A") ? "#30558C" // dark blue
-    : grade.startsWith("B") ? "#93c5fd" // light blue
-    : grade.startsWith("C") ? "#b6dfcc" // mint green
-    : grade.startsWith("D") ? "#D4B870" // tan/gold
-    : "#C38B32"; // bronze/gold for F
+  const color = grade.startsWith("A") ? GRADE_COLORS.A
+    : grade.startsWith("B") ? GRADE_COLORS.B
+    : grade.startsWith("C") ? GRADE_COLORS.C
+    : grade.startsWith("D") ? GRADE_COLORS.D
+    : grade.startsWith("F") ? GRADE_COLORS.F
+    : GRADE_COLORS.default;
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
     : grade.startsWith("B") ? "#4b5563" // dark grey for B grades

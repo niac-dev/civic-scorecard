@@ -343,9 +343,14 @@ export function MemberModal({
                       : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">All Issues</div>
-                    <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        {Number(row.Total || 0).toFixed(0)}/{Number(row.Max_Possible || 0).toFixed(0)}
+                      </div>
+                      <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                    </div>
                   </div>
                 </button>
 
@@ -354,6 +359,8 @@ export function MemberModal({
                   const totalField = `Total_${fieldSuffix}` as keyof Row;
                   const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
                   const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+                  const total = Number(row[totalField] || 0).toFixed(0);
+                  const maxPossible = Number(row[maxField] || 0).toFixed(0);
 
                   return (
                     <button
@@ -373,9 +380,14 @@ export function MemberModal({
                           : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{category}</div>
-                        <GradeChip grade={String(row[gradeField] || "N/A")} />
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-slate-600 dark:text-slate-400">
+                            {total}/{maxPossible}
+                          </div>
+                          <GradeChip grade={String(row[gradeField] || "N/A")} />
+                        </div>
                       </div>
                     </button>
                   );
@@ -455,7 +467,7 @@ export function MemberModal({
                       return (
                         <>
                           {/* Always show status message at the top */}
-                          <div className="py-3 flex items-start gap-3 mb-4">
+                          <div className="py-3 flex items-start gap-3 bg-slate-50 dark:bg-white/5 -mx-2 px-2 rounded mb-4">
                             <div className="mt-0.5">
                               <VoteIcon ok={!hasSupport} />
                             </div>

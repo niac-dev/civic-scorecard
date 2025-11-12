@@ -6,7 +6,7 @@ import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
-import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue } from "@/lib/utils";
+import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -22,88 +22,6 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   } else {
     return isSupport ? 'Support' : 'Oppose';
   }
-}
-
-function formatDate(dateStr: string): string {
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // Check for ISO format: YYYY-MM-DD
-  if (dateStr.includes('-')) {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-
-      if (month >= 1 && month <= 12) {
-        return `${monthNames[month - 1]} ${day}, ${year}`;
-      }
-    }
-  }
-
-  // Parse dates in format: M/D/YY or M/D/YYYY or MM/DD/YY or MM/DD/YYYY
-  const parts = dateStr.split('/');
-  if (parts.length === 3) {
-    const month = parseInt(parts[0], 10);
-    const day = parseInt(parts[1], 10);
-    let year = parseInt(parts[2], 10);
-
-    // Convert 2-digit year to 4-digit
-    if (year < 100) {
-      year += year < 50 ? 2000 : 1900;
-    }
-
-    if (month >= 1 && month <= 12) {
-      return `${monthNames[month - 1]} ${day}, ${year}`;
-    }
-  }
-
-  return dateStr;
-}
-
-function extractVoteInfo(meta: Meta | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
-  if (!meta) return {};
-
-  const description = String(meta.description || '');
-  const analysis = String(meta.analysis || '');
-  const combinedText = `${description} ${analysis}`;
-
-  // Extract vote results and dates
-  // Patterns: "failed 6-422 in a vote on 7/10/25", "Vote fails 15-83 on 4/3/25", "Voted down 47-53 on 6/27/25"
-  // "Passed 24-73 on 5/15/25", "passed the House 219-206 on 3/14/25"
-  const votePattern = /(?:failed?|passed?|voted\s+down|vote\s+fails?)\s+(?:the\s+(?:House|Senate)\s+)?(\d+-\d+)(?:\s+in\s+a\s+vote)?\s+on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
-  const match = combinedText.match(votePattern);
-
-  let voteResult: string | undefined;
-  let voteDate: string | undefined;
-
-  if (match) {
-    const votes = match[1]; // e.g., "6-422"
-    const date = match[2]; // e.g., "7/10/25"
-
-    // Determine if it passed or failed based on context
-    const isPassed = /passed?/i.test(match[0]);
-    const isFailed = /failed?|voted\s+down|vote\s+fails?/i.test(match[0]);
-
-    if (isPassed) {
-      voteResult = `Passed ${votes}`;
-    } else if (isFailed) {
-      voteResult = `Failed ${votes}`;
-    } else {
-      voteResult = votes;
-    }
-
-    voteDate = formatDate(date);
-  }
-
-  // Get date introduced from metadata field
-  const dateIntroduced = (meta as { introduced_date?: string }).introduced_date;
-  const formattedIntroducedDate = dateIntroduced ? formatDate(dateIntroduced) : undefined;
-
-  return { voteResult, voteDate, dateIntroduced: formattedIntroducedDate };
 }
 
 export default function BillPage() {
@@ -575,11 +493,12 @@ export default function BillPage() {
                     <span>{sponsorMember.full_name}</span>
                     {sponsorMember.Grade && (
                       <span className="flex-shrink-0 inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]" style={{
-                        backgroundColor: String(sponsorMember.Grade).startsWith("A") ? "#30558C" // dark blue
-                          : String(sponsorMember.Grade).startsWith("B") ? "#93c5fd" // light blue
-                          : String(sponsorMember.Grade).startsWith("C") ? "#b6dfcc" // mint green
-                          : String(sponsorMember.Grade).startsWith("D") ? "#D4B870" // tan/gold
-                          : "#C38B32", // bronze/gold for F
+                        backgroundColor: String(sponsorMember.Grade).startsWith("A") ? GRADE_COLORS.A
+                          : String(sponsorMember.Grade).startsWith("B") ? GRADE_COLORS.B
+                          : String(sponsorMember.Grade).startsWith("C") ? GRADE_COLORS.C
+                          : String(sponsorMember.Grade).startsWith("D") ? GRADE_COLORS.D
+                          : String(sponsorMember.Grade).startsWith("F") ? GRADE_COLORS.F
+                          : GRADE_COLORS.default,
                         color: String(sponsorMember.Grade).startsWith("A") ? "#ffffff"
                           : String(sponsorMember.Grade).startsWith("B") ? "#4b5563"
                           : String(sponsorMember.Grade).startsWith("C") ? "#4b5563"

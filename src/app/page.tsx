@@ -8,6 +8,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
+import { GRADE_COLORS, extractVoteInfo, inferChamber } from "@/lib/utils";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
 
@@ -69,19 +70,6 @@ function partyLabel(p?: string) {
     .join(" ");
 }
 
-function inferChamber(meta: Meta | undefined, col: string): "HOUSE" | "SENATE" | "" {
-  const bn = (meta?.bill_number || col || "").toString().trim();
-  const explicit = (meta?.chamber || "").toString().toUpperCase().trim();
-  // If chamber is explicitly set to HOUSE or SENATE, use that
-  if (explicit === "HOUSE" || explicit === "SENATE") return explicit as any;
-  // Try to infer from bill number prefix
-  if (bn.startsWith("H")) return "HOUSE";
-  if (bn.startsWith("S")) return "SENATE";
-  // If we still can't determine and chamber is explicitly empty in metadata, it's multi-chamber
-  if (meta && meta.chamber !== undefined && explicit === "") return "";
-  return "";
-}
-
 function formatPositionTooltip(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
   const actionType = (meta as { action_types?: string })?.action_types || '';
@@ -113,88 +101,6 @@ function formatPositionTooltip(meta: Meta | undefined): string {
   } else {
     return isSupport ? `Vote in Favor${points}` : `Vote Against${points}`;
   }
-}
-
-function formatDate(dateStr: string): string {
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
-  // Check for ISO format: YYYY-MM-DD
-  if (dateStr.includes('-')) {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-
-      if (month >= 1 && month <= 12) {
-        return `${monthNames[month - 1]} ${day}, ${year}`;
-      }
-    }
-  }
-
-  // Parse dates in format: M/D/YY or M/D/YYYY or MM/DD/YY or MM/DD/YYYY
-  const parts = dateStr.split('/');
-  if (parts.length === 3) {
-    const month = parseInt(parts[0], 10);
-    const day = parseInt(parts[1], 10);
-    let year = parseInt(parts[2], 10);
-
-    // Convert 2-digit year to 4-digit
-    if (year < 100) {
-      year += year < 50 ? 2000 : 1900;
-    }
-
-    if (month >= 1 && month <= 12) {
-      return `${monthNames[month - 1]} ${day}, ${year}`;
-    }
-  }
-
-  return dateStr;
-}
-
-function extractVoteInfo(meta: Meta | undefined): { voteResult?: string; voteDate?: string; dateIntroduced?: string } {
-  if (!meta) return {};
-
-  const description = String(meta.description || '');
-  const analysis = String(meta.analysis || '');
-  const combinedText = `${description} ${analysis}`;
-
-  // Extract vote results and dates
-  // Patterns: "failed 6-422 in a vote on 7/10/25", "Vote fails 15-83 on 4/3/25", "Voted down 47-53 on 6/27/25"
-  // "Passed 24-73 on 5/15/25", "passed the House 219-206 on 3/14/25"
-  const votePattern = /(?:failed?|passed?|voted\s+down|vote\s+fails?)\s+(?:the\s+(?:House|Senate)\s+)?(\d+-\d+)(?:\s+in\s+a\s+vote)?\s+on\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/i;
-  const match = combinedText.match(votePattern);
-
-  let voteResult: string | undefined;
-  let voteDate: string | undefined;
-
-  if (match) {
-    const votes = match[1]; // e.g., "6-422"
-    const date = match[2]; // e.g., "7/10/25"
-
-    // Determine if it passed or failed based on context
-    const isPassed = /passed?/i.test(match[0]);
-    const isFailed = /failed?|voted\s+down|vote\s+fails?/i.test(match[0]);
-
-    if (isPassed) {
-      voteResult = `Passed ${votes}`;
-    } else if (isFailed) {
-      voteResult = `Failed ${votes}`;
-    } else {
-      voteResult = votes;
-    }
-
-    voteDate = formatDate(date);
-  }
-
-  // Get date introduced from metadata field
-  const dateIntroduced = (meta as { introduced_date?: string }).introduced_date;
-  const formattedIntroducedDate = dateIntroduced ? formatDate(dateIntroduced) : undefined;
-
-  return { voteResult, voteDate, dateIntroduced: formattedIntroducedDate };
 }
 
 function lastName(full?: string) {
@@ -383,6 +289,7 @@ export default function Page() {
   })(); }, []);
 
   const f = useFilters();
+  const router = useRouter();
 
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
@@ -1047,17 +954,17 @@ export default function Page() {
 
       const avgRank = grades.reduce((a, b) => a + b, 0) / grades.length;
 
-      // Map average grade rank to color (dark navy = A, bronze = F)
+      // Map average grade rank to color
       if (avgRank <= 2) { // A+ to A-
-        colors[state] = "#050a30"; // dark navy blue
+        colors[state] = GRADE_COLORS.A;
       } else if (avgRank <= 5) { // B+ to B-
-        colors[state] = "#30558d"; // medium blue
+        colors[state] = GRADE_COLORS.B;
       } else if (avgRank <= 8) { // C+ to C-
-        colors[state] = "#93c5fd"; // light blue
+        colors[state] = GRADE_COLORS.C;
       } else if (avgRank <= 11) { // D+ to D-
-        colors[state] = "#D4B870"; // tan/gold
+        colors[state] = GRADE_COLORS.D;
       } else { // F
-        colors[state] = "#C38B32"; // bronze/gold
+        colors[state] = GRADE_COLORS.F;
       }
     });
 
@@ -1230,7 +1137,7 @@ export default function Page() {
         <div
           className={clsx(
             "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out",
-            f.viewMode !== "map"
+            f.viewMode !== "map" && f.viewMode !== "tracker"
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
@@ -2229,6 +2136,263 @@ export default function Page() {
           </div>
         </div>
         </div>
+
+        {/* Tracker View */}
+        <div
+          className={clsx(
+            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out",
+            f.viewMode === "tracker"
+              ? "translate-x-0 opacity-100"
+              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+          )}
+        >
+          <div className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl">
+            {(() => {
+              // Process bills data
+              let bills = cols.map((col) => {
+                const meta = metaByCol.get(col);
+                if (!meta) return null;
+
+                const inferredChamber = inferChamber(meta, col);
+                const actionType = (meta as { action_types?: string })?.action_types || '';
+                const position = (meta?.position_to_score || '').toUpperCase();
+                const categories = (meta?.categories || "")
+                  .split(";")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+
+                // Find sponsor from metadata
+                const sponsorBioguideId = meta?.sponsor_bioguide_id;
+                const sponsorName = meta?.sponsor_name || meta?.sponsor;
+
+                // Try to find sponsor by bioguide_id first, then by name
+                let sponsor = sponsorBioguideId
+                  ? rows.find(r => r.bioguide_id === sponsorBioguideId)
+                  : undefined;
+
+                // If no sponsor found by bioguide_id but we have a name, try to find by name
+                if (!sponsor && sponsorName) {
+                  sponsor = rows.find(r =>
+                    r.full_name?.toLowerCase().includes(sponsorName.toLowerCase()) ||
+                    sponsorName.toLowerCase().includes(r.full_name?.toLowerCase() || '')
+                  );
+                }
+
+                return {
+                  col,
+                  meta,
+                  inferredChamber,
+                  actionType,
+                  position,
+                  categories,
+                  sponsor,
+                };
+              }).filter(Boolean);
+
+              // Apply category filter
+              if (f.categories.size > 0) {
+                bills = bills.filter((bill: any) =>
+                  bill.categories.some((cat: string) => f.categories.has(cat))
+                );
+              }
+
+              // Apply chamber filter
+              if (f.chamber) {
+                bills = bills.filter((bill: any) =>
+                  bill.inferredChamber === f.chamber || bill.inferredChamber === ""
+                );
+              }
+
+              // Group bills by category
+              const billsByCategory = new Map<string, any[]>();
+              bills.forEach((bill: any) => {
+                bill.categories.forEach((cat: string) => {
+                  if (!billsByCategory.has(cat)) {
+                    billsByCategory.set(cat, []);
+                  }
+                  billsByCategory.get(cat)!.push(bill);
+                });
+              });
+
+              // Remove duplicates (bills that appear in multiple categories)
+              billsByCategory.forEach((categoryBills, category) => {
+                billsByCategory.set(category, Array.from(new Set(categoryBills)));
+              });
+
+              // Sort categories
+              const sortedCategories = Array.from(billsByCategory.keys()).sort();
+
+              return (
+                <>
+                  {/* Header */}
+                  <div
+                    className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
+                    style={{
+                      gridTemplateColumns: "2fr 1fr",
+                    }}
+                  >
+                    <div className="th pl-4">Bill Information</div>
+                    <div className="th">Sponsor</div>
+                  </div>
+
+                  {/* Bill Rows - Grouped by Category */}
+                  <div>
+                    {sortedCategories.map((category) => (
+                      <div key={category}>
+                        {/* Category Header */}
+                        <div className="bg-slate-100 dark:bg-slate-800 border-b border-[#E7ECF2] dark:border-slate-900 px-4 py-3 text-center">
+                          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {category}
+                          </h3>
+                        </div>
+
+                        {/* Bills in this category */}
+                        {billsByCategory.get(category)!.map((bill: any) => (
+                      <div
+                        key={bill.col}
+                        className="grid hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition border-b border-[#E7ECF2] dark:border-slate-900"
+                        style={{
+                          gridTemplateColumns: "2fr 1fr",
+                        }}
+                        onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                      >
+                        {/* Bill Info Cell */}
+                        <div className="td">
+                          <div className="space-y-2">
+                            {/* Title (big) */}
+                            <div>
+                              {/* Chamber and Category badges */}
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                {bill.inferredChamber === "" ? (
+                                  <>
+                                    <span
+                                      className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
+                                      style={{
+                                        backgroundColor: `${chamberColor("HOUSE")}30`,
+                                      }}
+                                    >
+                                      House
+                                    </span>
+                                    <span
+                                      className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
+                                      style={{
+                                        backgroundColor: `${chamberColor("SENATE")}30`,
+                                      }}
+                                    >
+                                      Senate
+                                    </span>
+                                  </>
+                                ) : bill.inferredChamber && (
+                                  <span
+                                    className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
+                                    style={{
+                                      backgroundColor: `${chamberColor(bill.inferredChamber)}30`,
+                                    }}
+                                  >
+                                    {bill.inferredChamber === "HOUSE" ? "House" : "Senate"}
+                                  </span>
+                                )}
+
+                                {/* Category pills */}
+                                {bill.categories.map((cat: string) => (
+                                  <span
+                                    key={cat}
+                                    className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200"
+                                  >
+                                    {cat}
+                                  </span>
+                                ))}
+                              </div>
+
+                              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                                {bill.meta.display_name || bill.meta.short_title || bill.meta.bill_number || bill.col}
+                              </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                              {(() => {
+                                const { voteResult, voteDate, dateIntroduced } = extractVoteInfo(bill.meta);
+
+                                if (voteResult && voteDate) {
+                                  return `${voteResult} on ${voteDate}`;
+                                } else if (dateIntroduced) {
+                                  return `Introduced ${dateIntroduced}`;
+                                }
+                                return "Pending";
+                              })()}
+                            </div>
+
+                            {/* Description */}
+                            {bill.meta.description && (
+                              <div className="text-sm text-slate-600 dark:text-slate-300">
+                                {bill.meta.description}
+                              </div>
+                            )}
+
+                            {/* NIAC Action Position */}
+                            <div className="flex items-center gap-3 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-medium text-slate-600 dark:text-slate-400">
+                                  NIAC Action Position:
+                                </span>
+                                <span className={clsx(
+                                  "px-2 py-1 rounded font-semibold",
+                                  bill.position === "SUPPORT"
+                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                )}>
+                                  {bill.position === "SUPPORT" ? "Support" : "Oppose"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sponsor Cell */}
+                        <div className="td flex items-center">
+                          {bill.sponsor ? (
+                            <div className="flex items-center gap-2 p-2">
+                              {bill.sponsor.photo_url ? (
+                                <img
+                                  src={String(bill.sponsor.photo_url)}
+                                  alt=""
+                                  className="h-12 w-12 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                                  {bill.sponsor.full_name}
+                                </div>
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span
+                                    className="px-1 py-0.5 rounded text-[10px] font-medium"
+                                    style={partyBadgeStyle(bill.sponsor.party)}
+                                  >
+                                    {partyLabel(bill.sponsor.party)}
+                                  </span>
+                                  <span className="text-slate-500 dark:text-slate-400">
+                                    {stateCodeOf(bill.sponsor.state)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 p-2">No sponsor</div>
+                          )}
+                        </div>
+                      </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
       </div>
       </div>
     </div>
@@ -2237,11 +2401,11 @@ export default function Page() {
 
 function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta> }) {
   const f = useFilters();
-  const [filtersExpanded, setFiltersExpanded] = useState(f.viewMode === "map");
+  const [filtersExpanded, setFiltersExpanded] = useState(f.viewMode === "map" || f.viewMode === "tracker");
 
-  // Auto-expand filters in map view, collapse in other views
+  // Auto-expand filters in map view and tracker view, collapse in other views
   useEffect(() => {
-    if (f.viewMode === "map") {
+    if (f.viewMode === "map" || f.viewMode === "tracker") {
       setFiltersExpanded(true);
     } else {
       setFiltersExpanded(false);
@@ -2281,6 +2445,19 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           >
             Scorecard
           </button>
+          <button
+            onClick={() => f.set({ viewMode: "tracker", categories: new Set() })}
+            className={clsx(
+              "px-3 h-9 rounded-md text-sm",
+              f.viewMode === "tracker" && f.categories.size === 0
+                ? "bg-[#4B8CFB] text-white"
+                : f.viewMode === "tracker" && f.categories.size > 0
+                ? "bg-[#93c5fd] text-slate-900"
+                : "hover:bg-slate-50 dark:hover:bg-white/10"
+            )}
+          >
+            Tracker
+          </button>
         </div>
 
         {/* Mobile: Show icon buttons (<768px) */}
@@ -2313,6 +2490,22 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </button>
+          <button
+            onClick={() => f.set({ viewMode: "tracker", categories: new Set() })}
+            className={clsx(
+              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
+              f.viewMode === "tracker" && f.categories.size === 0
+                ? "bg-[#4B8CFB] text-white"
+                : f.viewMode === "tracker" && f.categories.size > 0
+                ? "bg-[#93c5fd] text-slate-900"
+                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
+            )}
+            title="Legislation tracker"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+          </button>
         </div>
 
         {/* Desktop: Show individual issue buttons (≥985px) - Hide in map mode */}
@@ -2322,18 +2515,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-900">
             {/* Individual issue buttons - bright blue when active */}
             <button
-              onClick={() => f.set({ viewMode: "all", categories: new Set() })}
-              className={clsx(
-                "px-2 h-7 rounded-md text-sm",
-                f.viewMode === "all" && f.categories.size === 0
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
-              )}
-            >
-              All
-            </button>
-            <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["Civil Rights & Immigration"]) })}
+              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Civil Rights & Immigration"]) })}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm whitespace-nowrap",
                 f.categories.has("Civil Rights & Immigration")
@@ -2344,7 +2526,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               Civil Rights & Immigration
             </button>
             <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["Iran"]) })}
+              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Iran"]) })}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Iran")
@@ -2355,7 +2537,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               Iran
             </button>
             <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["Israel-Gaza"]) })}
+              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Israel-Gaza"]) })}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Israel-Gaza")
@@ -2369,7 +2551,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
-                f.categories.has("AIPAC")
+                f.categories.has("AIPAC") && f.viewMode === "category"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
@@ -2386,28 +2568,28 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           className={clsx(
             "max-[984px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
             "max-[500px]:px-2 max-[500px]:max-w-[120px] max-[500px]:text-xs",
-            f.viewMode === "all" || f.viewMode === "category"
+            f.viewMode === "category" || (f.viewMode === "tracker" && f.categories.size > 0)
               ? "bg-[#4B8CFB] text-white"
               : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
           )}
           value={
-            f.viewMode === "all" && f.categories.size === 0
-              ? "All"
-              : f.categories.size > 0
+            f.categories.size > 0
               ? Array.from(f.categories)[0]
               : ""
           }
           onChange={(e) => {
             const value = e.target.value;
-            if (value === "" || value === "All") {
-              f.set({ viewMode: "all", categories: new Set() });
-            } else {
+            if (value === "") {
+              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+            } else if (value === "AIPAC") {
+              // AIPAC always goes to scorecard category view
               f.set({ viewMode: "category", categories: new Set([value]) });
+            } else {
+              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set([value]) });
             }
           }}
         >
           <option value="">Issues</option>
-          <option value="All">All</option>
           <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
           <option value="Iran">Iran</option>
           <option value="Israel-Gaza">Israel-Gaza</option>
@@ -2454,19 +2636,19 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
-          {(f.chamber || f.party || f.state) && !filtersExpanded && (
+          {(f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && !filtersExpanded && (
             <span className="text-xs text-slate-500">
               ({[
                 f.chamber && f.chamber,
-                f.party && f.party,
-                f.state && f.state
+                f.viewMode !== "tracker" && f.party && f.party,
+                f.viewMode !== "tracker" && f.state && f.state
               ].filter(Boolean).join(", ")})
             </span>
           )}
         </button>
 
         {/* Clear button when filters are active but collapsed */}
-        {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
+        {f.viewMode !== "tracker" && (f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
           <button
             onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
             className="chip-outline text-slate-700 dark:text-slate-800 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
@@ -2493,31 +2675,35 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               }
             }}
           />
-          <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
-            <option value="">Party</option>
-            <option>Democratic</option><option>Republican</option><option>Independent</option>
-          </select>
-          <select
-            className="select !text-xs !h-8 !px-2 !max-w-[140px]"
-            value={f.state || ""}
-            onChange={(e) => {
-              const selectedState = e.target.value;
-              // If selecting a territory without senate, automatically switch to House
-              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                f.set({ state: selectedState, chamber: "HOUSE" });
-              } else {
-                f.set({ state: selectedState });
-              }
-            }}
-          >
-            <option value="">State</option>
-            {STATES.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          {(f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+          {f.viewMode !== "tracker" && (
+            <>
+              <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
+                <option value="">Party</option>
+                <option>Democratic</option><option>Republican</option><option>Independent</option>
+              </select>
+              <select
+                className="select !text-xs !h-8 !px-2 !max-w-[140px]"
+                value={f.state || ""}
+                onChange={(e) => {
+                  const selectedState = e.target.value;
+                  // If selecting a territory without senate, automatically switch to House
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
+                }}
+              >
+                <option value="">State</option>
+                {STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+          {f.viewMode !== "tracker" && (f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
             <button
               onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
               className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
@@ -2947,11 +3133,12 @@ function Progress({ value }:{ value:number }) {
 }
 
 function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
-  const color = grade.startsWith("A") ? "#30558C" // dark blue
-    : grade.startsWith("B") ? "#93c5fd" // light blue
-    : grade.startsWith("C") ? "#b6dfcc" // mint green
-    : grade.startsWith("D") ? "#D4B870" // tan/gold
-    : "#C38B32"; // bronze/gold for F
+  const color = grade.startsWith("A") ? GRADE_COLORS.A
+    : grade.startsWith("B") ? GRADE_COLORS.B
+    : grade.startsWith("C") ? GRADE_COLORS.C
+    : grade.startsWith("D") ? GRADE_COLORS.D
+    : grade.startsWith("F") ? GRADE_COLORS.F
+    : GRADE_COLORS.default;
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
     : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
