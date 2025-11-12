@@ -90,7 +90,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
         // Create new GeoJSON with unique IDs in properties for hover state tracking
         const processedGeoJson = {
-          type: 'FeatureCollection',
+          type: 'FeatureCollection' as const,
           features: geoJsonData.features.map((feature: { properties?: { name?: string; STATEFP?: string; CD118FP?: string; NAMELSAD?: string }; geometry?: unknown }, index: number) => {
             let customId;
             if (isSenate) {
