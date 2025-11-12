@@ -336,7 +336,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
 
           // Find the district feature in the GeoJSON
           const features = geoJsonData.features || [];
-          const districtFeature = features.find((f: any) =>
+          const districtFeature = features.find((f: { properties?: { STATEFP?: string; CD118FP?: string } }) =>
             f.properties?.STATEFP === fips && f.properties?.CD118FP === districtNum
           );
 
@@ -771,7 +771,7 @@ function FullscreenMap({ member }: { member: Row }) {
 
           // Find the district feature to calculate center
           const features = geoJsonData.features || [];
-          const districtFeature = features.find((f: any) =>
+          const districtFeature = features.find((f: { properties?: { STATEFP?: string; CD118FP?: string } }) =>
             f.properties?.STATEFP === fips && f.properties?.CD118FP === districtNum
           );
 
