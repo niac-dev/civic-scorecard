@@ -9,7 +9,14 @@
   font-size: 20px; /* Increased by 10% from 18px (originally 16px default) */
 }
 
-body { @apply bg-[#F7F8FA] text-[#0B1220] antialiased; }
+body {
+  @apply bg-[#F7F8FA] text-[#0B1220] antialiased;
+  overscroll-behavior-x: none;
+}
+
+html {
+  overscroll-behavior-x: none;
+}
 
 @media (prefers-color-scheme: dark) {
   body { @apply bg-[#0B1220] text-[#E8EEF7]; }

@@ -296,6 +296,9 @@ export default function Page() {
   const [selectedElection, setSelectedElection] = useState<"2024" | "2026" | "2022">("2024");
   const [isMobile, setIsMobile] = useState(false);
 
+  // Track expanded bills in tracker accordion
+  const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -794,14 +797,32 @@ export default function Page() {
         if (catCompare !== 0) return catCompare;
       }
 
-      // Finally sort alphabetically by display name
-      // Strip bill numbers (e.g., "H.R.123 — Title" -> "Title") to group related bills together
-      const stripBillNumber = (name: string) => {
-        // Match patterns like "H.R.123 — ", "S.456 — ", "H.Con.Res.78 — ", etc.
-        return name.replace(/^[A-Z]\.[A-Z\.]+\s*\d+\s*—\s*/i, '').trim();
-      };
-      const nameA = stripBillNumber(metaA?.display_name || metaA?.short_title || a);
-      const nameB = stripBillNumber(metaB?.display_name || metaB?.short_title || b);
+      // Finally sort by bill number and title
+      // Extract bill type and number for proper numeric sorting (e.g., "H.R.100" comes after "H.R.99")
+      const nameA = metaA?.display_name || metaA?.short_title || a;
+      const nameB = metaB?.display_name || metaB?.short_title || b;
+
+      // Match bill number pattern: "H.R.123", "S.456", "H.Con.Res.78", etc.
+      const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
+      const matchA = nameA.match(billRegex);
+      const matchB = nameB.match(billRegex);
+
+      // If both have bill numbers, compare bill type first, then number numerically
+      if (matchA && matchB) {
+        const typeA = matchA[1];
+        const typeB = matchB[1];
+        const numA = parseInt(matchA[2], 10);
+        const numB = parseInt(matchB[2], 10);
+
+        // Compare bill type (H.R. vs S. vs H.Con.Res., etc.)
+        const typeCompare = typeA.localeCompare(typeB);
+        if (typeCompare !== 0) return typeCompare;
+
+        // Compare bill number numerically
+        if (numA !== numB) return numA - numB;
+      }
+
+      // Fall back to full alphanumeric comparison for the rest
       return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
     });
 
@@ -1142,7 +1163,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" onScroll={handleScroll}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -2146,7 +2167,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl">
+          <div className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
             {(() => {
               // Process bills data
               let bills = cols.map((col) => {
@@ -2219,6 +2240,39 @@ export default function Page() {
                 billsByCategory.set(category, Array.from(new Set(categoryBills)));
               });
 
+              // Sort bills within each category by chamber, then by bill number
+              billsByCategory.forEach((categoryBills, category) => {
+                const sorted = categoryBills.sort((a: any, b: any) => {
+                  // Sort by chamber first (HOUSE, SENATE, empty)
+                  const chamberOrder = { "HOUSE": 1, "SENATE": 2, "": 3 };
+                  const chamberCompare = (chamberOrder[a.inferredChamber] || 3) - (chamberOrder[b.inferredChamber] || 3);
+                  if (chamberCompare !== 0) return chamberCompare;
+
+                  // Then sort by bill number and title
+                  const nameA = a.meta?.display_name || a.meta?.short_title || a.col;
+                  const nameB = b.meta?.display_name || b.meta?.short_title || b.col;
+
+                  const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
+                  const matchA = nameA.match(billRegex);
+                  const matchB = nameB.match(billRegex);
+
+                  if (matchA && matchB) {
+                    const typeA = matchA[1];
+                    const typeB = matchB[1];
+                    const numA = parseInt(matchA[2], 10);
+                    const numB = parseInt(matchB[2], 10);
+
+                    const typeCompare = typeA.localeCompare(typeB);
+                    if (typeCompare !== 0) return typeCompare;
+
+                    if (numA !== numB) return numA - numB;
+                  }
+
+                  return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+                });
+                billsByCategory.set(category, sorted);
+              });
+
               // Sort categories
               const sortedCategories = Array.from(billsByCategory.keys()).sort();
 
@@ -2228,11 +2282,13 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
                     style={{
-                      gridTemplateColumns: "2fr 1fr",
+                      gridTemplateColumns: window.innerWidth < 768 ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
                     }}
                   >
+                    <div className="th px-2 hidden md:block"></div>
                     <div className="th pl-4">Bill Information</div>
-                    <div className="th">Sponsor</div>
+                    <div className="th text-center">Our Position</div>
+                    <div className="th pl-4 hidden md:block">Sponsor</div>
                   </div>
 
                   {/* Bill Rows - Grouped by Category */}
@@ -2247,144 +2303,156 @@ export default function Page() {
                         </div>
 
                         {/* Bills in this category */}
-                        {billsByCategory.get(category)!.map((bill: any) => (
-                      <div
-                        key={bill.col}
-                        className="grid hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition border-b border-[#E7ECF2] dark:border-slate-900"
-                        style={{
-                          gridTemplateColumns: "2fr 1fr",
-                        }}
-                        onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
-                      >
-                        {/* Bill Info Cell */}
-                        <div className="td">
-                          <div className="space-y-2">
-                            {/* Title (big) */}
-                            <div>
-                              {/* Chamber and Category badges */}
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                {bill.inferredChamber === "" ? (
-                                  <>
-                                    <span
-                                      className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
-                                      style={{
-                                        backgroundColor: `${chamberColor("HOUSE")}30`,
-                                      }}
-                                    >
-                                      House
-                                    </span>
-                                    <span
-                                      className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
-                                      style={{
-                                        backgroundColor: `${chamberColor("SENATE")}30`,
-                                      }}
-                                    >
-                                      Senate
-                                    </span>
-                                  </>
-                                ) : bill.inferredChamber && (
-                                  <span
-                                    className="px-2 py-0.5 rounded text-xs font-semibold text-slate-700 dark:text-slate-200"
-                                    style={{
-                                      backgroundColor: `${chamberColor(bill.inferredChamber)}30`,
-                                    }}
+                        {billsByCategory.get(category)!.map((bill: any) => {
+                          const isExpanded = expandedBills.has(bill.col);
+                          return (
+                            <div
+                              key={bill.col}
+                              className="border-b border-[#E7ECF2] dark:border-slate-900"
+                            >
+                              {/* Collapsed view - always visible */}
+                              <div
+                                className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer"
+                                style={{
+                                  gridTemplateColumns: window.innerWidth < 768 ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {/* Expand/Collapse Button */}
+                                <div
+                                  className="px-2 py-3 items-center justify-center hidden md:flex"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedBills(prev => {
+                                      const next = new Set(prev);
+                                      if (next.has(bill.col)) {
+                                        next.delete(bill.col);
+                                      } else {
+                                        next.add(bill.col);
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <svg
+                                    className={clsx(
+                                      "w-3 h-3 transition-transform text-slate-500 dark:text-slate-400",
+                                      isExpanded && "rotate-90"
+                                    )}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
                                   >
-                                    {bill.inferredChamber === "HOUSE" ? "House" : "Senate"}
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+
+                                {/* Bill Info - Chamber, Category, Title */}
+                                <div
+                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3"
+                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                                >
+                                  {/* Title */}
+                                  <div className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                    {bill.meta.display_name || bill.meta.short_title || bill.meta.bill_number || bill.col}
+                                  </div>
+                                  {/* Description */}
+                                  {bill.meta.description && (
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 hidden md:block">
+                                      {bill.meta.description}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* NIAC Action Position */}
+                                <div
+                                  className="py-3 text-sm text-slate-800 dark:text-white flex items-center justify-center"
+                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                                >
+                                  <span className={clsx(
+                                    "px-1 rounded text-[10px] font-medium border",
+                                    bill.position === "SUPPORT"
+                                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700"
+                                      : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700"
+                                  )}>
+                                    {bill.position === "SUPPORT" ? "Support" : "Oppose"}
                                   </span>
-                                )}
+                                </div>
 
-                                {/* Category pills */}
-                                {bill.categories.map((cat: string) => (
-                                  <span
-                                    key={cat}
-                                    className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200"
-                                  >
-                                    {cat}
-                                  </span>
-                                ))}
+                                {/* Sponsor */}
+                                <div
+                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 hidden md:block"
+                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                                >
+                                  {bill.sponsor ? (
+                                    <div className="flex items-center gap-2 max-w-full">
+                                      {bill.sponsor.photo_url ? (
+                                        <img
+                                          src={String(bill.sponsor.photo_url)}
+                                          alt=""
+                                          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                        />
+                                      ) : (
+                                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
+                                          {bill.sponsor.full_name}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs mt-0.5">
+                                          <span
+                                            className="px-1 py-0.5 rounded text-[10px] font-medium"
+                                            style={partyBadgeStyle(bill.sponsor.party)}
+                                          >
+                                            {partyLabel(bill.sponsor.party)}
+                                          </span>
+                                          <span className="text-slate-500 dark:text-slate-400 text-[10px]">
+                                            {stateCodeOf(bill.sponsor.state)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">No sponsor</div>
+                                  )}
+                                </div>
                               </div>
 
-                              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                                {bill.meta.display_name || bill.meta.short_title || bill.meta.bill_number || bill.col}
-                              </div>
-                            </div>
+                              {/* Expanded view - Status and Analysis */}
+                              {isExpanded && (
+                                <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-t border-[#E7ECF2] dark:border-slate-900">
+                                  <div className="space-y-2">
+                                    {/* Status */}
+                                    <div>
+                                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mr-2">Status:</span>
+                                      <span className="text-xs text-slate-600 dark:text-slate-400">
+                                        {(() => {
+                                          const { voteResult, dateIntroduced } = extractVoteInfo(bill.meta);
+                                          if (voteResult) {
+                                            return voteResult;
+                                          } else if (dateIntroduced) {
+                                            return `Introduced ${dateIntroduced}`;
+                                          }
+                                          return "Pending";
+                                        })()}
+                                      </span>
+                                    </div>
 
-                            {/* Status */}
-                            <div className="text-xs text-slate-600 dark:text-slate-400">
-                              {(() => {
-                                const { voteResult, dateIntroduced } = extractVoteInfo(bill.meta);
-
-                                if (voteResult) {
-                                  return voteResult;
-                                } else if (dateIntroduced) {
-                                  return `Introduced ${dateIntroduced}`;
-                                }
-                                return "Pending";
-                              })()}
-                            </div>
-
-                            {/* Description */}
-                            {bill.meta.description && (
-                              <div className="text-sm text-slate-600 dark:text-slate-300">
-                                {bill.meta.description}
-                              </div>
-                            )}
-
-                            {/* NIAC Action Position */}
-                            <div className="flex items-center gap-3 text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-slate-600 dark:text-slate-400">
-                                  NIAC Action Position:
-                                </span>
-                                <span className={clsx(
-                                  "px-2 py-1 rounded font-semibold",
-                                  bill.position === "SUPPORT"
-                                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                                )}>
-                                  {bill.position === "SUPPORT" ? "Support" : "Oppose"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Sponsor Cell */}
-                        <div className="td flex items-center">
-                          {bill.sponsor ? (
-                            <div className="flex items-center gap-2 p-2">
-                              {bill.sponsor.photo_url ? (
-                                <img
-                                  src={String(bill.sponsor.photo_url)}
-                                  alt=""
-                                  className="h-12 w-12 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                                    {/* Analysis */}
+                                    {bill.meta.analysis && (
+                                      <div>
+                                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Analysis:</div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-300">
+                                          {bill.meta.analysis}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               )}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                                  {bill.sponsor.full_name}
-                                </div>
-                                <div className="flex items-center gap-1 text-xs">
-                                  <span
-                                    className="px-1 py-0.5 rounded text-[10px] font-medium"
-                                    style={partyBadgeStyle(bill.sponsor.party)}
-                                  >
-                                    {partyLabel(bill.sponsor.party)}
-                                  </span>
-                                  <span className="text-slate-500 dark:text-slate-400">
-                                    {stateCodeOf(bill.sponsor.state)}
-                                  </span>
-                                </div>
-                              </div>
                             </div>
-                          ) : (
-                            <div className="text-xs text-slate-500 dark:text-slate-400 p-2">No sponsor</div>
-                          )}
-                        </div>
-                      </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
@@ -2515,7 +2583,14 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-900">
             {/* Individual issue buttons - bright blue when active */}
             <button
-              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Civil Rights & Immigration"]) })}
+              onClick={() => {
+                // Toggle: if already selected, go back to summary/all view
+                if (f.categories.has("Civil Rights & Immigration")) {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+                } else {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Civil Rights & Immigration"]) });
+                }
+              }}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm whitespace-nowrap",
                 f.categories.has("Civil Rights & Immigration")
@@ -2526,7 +2601,14 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               Civil Rights & Immigration
             </button>
             <button
-              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Iran"]) })}
+              onClick={() => {
+                // Toggle: if already selected, go back to summary/all view
+                if (f.categories.has("Iran")) {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+                } else {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Iran"]) });
+                }
+              }}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Iran")
@@ -2537,7 +2619,14 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               Iran
             </button>
             <button
-              onClick={() => f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Israel-Gaza"]) })}
+              onClick={() => {
+                // Toggle: if already selected, go back to summary/all view
+                if (f.categories.has("Israel-Gaza")) {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+                } else {
+                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Israel-Gaza"]) });
+                }
+              }}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("Israel-Gaza")
@@ -2548,7 +2637,14 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               Israel-Gaza
             </button>
             <button
-              onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
+              onClick={() => {
+                // Toggle: if already selected, go back to summary view
+                if (f.categories.has("AIPAC") && f.viewMode === "category") {
+                  f.set({ viewMode: "summary", categories: new Set() });
+                } else {
+                  f.set({ viewMode: "category", categories: new Set(["AIPAC"]) });
+                }
+              }}
               className={clsx(
                 "px-2 h-7 rounded-md text-sm",
                 f.categories.has("AIPAC") && f.viewMode === "category"
@@ -2579,7 +2675,12 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
           }
           onChange={(e) => {
             const value = e.target.value;
-            if (value === "") {
+            const currentCategory = f.categories.size > 0 ? Array.from(f.categories)[0] : "";
+
+            // If selecting the same category, toggle it off (go back to summary/all view)
+            if (value === currentCategory && value !== "") {
+              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+            } else if (value === "") {
               f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
             } else if (value === "AIPAC") {
               // AIPAC always goes to scorecard category view

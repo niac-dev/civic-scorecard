@@ -27,7 +27,7 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
         <div className="h-8 w-8 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10" />
       )}
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 overflow-hidden">
+        <div className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 overflow-hidden">
           <span className="truncate">{member.full_name}</span>
           {grade && (
             <span

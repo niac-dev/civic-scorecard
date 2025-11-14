@@ -99,26 +99,21 @@ export function chamberColor(ch?: string): string {
   }
 }
 
-export function inferChamber(meta: { bill_number?: string; chamber?: string } | undefined, col: string): "HOUSE" | "SENATE" | "" {
+export function inferChamber(meta: { bill_number?: string; chamber?: string; display_name?: string; short_title?: string } | undefined, col: string): "HOUSE" | "SENATE" | "" {
   if (!meta) return "";
 
-  const bn = (meta.bill_number || col || "").toString().trim();
-  const chamberValue = meta.chamber;
+  const chamberValue = (meta.chamber || "").toString().trim().toUpperCase();
 
   // If chamber is explicitly HOUSE or SENATE, use that
   if (chamberValue === "HOUSE") return "HOUSE";
   if (chamberValue === "SENATE") return "SENATE";
 
-  // If chamber is explicitly empty string, it's multi-chamber
-  // Papa Parse with header:true converts empty CSV fields to empty strings
-  if (chamberValue === "") {
-    return "";
-  }
+  // Fallback: infer from bill number prefix (check multiple fields)
+  const bn = (meta.bill_number || meta.display_name || meta.short_title || col || "").toString().trim();
+  if (bn.startsWith("H.R.") || bn.startsWith("H.") || bn.startsWith("H ")) return "HOUSE";
+  if (bn.startsWith("S.") || bn.startsWith("S ")) return "SENATE";
 
-  // Fallback: infer from bill number prefix
-  if (bn.startsWith("H")) return "HOUSE";
-  if (bn.startsWith("S")) return "SENATE";
-
+  // If chamber was explicitly empty and we couldn't infer, treat as multi-chamber
   return "";
 }
 
