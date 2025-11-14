@@ -20,9 +20,16 @@ type FiltersState = {
   clearCategories: () => void;
 };
 
-// Helper to get initial viewMode based on localStorage
+// Helper to get initial viewMode based on URL query params or localStorage
 function getInitialViewMode(): "summary" | "all" | "category" | "map" | "tracker" {
   if (typeof window === "undefined") return "summary";
+
+  // Check for view query parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get('view');
+  if (viewParam === "tracker" || viewParam === "map" || viewParam === "summary" || viewParam === "all" || viewParam === "category") {
+    return viewParam;
+  }
 
   // Check if user has visited before
   const hasVisited = localStorage.getItem("hasVisitedScorecard");

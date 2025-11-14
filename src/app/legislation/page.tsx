@@ -193,7 +193,7 @@ export default function LegislationPage() {
               <div
                 key={bill.col}
                 className="rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 p-6 hover:shadow-lg transition cursor-pointer"
-                onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}?from=legislation`)}
               >
                 <div className="flex gap-4">
                   {/* Sponsor Photo */}

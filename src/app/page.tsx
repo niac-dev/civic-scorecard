@@ -291,6 +291,15 @@ export default function Page() {
   const f = useFilters();
   const router = useRouter();
 
+  // Check for view query parameter on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    if (viewParam === 'tracker' || viewParam === 'map' || viewParam === 'summary' || viewParam === 'all' || viewParam === 'category') {
+      f.set({ viewMode: viewParam });
+    }
+  }, []);
+
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
   const [selectedElection, setSelectedElection] = useState<"2024" | "2026" | "2022">("2024");
@@ -302,6 +311,9 @@ export default function Page() {
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Ref for the tracker container
+  const trackerScrollRef = useRef<HTMLDivElement | null>(null);
+
   // Virtual scrolling state
   const [scrollTop, setScrollTop] = useState(0);
 
@@ -312,6 +324,20 @@ export default function Page() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Prevent horizontal scrolling in tracker
+  useEffect(() => {
+    if (trackerScrollRef.current) {
+      trackerScrollRef.current.scrollLeft = 0;
+      const preventHorizontalScroll = () => {
+        if (trackerScrollRef.current) {
+          trackerScrollRef.current.scrollLeft = 0;
+        }
+      };
+      const interval = setInterval(preventHorizontalScroll, 100);
+      return () => clearInterval(interval);
+    }
+  }, [f.viewMode]);
 
   // Scroll to top when filters change (but not when categories change)
   useEffect(() => {
@@ -1163,7 +1189,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-12rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -2167,7 +2193,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[85vh] rounded-lg md:rounded-2xl" style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
+          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[450px] max-h-[calc(100vh-12rem)] rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
             {(() => {
               // Process bills data
               let bills = cols.map((col) => {
@@ -2181,6 +2207,24 @@ export default function Page() {
                   .split(";")
                   .map((s) => s.trim())
                   .filter(Boolean);
+
+                // Count cosponsors dynamically from the wide CSV if this is a cosponsor action
+                const isCosponsor = actionType.includes('cosponsor');
+                if (isCosponsor && !meta.cosponsors) {
+                  const cosponsorCol = `${col}_cosponsor`;
+                  const cosponsorCount = rows.filter(row => {
+                    // Only count members from the appropriate chamber
+                    if (inferredChamber && row.chamber !== inferredChamber) {
+                      return false;
+                    }
+                    // Check if they cosponsored
+                    return Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
+                  }).length;
+
+                  // Add cosponsor count to meta (include sponsor by adding 1)
+                  // The sponsor is the original author, so total cosponsors = cosponsors + sponsor
+                  (meta as any).cosponsors = cosponsorCount + 1;
+                }
 
                 // Find sponsor from metadata
                 const sponsorBioguideId = meta?.sponsor_bioguide_id;
@@ -2280,9 +2324,9 @@ export default function Page() {
                 <>
                   {/* Header */}
                   <div
-                    className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
+                    className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
+                      gridTemplateColumns: isMobile ? "1fr 0.6fr" : "40px calc(100% - 320px) 100px 180px",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
@@ -2292,7 +2336,7 @@ export default function Page() {
                   </div>
 
                   {/* Bill Rows - Grouped by Category */}
-                  <div>
+                  <div className="w-full max-w-full">
                     {sortedCategories.map((category) => (
                       <div key={category}>
                         {/* Category Header */}
@@ -2312,10 +2356,21 @@ export default function Page() {
                             >
                               {/* Collapsed view - always visible */}
                               <div
-                                className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer"
+                                className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
+                                  gridTemplateColumns: isMobile ? "1fr 0.6fr" : "40px calc(100% - 320px) 100px 180px",
                                   alignItems: "center",
+                                }}
+                                onClick={() => {
+                                  setExpandedBills(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(bill.col)) {
+                                      next.delete(bill.col);
+                                    } else {
+                                      next.add(bill.col);
+                                    }
+                                    return next;
+                                  });
                                 }}
                               >
                                 {/* Expand/Collapse Button */}
@@ -2349,8 +2404,7 @@ export default function Page() {
 
                                 {/* Bill Info - Chamber, Category, Title */}
                                 <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3"
-                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 min-w-0"
                                 >
                                   {/* Title */}
                                   <div className="text-sm font-bold text-slate-700 dark:text-slate-200">
@@ -2367,7 +2421,6 @@ export default function Page() {
                                 {/* NIAC Action Position */}
                                 <div
                                   className="py-3 text-sm text-slate-800 dark:text-white flex items-center justify-center"
-                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
                                 >
                                   <span className={clsx(
                                     "px-1 rounded text-[10px] font-medium border",
@@ -2381,8 +2434,7 @@ export default function Page() {
 
                                 {/* Sponsor */}
                                 <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 hidden md:block"
-                                  onClick={() => router.push(`/bill/${encodeURIComponent(bill.col)}`)}
+                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 hidden md:block min-w-0"
                                 >
                                   {bill.sponsor ? (
                                     <div className="flex items-center gap-2 max-w-full">
@@ -2421,7 +2473,7 @@ export default function Page() {
                               {/* Expanded view - Status and Analysis */}
                               {isExpanded && (
                                 <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-t border-[#E7ECF2] dark:border-slate-900">
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     {/* Status */}
                                     <div>
                                       <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mr-2">Status:</span>
@@ -2436,17 +2488,41 @@ export default function Page() {
                                           return "Pending";
                                         })()}
                                       </span>
+                                      {!extractVoteInfo(bill.meta).voteResult && bill.meta.cosponsors && (
+                                        <>
+                                          <span className="text-xs text-slate-400 dark:text-slate-500 mx-2">•</span>
+                                          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mr-1">Cosponsors:</span>
+                                          <span className="text-xs text-slate-600 dark:text-slate-400">{bill.meta.cosponsors}</span>
+                                        </>
+                                      )}
                                     </div>
 
                                     {/* Analysis */}
                                     {bill.meta.analysis && (
                                       <div>
                                         <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Analysis:</div>
-                                        <div className="text-sm text-slate-600 dark:text-slate-300">
+                                        <div className="text-xs text-slate-600 dark:text-slate-300">
                                           {bill.meta.analysis}
                                         </div>
                                       </div>
                                     )}
+
+                                    {/* More Information Link */}
+                                    <div className="pt-2">
+                                      <a
+                                        href={`/bill/${encodeURIComponent(bill.col)}?from=tracker`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          router.push(`/bill/${encodeURIComponent(bill.col)}?from=tracker`);
+                                        }}
+                                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                                      >
+                                        More Information
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                      </a>
+                                    </div>
                                   </div>
                                 </div>
                               )}

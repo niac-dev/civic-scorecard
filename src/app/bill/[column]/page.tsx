@@ -29,6 +29,16 @@ export default function BillPage() {
   const router = useRouter();
   const column = decodeURIComponent(params.column as string);
 
+  // Check if we came from a specific page
+  const [fromPage, setFromPage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get the 'from' query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const from = urlParams.get('from');
+    setFromPage(from);
+  }, []);
+
   const [meta, setMeta] = useState<Meta | null>(null);
   const [supporters, setSupporters] = useState<Row[]>([]);
   const [middleGroup, setMiddleGroup] = useState<Row[]>([]);
@@ -458,7 +468,12 @@ export default function BillPage() {
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
                 onClick={() => {
-                  router.push('/');
+                  // Navigate back to where we came from, or default to scorecard homepage
+                  if (fromPage === 'tracker') {
+                    router.push('/?view=tracker');
+                  } else {
+                    router.push('/');
+                  }
                 }}
               >
                 Close
