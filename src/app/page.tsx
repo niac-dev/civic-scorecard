@@ -2282,7 +2282,7 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
                     style={{
-                      gridTemplateColumns: window.innerWidth < 768 ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
+                      gridTemplateColumns: isMobile ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
@@ -2314,7 +2314,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer"
                                 style={{
-                                  gridTemplateColumns: window.innerWidth < 768 ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
+                                  gridTemplateColumns: isMobile ? "1fr 0.6fr" : "auto 3fr 0.6fr 1fr",
                                   alignItems: "center",
                                 }}
                               >
