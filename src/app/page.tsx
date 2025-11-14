@@ -2244,8 +2244,8 @@ export default function Page() {
               billsByCategory.forEach((categoryBills, category) => {
                 const sorted = categoryBills.sort((a: any, b: any) => {
                   // Sort by chamber first (HOUSE, SENATE, empty)
-                  const chamberOrder = { "HOUSE": 1, "SENATE": 2, "": 3 };
-                  const chamberCompare = (chamberOrder[a.inferredChamber] || 3) - (chamberOrder[b.inferredChamber] || 3);
+                  const chamberOrder: Record<string, number> = { "HOUSE": 1, "SENATE": 2, "": 3 };
+                  const chamberCompare = (chamberOrder[a.inferredChamber as string] || 3) - (chamberOrder[b.inferredChamber as string] || 3);
                   if (chamberCompare !== 0) return chamberCompare;
 
                   // Then sort by bill number and title
