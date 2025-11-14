@@ -2288,7 +2288,7 @@ export default function Page() {
                     <div className="th px-2 hidden md:block"></div>
                     <div className="th pl-4">Bill Information</div>
                     <div className="th text-center">Our Position</div>
-                    <div className="th pl-4 hidden md:block">Sponsor</div>
+                    <div className="th text-center hidden md:block">Sponsor</div>
                   </div>
 
                   {/* Bill Rows - Grouped by Category */}
@@ -3131,8 +3131,12 @@ function Header({
               <>
                 {icon}{' '}
                 <span
-                  className="px-1 py-0.5 rounded font-medium"
-                  style={meta?.chamber ? { backgroundColor: `${chamberColor(meta.chamber)}40` } : undefined}
+                  className={clsx(
+                    "px-1 py-0.5 rounded font-medium",
+                    isSupport
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
+                  )}
                 >
                   {label}
                 </span>
