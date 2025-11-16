@@ -6,9 +6,18 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:android": "npx cap open android",
+    "app:ios": "npm run cap:sync && npm run cap:ios",
+    "app:android": "npm run cap:sync && npm run cap:android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
     "@types/react-window": "^1.8.8",
     "clsx": "^2.1.1",
     "maplibre-gl": "^5.10.0",

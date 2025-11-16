@@ -422,6 +422,151 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           } catch (err) {
             console.error('Failed to load state boundaries for House view', err);
           }
+
+          // Add district number labels that appear when zoomed in
+          // Create centroid points for each unique district to avoid duplicate labels
+          if (map.current) {
+            // Calculate centroids for each district (deduplicated by STATEFP + CD118FP)
+            const districtCentroids: { type: 'FeatureCollection'; features: Array<{ type: 'Feature'; properties: { district: string; statefp: string; cd: string }; geometry: { type: 'Point'; coordinates: [number, number] } }> } = {
+              type: 'FeatureCollection',
+              features: []
+            };
+
+            const seenDistricts = new Set<string>();
+
+            processedGeoJson.features.forEach((feature: { properties?: { STATEFP?: string; CD118FP?: string }; geometry?: { type?: string; coordinates?: unknown } }) => {
+              const statefp = feature.properties?.STATEFP || '';
+              const cd = feature.properties?.CD118FP || '';
+              const key = `${statefp}-${cd}`;
+
+              if (!seenDistricts.has(key) && statefp && cd) {
+                seenDistricts.add(key);
+
+                // Calculate centroid from geometry
+                const geom = feature.geometry;
+                if (geom && geom.type && geom.coordinates) {
+                  let centroid: [number, number] = [0, 0];
+
+                  if (geom.type === 'Polygon') {
+                    const coords = geom.coordinates as number[][][];
+                    centroid = calculatePolygonCentroid(coords[0]);
+                  } else if (geom.type === 'MultiPolygon') {
+                    // For MultiPolygon, find the largest polygon and use its centroid
+                    const multiCoords = geom.coordinates as number[][][][];
+                    let maxArea = 0;
+                    let largestPoly: number[][] = [];
+
+                    multiCoords.forEach(poly => {
+                      const area = calculatePolygonArea(poly[0]);
+                      if (area > maxArea) {
+                        maxArea = area;
+                        largestPoly = poly[0];
+                      }
+                    });
+
+                    if (largestPoly.length > 0) {
+                      centroid = calculatePolygonCentroid(largestPoly);
+                    }
+                  }
+
+                  if (centroid[0] !== 0 || centroid[1] !== 0) {
+                    districtCentroids.features.push({
+                      type: 'Feature',
+                      properties: {
+                        district: cd === '00' ? 'AL' : String(parseInt(cd, 10)),
+                        statefp: statefp,
+                        cd: cd
+                      },
+                      geometry: {
+                        type: 'Point',
+                        coordinates: centroid
+                      }
+                    });
+                  }
+                }
+              }
+            });
+
+            // Helper function to calculate polygon centroid using the proper geometric formula
+            function calculatePolygonCentroid(coords: number[][]): [number, number] {
+              let cx = 0, cy = 0;
+              let signedArea = 0;
+              const n = coords.length;
+
+              for (let i = 0; i < n - 1; i++) {
+                const x0 = coords[i][0];
+                const y0 = coords[i][1];
+                const x1 = coords[i + 1][0];
+                const y1 = coords[i + 1][1];
+                const a = x0 * y1 - x1 * y0;
+                signedArea += a;
+                cx += (x0 + x1) * a;
+                cy += (y0 + y1) * a;
+              }
+
+              signedArea *= 0.5;
+              cx = cx / (6.0 * signedArea);
+              cy = cy / (6.0 * signedArea);
+
+              // If calculation fails (very small or degenerate polygon), fall back to simple average
+              if (isNaN(cx) || isNaN(cy) || !isFinite(cx) || !isFinite(cy)) {
+                let x = 0, y = 0;
+                for (let i = 0; i < n; i++) {
+                  x += coords[i][0];
+                  y += coords[i][1];
+                }
+                return [x / n, y / n];
+              }
+
+              return [cx, cy];
+            }
+
+            // Helper function to calculate polygon area (for finding largest)
+            function calculatePolygonArea(coords: number[][]): number {
+              let area = 0;
+              const n = coords.length;
+              for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                area += coords[i][0] * coords[j][1];
+                area -= coords[j][0] * coords[i][1];
+              }
+              return Math.abs(area / 2);
+            }
+
+            map.current.addSource('district-centroids', {
+              type: 'geojson',
+              data: districtCentroids
+            });
+
+            map.current.addLayer({
+              id: 'district-labels',
+              type: 'symbol',
+              source: 'district-centroids',
+              layout: {
+                'text-field': ['get', 'district'],
+                'text-size': [
+                  'step',
+                  ['zoom'],
+                  0,    // Hidden at low zoom
+                  5, 12,  // Show at zoom 5+
+                  6, 14,  // Larger at zoom 6+
+                  7, 16   // Even larger at zoom 7+
+                ],
+                'text-allow-overlap': false,
+                'text-ignore-placement': false,
+                'text-padding': 2
+              },
+              paint: {
+                'text-color': '#0f172a',
+                'text-opacity': [
+                  'step',
+                  ['zoom'],
+                  0,    // Hidden at low zoom
+                  5, 1  // Show at zoom 5+
+                ]
+              }
+            });
+          }
         }
 
         // Add major city labels with tier system for zoom-based display
@@ -727,7 +872,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                 if (stateMembers && Array.isArray(stateMembers)) {
                   const avgGrade = districtGrades[stateFips] || 'N/A';
 
-                  // Helper function to get grade chip styling
+                  // Helper function to get grade chip styling (50% larger)
                   const getGradeChipStyle = (grade: string) => {
                     const color = grade.startsWith("A") ? GRADE_COLORS.A
                       : grade.startsWith("B") ? GRADE_COLORS.B
@@ -737,7 +882,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                       : GRADE_COLORS.default;
                     const textColor = grade.startsWith("A") ? "#ffffff"
                       : "#4b5563";
-                    return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; min-width: 44px;`;
+                    return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
                   };
 
                   // Helper function to normalize party label
@@ -754,14 +899,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                       .join(" ");
                   };
 
-                  // Helper function to get party badge styling
+                  // Helper function to get party badge styling (50% larger)
                   const getPartyBadgeStyle = (party: string) => {
                     const label = (party || '').toLowerCase();
                     const baseColor = label.startsWith("rep") ? "#EF4444"
                       : label.startsWith("dem") ? "#3B82F6"
                       : label.startsWith("ind") ? "#10B981"
                       : "#94A3B8";
-                    return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 500;`;
+                    return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
                   };
 
                   // Detect theme - check both class and computed background color
@@ -777,45 +922,47 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                   if (isBothMode) {
                     // Both mode: Just show state and average grade
                     html = `
-                      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                        <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 8px;">
+                      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px;">
+                        <div style="font-size: 20px; font-weight: 600; color: ${primaryTextColor}; margin-bottom: 6px;">
                           ${stateName}
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="font-size: 12px; color: ${secondaryTextColor}; font-weight: 500;">Average Grade:</span>
+                        <div style="display: flex; align-items: center; gap: 9px;">
+                          <span style="font-size: 15px; color: ${secondaryTextColor}; font-weight: 500;">Average Grade:</span>
                           <span style="${getGradeChipStyle(avgGrade)}">${avgGrade}</span>
                         </div>
                       </div>
                     `;
                   } else {
-                    // Senate mode: Show senators with details
+                    // Senate mode: Show senators with photo on left, info on right (like scorecard)
                     const senators = stateMembers.filter(m => m.chamber === 'SENATE');
-                    const senatorsHtml = senators.map(senator => `
-                      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #475569;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    const senatorsHtml = senators.map((senator, idx) => `
+                      <div style="${idx > 0 ? 'margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(71, 85, 105, 0.3);' : ''}">
+                        <div style="display: flex; align-items: center; gap: 12px;">
                           ${senator.photo_url ? `
                             <img
                               src="${senator.photo_url}"
                               alt=""
-                              style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #475569;"
+                              style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; background-color: #475569; flex-shrink: 0;"
                             />
                           ` : `
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
+                            <div style="width: 54px; height: 54px; border-radius: 50%; background-color: #475569; flex-shrink: 0;"></div>
                           `}
-                          <div style="font-size: 13px; font-weight: 600; color: ${primaryTextColor};">
-                            ${senator.full_name}
+                          <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 17px; font-weight: 600; color: ${primaryTextColor}; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                              ${senator.full_name}
+                            </div>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                              <span style="${getPartyBadgeStyle(senator.party || '')}">${normalizeParty(senator.party || '')}</span>
+                              <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${senator.Grade || 'N/A'}</span>
+                            </div>
                           </div>
-                        </div>
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                          <span style="${getPartyBadgeStyle(senator.party || '')}">${normalizeParty(senator.party || '')}</span>
-                          <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${senator.Grade || 'N/A'}</span>
                         </div>
                       </div>
                     `).join('');
 
                     html = `
-                      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 220px;">
-                        <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 4px;">
+                      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px;">
+                        <div style="font-size: 18px; font-weight: 600; color: ${primaryTextColor}; margin-bottom: 9px;">
                           ${stateName}
                         </div>
                         ${senatorsHtml}
@@ -846,7 +993,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
               const districtDisplay = cd === '00' ? 'At-Large' : `District ${parseInt(cd, 10)}`;
 
               if (member && !Array.isArray(member)) {
-                // Helper function to get grade chip styling
+                // Helper function to get grade chip styling (50% larger)
                 const getGradeChipStyle = (grade: string) => {
                   const color = grade.startsWith("A") ? GRADE_COLORS.A
                     : grade.startsWith("B") ? GRADE_COLORS.B
@@ -856,17 +1003,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                     : GRADE_COLORS.default;
                   const textColor = grade.startsWith("A") ? "#ffffff"
                     : "#4b5563";
-                  return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 4px 10px; font-size: 11px; font-weight: 700; min-width: 44px;`;
+                  return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
                 };
 
-                // Helper function to get party badge styling
+                // Helper function to get party badge styling (50% larger)
                 const getPartyBadgeStyle = (party: string) => {
                   const label = (party || '').toLowerCase();
                   const baseColor = label.startsWith("rep") ? "#EF4444"
                     : label.startsWith("dem") ? "#3B82F6"
                     : label.startsWith("ind") ? "#10B981"
                     : "#94A3B8";
-                  return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 500;`;
+                  return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
                 };
 
                 // Helper function to normalize party label
@@ -890,30 +1037,29 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                 const secondaryTextColor = isDarkMode ? '#ffffff' : '#475569';
 
                 const html = `
-                  <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px; min-width: 200px;">
-                    <div style="font-size: 16px; font-weight: 700; color: ${primaryTextColor}; margin-bottom: 2px;">
-                      ${stateName}
+                  <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px;">
+                    <div style="font-size: 15px; color: ${secondaryTextColor}; margin-bottom: 6px;">
+                      ${stateName} · ${districtDisplay}
                     </div>
-                    <div style="font-size: 12px; color: ${secondaryTextColor}; margin-bottom: 8px;">
-                      ${districtDisplay}
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
                       ${member.photo_url ? `
                         <img
                           src="${member.photo_url}"
                           alt=""
-                          style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #475569;"
+                          style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; background-color: #475569; flex-shrink: 0;"
                         />
                       ` : `
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #475569;"></div>
+                        <div style="width: 54px; height: 54px; border-radius: 50%; background-color: #475569; flex-shrink: 0;"></div>
                       `}
-                      <div style="font-size: 13px; font-weight: 600; color: ${primaryTextColor};">
-                        ${member.full_name}
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 17px; font-weight: 600; color: ${primaryTextColor}; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                          ${member.full_name}
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                          <span style="${getPartyBadgeStyle(member.party || '')}">${normalizeParty(member.party || '')}</span>
+                          <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${member.Grade || 'N/A'}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                      <span style="${getPartyBadgeStyle(member.party || '')}">${normalizeParty(member.party || '')}</span>
-                      <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${member.Grade || 'N/A'}</span>
                     </div>
                   </div>
                 `;
@@ -1025,8 +1171,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
       {/* Fixed tooltip in upper right corner */}
       {tooltipContent && (
         <div
-          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-slate-900 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-2xl"
-          style={{ transform: 'scale(1.5)', transformOrigin: 'top right' }}
+          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-slate-900 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-sm"
           dangerouslySetInnerHTML={{ __html: tooltipContent }}
         />
       )}

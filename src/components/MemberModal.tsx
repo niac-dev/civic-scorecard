@@ -49,6 +49,8 @@ interface MemberModalProps {
   categories?: string[];
   manualScoringMeta?: Map<string, string>;
   onClose: () => void;
+  onBack?: () => void;
+  onBillClick?: (meta: Meta, column: string) => void;
 }
 
 export function MemberModal({
@@ -58,6 +60,8 @@ export function MemberModal({
   categories = [],
   manualScoringMeta = new Map(),
   onClose,
+  onBack,
+  onBillClick,
 }: MemberModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAipacSection, setShowAipacSection] = useState(false);
@@ -214,29 +218,56 @@ export function MemberModal({
         <div className="w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
           {/* Header */}
           <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative">
-            {/* Close button and external link - upper right corner */}
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-                title="Open in new tab"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                onClick={onClose}
-                title="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            {/* Close button and external link - upper right corner on desktop, own row on mobile */}
+            <div className="flex justify-between mb-3 md:mb-0 md:absolute md:top-4 md:right-4 gap-2 z-10">
+              {/* Back button - only shown if there's history */}
+              <div className="md:hidden">
+                {onBack && (
+                  <button
+                    className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                    onClick={onBack}
+                    title="Back"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {onBack && (
+                  <button
+                    className="hidden md:block p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                    onClick={onBack}
+                    title="Back"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                  onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                  title="Open in new tab"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </button>
+                <button
+                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
+                  onClick={onClose}
+                  title="Close"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
             {/* Three column layout on wide screens */}
-            <div className="flex flex-col md:flex-row gap-4 pr-20 md:pr-24">
+            <div className={clsx("flex flex-col md:flex-row gap-4", onBack ? "md:pr-32" : "md:pr-24")}>
               {/* Column 1: Photo */}
               <div className="flex flex-col gap-3 items-center md:items-start">
                 {row.photo_url ? (
@@ -252,6 +283,18 @@ export function MemberModal({
 
               {/* Column 2: Member info */}
               <div className="flex-1 flex flex-col items-center md:items-start">
+                {/* Title (Representative/Senator/Delegate) */}
+                <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
+                  {(() => {
+                    if (row.chamber === "SENATE") return "Senator";
+                    if (row.chamber === "HOUSE") {
+                      const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
+                      const state = String(row.state || "").toUpperCase();
+                      return delegateStates.includes(state) ? "Delegate" : "Representative";
+                    }
+                    return "";
+                  })()}
+                </div>
                 {/* Name and grade - aligned to top of photo */}
                 <div className="flex items-center gap-3 mb-2">
                   <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -837,7 +880,13 @@ export function MemberModal({
                       <div
                         key={it.col}
                         className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
-                        onClick={() => window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank')}
+                        onClick={() => {
+                          if (onBillClick && it.meta) {
+                            onBillClick(it.meta, it.col);
+                          } else {
+                            window.open(`/bill/${encodeURIComponent(it.col)}`, '_blank');
+                          }
+                        }}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">

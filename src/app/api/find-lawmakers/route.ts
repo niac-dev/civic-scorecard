@@ -1,5 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// STATE FIPS code to abbreviation mapping
+const STATE_FIPS_TO_ABBREV: Record<string, string> = {
+  '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA',
+  '08': 'CO', '09': 'CT', '10': 'DE', '11': 'DC', '12': 'FL',
+  '13': 'GA', '15': 'HI', '16': 'ID', '17': 'IL', '18': 'IN',
+  '19': 'IA', '20': 'KS', '21': 'KY', '22': 'LA', '23': 'ME',
+  '24': 'MD', '25': 'MA', '26': 'MI', '27': 'MN', '28': 'MS',
+  '29': 'MO', '30': 'MT', '31': 'NE', '32': 'NV', '33': 'NH',
+  '34': 'NJ', '35': 'NM', '36': 'NY', '37': 'NC', '38': 'ND',
+  '39': 'OH', '40': 'OK', '41': 'OR', '42': 'PA', '44': 'RI',
+  '45': 'SC', '46': 'SD', '47': 'TN', '48': 'TX', '49': 'UT',
+  '50': 'VT', '51': 'VA', '53': 'WA', '54': 'WV', '55': 'WI',
+  '56': 'WY', '60': 'AS', '66': 'GU', '69': 'MP', '72': 'PR',
+  '78': 'VI'
+};
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
@@ -14,71 +30,7 @@ export async function GET(request: NextRequest) {
     // Check if it's a simple zipcode
     const isZipcode = /^\d{5}(-\d{4})?$/.test(normalizedAddress);
 
-    // For ZIP codes, use the old API (will return multiple reps if ZIP spans districts)
-    if (isZipcode) {
-      const url = `https://whoismyrepresentative.com/getall_mems.php?zip=${encodeURIComponent(normalizedAddress)}&output=json`;
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        console.error('Lawmakers API error:', response.status, await response.text());
-        return NextResponse.json({ error: 'Failed to fetch lawmakers' }, { status: response.status });
-      }
-
-      const responseText = await response.text();
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error('JSON parse error:', e, 'Response:', responseText.substring(0, 200));
-        return NextResponse.json({ error: 'Invalid response from lawmakers API' }, { status: 500 });
-      }
-
-      // Extract congressional representatives
-      const lawmakers: Array<{ name: string; office: string; chamber: string }> = [];
-
-      if (data && data.results && Array.isArray(data.results)) {
-        data.results.forEach((official: { name: string; district?: string; state: string }) => {
-          const apiName = official.name;
-          const district = official.district;
-          const state = official.state;
-
-          let name = apiName;
-          if (apiName) {
-            const parts = apiName.trim().split(' ');
-            if (parts.length >= 2) {
-              const lastName = parts[parts.length - 1];
-              const firstName = parts.slice(0, -1).join(' ');
-              name = `${lastName}, ${firstName}`;
-            }
-          }
-
-          const chamber = district ? 'HOUSE' : 'SENATE';
-          const office = chamber === 'SENATE'
-            ? `U.S. Senator from ${state}`
-            : `U.S. Representative - District ${district}`;
-
-          if (name) {
-            lawmakers.push({
-              name,
-              office,
-              chamber
-            });
-          }
-        });
-      }
-
-      if (lawmakers.length === 0) {
-        return NextResponse.json({ error: 'No lawmakers found for this ZIP code' }, { status: 404 });
-      }
-
-      return NextResponse.json({ lawmakers });
-    }
-
-    // For full addresses, use free geocoding + FCC Area API for precise district lookup
-
-    // Step 1: Geocode the address using OpenStreetMap (free, no API key)
+    // Step 1: Geocode the address/ZIP using OpenStreetMap Nominatim (free, no API key)
     const geocodeResponse = await fetch(
       `https://nominatim.openstreetmap.org/search?` +
       new URLSearchParams({
@@ -103,57 +55,76 @@ export async function GET(request: NextRequest) {
     const geocodeData = await geocodeResponse.json();
 
     if (!geocodeData || geocodeData.length === 0) {
-      return NextResponse.json({ error: 'Address not found' }, { status: 404 });
+      return NextResponse.json({
+        error: isZipcode ? 'ZIP code not found' : 'Address not found'
+      }, { status: 404 });
     }
 
     const lat = geocodeData[0].lat;
     const lon = geocodeData[0].lon;
-    const state = geocodeData[0].address?.state;
 
     if (!lat || !lon) {
-      return NextResponse.json({ error: 'Unable to determine coordinates for address' }, { status: 404 });
+      return NextResponse.json({ error: 'Unable to determine coordinates' }, { status: 404 });
     }
 
-    // Step 2: Use FCC Area API to get congressional district (free, no API key)
-    const fccResponse = await fetch(
-      `https://geo.fcc.gov/api/census/area?lat=${lat}&lon=${lon}&format=json`
+    // Step 2: Use Census Bureau TIGERweb API to get exact congressional district
+    // Layer 54 = 119th Congressional Districts (current)
+    const tigerwebResponse = await fetch(
+      `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/54/query?` +
+      new URLSearchParams({
+        geometry: `${lon},${lat}`,
+        geometryType: 'esriGeometryPoint',
+        inSR: '4326',
+        spatialRel: 'esriSpatialRelWithin',
+        returnGeometry: 'false',
+        f: 'json',
+        outFields: 'STATE,CD119,NAME,GEOID'
+      })
     );
 
-    if (!fccResponse.ok) {
-      console.error('FCC API error:', fccResponse.status, await fccResponse.text());
+    if (!tigerwebResponse.ok) {
+      console.error('TIGERweb API error:', tigerwebResponse.status, await tigerwebResponse.text());
       return NextResponse.json({ error: 'Failed to determine congressional district' }, { status: 500 });
     }
 
-    const fccData = await fccResponse.json();
+    const tigerwebData = await tigerwebResponse.json();
 
-    console.log('FCC API response:', JSON.stringify(fccData, null, 2));
+    console.log('TIGERweb API response:', JSON.stringify(tigerwebData, null, 2));
 
-    if (!fccData || !fccData.results || fccData.results.length === 0) {
-      return NextResponse.json({ error: 'No district information found for this location' }, { status: 404 });
-    }
-
-    const districtInfo = fccData.results[0];
-
-    // FCC API uses different field names - try multiple possibilities
-    const stateCode = districtInfo.state_code || districtInfo.state_fips || districtInfo.state;
-    const districtNumber = districtInfo.congressional_district ||
-                          districtInfo.congressional_districts?.[0]?.district_number ||
-                          districtInfo.block_fips?.substring(0, 2); // fallback to state FIPS
-
-    console.log('Extracted:', { stateCode, districtNumber, fullInfo: districtInfo });
-
-    if (!stateCode || districtNumber === undefined || districtNumber === null) {
+    if (!tigerwebData || !tigerwebData.features || tigerwebData.features.length === 0) {
       return NextResponse.json({
-        error: 'Unable to determine district information',
-        debug: { stateCode, districtNumber, fccData }
+        error: 'No congressional district found for this location. This may be a territory or non-voting district.'
       }, { status: 404 });
     }
 
-    // Step 3: Look up representatives for this specific district
-    // Use whoismyrepresentative.com with state abbreviation
-    const repUrl = `https://whoismyrepresentative.com/getall_reps_bystate.php?state=${stateCode}&output=json`;
+    const districtFeature = tigerwebData.features[0];
+    const stateFips = districtFeature.attributes?.STATE;
+    const districtNumber = districtFeature.attributes?.CD119;
 
-    const repResponse = await fetch(repUrl);
+    if (!stateFips || districtNumber === undefined || districtNumber === null) {
+      return NextResponse.json({
+        error: 'Unable to determine district information',
+        debug: { stateFips, districtNumber, tigerwebData }
+      }, { status: 404 });
+    }
+
+    // Convert STATE FIPS to state abbreviation
+    const stateAbbrev = STATE_FIPS_TO_ABBREV[stateFips];
+
+    if (!stateAbbrev) {
+      return NextResponse.json({
+        error: `Unknown state FIPS code: ${stateFips}`
+      }, { status: 404 });
+    }
+
+    console.log('District info:', { stateAbbrev, stateFips, districtNumber });
+
+    // Step 3: Look up representatives AND senators for this specific district/state
+    // Fetch both in parallel
+    const [repResponse, senResponse] = await Promise.all([
+      fetch(`https://whoismyrepresentative.com/getall_reps_bystate.php?state=${stateAbbrev}&output=json`),
+      fetch(`https://whoismyrepresentative.com/getall_sens_bystate.php?state=${stateAbbrev}&output=json`)
+    ]);
 
     if (!repResponse.ok) {
       console.error('Representatives API error:', repResponse.status, await repResponse.text());
@@ -161,28 +132,31 @@ export async function GET(request: NextRequest) {
     }
 
     const repText = await repResponse.text();
+    const senText = senResponse.ok ? await senResponse.text() : '{"results":[]}';
 
     let repData;
+    let senData;
     try {
       repData = JSON.parse(repText);
+      senData = JSON.parse(senText);
     } catch (e) {
       console.error('JSON parse error:', e);
       return NextResponse.json({ error: 'Invalid response from representatives API' }, { status: 500 });
     }
 
-    // Extract lawmakers
+    // Extract lawmakers - filter House reps to exact district, include all Senators
     const lawmakers: Array<{ name: string; office: string; chamber: string }> = [];
 
+    // Process House Representatives - filter to exact district
     if (repData && repData.results && Array.isArray(repData.results)) {
       repData.results.forEach((official: { name: string; district?: string; state: string }) => {
         const apiName = official.name;
         const officialDistrict = official.district;
-        const officialState = official.state;
 
-        // For House reps, only include if they match our district
-        // For Senators, include all from the state
-        const isSenator = !officialDistrict;
-        const isCorrectDistrict = isSenator || officialDistrict === districtNumber;
+        // Convert both to integers for comparison (TIGERweb returns "08", API returns "8")
+        const targetDistrictNum = parseInt(String(districtNumber), 10);
+        const officialDistrictNum = officialDistrict ? parseInt(officialDistrict, 10) : 0;
+        const isCorrectDistrict = officialDistrictNum === targetDistrictNum;
 
         if (!isCorrectDistrict) {
           return; // Skip this rep
@@ -198,26 +172,57 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        const chamber = isSenator ? 'SENATE' : 'HOUSE';
-        const office = chamber === 'SENATE'
-          ? `U.S. Senator from ${officialState}`
-          : `U.S. Representative - District ${officialDistrict}`;
+        if (name) {
+          lawmakers.push({
+            name,
+            office: `U.S. Representative - District ${officialDistrict}`,
+            chamber: 'HOUSE'
+          });
+        }
+      });
+    }
+
+    // Process Senators - include all from the state
+    if (senData && senData.results && Array.isArray(senData.results)) {
+      senData.results.forEach((official: { name: string; state: string }) => {
+        const apiName = official.name;
+        const officialState = official.state;
+
+        let name = apiName;
+        if (apiName) {
+          const parts = apiName.trim().split(' ');
+          if (parts.length >= 2) {
+            const lastName = parts[parts.length - 1];
+            const firstName = parts.slice(0, -1).join(' ');
+            name = `${lastName}, ${firstName}`;
+          }
+        }
 
         if (name) {
           lawmakers.push({
             name,
-            office,
-            chamber
+            office: `U.S. Senator from ${officialState}`,
+            chamber: 'SENATE'
           });
         }
       });
     }
 
     if (lawmakers.length === 0) {
-      return NextResponse.json({ error: 'No lawmakers found for this address' }, { status: 404 });
+      return NextResponse.json({
+        error: `No lawmakers found for ${stateAbbrev} district ${districtNumber}`
+      }, { status: 404 });
     }
 
-    return NextResponse.json({ lawmakers });
+    return NextResponse.json({
+      lawmakers,
+      // Include district info for debugging/display
+      district: {
+        state: stateAbbrev,
+        number: districtNumber,
+        name: districtFeature.attributes?.NAME
+      }
+    });
   } catch (error) {
     console.error('Error fetching lawmakers:', error);
     return NextResponse.json({ error: 'Failed to fetch lawmakers' }, { status: 500 });

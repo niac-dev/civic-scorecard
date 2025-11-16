@@ -11,6 +11,7 @@ import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/li
 import { GRADE_COLORS, extractVoteInfo, inferChamber } from "@/lib/utils";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
+import { BillModal } from "@/components/BillModal";
 
 import clsx from "clsx";
 
@@ -277,8 +278,65 @@ export default function Page() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
   const [selectedCell, setSelectedCell] = useState<{rowId: string, col: string} | null>(null);
+  const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string } | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
+
+  // Modal history stack for back navigation
+  type ModalHistoryItem =
+    | { type: 'member'; data: Row }
+    | { type: 'bill'; data: { meta: Meta; column: string } };
+  const [modalHistory, setModalHistory] = useState<ModalHistoryItem[]>([]);
+
+  // Helper to navigate to a modal while preserving history
+  const pushMemberModal = useCallback((member: Row) => {
+    // Save current modal to history if one is open
+    if (selected) {
+      setModalHistory(prev => [...prev, { type: 'member', data: selected }]);
+    } else if (selectedBill) {
+      setModalHistory(prev => [...prev, { type: 'bill', data: selectedBill }]);
+    }
+    setSelected(member);
+    setSelectedBill(null);
+  }, [selected, selectedBill]);
+
+  const pushBillModal = useCallback((meta: Meta, column: string) => {
+    // Save current modal to history if one is open
+    if (selected) {
+      setModalHistory(prev => [...prev, { type: 'member', data: selected }]);
+    } else if (selectedBill) {
+      setModalHistory(prev => [...prev, { type: 'bill', data: selectedBill }]);
+    }
+    setSelectedBill({ meta, column });
+    setSelected(null);
+  }, [selected, selectedBill]);
+
+  const goBackModal = useCallback(() => {
+    if (modalHistory.length === 0) {
+      // No history, just close current modal
+      setSelected(null);
+      setSelectedBill(null);
+      return;
+    }
+
+    const newHistory = [...modalHistory];
+    const previousModal = newHistory.pop()!;
+    setModalHistory(newHistory);
+
+    if (previousModal.type === 'member') {
+      setSelected(previousModal.data);
+      setSelectedBill(null);
+    } else {
+      setSelectedBill(previousModal.data);
+      setSelected(null);
+    }
+  }, [modalHistory]);
+
+  const closeAllModals = useCallback(() => {
+    setSelected(null);
+    setSelectedBill(null);
+    setModalHistory([]);
+  }, []);
 
   useEffect(() => { (async () => {
     const [data, pacData, manualMeta] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta()]);
@@ -443,8 +501,13 @@ export default function Page() {
           // Extract last name and first name from both
           const [dbLast, dbFirst] = dbName.split(',').map(s => s?.trim().toLowerCase());
           const [apiLast, apiFirst] = apiName.split(',').map(s => s?.trim().toLowerCase());
-          // Match both last and first name (first name can be a partial match to handle middle names/initials)
-          return dbLast === apiLast && dbFirst && apiFirst && dbFirst.startsWith(apiFirst.split(' ')[0]);
+          // Match last name exactly, first name can be partial match in either direction
+          // This handles cases like "Timothy" (API) vs "Tim" (DB), or "Mark R." (DB) vs "Mark" (API)
+          if (dbLast !== apiLast || !dbFirst || !apiFirst) return false;
+          const dbFirstBase = dbFirst.split(' ')[0]; // Get first word (no middle name)
+          const apiFirstBase = apiFirst.split(' ')[0]; // Get first word
+          // Match if either is a prefix of the other (handles Tim/Timothy, Mark/Mark R., etc.)
+          return dbFirstBase.startsWith(apiFirstBase) || apiFirstBase.startsWith(dbFirstBase);
         });
       });
     }
@@ -1151,7 +1214,20 @@ export default function Page() {
           metaByCol={metaByCol}
           categories={categories}
           manualScoringMeta={manualScoringMeta}
-          onClose={() => setSelected(null)}
+          onClose={closeAllModals}
+          onBack={modalHistory.length > 0 ? goBackModal : undefined}
+          onBillClick={(meta, column) => pushBillModal(meta, column)}
+        />
+      )}
+      {selectedBill && (
+        <BillModal
+          meta={selectedBill.meta}
+          column={selectedBill.column}
+          rows={rows}
+          manualScoringMeta={manualScoringMeta}
+          onClose={closeAllModals}
+          onBack={modalHistory.length > 0 ? goBackModal : undefined}
+          onMemberClick={(member) => pushMemberModal(member)}
         />
       )}
 
@@ -1189,7 +1265,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-12rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -1449,6 +1525,7 @@ export default function Page() {
                       setSortDir("GOOD_FIRST");
                     }
                   }}
+                  onBillClick={(meta, column) => setSelectedBill({ meta, column })}
                 />
               );
             })}
@@ -1968,16 +2045,19 @@ export default function Page() {
                           </svg>
                         </button>
 
-                        <a
-                          href={`/bill/${c}`}
+                        <button
                           className={clsx(
                             (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
-                            "text-slate-900 dark:text-slate-100 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] underline cursor-pointer pr-8"
+                            "text-slate-900 dark:text-slate-100 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] cursor-pointer pr-8 text-left"
                           )}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCell(null);
+                            setSelectedBill({ meta, column: c });
+                          }}
                         >
                           {meta.display_name || meta.short_title || c}
-                        </a>
+                        </button>
                         <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
                         </div>
@@ -2087,7 +2167,11 @@ export default function Page() {
 
               {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
-                <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
+                <div
+                  className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                  onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
+                  title="Click to view AIPAC details"
+                >
                   {(() => {
                     // Check if member has reject AIPAC commitment text (takes priority)
                     const rejectCommitment = r.reject_aipac_commitment;
@@ -2193,7 +2277,21 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[450px] max-h-[calc(100vh-12rem)] rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
+          {/* Bill search indicator */}
+          {f.billColumn && (
+            <div className="bg-[#4B8CFB] text-white px-4 py-2 rounded-t-lg md:rounded-t-2xl flex items-center justify-between">
+              <span className="text-sm">
+                Searching: &quot;{f.billColumn}&quot;
+              </span>
+              <button
+                onClick={() => f.set({ billColumn: "" })}
+                className="text-white hover:bg-white/20 px-2 py-1 rounded text-sm flex items-center gap-1"
+              >
+                Clear ✕
+              </button>
+            </div>
+          )}
+          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
             {(() => {
               // Process bills data
               let bills = cols.map((col) => {
@@ -2266,6 +2364,48 @@ export default function Page() {
                 bills = bills.filter((bill: any) =>
                   bill.inferredChamber === f.chamber || bill.inferredChamber === ""
                 );
+              }
+
+              // Apply bill search filter (f.billColumn contains search query)
+              if (f.billColumn) {
+                const query = f.billColumn.toLowerCase().trim();
+                // Normalize bill number for flexible matching
+                const normalizeBillNumber = (str: string) => {
+                  return str
+                    .toLowerCase()
+                    .replace(/\s+/g, '') // Remove spaces
+                    .replace(/\./g, ''); // Remove periods
+                };
+                const normalizedQuery = normalizeBillNumber(query);
+
+                bills = bills.filter((bill: any) => {
+                  const billNumber = (bill.meta?.bill_number || "").toLowerCase();
+                  const displayName = (bill.meta?.display_name || "").toLowerCase();
+                  const shortTitle = (bill.meta?.short_title || "").toLowerCase();
+                  const description = (bill.meta?.description || "").toLowerCase();
+                  const analysis = (bill.meta?.analysis || "").toLowerCase();
+                  const notes = (bill.meta?.notes || "").toLowerCase();
+
+                  // Check direct matches
+                  if (
+                    billNumber.includes(query) ||
+                    displayName.includes(query) ||
+                    shortTitle.includes(query) ||
+                    description.includes(query) ||
+                    analysis.includes(query) ||
+                    notes.includes(query)
+                  ) {
+                    return true;
+                  }
+
+                  // Check normalized bill number match
+                  const normalizedBillNumber = normalizeBillNumber(billNumber);
+                  if (normalizedBillNumber.includes(normalizedQuery) || normalizedQuery.includes(normalizedBillNumber)) {
+                    return true;
+                  }
+
+                  return false;
+                });
               }
 
               // Group bills by category
@@ -2407,9 +2547,15 @@ export default function Page() {
                                   className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 min-w-0"
                                 >
                                   {/* Title */}
-                                  <div className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                  <button
+                                    className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedBill({ meta: bill.meta, column: bill.col });
+                                    }}
+                                  >
                                     {bill.meta.display_name || bill.meta.short_title || bill.meta.bill_number || bill.col}
-                                  </div>
+                                  </button>
                                   {/* Description */}
                                   {bill.meta.description && (
                                     <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 hidden md:block">
@@ -2509,11 +2655,10 @@ export default function Page() {
 
                                     {/* More Information Link */}
                                     <div className="pt-2">
-                                      <a
-                                        href={`/bill/${encodeURIComponent(bill.col)}?from=tracker`}
+                                      <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          router.push(`/bill/${encodeURIComponent(bill.col)}?from=tracker`);
+                                          setSelectedBill({ meta: bill.meta, column: bill.col });
                                         }}
                                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
                                       >
@@ -2521,7 +2666,7 @@ export default function Page() {
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                         </svg>
-                                      </a>
+                                      </button>
                                     </div>
                                   </div>
                                 </div>
@@ -2577,7 +2722,17 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             Map
           </button>
           <button
-            onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
+            onClick={() => {
+              // When switching from map to scorecard, clear chamber filter
+              const newState: { viewMode: "summary"; categories: Set<string>; chamber?: "" } = {
+                viewMode: "summary",
+                categories: new Set()
+              };
+              if (f.viewMode === "map") {
+                newState.chamber = "";
+              }
+              f.set(newState);
+            }}
             className={clsx(
               "px-3 h-9 rounded-md text-sm",
               f.viewMode === "summary"
@@ -2621,7 +2776,17 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             </svg>
           </button>
           <button
-            onClick={() => f.set({ viewMode: "summary", categories: new Set() })}
+            onClick={() => {
+              // When switching from map to scorecard, clear chamber filter
+              const newState: { viewMode: "summary"; categories: Set<string>; chamber?: "" } = {
+                viewMode: "summary",
+                categories: new Set()
+              };
+              if (f.viewMode === "map") {
+                newState.chamber = "";
+              }
+              f.set(newState);
+            }}
             className={clsx(
               "p-2 h-9 w-9 rounded-md flex items-center justify-center",
               f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category"
@@ -2776,7 +2941,7 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
         {/* Search - right-aligned for both map and scorecard */}
         <div className="ml-auto">
-          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={f.viewMode === "map"} />
+          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={f.viewMode === "map"} isTrackerView={f.viewMode === "tracker"} />
         </div>
       </div>
 
@@ -2825,9 +2990,9 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
         </button>
 
         {/* Clear button when filters are active but collapsed */}
-        {f.viewMode !== "tracker" && (f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && !filtersExpanded && (
+        {f.viewMode !== "tracker" && (f.chamber || f.party || f.state) && !filtersExpanded && (
           <button
-            onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+            onClick={() => f.set({ chamber: "", party: "", state: "" })}
             className="chip-outline text-slate-700 dark:text-slate-800 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
             title="Clear all filters"
           >
@@ -2880,9 +3045,9 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
               </select>
             </>
           )}
-          {f.viewMode !== "tracker" && (f.chamber || f.party || f.state || f.search || f.myLawmakers.length > 0) && (
+          {f.viewMode !== "tracker" && (f.chamber || f.party || f.state) && (
             <button
-              onClick={() => f.set({ chamber: "", party: "", state: "", search: "", myLawmakers: [] })}
+              onClick={() => f.set({ chamber: "", party: "", state: "" })}
               className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
               title="Clear all filters"
             >
@@ -2896,19 +3061,21 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
   );
 }
 
-function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean }) {
+function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = false }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean; isTrackerView?: boolean }) {
   const f = useFilters();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">(isMapView ? "zip" : "name");
+  const [searchType, setSearchType] = useState<"zip" | "name" | "legislation">(
+    isMapView ? "zip" : isTrackerView ? "legislation" : "name"
+  );
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Update search type when view mode changes
   useEffect(() => {
-    setSearchType(isMapView ? "zip" : "name");
-  }, [isMapView]);
+    setSearchType(isMapView ? "zip" : isTrackerView ? "legislation" : "name");
+  }, [isMapView, isTrackerView]);
 
   const handleZipSearch = async () => {
     if (!searchValue.trim()) return;
@@ -2927,8 +3094,8 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
 
       if (data.lawmakers && data.lawmakers.length > 0) {
         const names = data.lawmakers.map((l: any) => l.name);
-        // If in map mode, automatically switch to summary mode when searching
-        if (f.viewMode === "map") {
+        // If in map or tracker mode, automatically switch to summary mode when searching
+        if (f.viewMode === "map" || f.viewMode === "tracker") {
           f.set({ myLawmakers: names, viewMode: "summary" });
         } else {
           f.set({ myLawmakers: names });
@@ -2950,24 +3117,58 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
 
     const query = searchValue.toLowerCase().trim();
 
-    // Search through all columns in metaByCol
-    let foundColumn = "";
+    // Normalize bill number for flexible matching
+    // e.g., "HR 23", "H.R.23", "Hr23", "H.R. 23" all become "hr23"
+    const normalizeBillNumber = (str: string) => {
+      return str
+        .toLowerCase()
+        .replace(/\s+/g, '') // Remove spaces
+        .replace(/\./g, '') // Remove periods
+        .replace(/^(h|s)\s*(r|res|con\s*res|j\s*res)/i, '$1$2'); // Normalize prefixes
+    };
+
+    const normalizedQuery = normalizeBillNumber(query);
+
+    // Search through all columns in metaByCol to find matching bills
+    const matchingColumns: string[] = [];
     for (const [column, meta] of metaByCol.entries()) {
       const billNumber = (meta.bill_number || "").toLowerCase();
       const displayName = (meta.display_name || "").toLowerCase();
       const shortTitle = (meta.short_title || "").toLowerCase();
+      const description = (meta.description || "").toLowerCase();
+      const analysis = (meta.analysis || "").toLowerCase();
+      const notes = (meta.notes || "").toLowerCase();
 
-      if (billNumber.includes(query) || displayName.includes(query) || shortTitle.includes(query)) {
-        foundColumn = column;
-        break;
+      // Check direct matches in bill number, display name, short title, description, analysis, or notes
+      if (
+        billNumber.includes(query) ||
+        displayName.includes(query) ||
+        shortTitle.includes(query) ||
+        description.includes(query) ||
+        analysis.includes(query) ||
+        notes.includes(query)
+      ) {
+        matchingColumns.push(column);
+        continue;
+      }
+
+      // Check normalized bill number match
+      const normalizedBillNumber = normalizeBillNumber(billNumber);
+      if (normalizedBillNumber.includes(normalizedQuery) || normalizedQuery.includes(normalizedBillNumber)) {
+        matchingColumns.push(column);
       }
     }
 
-    if (foundColumn) {
-      // Navigate to bill page
-      router.push(`/bill/${encodeURIComponent(foundColumn)}`);
+    if (matchingColumns.length > 0) {
+      // Store the search query and switch to tracker view with filtered results
+      // We'll use a custom state to filter the tracker
+      f.set({
+        viewMode: "tracker",
+        billColumn: query // Store the search query for filtering tracker
+      });
+      setIsOpen(false);
     } else {
-      setError('No bill found matching your search');
+      setError('No bills found matching your search');
     }
   };
 
@@ -2975,8 +3176,8 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
     if (searchType === "zip") {
       handleZipSearch();
     } else if (searchType === "name") {
-      // If in map mode, automatically switch to summary mode when searching
-      if (f.viewMode === "map") {
+      // If in map or tracker mode, automatically switch to summary mode when searching
+      if (f.viewMode === "map" || f.viewMode === "tracker") {
         f.set({ search: searchValue, viewMode: "summary" });
       } else {
         f.set({ search: searchValue });
@@ -2994,8 +3195,8 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
   };
 
   const getPlaceholder = () => {
-    if (isMapView) return "Enter zipcode...";
-    if (searchType === "zip") return "Enter zip code…";
+    if (isMapView) return "Enter address or zipcode";
+    if (searchType === "zip") return "Enter address or zipcode";
     if (searchType === "name") return "Enter lawmaker name…";
     return "Enter bill number or title…";
   };
@@ -3025,7 +3226,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView }: { filteredCount:
                 handleSearch();
               }
             }}
-            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-slate-900 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[250px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
+            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-slate-900 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[280px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
           />
         </div>
         {loading ? (
@@ -3162,14 +3363,15 @@ function Header({
   onSort,
   active,
   dir,
+  onBillClick,
 }: {
   col: string;
   meta?: Meta;
   onSort?: () => void;
   active?: boolean;
   dir?: "GOOD_FIRST" | "BAD_FIRST";
+  onBillClick?: (meta: Meta, column: string) => void;
 }) {
-  const router = useRouter();
   return (
     <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
       {/* Bill title - clickable to view details with fixed 4-line height */}
@@ -3178,8 +3380,8 @@ function Header({
           className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
           onClick={(e) => {
             e.stopPropagation();
-            if (meta) {
-              router.push(`/bill/${encodeURIComponent(col)}`);
+            if (meta && onBillClick) {
+              onBillClick(meta, col);
             }
           }}
         >

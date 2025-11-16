@@ -30,3 +30,10 @@ venv/
 # VSCode & IDE settings
 .vscode/
 .idea/
+
+# Capacitor / Mobile platforms
+ios/
+android/
+*.xcworkspace
+*.xcodeproj
+Pods/
