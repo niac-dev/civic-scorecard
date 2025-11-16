@@ -207,7 +207,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     let tLabel = '';
     let fIsGood = isSupport;
     let sIsGood = !isSupport;
-    let tIsGood = false;
+    const tIsGood = false;
 
     if (isCosponsor) {
       fLabel = 'Cosponsors';
