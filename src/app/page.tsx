@@ -12,6 +12,7 @@ import { GRADE_COLORS, extractVoteInfo, inferChamber } from "@/lib/utils";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
+import { AipacModal } from "@/components/AipacModal";
 
 import clsx from "clsx";
 
@@ -281,11 +282,13 @@ export default function Page() {
   const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string } | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
+  const [showAipacModal, setShowAipacModal] = useState<boolean>(false);
 
   // Modal history stack for back navigation
   type ModalHistoryItem =
     | { type: 'member'; data: Row }
-    | { type: 'bill'; data: { meta: Meta; column: string } };
+    | { type: 'bill'; data: { meta: Meta; column: string } }
+    | { type: 'aipac'; data: null };
   const [modalHistory, setModalHistory] = useState<ModalHistoryItem[]>([]);
 
   // Helper to navigate to a modal while preserving history
@@ -316,6 +319,7 @@ export default function Page() {
       // No history, just close current modal
       setSelected(null);
       setSelectedBill(null);
+      setShowAipacModal(false);
       return;
     }
 
@@ -326,15 +330,22 @@ export default function Page() {
     if (previousModal.type === 'member') {
       setSelected(previousModal.data);
       setSelectedBill(null);
-    } else {
+      setShowAipacModal(false);
+    } else if (previousModal.type === 'bill') {
       setSelectedBill(previousModal.data);
       setSelected(null);
+      setShowAipacModal(false);
+    } else if (previousModal.type === 'aipac') {
+      setShowAipacModal(true);
+      setSelected(null);
+      setSelectedBill(null);
     }
   }, [modalHistory]);
 
   const closeAllModals = useCallback(() => {
     setSelected(null);
     setSelectedBill(null);
+    setShowAipacModal(false);
     setModalHistory([]);
   }, []);
 
@@ -1026,27 +1037,27 @@ export default function Page() {
   const gridTemplate = useMemo(() => {
     // Fixed widths per column so the header background spans the full scroll width
     const billsPart = billCols.map(() => "minmax(140px, 140px)").join(" ");
-    const gradesPart = gradeColumns.map(() => "minmax(120px, 120px)").join(" ");
+    const gradesPart = gradeColumns.map(() => "minmax(160px, 160px)").join(" ");
     // Member column: narrower on mobile (no photos, stacked names), wider on desktop
     // Mobile: min 120px to fit stacked names, max 35vw to save space
     // Desktop: fixed 300px for comfortable reading with photos
     const memberCol = isMobile ? "minmax(120px, min(35vw, 160px))" : "300px";
     // In summary mode: member col + grade cols + endorsements col + total/max/percent
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} minmax(240px, 240px) minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
+      return `${memberCol} ${gradesPart} minmax(144px, 144px) minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
     }
     // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols (no totals)
     if (f.categories.has("AIPAC")) {
-      // First grade column is Overall Grade (120px), then endorsements (240px), then remaining grade columns
-      const restGradesPart = gradeColumns.slice(1).map(() => "minmax(120px, 120px)").join(" ");
-      return `${memberCol} minmax(120px, 120px) minmax(240px, 240px) ${restGradesPart} ${billsPart}`;
+      // First grade column is Overall Grade (160px), then endorsements (144px), then remaining grade columns
+      const restGradesPart = gradeColumns.slice(1).map(() => "minmax(160px, 160px)").join(" ");
+      return `${memberCol} minmax(160px, 160px) minmax(144px, 144px) ${restGradesPart} ${billsPart}`;
     }
     // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
     if (f.categories.has("Civil Rights & Immigration")) {
       return `${memberCol} ${gradesPart} ${billsPart} minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col + totals
-    return `${memberCol} ${gradesPart} ${billsPart} 16rem minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
+    return `${memberCol} ${gradesPart} ${billsPart} 9.6rem minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
   }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile]);
 
   // Calculate average grades per state for map coloring
@@ -1242,6 +1253,19 @@ export default function Page() {
         />
       )}
 
+      {showAipacModal && (
+        <AipacModal
+          rows={rows}
+          onClose={() => setShowAipacModal(false)}
+          onMemberClick={(member) => {
+            // Push AIPAC modal to history stack
+            setModalHistory(prev => [...prev, { type: 'aipac', data: null }]);
+            setShowAipacModal(false);
+            setSelected(member);
+          }}
+        />
+      )}
+
       {/* Views Container with Sliding Animation */}
       <div className="relative overflow-hidden">
         {/* Map View */}
@@ -1285,7 +1309,7 @@ export default function Page() {
               }}
             >
             <div
-              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group"
+              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group flex flex-col justify-between"
               onClick={() => {
                 if (sortCol === "__member") {
                   // Cycle: alphabet asc → alphabet desc → district asc → district desc → alphabet asc
@@ -1315,13 +1339,13 @@ export default function Page() {
                   : "Click to sort by alphabet or district"
               }
             >
-              Member
+              <div className="flex-1" />
               <span className={clsx(
-                "absolute right-2 top-1.5 text-[10px] flex items-center gap-1",
+                "text-[10px] flex items-center gap-1",
                 (sortCol === "__member" || sortCol === "__district") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
               )}>
                 <span className="text-[9px]">
-                  {sortCol === "__district" ? "district" : sortCol === "__member" ? "name" : "sort"}
+                  {sortCol === "__district" ? "District" : sortCol === "__member" ? "Name" : "Sort"}
                 </span>
                 {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
               </span>
@@ -1336,13 +1360,15 @@ export default function Page() {
                 <React.Fragment key={gradeCol.field}>
                   <div
                     className={clsx(
-                      "th text-center relative group",
+                      "th group flex flex-col",
+                      isSummaryMode ? "text-center" : "text-left",
                       idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900"
                     )}
                   >
                     <div
                       className={clsx(
-                        "flex flex-col items-center cursor-pointer",
+                        "flex-1 flex items-center cursor-pointer",
+                        isSummaryMode ? "justify-center" : "justify-start",
                         isCategoryHeader && "hover:text-[#4B8CFB] transition-colors"
                       )}
                       title={
@@ -1368,10 +1394,10 @@ export default function Page() {
                         }
                       }}
                     >
-                      <div>{gradeCol.header}</div>
+                      <div className="uppercase">{gradeCol.header}</div>
                     </div>
                     <div
-                      className="absolute bottom-1 left-0 right-0 text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
+                      className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         // Sort behavior when clicking the sort indicator
@@ -1396,13 +1422,13 @@ export default function Page() {
                   {/* Endorsements column header - after Overall Grade in AIPAC view */}
                   {idx === 0 && f.categories.has("AIPAC") && (
                     <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
-                      {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
-                      <div className="h-[4.5rem] flex items-start">
+                      {/* Header title - clickable to view AIPAC page with 3-line height */}
+                      <div className="h-[3.375rem] flex items-start">
                         <span
-                          className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open('/aipac', '_blank');
+                            setShowAipacModal(true);
                           }}
                         >
                           Supported by AIPAC or DMFI
@@ -1412,7 +1438,7 @@ export default function Page() {
                       {/* Sortable indicator - always in uniform position */}
                       <span
                         className={clsx(
-                          "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                          "text-[10px] text-slate-400 dark:text-slate-500 font-light flex items-center gap-1 cursor-pointer",
                           sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                         )}
                         onClick={() => {
@@ -1458,7 +1484,7 @@ export default function Page() {
                       className="th group/header relative select-none flex flex-col max-w-[14rem]"
                     >
                       {/* Header and dropdown for election year selection */}
-                      <div className="h-[4.5rem] flex flex-col items-start justify-start">
+                      <div className="h-[3.375rem] flex flex-col items-start justify-start">
                         <div className="mb-1">Election Cycle</div>
                         <select
                           className="text-sm font-normal bg-transparent border border-slate-300 dark:border-slate-600 rounded px-2 py-0.5 cursor-pointer hover:border-[#4B8CFB] dark:hover:border-[#4B8CFB] focus:outline-none focus:border-[#4B8CFB] dark:focus:border-[#4B8CFB]"
@@ -1480,15 +1506,15 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="th group relative select-none flex flex-col max-w-[14rem]"
+                    className="th group relative select-none flex flex-col justify-end max-w-[14rem]"
                   >
-                    {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
-                    <div className="h-[4.5rem] flex items-start">
+                    {/* Header title - clickable to view AIPAC page with 3-line height */}
+                    <div className="h-[3.375rem] flex items-start">
                       <span
-                        className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                        className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open('/aipac', '_blank');
+                          setShowAipacModal(true);
                         }}
                       >
                         {headerLabels[c] || c}
@@ -1498,7 +1524,7 @@ export default function Page() {
                     {/* Sortable indicator - always in uniform position */}
                     <span
                       className={clsx(
-                        "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                        "text-[10px] text-slate-400 dark:text-slate-500 font-light flex items-center gap-1 cursor-pointer",
                         sortCol === c ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       )}
                       onClick={() => {
@@ -1537,19 +1563,24 @@ export default function Page() {
                     }
                   }}
                   onBillClick={(meta, column) => setSelectedBill({ meta, column })}
+                  hideTooltip={isScrolling}
                 />
               );
             })}
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
               <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
-                {/* Header title - clickable to view AIPAC page with fixed 3-line height */}
-                <div className="h-[3.375rem] flex items-start">
+                {/* Empty space for bill number alignment */}
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5 h-[14px]">
+                  {'\u00A0'}
+                </div>
+                {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
+                <div className="h-[4.5rem] flex items-start">
                   <span
-                    className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                    className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open('/aipac', '_blank');
+                      setShowAipacModal(true);
                     }}
                   >
                     Supported by AIPAC or DMFI
@@ -3385,12 +3416,24 @@ function Header({
   onBillClick?: (meta: Meta, column: string) => void;
   hideTooltip?: boolean;
 }) {
+  // Build simple system tooltip
+  const tooltipText = meta
+    ? `${meta.display_name || meta.short_title || col}${meta.description ? `\n\n${meta.description}` : ''}`
+    : col;
+
   return (
-    <div className="th group group/header relative select-none flex flex-col max-w-[14rem]" style={{ touchAction: 'pan-x pan-y' }}>
-      {/* Bill title - clickable to view details with fixed 4-line height */}
-      <div className="h-[4.5rem] flex items-start justify-start overflow-hidden">
+    <div
+      className="th group group/header relative select-none flex flex-col max-w-[14rem]"
+      title={tooltipText}
+    >
+      {/* Bill number - always reserve space for alignment */}
+      <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-0.5 h-[14px]">
+        {meta?.bill_number || '\u00A0'}
+      </div>
+      {/* Bill title - clickable to view details with fixed 3-line height */}
+      <div className="h-[3.375rem] flex items-start justify-start overflow-hidden">
         <span
-          className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             if (meta && onBillClick) {
@@ -3406,32 +3449,27 @@ function Header({
       {meta && meta.position_to_score && (
         <span
           className={clsx(
-            "text-[10px] text-slate-700 dark:text-slate-200 font-light mt-0.5 flex items-center gap-1",
+            "text-[10px] text-slate-700 dark:text-slate-200 font-light mt-2 mb-0 flex items-center gap-1",
             onSort && "cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
           )}
           onClick={onSort}
-          title={onSort ? "Click to sort by this column (toggle ✓ first / ✕ first)" : undefined}
         >
           {(() => {
             const position = (meta?.position_to_score || '').toUpperCase();
             const isSupport = position === 'SUPPORT';
             const label = isSupport ? 'Support' : 'Oppose';
-            const icon = isSupport ? '✓' : '✗';
 
             return (
-              <>
-                {icon}{' '}
-                <span
-                  className={clsx(
-                    "px-1 py-0.5 rounded font-medium",
-                    isSupport
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                      : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
-                  )}
-                >
-                  {label}
-                </span>
-              </>
+              <span
+                className={clsx(
+                  "px-1 py-0.5 rounded font-medium",
+                  isSupport
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300"
+                )}
+              >
+                {label}
+              </span>
             );
           })()}
           {onSort && (
@@ -3443,41 +3481,6 @@ function Header({
             </span>
           )}
         </span>
-      )}
-
-      {/* Tooltip - only shows on hover (not on touch devices) */}
-      {meta && !hideTooltip && (
-        <div className="header-tooltip opacity-0 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
-          <div className={clsx(
-            (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
-            "text-slate-900 dark:text-slate-100"
-          )}>
-            {meta.display_name || meta.short_title || col}
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-300 mt-1">
-            <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
-          </div>
-          {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
-          {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
-          {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {meta.chamber && (
-                <span
-                  className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
-                  style={{
-                    color: '#64748b',
-                    backgroundColor: `${chamberColor(meta.chamber)}20`,
-                  }}
-                >
-                  {meta.chamber === 'HOUSE' ? 'House' : meta.chamber === 'SENATE' ? 'Senate' : meta.chamber}
-                </span>
-              )}
-              {(meta.categories || "").split(";").map((c:string)=>c.trim()).filter(Boolean).map((c:string)=>(
-                <span key={c} className="chip-xs">{c}</span>
-              ))}
-            </div>
-          )}
-        </div>
       )}
     </div>
   );

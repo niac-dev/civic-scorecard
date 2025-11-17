@@ -491,20 +491,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               <div className="text-sm text-slate-600 dark:text-slate-300">
                 <span className="font-bold">NIAC Action Position:</span> {formatPositionLegislation(meta)}
               </div>
-              {/* Vote tallies (not cosponsors - those are shown in accordion) */}
-              {(() => {
-                const actionType = (meta as { action_types?: string })?.action_types || '';
-                const isVote = actionType.includes('vote');
-
-                if (isVote && meta.vote_tallies) {
-                  return (
-                    <div className="text-sm text-slate-600 dark:text-slate-300">
-                      <span className="font-medium">Vote Tallies:</span> {meta.vote_tallies}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
             </div>
 
             {/* Analysis */}
@@ -525,7 +511,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 {/* First Section - Cosponsored / Voted in favor */}
                 <div>
                   <h2
-                    className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors flex-wrap"
+                    className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
                     onClick={() => setFirstExpanded(!firstExpanded)}
                   >
                     <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
@@ -535,13 +521,13 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                       )}
                     </svg>
-                    <span className="flex items-center flex-wrap">
-                      {firstLabel}: {firstSection.length}
+                    <span className="flex items-center flex-wrap flex-1 min-w-0">
+                      <span className="whitespace-nowrap">{firstLabel}: {firstSection.length}</span>
                       <PartisanPills members={firstSection} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
-                      className={clsx("h-4 w-4 ml-auto transition-transform flex-shrink-0", firstExpanded && "rotate-180")}
+                      className={clsx("h-4 w-4 transition-transform flex-shrink-0", firstExpanded && "rotate-180")}
                       aria-hidden="true"
                       role="img"
                     >
@@ -549,7 +535,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                   </h2>
                   {firstExpanded && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
                       {firstSection.map((member) => {
                         const isSponsor = sponsorMember && member.bioguide_id === sponsorMember.bioguide_id;
                         return (
@@ -612,7 +598,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 {/* Second Section - Has not cosponsored / Voted against */}
                 <div>
                   <h2
-                    className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors flex-wrap"
+                    className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
                     onClick={() => setSecondExpanded(!secondExpanded)}
                   >
                     <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
@@ -628,13 +614,13 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                       )}
                     </svg>
-                    <span className="flex items-center flex-wrap">
-                      {secondLabel}: {secondSection.length}
+                    <span className="flex items-center flex-wrap flex-1 min-w-0">
+                      <span className="whitespace-nowrap">{secondLabel}: {secondSection.length}</span>
                       <PartisanPills members={secondSection} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
-                      className={clsx("h-4 w-4 ml-auto transition-transform flex-shrink-0", secondExpanded && "rotate-180")}
+                      className={clsx("h-4 w-4 transition-transform flex-shrink-0", secondExpanded && "rotate-180")}
                       aria-hidden="true"
                       role="img"
                     >
@@ -642,7 +628,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                   </h2>
                   {secondExpanded && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
                       {secondSection.map((member) => (
                         <div
                           key={member.bioguide_id}
@@ -703,7 +689,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 {thirdLabel && thirdSection.length > 0 && (
                   <div>
                     <h2
-                      className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors flex-wrap"
+                      className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
                       onClick={() => setThirdExpanded(!thirdExpanded)}
                     >
                       <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
@@ -713,13 +699,13 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
                         )}
                       </svg>
-                      <span className="flex items-center flex-wrap">
-                        {thirdLabel}: {thirdSection.length}
+                      <span className="flex items-center flex-wrap flex-1 min-w-0">
+                        <span className="whitespace-nowrap">{thirdLabel}: {thirdSection.length}</span>
                         <PartisanPills members={thirdSection} />
                       </span>
                       <svg
                         viewBox="0 0 20 20"
-                        className={clsx("h-4 w-4 ml-auto transition-transform flex-shrink-0", thirdExpanded && "rotate-180")}
+                        className={clsx("h-4 w-4 transition-transform flex-shrink-0", thirdExpanded && "rotate-180")}
                         aria-hidden="true"
                         role="img"
                       >
@@ -727,7 +713,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       </svg>
                     </h2>
                     {thirdExpanded && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
                         {thirdSection.map((member) => (
                           <div
                             key={member.bioguide_id}

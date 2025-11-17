@@ -40,6 +40,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
       popup.current = null;
     }
 
+    // Calculate zoom based on screen width - more zoomed out on smaller screens
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+    const initialZoom = screenWidth < 768 ? 2.3 : screenWidth < 1024 ? 2.8 : 3.5;
+
     // Initialize map
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -63,7 +67,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
         ]
       },
       center: [-98.5795, 39.8283], // Center of US
-      zoom: 3.5,
+      zoom: initialZoom,
       maxZoom: 10,
       minZoom: 2
     });
