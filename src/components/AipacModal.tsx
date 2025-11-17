@@ -4,7 +4,7 @@ import clsx from "clsx";
 import type { Row } from "@/lib/types";
 import { MemberCard } from "@/components/MemberCard";
 import { partyLabel } from "@/lib/utils";
-import { loadPacData, isAipacEndorsed, isDmfiEndorsed } from "@/lib/pacData";
+import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
 
 interface AipacModalProps {
   rows: Row[];
@@ -17,7 +17,7 @@ export function AipacModal({ rows, onClose, onMemberClick }: AipacModalProps) {
   const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [chamberFilter, setChamberFilter] = useState<string>("");
-  const [pacDataMap, setPacDataMap] = useState<Map<string, { aipac_endorsed: string; dmfi_endorsed: string }>>(new Map());
+  const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
 
   useEffect(() => {
     loadPacData().then(setPacDataMap);
