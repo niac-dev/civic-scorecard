@@ -18,6 +18,11 @@ html {
   overscroll-behavior-x: none;
 }
 
+/* Fix iOS double-tap issue - disables tap-to-zoom on interactive elements */
+a, button, [role="button"], [onclick], .cursor-pointer {
+  touch-action: manipulation;
+}
+
 @media (prefers-color-scheme: dark) {
   body { @apply bg-[#0B1220] text-[#E8EEF7]; }
 }
