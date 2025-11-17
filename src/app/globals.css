@@ -47,6 +47,13 @@ th {
   @apply bg-white text-slate-800; /* keep white even in dark mode */
 }
 
+/* Header tooltip - only show on devices with true hover (not touch) */
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .header-tooltip {
+    opacity: 1;
+  }
+}
+
 /* Print styles */
 @media print {
   /* Hide print and back buttons */

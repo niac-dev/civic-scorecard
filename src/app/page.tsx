@@ -374,6 +374,8 @@ export default function Page() {
 
   // Virtual scrolling state
   const [scrollTop, setScrollTop] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track mobile viewport for responsive column widths
   useEffect(() => {
@@ -397,10 +399,10 @@ export default function Page() {
     }
   }, [f.viewMode]);
 
-  // Scroll to top when filters change (but not when categories change)
+  // Scroll to left when filters change (but not when categories change) - keep vertical position
   useEffect(() => {
     if (tableScrollRef.current) {
-      tableScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      tableScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
     }
   }, [f.chamber, f.party, f.state, f.search, f.myLawmakers, f.viewMode]);
 
@@ -847,6 +849,15 @@ export default function Page() {
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     setScrollTop(target.scrollTop);
+
+    // Hide header tooltips while scrolling
+    setIsScrolling(true);
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 150);
   }, []);
 
   // All columns for the member card (chamber-filtered only, not category-filtered)
@@ -1265,7 +1276,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} onTouchStart={() => setIsScrolling(true)} onTouchEnd={() => setTimeout(() => setIsScrolling(false), 150)} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -3364,6 +3375,7 @@ function Header({
   active,
   dir,
   onBillClick,
+  hideTooltip,
 }: {
   col: string;
   meta?: Meta;
@@ -3371,9 +3383,10 @@ function Header({
   active?: boolean;
   dir?: "GOOD_FIRST" | "BAD_FIRST";
   onBillClick?: (meta: Meta, column: string) => void;
+  hideTooltip?: boolean;
 }) {
   return (
-    <div className="th group group/header relative select-none flex flex-col max-w-[14rem]">
+    <div className="th group group/header relative select-none flex flex-col max-w-[14rem]" style={{ touchAction: 'pan-x pan-y' }}>
       {/* Bill title - clickable to view details with fixed 4-line height */}
       <div className="h-[4.5rem] flex items-start justify-start overflow-hidden">
         <span
@@ -3432,9 +3445,9 @@ function Header({
         </span>
       )}
 
-      {/* Tooltip */}
-      {meta && (
-        <div className="opacity-0 group-hover:opacity-100 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
+      {/* Tooltip - only shows on hover (not on touch devices) */}
+      {meta && !hideTooltip && (
+        <div className="header-tooltip opacity-0 pointer-events-none absolute left-0 top-full mt-2 z-[100] w-[28rem] rounded-xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-[#1a2332] p-3 shadow-xl transition-opacity duration-200">
           <div className={clsx(
             (meta.display_name || meta.short_title) ? "text-base font-bold" : "text-sm font-semibold",
             "text-slate-900 dark:text-slate-100"

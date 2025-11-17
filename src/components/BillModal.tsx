@@ -20,6 +20,86 @@ function formatPositionLegislation(meta: Meta | undefined): string {
   }
 }
 
+// Convert "Last, First" to "First Last"
+function formatNameFirstLast(name: string | unknown): string {
+  const nameStr = String(name || '');
+  if (nameStr.includes(', ')) {
+    const [last, first] = nameStr.split(', ');
+    return `${first} ${last}`;
+  }
+  return nameStr;
+}
+
+// Party label helper
+function partyLabel(p?: string) {
+  const raw = (p ?? "").trim();
+  if (!raw) return "";
+  const s = raw.toLowerCase();
+  if (s.startsWith("democ")) return "Democrat";
+  return raw
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+// Chamber color helper
+function chamberColor(ch?: string): string {
+  switch (ch) {
+    case "HOUSE":
+      return "#b2c74a";
+    case "SENATE":
+      return "#857eab";
+    default:
+      return "#94A3B8";
+  }
+}
+
+// Party badge style helper
+function partyBadgeStyle(p?: string) {
+  const label = partyLabel(p).toLowerCase();
+  const base =
+    label.startsWith("rep") ? "#EF4444" :
+    label.startsWith("dem") ? "#3B82F6" :
+    label.startsWith("ind") ? "#10B981" :
+    "#94A3B8";
+  return {
+    color: base,
+    backgroundColor: `${base}1A`,
+    borderColor: `${base}66`,
+  };
+}
+
+// State code to full name mapping
+const STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota",
+  MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada",
+  NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+  TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  AS: "American Samoa", GU: "Guam", MP: "Northern Mariana Islands", PR: "Puerto Rico", VI: "Virgin Islands",
+};
+
+// Format state and district for display
+function formatStateDistrict(member: Row): string {
+  const stateCode = String(member.state || '');
+  const stateName = STATE_NAMES[stateCode] || stateCode;
+
+  if (member.chamber === "HOUSE") {
+    if (member.district) {
+      return `${stateName} - ${member.district}`;
+    } else {
+      return `${stateName} - At Large`;
+    }
+  }
+  return stateName;
+}
+
 interface BillModalProps {
   meta: Meta;
   column: string;
@@ -330,26 +410,52 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
             <div className="space-y-2">
               {/* Sponsor */}
               {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
-                <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                <div className="text-sm text-slate-600 dark:text-slate-300">
                   <span className="font-medium">Sponsor:</span>
                   {sponsorMember ? (
                     <button
-                      className="flex items-center gap-2 text-[#4B8CFB] hover:text-[#3a7de8] hover:underline"
+                      className="mt-2 w-full text-left py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
                       onClick={() => onMemberClick?.(sponsorMember)}
                     >
+                      {/* Photo */}
                       {sponsorMember.photo_url ? (
                         <img
                           src={String(sponsorMember.photo_url)}
                           alt=""
-                          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                          className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                         />
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                        <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                       )}
-                      {sponsorMember.chamber === 'SENATE' ? 'Sen.' : 'Rep.'} {sponsorMember.full_name} ({sponsorMember.party?.[0] || '?'}-{sponsorMember.state})
+                      {/* Info */}
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                          {formatNameFirstLast(sponsorMember.full_name)}
+                        </span>
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                          <span
+                            className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                            style={{
+                              color: '#64748b',
+                              backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
+                            }}
+                          >
+                            {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
+                          </span>
+                          <span
+                            className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                            style={partyBadgeStyle(sponsorMember.party)}
+                          >
+                            {partyLabel(sponsorMember.party)}
+                          </span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                            {formatStateDistrict(sponsorMember)}
+                          </span>
+                        </div>
+                      </div>
                     </button>
                   ) : (
-                    meta.sponsor_name || meta.sponsor
+                    <span className="ml-2">{meta.sponsor_name || meta.sponsor}</span>
                   )}
                 </div>
               )}
@@ -443,20 +549,57 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                   </h2>
                   {firstExpanded && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                      {firstSection.map((member) => (
-                        <div
-                          key={member.bioguide_id}
-                          className={clsx(
-                            "text-xs py-1.5 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
-                            onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
-                          )}
-                          onClick={() => onMemberClick?.(member)}
-                        >
-                          <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{member.full_name}</span>
-                          <span className="text-slate-500 dark:text-slate-400">({member.party?.[0] || '?'}-{member.state})</span>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      {firstSection.map((member) => {
+                        const isSponsor = sponsorMember && member.bioguide_id === sponsorMember.bioguide_id;
+                        return (
+                          <div
+                            key={member.bioguide_id}
+                            className={clsx(
+                              "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
+                              onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
+                            )}
+                            onClick={() => onMemberClick?.(member)}
+                          >
+                            {/* Photo */}
+                            {member.photo_url ? (
+                              <img
+                                src={String(member.photo_url)}
+                                alt=""
+                                className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                            )}
+                            {/* Info */}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                                {formatNameFirstLast(member.full_name)}{isSponsor && '*'}
+                              </span>
+                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                <span
+                                  className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                                  style={{
+                                    color: '#64748b',
+                                    backgroundColor: `${chamberColor(member.chamber)}20`,
+                                  }}
+                                >
+                                  {member.chamber === "HOUSE" ? "House" : member.chamber === "SENATE" ? "Senate" : (member.chamber || "")}
+                                </span>
+                                <span
+                                  className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                                  style={partyBadgeStyle(member.party)}
+                                >
+                                  {partyLabel(member.party)}
+                                </span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {formatStateDistrict(member)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                       {firstSection.length === 0 && (
                         <div className="col-span-full text-center py-4 text-xs text-slate-500 dark:text-slate-400">
                           None found
@@ -499,18 +642,52 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                   </h2>
                   {secondExpanded && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                       {secondSection.map((member) => (
                         <div
                           key={member.bioguide_id}
                           className={clsx(
-                            "text-xs py-1.5 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
+                            "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
                             onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                           )}
                           onClick={() => onMemberClick?.(member)}
                         >
-                          <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{member.full_name}</span>
-                          <span className="text-slate-500 dark:text-slate-400">({member.party?.[0] || '?'}-{member.state})</span>
+                          {/* Photo */}
+                          {member.photo_url ? (
+                            <img
+                              src={String(member.photo_url)}
+                              alt=""
+                              className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                          )}
+                          {/* Info */}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                              {formatNameFirstLast(member.full_name)}
+                            </span>
+                            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                              <span
+                                className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                                style={{
+                                  color: '#64748b',
+                                  backgroundColor: `${chamberColor(member.chamber)}20`,
+                                }}
+                              >
+                                {member.chamber === "HOUSE" ? "House" : member.chamber === "SENATE" ? "Senate" : (member.chamber || "")}
+                              </span>
+                              <span
+                                className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                                style={partyBadgeStyle(member.party)}
+                              >
+                                {partyLabel(member.party)}
+                              </span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                {formatStateDistrict(member)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                       {secondSection.length === 0 && (
@@ -550,18 +727,52 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       </svg>
                     </h2>
                     {thirdExpanded && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                         {thirdSection.map((member) => (
                           <div
                             key={member.bioguide_id}
                             className={clsx(
-                              "text-xs py-1.5 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
+                              "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
                               onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                             )}
                             onClick={() => onMemberClick?.(member)}
                           >
-                            <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{member.full_name}</span>
-                            <span className="text-slate-500 dark:text-slate-400">({member.party?.[0] || '?'}-{member.state})</span>
+                            {/* Photo */}
+                            {member.photo_url ? (
+                              <img
+                                src={String(member.photo_url)}
+                                alt=""
+                                className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                            )}
+                            {/* Info */}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                                {formatNameFirstLast(member.full_name)}
+                              </span>
+                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                <span
+                                  className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                                  style={{
+                                    color: '#64748b',
+                                    backgroundColor: `${chamberColor(member.chamber)}20`,
+                                  }}
+                                >
+                                  {member.chamber === "HOUSE" ? "House" : member.chamber === "SENATE" ? "Senate" : (member.chamber || "")}
+                                </span>
+                                <span
+                                  className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                                  style={partyBadgeStyle(member.party)}
+                                >
+                                  {partyLabel(member.party)}
+                                </span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {formatStateDistrict(member)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
