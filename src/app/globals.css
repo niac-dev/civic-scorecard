@@ -19,8 +19,30 @@ html {
 }
 
 /* Fix iOS double-tap issue - disables tap-to-zoom on interactive elements */
-a, button, [role="button"], [onclick], .cursor-pointer {
+a, button, [role="button"], [onclick], .cursor-pointer, input, select, textarea, label, summary {
   touch-action: manipulation;
+}
+
+/* Disable iOS touch delay globally - more aggressive fix */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure no touch delay on body */
+html {
+  touch-action: manipulation;
+}
+
+/* Remove title attribute tooltips on touch devices to prevent double-tap */
+@media (hover: none) and (pointer: coarse) {
+  [title] {
+    pointer-events: auto;
+  }
+
+  /* Hide the native title tooltip on touch devices */
+  [title]:hover::after {
+    display: none !important;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

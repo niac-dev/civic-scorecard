@@ -21,26 +21,10 @@ type FiltersState = {
 };
 
 // Helper to get initial viewMode based on URL query params or localStorage
+// Returns consistent value for SSR to avoid hydration mismatch
 function getInitialViewMode(): "summary" | "all" | "category" | "map" | "tracker" {
-  if (typeof window === "undefined") return "summary";
-
-  // Check for view query parameter first
-  const urlParams = new URLSearchParams(window.location.search);
-  const viewParam = urlParams.get('view');
-  if (viewParam === "tracker" || viewParam === "map" || viewParam === "summary" || viewParam === "all" || viewParam === "category") {
-    return viewParam;
-  }
-
-  // Check if user has visited before
-  const hasVisited = localStorage.getItem("hasVisitedScorecard");
-
-  if (!hasVisited) {
-    // First visit - default to map view
-    localStorage.setItem("hasVisitedScorecard", "true");
-    return "map";
-  }
-
-  // Returning user - default to summary (scorecard view)
+  // Always return "summary" initially to match server render
+  // The actual logic will be applied via useEffect in the component
   return "summary";
 }
 

@@ -360,12 +360,21 @@ export default function Page() {
   const f = useFilters();
   const router = useRouter();
 
-  // Check for view query parameter on mount
+  // Check for view query parameter on mount, and handle first visit logic
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get('view');
     if (viewParam === 'tracker' || viewParam === 'map' || viewParam === 'summary' || viewParam === 'all' || viewParam === 'category') {
       f.set({ viewMode: viewParam });
+    } else {
+      // Check if user has visited before
+      const hasVisited = localStorage.getItem("hasVisitedScorecard");
+      if (!hasVisited) {
+        // First visit - default to map view
+        localStorage.setItem("hasVisitedScorecard", "true");
+        f.set({ viewMode: "map" });
+      }
+      // Returning user stays on "summary" (already the default)
     }
   }, []);
 
@@ -395,6 +404,22 @@ export default function Page() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Remove all title attributes on mobile/touch devices to prevent double-tap issue
+  useEffect(() => {
+    if (isMobile || ('ontouchstart' in window)) {
+      const removeTitles = () => {
+        document.querySelectorAll('[title]').forEach(el => {
+          el.removeAttribute('title');
+        });
+      };
+      // Run immediately and on DOM changes
+      removeTitles();
+      const observer = new MutationObserver(removeTitles);
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
+    }
+  }, [isMobile]);
 
   // Prevent horizontal scrolling in tracker
   useEffect(() => {
@@ -1300,7 +1325,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} onTouchStart={() => setIsScrolling(true)} onTouchEnd={() => setTimeout(() => setIsScrolling(false), 150)} style={{ overscrollBehavior: 'contain', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -1700,7 +1725,6 @@ export default function Page() {
               <div
                 className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
-                title="Click to view details"
               >
                 {/* Photo - hidden on mobile, visible on tablets/desktop */}
                 {r.photo_url ? (
@@ -2041,7 +2065,7 @@ export default function Page() {
                   <div
                     key={c}
                     className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-slate-900 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    title={tooltipText}
+                    {...(!isMobile && { title: tooltipText })}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCell(isTooltipOpen ? null : { rowId: bioguideId, col: c });
