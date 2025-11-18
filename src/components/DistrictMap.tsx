@@ -2025,10 +2025,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
                     <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
                   </div>
-                  {isPartisanView && (billActionData.stats as any).houseNeutral > 0 && (
+                  {isPartisanView && 'houseNeutral' in billActionData.stats && billActionData.stats.houseNeutral > 0 && (
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
-                      <span>{(billActionData as any).neutralLabel} ({(billActionData.stats as any).houseNeutral})</span>
+                      <span>{'neutralLabel' in billActionData ? billActionData.neutralLabel : 'Independent/Other'} ({billActionData.stats.houseNeutral})</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
