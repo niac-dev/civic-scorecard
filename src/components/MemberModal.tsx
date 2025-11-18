@@ -362,10 +362,15 @@ export function MemberModal({
 
                 {/* Washington office phone */}
                 {row.office_phone && (
-                  <div className="text-xs text-slate-600 dark:text-slate-400 text-center md:text-left">
-                    <div className="font-medium mb-0.5">Washington Office Phone</div>
-                    <div className="text-slate-700 dark:text-slate-200">{row.office_phone}</div>
-                  </div>
+                  <a
+                    href={`tel:${row.office_phone}`}
+                    className="text-xs text-slate-700 dark:text-slate-200 text-center md:text-left flex items-center justify-center md:justify-start gap-1.5 hover:text-[#4B8CFB] transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span>{row.office_phone}</span>
+                  </a>
                 )}
               </div>
 
@@ -814,18 +819,12 @@ export function MemberModal({
                     {(() => {
                       const category = selectedCategory || "All Issues";
                       let title = category;
-                      let total: string | number | undefined = row.Total;
-                      let maxPossible: string | number | undefined = row.Max_Possible;
                       let grade: string | number | undefined = row.Grade;
 
                       if (selectedCategory) {
                         const fieldSuffix = selectedCategory.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
-                        const totalField = `Total_${fieldSuffix}` as keyof Row;
-                        const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
                         const gradeField = `Grade_${fieldSuffix}` as keyof Row;
                         title = selectedCategory;
-                        total = row[totalField] as string | number | undefined;
-                        maxPossible = row[maxField] as string | number | undefined;
                         grade = row[gradeField] as string | number | undefined;
                       }
 
@@ -833,12 +832,7 @@ export function MemberModal({
                         <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-                            <div className="flex items-center gap-3">
-                              <div className="text-sm text-slate-600 dark:text-slate-400">
-                                {Number(total || 0).toFixed(0)} / {Number(maxPossible || 0).toFixed(0)} pts
-                              </div>
-                              <GradeChip grade={String(grade || "N/A")} isOverall={!selectedCategory} />
-                            </div>
+                            <GradeChip grade={String(grade || "N/A")} isOverall={!selectedCategory} />
                           </div>
                         </div>
                       );
@@ -906,12 +900,19 @@ export function MemberModal({
                         }}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-medium leading-5 text-slate-700 dark:text-slate-200">
-                            {it.meta?.display_name || it.meta?.short_title || it.meta?.bill_number || it.col}
+                          <div className="text-base font-medium leading-5 text-slate-700 dark:text-slate-200">
+                            {it.meta?.short_title || it.meta?.display_name || it.col}
                           </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-300 font-light">
-                            <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(it.meta, it.val, manualScoringMeta)}
-                          </div>
+                          {it.meta?.bill_number && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 italic">
+                              {it.meta.bill_number}
+                            </div>
+                          )}
+                          {it.meta?.description && (
+                            <div className="text-xs text-slate-600 dark:text-slate-300 font-light mt-1">
+                              {it.meta.description}
+                            </div>
+                          )}
                           {it.meta && (it.meta as { action_types?: string }).action_types && (
                             <div className="text-xs text-slate-600 dark:text-slate-300 font-light flex items-center gap-1.5">
                               <div className="mt-0.5">

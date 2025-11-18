@@ -457,7 +457,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
         // Load appropriate GeoJSON file based on chamber
         const dataUrl = isSenate
-          ? 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json'  // State boundaries GeoJSON for Senate
+          ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'  // State boundaries GeoJSON for Senate
           : '/data/districts/congressional-districts-118th.geojson';    // District boundaries for House
 
         const response = await fetch(dataUrl);
@@ -577,7 +577,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           'GU': '66', 'GUAM': '66',
           'MP': '69', 'NORTHERN MARIANA ISLANDS': '69',
           'PR': '72', 'PUERTO RICO': '72',
-          'VI': '78', 'U.S. VIRGIN ISLANDS': '78'
+          'VI': '78', 'U.S. VIRGIN ISLANDS': '78', 'VIRGIN ISLANDS': '78'
         };
 
         // Helper to normalize state to FIPS
@@ -600,10 +600,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // For Senate or Both mode: group members by state and calculate average grade
           const membersByState: Record<string, Row[]> = {};
 
-          const senateMembersCount = members.filter(m => m.chamber === 'SENATE').length;
-          const houseMembersCount = members.filter(m => m.chamber === 'HOUSE').length;
+          // Use allRows for grade coloring to show all members, not just filtered ones
+          const membersToColor = allRows || members;
+          const senateMembersCount = membersToColor.filter(m => m.chamber === 'SENATE').length;
+          const houseMembersCount = membersToColor.filter(m => m.chamber === 'HOUSE').length;
 
-          members.forEach((member) => {
+          membersToColor.forEach((member) => {
             // In Both mode, include all members; in Senate mode, only senators
             if (isBothMode || member.chamber === 'SENATE') {
               const state = member.state;
@@ -665,22 +667,85 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
         } else {
           // For House: map districts to individual representatives
-          members.forEach((member) => {
-            if (member.chamber === 'HOUSE') {
-              const state = member.state;
-              const district = String(member.district || '');
+          // Use allRows for grade coloring to show all members, not just filtered ones
+          const membersToColor = allRows || members;
 
+          // Check if district data is available
+          const hasDistrictData = membersToColor.some(m => m.chamber === 'HOUSE' && m.district && m.district.trim() !== '');
 
-              const fips = getStateFips(state);
-              if (fips) {
-                const districtNum = district === '' ? '00' : district.padStart(2, '0');
-                const districtKey = `${fips}${districtNum}`;
-                const grade = String(member.Grade || 'N/A');
-                districtGrades[districtKey] = grade;
-                districtMembers[districtKey] = member;
+          if (!hasDistrictData) {
+            // Fallback: If no district data, aggregate by state like Senate mode
+            console.warn('House mode: No district data available, aggregating by state instead');
+            const membersByState: Record<string, Row[]> = {};
+
+            membersToColor.forEach((member) => {
+              if (member.chamber === 'HOUSE') {
+                const state = member.state;
+                const fips = getStateFips(state);
+
+                if (fips) {
+                  if (!membersByState[fips]) {
+                    membersByState[fips] = [];
+                  }
+                  membersByState[fips].push(member);
+                }
               }
-            }
-          });
+            });
+
+            // Calculate average grade for each state
+            const gradeValues: Record<string, number> = {
+              'A+': 100, 'A': 95, 'A-': 90,
+              'B+': 87, 'B': 83, 'B-': 80,
+              'C+': 77, 'C': 73, 'C-': 70,
+              'D+': 67, 'D': 63, 'D-': 60,
+              'F': 50
+            };
+
+            Object.entries(membersByState).forEach(([fips, stateMembers]) => {
+              const validGrades = stateMembers
+                .map(m => gradeValues[String(m.Grade || '')])
+                .filter(v => v !== undefined);
+
+              if (validGrades.length > 0) {
+                const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
+
+                let avgGrade = 'N/A';
+                if (avg >= 98) avgGrade = 'A+';
+                else if (avg >= 93) avgGrade = 'A';
+                else if (avg >= 88.5) avgGrade = 'A-';
+                else if (avg >= 85) avgGrade = 'B+';
+                else if (avg >= 81.5) avgGrade = 'B';
+                else if (avg >= 78.5) avgGrade = 'B-';
+                else if (avg >= 75) avgGrade = 'C+';
+                else if (avg >= 71.5) avgGrade = 'C';
+                else if (avg >= 68.5) avgGrade = 'C-';
+                else if (avg >= 65) avgGrade = 'D+';
+                else if (avg >= 61.5) avgGrade = 'D';
+                else if (avg >= 55) avgGrade = 'D-';
+                else avgGrade = 'F';
+
+                districtGrades[fips] = avgGrade;
+                districtMembers[fips] = stateMembers;
+              }
+            });
+          } else {
+            // Normal path: Map individual districts
+            membersToColor.forEach((member) => {
+              if (member.chamber === 'HOUSE') {
+                const state = member.state;
+                const district = String(member.district || '');
+
+                const fips = getStateFips(state);
+                if (fips) {
+                  const districtNum = district === '' ? '00' : district.padStart(2, '0');
+                  const districtKey = `${fips}${districtNum}`;
+                  const grade = String(member.Grade || 'N/A');
+                  districtGrades[districtKey] = grade;
+                  districtMembers[districtKey] = member;
+                }
+              }
+            });
+          }
 
           // Update refs for tooltip access
           districtMembersRef.current = districtMembers;
@@ -772,11 +837,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           }
         } else if (Object.keys(districtGrades).length > 0) {
           // Senate or House mode: Use grade colors
+          // Check if we're aggregating by state (no district data)
+          const firstKey = Object.keys(districtGrades)[0];
+          const aggregatingByState = firstKey.length === 2; // FIPS codes are 2 digits
+
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
             'match',
-            isSenate
-              ? ['get', 'name']  // For states GeoJSON, use the 'name' property (state name)
+            isSenate || aggregatingByState
+              ? (isSenate ? ['get', 'name'] : ['get', 'STATEFP'])  // For states: use 'name' for Senate GeoJSON, 'STATEFP' for House
               : ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']] // For districts, concatenate STATEFP and CD118FP
           ];
 
@@ -856,7 +925,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         // Add state borders for House view
         if (!isSenate) {
           try {
-            const stateResponse = await fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json');
+            const stateResponse = await fetch('https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json');
             if (stateResponse.ok) {
               const stateData = await stateResponse.json();
               if (map.current) {
@@ -1971,7 +2040,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
 
   return (
-    <div className="relative w-full h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
+    <div className="relative w-full h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-[#0B1220] z-10">
           <div className="text-sm text-slate-500 dark:text-slate-400">Loading {chamber === 'SENATE' ? 'state map' : chamber === 'HOUSE' ? 'congressional districts' : 'state map'}...</div>

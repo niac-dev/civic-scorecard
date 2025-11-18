@@ -144,13 +144,16 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const [firstExpanded, setFirstExpanded] = useState(false);
   const [secondExpanded, setSecondExpanded] = useState(false);
   const [thirdExpanded, setThirdExpanded] = useState(false);
+  const [filterExpanded, setFilterExpanded] = useState(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [stateFilter, setStateFilter] = useState<string>(initialStateFilter || "");
+  const [chamberFilter, setChamberFilter] = useState<string>("");
   const accordionSectionRef = useRef<HTMLDivElement>(null);
 
   // When clicking on map with state filter, expand all accordion sections and scroll to them
   useEffect(() => {
     if (initialStateFilter) {
+      setFilterExpanded(true);
       setFirstExpanded(true);
       setSecondExpanded(true);
       setThirdExpanded(true);
@@ -366,7 +369,14 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     return Array.from(statesSet).sort();
   }, [firstSection, secondSection, thirdSection]);
 
-  // Filter sections based on party and state
+  // Check if chamber filter should be shown (only for bicameral bills)
+  const showChamberFilter = useMemo(() => {
+    const allMembers = [...firstSection, ...secondSection, ...thirdSection];
+    const chambers = new Set(allMembers.map(m => m.chamber).filter(Boolean));
+    return chambers.size > 1;
+  }, [firstSection, secondSection, thirdSection]);
+
+  // Filter sections based on party, state, and chamber
   const filteredFirstSection = useMemo(() => {
     let filtered = firstSection;
     if (partyFilter) {
@@ -375,8 +385,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
     }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
     return filtered;
-  }, [firstSection, partyFilter, stateFilter]);
+  }, [firstSection, partyFilter, stateFilter, chamberFilter]);
 
   const filteredSecondSection = useMemo(() => {
     let filtered = secondSection;
@@ -386,8 +399,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
     }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
     return filtered;
-  }, [secondSection, partyFilter, stateFilter]);
+  }, [secondSection, partyFilter, stateFilter, chamberFilter]);
 
   const filteredThirdSection = useMemo(() => {
     let filtered = thirdSection;
@@ -397,8 +413,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
     }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
     return filtered;
-  }, [thirdSection, partyFilter, stateFilter]);
+  }, [thirdSection, partyFilter, stateFilter, chamberFilter]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -420,51 +439,104 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
       <div className="fixed inset-2 md:inset-10 z-[110] flex items-start justify-center overflow-hidden">
         <div className="w-full max-w-3xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
           {/* Header - sticky (just bill name and navigation) */}
-          <div className="flex items-center justify-between p-4 border-b border-[#E7ECF2] dark:border-slate-900 sticky top-0 bg-white dark:bg-slate-800 z-10">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-1 min-w-0">
-              {isSupport ? (
-                <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0" aria-hidden="true" role="img">
-                  <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0" aria-hidden="true" role="img">
-                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                </svg>
+          <div className="p-4 border-b border-[#E7ECF2] dark:border-slate-900 sticky top-0 bg-white dark:bg-slate-800 z-10">
+            {/* Bill number and navigation buttons row - mobile only */}
+            <div className="flex items-end justify-between mb-2 md:hidden">
+              {meta.bill_number && (
+                <div className="text-xs text-slate-500 dark:text-slate-400 italic pl-7">
+                  {meta.bill_number}
+                </div>
               )}
-              <span className="truncate">
-                {meta.display_name || meta.short_title || `${meta.bill_number || column}`}
-              </span>
-            </h1>
-            <div className="flex gap-2 flex-shrink-0 ml-4">
-              {onBack && (
+              <div className="flex gap-1 flex-shrink-0">
+                {onBack && (
+                  <button
+                    className="p-1.5 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                    onClick={onBack}
+                    title="Back"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                )}
                 <button
-                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                  onClick={onBack}
-                  title="Back"
+                  className="p-1.5 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                  onClick={() => window.open(`/bill/${encodeURIComponent(column)}`, "_blank")}
+                  title="Open full page"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </button>
-              )}
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={() => window.open(`/bill/${encodeURIComponent(column)}`, "_blank")}
-                title="Open full page"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </button>
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
-                onClick={onClose}
-                title="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <button
+                  className="p-1.5 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                  onClick={onClose}
+                  title="Close"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Title and navigation - desktop layout */}
+            <div className="flex items-center justify-between">
+              {/* Title */}
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                {isSupport ? (
+                  <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0 mt-1" aria-hidden="true" role="img">
+                    <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0 mt-1" aria-hidden="true" role="img">
+                    <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                  </svg>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    {meta.short_title || meta.display_name || `${meta.bill_number || column}`}
+                  </h1>
+                  {meta.bill_number && (
+                    <div className="hidden md:block text-sm text-slate-500 dark:text-slate-400 italic mt-0.5">
+                      {meta.bill_number}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Navigation buttons - desktop only */}
+              <div className="hidden md:flex gap-2 flex-shrink-0 ml-4">
+                {onBack && (
+                  <button
+                    className="p-1.5 md:p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                    onClick={onBack}
+                    title="Back"
+                  >
+                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  className="p-1.5 md:p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                  onClick={() => window.open(`/bill/${encodeURIComponent(column)}`, "_blank")}
+                  title="Open full page"
+                >
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </button>
+                <button
+                  className="p-1.5 md:p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                  onClick={onClose}
+                  title="Close"
+                >
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -476,6 +548,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 {meta.description}
               </p>
             )}
+
+            {/* Divider */}
+            <div className="border-t border-[#E7ECF2] dark:border-slate-900"></div>
 
             {/* Bill metadata */}
             <div className="space-y-2">
@@ -541,7 +616,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       </div>
                     ) : voteInfo.dateIntroduced ? (
                       <div className="text-sm text-slate-600 dark:text-slate-300">
-                        <span className="font-bold">Date Introduced:</span> {voteInfo.dateIntroduced}
+                        <span className="font-bold">Introduced:</span> {voteInfo.dateIntroduced}
                       </div>
                     ) : null}
                   </>
@@ -613,42 +688,80 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             )}
 
+            {/* Divider */}
+            <div className="border-t border-[#E7ECF2] dark:border-slate-900"></div>
+
             {/* Member Lists - Accordion Sections */}
             {(firstSection.length > 0 || secondSection.length > 0) && (
               <div className="space-y-4">
-                {/* Filters */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Filter:</span>
-                  <select
-                    className="select !text-xs !h-8 !px-2"
-                    value={partyFilter}
-                    onChange={(e) => setPartyFilter(e.target.value)}
+                {/* Filters - Bookmark Style */}
+                <div className="relative">
+                  {/* Filter Bookmark Tab */}
+                  <button
+                    className="absolute -left-6 -top-4 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-2 py-1 rounded-r-md text-xs hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    onClick={() => setFilterExpanded(!filterExpanded)}
+                    title="Filter"
                   >
-                    <option value="">All Parties</option>
-                    <option value="Democrat">Democrat</option>
-                    <option value="Republican">Republican</option>
-                    <option value="Independent">Independent</option>
-                  </select>
-                  <select
-                    className="select !text-xs !h-8 !px-2"
-                    value={stateFilter}
-                    onChange={(e) => setStateFilter(e.target.value)}
-                  >
-                    <option value="">All States</option>
-                    {uniqueStates.map(state => (
-                      <option key={state} value={state}>{state}</option>
-                    ))}
-                  </select>
-                  {(partyFilter || stateFilter) && (
-                    <button
-                      onClick={() => {
-                        setPartyFilter("");
-                        setStateFilter("");
-                      }}
-                      className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                    <svg
+                      viewBox="0 0 20 20"
+                      className="h-3 w-3"
+                      aria-hidden="true"
+                      role="img"
+                      fill="currentColor"
                     >
-                      Clear
-                    </button>
+                      <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
+                    </svg>
+                  </button>
+
+                  {/* Filter Panel - Slides out */}
+                  {filterExpanded && (
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg mb-4 border border-slate-200 dark:border-slate-700">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {showChamberFilter && (
+                          <select
+                            className="select !text-xs !h-8 !px-2"
+                            value={chamberFilter}
+                            onChange={(e) => setChamberFilter(e.target.value)}
+                          >
+                            <option value="">All Chambers</option>
+                            <option value="HOUSE">House</option>
+                            <option value="SENATE">Senate</option>
+                          </select>
+                        )}
+                        <select
+                          className="select !text-xs !h-8 !px-2"
+                          value={partyFilter}
+                          onChange={(e) => setPartyFilter(e.target.value)}
+                        >
+                          <option value="">All Parties</option>
+                          <option value="Democrat">Democrat</option>
+                          <option value="Republican">Republican</option>
+                          <option value="Independent">Independent</option>
+                        </select>
+                        <select
+                          className="select !text-xs !h-8 !px-2"
+                          value={stateFilter}
+                          onChange={(e) => setStateFilter(e.target.value)}
+                        >
+                          <option value="">All States</option>
+                          {uniqueStates.map(state => (
+                            <option key={state} value={state}>{state}</option>
+                          ))}
+                        </select>
+                        {(partyFilter || stateFilter || chamberFilter) && (
+                          <button
+                            onClick={() => {
+                              setPartyFilter("");
+                              setStateFilter("");
+                              setChamberFilter("");
+                            }}
+                            className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -666,7 +779,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       )}
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
-                      <span className="whitespace-nowrap">{firstLabel}: {filteredFirstSection.length}{(partyFilter || stateFilter) && ` of ${firstSection.length}`}</span>
+                      <span className="whitespace-nowrap">{firstLabel}: {filteredFirstSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${firstSection.length}`}</span>
                       <PartisanPills members={filteredFirstSection} />
                     </span>
                     <svg
@@ -732,7 +845,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       })}
                       {filteredFirstSection.length === 0 && (
                         <div className="col-span-full text-center py-4 text-xs text-slate-500 dark:text-slate-400">
-                          {(partyFilter || stateFilter) ? "No matches for current filters" : "None found"}
+                          {(partyFilter || stateFilter || chamberFilter) ? "No matches for current filters" : "None found"}
                         </div>
                       )}
                     </div>
@@ -759,7 +872,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       )}
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
-                      <span className="whitespace-nowrap">{secondLabel}: {filteredSecondSection.length}{(partyFilter || stateFilter) && ` of ${secondSection.length}`}</span>
+                      <span className="whitespace-nowrap">{secondLabel}: {filteredSecondSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${secondSection.length}`}</span>
                       <PartisanPills members={filteredSecondSection} />
                     </span>
                     <svg
@@ -822,7 +935,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       ))}
                       {filteredSecondSection.length === 0 && (
                         <div className="col-span-full text-center py-4 text-xs text-slate-500 dark:text-slate-400">
-                          {(partyFilter || stateFilter) ? "No matches for current filters" : "None found"}
+                          {(partyFilter || stateFilter || chamberFilter) ? "No matches for current filters" : "None found"}
                         </div>
                       )}
                     </div>
@@ -844,7 +957,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         )}
                       </svg>
                       <span className="flex items-center flex-wrap flex-1 min-w-0">
-                        <span className="whitespace-nowrap">{thirdLabel}: {filteredThirdSection.length}{(partyFilter || stateFilter) && ` of ${thirdSection.length}`}</span>
+                        <span className="whitespace-nowrap">{thirdLabel}: {filteredThirdSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${thirdSection.length}`}</span>
                         <PartisanPills members={filteredThirdSection} />
                       </span>
                       <svg

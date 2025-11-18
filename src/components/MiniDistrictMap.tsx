@@ -144,7 +144,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
 
       try {
         const dataUrl = isSenate
-          ? 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json'
+          ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'
           : '/data/districts/congressional-districts-118th.geojson';
 
         console.log('MiniDistrictMap: Loading', dataUrl);
@@ -164,7 +164,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
         // For House districts, also load state boundaries to show context
         if (!isSenate) {
           try {
-            const stateResponse = await fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json');
+            const stateResponse = await fetch('https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json');
             if (stateResponse.ok) {
               const stateData = await stateResponse.json();
               if (map.current) {
@@ -217,6 +217,8 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
           const fips = stateToFips[stateCode];
           const district = String(member.district || '');
           const districtNum = district === '' ? '00' : district.padStart(2, '0');
+
+          console.log('MiniDistrictMap House - stateCode:', stateCode, 'fips:', fips, 'district:', districtNum);
 
           map.current.addLayer({
             id: 'districts-fill',
@@ -593,7 +595,7 @@ function FullscreenMap({ member }: { member: Row }) {
 
       try {
         const dataUrl = isSenate
-          ? 'https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json'
+          ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'
           : '/data/districts/congressional-districts-118th.geojson';
 
         const response = await fetch(dataUrl);
@@ -609,7 +611,7 @@ function FullscreenMap({ member }: { member: Row }) {
         // Load state boundaries for House
         if (!isSenate) {
           try {
-            const stateResponse = await fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json');
+            const stateResponse = await fetch('https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json');
             if (stateResponse.ok) {
               const stateData = await stateResponse.json();
               if (map.current) {

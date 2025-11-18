@@ -514,7 +514,14 @@ export default function Page() {
   const filtered = useMemo(() => {
     let out = rows;
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
-    if (f.party) out = out.filter(r => r.party === f.party);
+    if (f.party) {
+      // When filtering for Democratic, include Independents
+      if (f.party === "Democratic") {
+        out = out.filter(r => r.party === "Democratic" || r.party === "Independent");
+      } else {
+        out = out.filter(r => r.party === f.party);
+      }
+    }
     if (f.state) out = out.filter(r => stateCodeOf(r.state) === f.state);
     if (f.search) {
       const q = f.search.toLowerCase().trim();
@@ -873,9 +880,12 @@ export default function Page() {
     const totalRows = sorted.length;
     const containerHeight = tableScrollRef.current?.clientHeight || 700;
 
+    // Use responsive row height: mobile has compact padding (py-1.5), desktop has more padding (py-3)
+    const rowHeight = isMobile ? 73 : ROW_HEIGHT;
+
     // Calculate which rows are visible based on scroll position
-    const startIdx = Math.floor(scrollTop / ROW_HEIGHT);
-    const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT);
+    const startIdx = Math.floor(scrollTop / rowHeight);
+    const visibleCount = Math.ceil(containerHeight / rowHeight);
 
     // Add overscan to reduce flickering
     const start = Math.max(0, startIdx - OVERSCAN);
@@ -885,8 +895,8 @@ export default function Page() {
     const visible = sorted.slice(start, end);
 
     // Calculate total height and offset for positioning
-    const total = totalRows * ROW_HEIGHT;
-    const offset = start * ROW_HEIGHT;
+    const total = totalRows * rowHeight;
+    const offset = start * rowHeight;
 
     return {
       visibleRows: visible,
@@ -895,7 +905,7 @@ export default function Page() {
       startIndex: start,
       endIndex: end
     };
-  }, [sorted, scrollTop]);
+  }, [sorted, scrollTop, isMobile]);
 
   // Scroll handler for virtual scrolling
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -1075,28 +1085,29 @@ export default function Page() {
 
   const gridTemplate = useMemo(() => {
     // Fixed widths per column so the header background spans the full scroll width
-    const billsPart = billCols.map(() => "minmax(140px, 140px)").join(" ");
-    const gradesPart = gradeColumns.map(() => "minmax(160px, 160px)").join(" ");
-    // Member column: narrower on mobile (no photos, stacked names), wider on desktop
-    // Mobile: min 120px to fit stacked names, max 35vw to save space
+    // Wider columns on mobile - sized so ~3 columns fit on screen (member + 2 data columns)
+    const billsPart = billCols.map(() => isMobile ? "minmax(126px, 126px)" : "minmax(140px, 140px)").join(" ");
+    const gradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
+    // Member column: wider on mobile for comfortable reading
+    // Mobile: min 126px to fit stacked names, max 40vw for responsive sizing
     // Desktop: fixed 300px for comfortable reading with photos
-    const memberCol = isMobile ? "minmax(120px, min(35vw, 160px))" : "300px";
-    // In summary mode: member col + grade cols + endorsements col + total/max/percent
+    const memberCol = isMobile ? "minmax(126px, min(40vw, 162px))" : "300px";
+    // In summary mode: member col + grade cols + endorsements col
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} minmax(144px, 144px) minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
+      return `${memberCol} ${gradesPart} minmax(144px, 144px)`;
     }
-    // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols (no totals)
+    // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols
     if (f.categories.has("AIPAC")) {
-      // First grade column is Overall Grade (160px), then endorsements (144px), then remaining grade columns
-      const restGradesPart = gradeColumns.slice(1).map(() => "minmax(160px, 160px)").join(" ");
-      return `${memberCol} minmax(160px, 160px) minmax(144px, 144px) ${restGradesPart} ${billsPart}`;
+      // First grade column is Overall Grade (135px on mobile), then endorsements (144px), then remaining grade columns
+      const restGradesPart = gradeColumns.slice(1).map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
+      return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)"} minmax(144px, 144px) ${restGradesPart} ${billsPart}`;
     }
-    // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols + totals (no endorsements)
+    // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols
     if (f.categories.has("Civil Rights & Immigration")) {
-      return `${memberCol} ${gradesPart} ${billsPart} minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
+      return `${memberCol} ${gradesPart} ${billsPart}`;
     }
-    // member col + grade cols + dynamic bill cols + endorsements col + totals
-    return `${memberCol} ${gradesPart} ${billsPart} 9.6rem minmax(100px, 100px) minmax(100px, 100px) minmax(100px, 100px)`;
+    // member col + grade cols + dynamic bill cols + endorsements col
+    return `${memberCol} ${gradesPart} ${billsPart} 9.6rem`;
   }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile]);
 
   // Calculate average grades per state for map coloring
@@ -1251,7 +1262,7 @@ export default function Page() {
   return (
     <div className="space-y-0">
       {/* Header Band */}
-      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-3 md:px-4 border-b border-[#001a2e] dark:border-slate-900">
+      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img
@@ -1261,7 +1272,7 @@ export default function Page() {
             />
           </a>
           <h1 className="text-xl md:text-2xl font-bold text-white">
-            Congressional Scorecard
+            Scorecard
           </h1>
         </div>
       </div>
@@ -1378,7 +1389,10 @@ export default function Page() {
               }}
             >
             <div
-              className="th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group flex flex-col justify-between"
+              className={clsx(
+                "th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group flex flex-col justify-between",
+                f.viewMode === "summary" && "!py-2"
+              )}
               onClick={() => {
                 if (sortCol === "__member") {
                   // Cycle: alphabet asc → alphabet desc → district asc → district desc → alphabet asc
@@ -1408,7 +1422,7 @@ export default function Page() {
                   : "Click to sort by alphabet or district"
               }
             >
-              <div className="flex-1" />
+              {f.viewMode !== "summary" && <div className="flex-1" />}
               <span className={clsx(
                 "text-[10px] flex items-center gap-1",
                 (sortCol === "__member" || sortCol === "__district") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
@@ -1420,6 +1434,48 @@ export default function Page() {
               </span>
             </div>
 
+            {/* Endorsements column header - before Overall Grade in AIPAC view */}
+            {f.categories.has("AIPAC") && (
+              <div className="th group relative select-none flex flex-col">
+                {/* Header title - clickable to view AIPAC page with 3-line height */}
+                <div className="h-[3.375rem] flex items-start">
+                  <span
+                    className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAipacModal(true);
+                    }}
+                  >
+                    Supported by AIPAC or DMFI
+                  </span>
+                </div>
+
+                {/* Sortable indicator - always in uniform position */}
+                <span
+                  className={clsx(
+                    "text-[10px] text-slate-400 dark:text-slate-500 font-light flex items-center gap-1 cursor-pointer",
+                    sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}
+                  onClick={() => {
+                    if (sortCol === "__aipac") {
+                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                    } else {
+                      setSortCol("__aipac");
+                      setSortDir("GOOD_FIRST");
+                    }
+                  }}
+                  title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
+                >
+                  <span>Sort</span>
+                  <span className={clsx(
+                    sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}>
+                    {sortCol === "__aipac" ? (sortDir === "GOOD_FIRST" ? "▲" : "▼") : "▼"}
+                  </span>
+                </span>
+              </div>
+            )}
+
             {gradeColumns.map((gradeCol, idx) => {
               const isOverallGrade = gradeCol.header === "Overall Grade";
               const isSummaryMode = f.viewMode === "summary";
@@ -1430,14 +1486,14 @@ export default function Page() {
                   <div
                     className={clsx(
                       "th group flex flex-col",
-                      isSummaryMode ? "text-center" : "text-left",
-                      idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900"
+                      isSummaryMode ? "text-center !py-2" : "text-left",
+                      idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-slate-900"
                     )}
                   >
                     <div
                       className={clsx(
-                        "flex-1 flex items-center cursor-pointer",
-                        isSummaryMode ? "justify-center" : "justify-start",
+                        "flex items-center cursor-pointer",
+                        isSummaryMode ? "justify-center" : "justify-start flex-1",
                         isCategoryHeader && "hover:text-[#4B8CFB] transition-colors"
                       )}
                       title={
@@ -1463,70 +1519,33 @@ export default function Page() {
                         }
                       }}
                     >
-                      <div className="uppercase">{gradeCol.header}</div>
+                      <div className="uppercase leading-tight">{gradeCol.header}</div>
                     </div>
-                    <div
-                      className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Sort behavior when clicking the sort indicator
-                        if (sortCol === String(gradeCol.field)) {
-                          setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                        } else {
-                          setSortCol(String(gradeCol.field));
-                          setSortDir("GOOD_FIRST");
-                        }
-                      }}
-                      title="Click to sort"
-                    >
-                      <span>Sort</span>
-                      <span className={clsx(
-                        sortCol === String(gradeCol.field) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      )}>
-                        {sortCol === String(gradeCol.field) ? (sortDir === "GOOD_FIRST" ? "▲" : "▼") : "▼"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Endorsements column header - after Overall Grade in AIPAC view */}
-                  {idx === 0 && f.categories.has("AIPAC") && (
-                    <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
-                      {/* Header title - clickable to view AIPAC page with 3-line height */}
-                      <div className="h-[3.375rem] flex items-start">
-                        <span
-                          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAipacModal(true);
-                          }}
-                        >
-                          Supported by AIPAC or DMFI
-                        </span>
-                      </div>
-
-                      {/* Sortable indicator - always in uniform position */}
-                      <span
-                        className={clsx(
-                          "text-[10px] text-slate-400 dark:text-slate-500 font-light flex items-center gap-1 cursor-pointer",
-                          sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                        )}
-                        onClick={() => {
-                          if (sortCol === "__aipac") {
+                    {!isSummaryMode && (
+                      <div
+                        className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Sort behavior when clicking the sort indicator
+                          if (sortCol === String(gradeCol.field)) {
                             setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
                           } else {
-                            setSortCol("__aipac");
+                            setSortCol(String(gradeCol.field));
                             setSortDir("GOOD_FIRST");
                           }
                         }}
-                        title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
+                        title="Click to sort"
                       >
-                        sort
-                        <span>
-                          {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                        <span>Sort</span>
+                        <span className={clsx(
+                          sortCol === String(gradeCol.field) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}>
+                          {sortCol === String(gradeCol.field) ? (sortDir === "GOOD_FIRST" ? "▲" : "▼") : "▼"}
                         </span>
-                      </span>
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
+
                 </React.Fragment>
               );
             })}
@@ -1638,15 +1657,23 @@ export default function Page() {
             })}
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
-              <div className="th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col">
-                {/* Empty space for bill number alignment */}
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5 h-[14px]">
-                  {'\u00A0'}
-                </div>
-                {/* Header title - clickable to view AIPAC page with fixed 4-line height */}
-                <div className="h-[4.5rem] flex items-start">
+              <div className={clsx(
+                "th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col",
+                f.viewMode === "summary" && "!py-2"
+              )}>
+                {/* Empty space for bill number alignment - hide in summary mode */}
+                {f.viewMode !== "summary" && (
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5 h-[14px]">
+                    {'\u00A0'}
+                  </div>
+                )}
+                {/* Header title - clickable to view AIPAC page */}
+                <div className={clsx(f.viewMode === "summary" ? "flex items-center" : "h-[4.5rem] flex items-start")}>
                   <span
-                    className="line-clamp-4 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                    className={clsx(
+                      "cursor-pointer hover:text-[#4B8CFB] transition-colors",
+                      f.viewMode === "summary" ? "line-clamp-2" : "line-clamp-4"
+                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAipacModal(true);
@@ -1656,101 +1683,32 @@ export default function Page() {
                   </span>
                 </div>
 
-                {/* Sortable indicator - always in uniform position */}
-                <span
-                  className={clsx(
-                    "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
-                    sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  )}
-                  onClick={() => {
-                    if (sortCol === "__aipac") {
-                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                    } else {
-                      setSortCol("__aipac");
-                      setSortDir("GOOD_FIRST");
-                    }
-                  }}
-                  title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
-                >
-                  sort
-                  <span>
-                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                {/* Sortable indicator - hide in summary mode */}
+                {f.viewMode !== "summary" && (
+                  <span
+                    className={clsx(
+                      "text-[10px] text-slate-400 dark:text-slate-500 font-light mt-0.5 flex items-center gap-1 cursor-pointer",
+                      sortCol === "__aipac" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}
+                    onClick={() => {
+                      if (sortCol === "__aipac") {
+                        setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                      } else {
+                        setSortCol("__aipac");
+                        setSortDir("GOOD_FIRST");
+                      }
+                    }}
+                    title="Click to sort by AIPAC/DMFI support (toggle ✓ first / ✕ first)"
+                  >
+                    sort
+                    <span>
+                      {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
             )}
 
-            {/* Sortable score headers - shown for all views except AIPAC */}
-            {!f.categories.has("AIPAC") && (
-              <>
-                {/* Sortable score headers */}
-                <div
-                  className="th text-center cursor-pointer relative group border-l border-[#E7ECF2] dark:border-slate-900"
-                  title="Click to sort by Total (toggle high→low / low→high)"
-                  onClick={() => {
-                    const col = scoreSuffix ? `Total_${scoreSuffix}` : "Total";
-                    if (sortCol === col) {
-                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                    } else {
-                      setSortCol(col);
-                      setSortDir("GOOD_FIRST");
-                    }
-                  }}
-                >
-                  Total Points
-                  <span className={clsx(
-                    "absolute right-2 bottom-1.5 text-[10px]",
-                    sortCol === (scoreSuffix ? `Total_${scoreSuffix}` : "Total") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
-                  )}>
-                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                  </span>
-                </div>
-
-                <div
-                  className="th text-center cursor-pointer relative group"
-                  title="Click to sort by Max (toggle high→low / low→high)"
-                  onClick={() => {
-                    const col = scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible";
-                    if (sortCol === col) {
-                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                    } else {
-                      setSortCol(col);
-                      setSortDir("GOOD_FIRST");
-                    }
-                  }}
-                >
-                  Max Points
-                  <span className={clsx(
-                    "absolute right-2 bottom-1.5 text-[10px]",
-                    sortCol === (scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
-                  )}>
-                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                  </span>
-                </div>
-
-                <div
-                  className="th text-center cursor-pointer relative group"
-                  title="Click to sort by Percent (toggle high→low / low→high)"
-                  onClick={() => {
-                    const col = scoreSuffix ? `Percent_${scoreSuffix}` : "Percent";
-                    if (sortCol === col) {
-                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
-                    } else {
-                      setSortCol(col);
-                      setSortDir("GOOD_FIRST");
-                    }
-                  }}
-                >
-                  Percent
-                  <span className={clsx(
-                    "absolute right-2 bottom-1.5 text-[10px]",
-                    sortCol === (scoreSuffix ? `Percent_${scoreSuffix}` : "Percent") ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
-                  )}>
-                    {sortDir === "GOOD_FIRST" ? "▲" : "▼"}
-                  </span>
-                </div>
-              </>
-            )}
           </div>
 
           {/* Rows Container - Virtual Scrolling */}
@@ -1767,23 +1725,24 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-2 md:pl-4 flex items-center gap-1.5 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
               >
-                {/* Photo - hidden on mobile, visible on tablets/desktop */}
+                {/* Photo - shown second on mobile, first on desktop */}
                 {r.photo_url ? (
                   <img
                     src={String(r.photo_url)}
                     alt=""
-                    className="hidden md:block h-[68px] w-[68px] rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                    className="w-[80%] md:w-[70px] h-auto md:h-[70px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                   />
                 ) : (
-                  <div className="hidden md:block h-[68px] w-[68px] rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                  <div className="w-[80%] md:w-[70px] h-auto md:h-[70px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
                 )}
 
-                {/* Text content - wraps on mobile, single line on desktop */}
-                <div className="flex flex-col justify-center min-w-0">
-                  <div className="text-[8px] md:text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5 hidden md:block">
+                {/* Desktop: Text section with role, name, and badges */}
+                <div className="hidden md:flex md:flex-col md:justify-center min-w-0 md:order-2">
+                  {/* Role/Title - top */}
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
                     {(() => {
                       if (r.chamber === "SENATE") return "Senator";
                       if (r.chamber === "HOUSE") {
@@ -1794,7 +1753,52 @@ export default function Page() {
                       return "";
                     })()}
                   </div>
-                  <div className="font-bold text-xs md:text-[16px] leading-tight md:leading-5 text-slate-800 dark:text-white mb-0.5 md:mb-1 md:truncate">
+
+                  {/* Name - middle */}
+                  <div className="font-bold text-[16px] leading-5 text-slate-800 dark:text-white">
+                    {(() => {
+                      const fullName = String(r.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
+                  </div>
+
+                  {/* Badges - bottom */}
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 whitespace-nowrap flex-wrap mt-1">
+                    {/* Chamber */}
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                      style={{
+                        color: '#64748b',
+                        backgroundColor: `${chamberColor(r.chamber)}20`,
+                      }}
+                    >
+                      {r.chamber === "HOUSE" ? "House" : r.chamber === "SENATE" ? "Senate" : (r.chamber || "")}
+                    </span>
+
+                    {/* Party */}
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                      style={partyBadgeStyle(r.party)}
+                    >
+                      {partyLabel(r.party)}
+                    </span>
+
+                    {/* District */}
+                    <span className="text-[11px]">
+                      {r.chamber === "HOUSE" ? `${stateCodeOf(r.state)}-${r.district || '1'}` : stateCodeOf(r.state)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mobile: Name first, then badges */}
+                <div className="md:hidden order-1 px-2 pt-1 pb-0">
+                  <div className="font-bold text-xs leading-tight text-slate-800 dark:text-white text-center">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
@@ -1803,53 +1807,47 @@ export default function Page() {
                         const last = fullName.slice(0, commaIndex).trim();
                         return (
                           <>
-                            <span className="block md:inline">{first}</span>
-                            <span className="hidden md:inline"> </span>
-                            <span className="block md:inline">{last}</span>
+                            <span className="block">{first}</span>
+                            <span className="block">{last}</span>
                           </>
                         );
                       }
                       return fullName;
                     })()}
                   </div>
-                  <div className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 md:gap-2 whitespace-nowrap md:flex-wrap">
-                    {/* Chamber first, solid background (purple for Senate, green for House) */}
+                </div>
+
+                {/* Mobile: Badges */}
+                <div className="md:hidden order-3 px-2 py-1">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1 whitespace-nowrap">
+                    {/* Chamber */}
                     <span
-                      className="px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-[11px] font-semibold"
+                      className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
                       style={{
                         color: '#64748b',
                         backgroundColor: `${chamberColor(r.chamber)}20`,
                       }}
                     >
-                      {r.chamber === "HOUSE"
-                        ? "House"
-                        : r.chamber === "SENATE"
-                        ? "Senate"
-                        : (r.chamber || "")}
+                      {r.chamber === "HOUSE" ? "House" : r.chamber === "SENATE" ? "Senate" : (r.chamber || "")}
                     </span>
 
-                    {/* Party badge next, colored outline/bg by party */}
+                    {/* Party */}
                     <span
-                      className="px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-[11px] font-medium border"
+                      className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
                       style={partyBadgeStyle(r.party)}
                     >
-                      <span className="md:hidden">
-                        {(() => {
-                          const label = partyLabel(r.party);
-                          if (label.startsWith("Republican")) return "R";
-                          if (label.startsWith("Democrat")) return "D";
-                          if (label.startsWith("Independent")) return "I";
-                          return label;
-                        })()}
-                      </span>
-                      <span className="hidden md:inline">{partyLabel(r.party)}</span>
+                      {(() => {
+                        const label = partyLabel(r.party);
+                        if (label.startsWith("Republican")) return "R";
+                        if (label.startsWith("Democrat")) return "D";
+                        if (label.startsWith("Independent")) return "I";
+                        return label;
+                      })()}
                     </span>
 
-                    {/* State last, with district for House members */}
-                    <span className="text-[9px] md:text-[11px]">
-                      {r.chamber === "HOUSE"
-                        ? `${stateCodeOf(r.state)}-${r.district || '1'}`
-                        : stateCodeOf(r.state)}
+                    {/* District */}
+                    <span className="text-[9px]">
+                      {r.chamber === "HOUSE" ? `${stateCodeOf(r.state)}-${r.district || '1'}` : stateCodeOf(r.state)}
                     </span>
                   </div>
                 </div>
@@ -1863,7 +1861,7 @@ export default function Page() {
                   <React.Fragment key={gradeCol.field}>
                     <div
                       className={clsx(
-                        "td flex items-center justify-center",
+                        "td flex items-center justify-center !py-0 md:!py-3",
                         idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900",
                         isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
@@ -2365,20 +2363,6 @@ export default function Page() {
                 </div>
               )}
 
-              {/* Total/Max/Percent - shown for all views except AIPAC */}
-              {!f.categories.has("AIPAC") && (
-                <>
-                  <div className="td tabular text-center font-medium flex items-center justify-center border-l border-[#E7ECF2] dark:border-slate-900">
-                    {Number(r[scoreSuffix ? `Total_${scoreSuffix}` : "Total"] || 0).toFixed(0)}
-                  </div>
-                  <div className="td tabular text-center flex items-center justify-center">
-                    {Number(r[scoreSuffix ? `Max_Possible_${scoreSuffix}` : "Max_Possible"] || 0).toFixed(0)}
-                  </div>
-                  <div className="td flex items-center justify-center px-2">
-                    <Progress value={Number(r[scoreSuffix ? `Percent_${scoreSuffix}` : "Percent"] || 0)} />
-                  </div>
-                </>
-              )}
             </div>
           ))}
             </div>
@@ -2600,7 +2584,7 @@ export default function Page() {
                   </div>
 
                   {/* Bill Rows - Grouped by Category */}
-                  <div className="w-full max-w-full">
+                  <div className="w-full max-w-full pb-8 md:pb-4">
                     {sortedCategories.map((category) => (
                       <div key={category}>
                         {/* Category Header */}
@@ -2814,14 +2798,25 @@ export default function Page() {
 
 function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
   const f = useFilters();
-  const [filtersExpanded, setFiltersExpanded] = useState(f.viewMode === "map" || f.viewMode === "tracker");
+  const [filtersExpanded, setFiltersExpanded] = useState(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // On desktop, always start expanded; on mobile, only expand for map/tracker/category
+    return !isMobile || f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "category";
+  });
 
-  // Auto-expand filters in map view and tracker view, collapse in other views
+  // Auto-expand filters in map view, tracker view, and category view; collapse in summary mode on mobile only
   useEffect(() => {
-    if (f.viewMode === "map" || f.viewMode === "tracker") {
+    const checkMobile = () => window.innerWidth < 768;
+    const isMobile = checkMobile();
+
+    if (f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "category") {
       setFiltersExpanded(true);
-    } else {
+    } else if (isMobile) {
+      // On mobile, collapse filters in summary mode
       setFiltersExpanded(false);
+    } else {
+      // On desktop, always keep filters expanded
+      setFiltersExpanded(true);
     }
   }, [f.viewMode]);
 
@@ -2928,8 +2923,8 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
 
   return (
     <div className="mb-1 space-y-2">
-      {/* First row: Map/Scorecard/Issues buttons */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* First row: Map/Scorecard/Tracker buttons + Search */}
+      <div className="flex flex-wrap items-center gap-2 px-2 md:px-0">
         {/* Desktop: Show both text buttons (≥768px) */}
         <div className="md:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
           <button
@@ -3041,8 +3036,8 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             )}
             title="Scorecard view"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/>
             </svg>
           </button>
           <button
@@ -3057,41 +3052,69 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             )}
             title="Legislation tracker"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
             </svg>
           </button>
         </div>
 
-        {/* Bill selector for map view - Mobile */}
-        {f.viewMode === "map" && (
-          <select
-            className="md:hidden select !text-xs !h-9 !px-2 flex-1"
-            value={selectedMapBill}
-            onChange={(e) => handleBillSelect(e.target.value)}
-          >
-            <option value="">Grade</option>
-            <option value="__PARTISAN__">Partisan</option>
-            <option value="__AIPAC__">AIPAC & DMFI Support</option>
-            <optgroup label="Bills & Actions">
-              {billsWithData.map(col => {
-                const m = metaByCol.get(col);
-                if (!m) return null;
-                return (
-                  <option key={col} value={col}>
-                    {m.display_name || m.short_title || col}
-                  </option>
-                );
-              })}
-            </optgroup>
-          </select>
-        )}
+        {/* Filter button - mobile only, hide in map mode */}
+        {f.viewMode !== "map" && (() => {
+          // Check if there are active filters (party/state only apply to non-tracker views)
+          const hasActiveFilters = f.chamber || f.categories.size > 0 || (f.viewMode !== "tracker" && (f.party || f.state));
 
-        {/* Desktop: Show individual issue buttons (≥985px) - Hide in map mode */}
-        {f.viewMode !== "map" && (
-        <div className="hidden min-[985px]:flex min-[985px]:items-center min-[985px]:gap-2">
+          return (
+            <button
+              className={clsx(
+                "md:hidden p-2 h-9 w-9 rounded-md flex items-center justify-center border transition-colors",
+                filtersExpanded
+                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
+                  : hasActiveFilters
+                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
+                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
+              )}
+              onClick={() => {
+                if (!filtersExpanded && hasActiveFilters) {
+                  // If closed with active filters, clear all filters
+                  f.set({ chamber: "", party: "", state: "", categories: new Set() });
+                } else {
+                  // Otherwise toggle expanded state
+                  setFiltersExpanded(!filtersExpanded);
+                }
+              }}
+              title={!filtersExpanded && hasActiveFilters ? "Clear filters" : "Filters"}
+            >
+              {!filtersExpanded && hasActiveFilters ? (
+                // X icon when filters are active but collapsed
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                // Filter icon when no filters or expanded
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
+                </svg>
+              )}
+            </button>
+          );
+        })()}
+
+        {/* Search - right-aligned for both map and scorecard */}
+        <div className="ml-auto">
+          <UnifiedSearch
+            filteredCount={filteredCount}
+            metaByCol={metaByCol}
+            isMapView={f.viewMode === "map"}
+            isTrackerView={f.viewMode === "tracker"}
+          />
+        </div>
+      </div>
+
+      {/* Second row: Category filter buttons - Hide in map mode */}
+      {f.viewMode !== "map" && filtersExpanded && (
+        <div className="flex items-center gap-2 px-2 md:px-0">
           {/* Border around issue buttons */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-900">
+          <div className="flex items-center flex-wrap gap-1 md:gap-1 px-1.5 md:px-2 py-1 md:py-1 rounded-lg border border-slate-200 dark:border-slate-900 bg-white dark:bg-white/5">
             {/* Individual issue buttons - bright blue when active */}
             <button
               onClick={() => {
@@ -3103,13 +3126,13 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                 }
               }}
               className={clsx(
-                "px-2 h-7 rounded-md text-sm whitespace-nowrap",
+                "px-2.5 md:px-2 py-1.5 md:py-0 md:h-7 rounded-md text-xs md:text-sm leading-tight text-center",
                 f.categories.has("Civil Rights & Immigration")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              Civil Rights & Immigration
+              Civil Rights &<br className="md:hidden" /> Immigration
             </button>
             <button
               onClick={() => {
@@ -3121,7 +3144,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                 }
               }}
               className={clsx(
-                "px-2 h-7 rounded-md text-sm",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
                 f.categories.has("Iran")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3139,7 +3162,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                 }
               }}
               className={clsx(
-                "px-2 h-7 rounded-md text-sm",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
                 f.categories.has("Israel-Gaza")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3157,7 +3180,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                 }
               }}
               className={clsx(
-                "px-2 h-7 rounded-md text-sm",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
                 f.categories.has("AIPAC") && f.viewMode === "category"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3167,62 +3190,11 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             </button>
           </div>
         </div>
-        )}
+      )}
 
-        {/* Mobile: Show dropdown (<985px) - narrower on very small screens - Hide in map mode */}
-        {f.viewMode !== "map" && (
-        <select
-          className={clsx(
-            "max-[984px]:block hidden px-3 h-9 rounded-md text-sm border-0 cursor-pointer",
-            "max-[500px]:px-2 max-[500px]:max-w-[120px] max-[500px]:text-xs",
-            f.viewMode === "category" || (f.viewMode === "tracker" && f.categories.size > 0)
-              ? "bg-[#4B8CFB] text-white"
-              : "bg-transparent hover:bg-slate-50 dark:hover:bg-white/10"
-          )}
-          value={
-            f.categories.size > 0
-              ? Array.from(f.categories)[0]
-              : ""
-          }
-          onChange={(e) => {
-            const value = e.target.value;
-            const currentCategory = f.categories.size > 0 ? Array.from(f.categories)[0] : "";
-
-            // If selecting the same category, toggle it off (go back to summary/all view)
-            if (value === currentCategory && value !== "") {
-              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
-            } else if (value === "") {
-              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
-            } else if (value === "AIPAC") {
-              // AIPAC always goes to scorecard category view
-              f.set({ viewMode: "category", categories: new Set([value]) });
-            } else {
-              f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set([value]) });
-            }
-          }}
-        >
-          <option value="">Issues</option>
-          <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
-          <option value="Iran">Iran</option>
-          <option value="Israel-Gaza">Israel-Gaza</option>
-          <option value="AIPAC">AIPAC</option>
-        </select>
-        )}
-
-        {/* Search - right-aligned for both map and scorecard */}
-        <div className="ml-auto">
-          <UnifiedSearch
-            filteredCount={filteredCount}
-            metaByCol={metaByCol}
-            isMapView={f.viewMode === "map"}
-            isTrackerView={f.viewMode === "tracker"}
-          />
-        </div>
-      </div>
-
-      {/* Second row: Map view - chamber filter */}
+      {/* Third row: Map view - chamber filter */}
       {f.viewMode === "map" && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 px-2 md:px-0">
           <Segmented
             options={["All", "House","Senate"]}
             value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
@@ -3269,12 +3241,13 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
         </div>
       )}
 
-      {/* Second row: Scorecard view - Filters */}
-      {f.viewMode !== "map" && (
-      <div className="flex items-center gap-2">
+      {/* Third row: Scorecard view - Filters */}
+      {f.viewMode !== "map" && filtersExpanded && (
+      <div className="relative flex items-center gap-2 px-2 md:px-0">
+        {/* Desktop: Filter expand button */}
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="flex items-center gap-2 text-sm text-slate-700 dark:text-white hover:text-slate-900 dark:hover:text-slate-300"
+          className="hidden md:flex items-center gap-2 text-sm text-slate-700 dark:text-white hover:text-slate-900 dark:hover:text-slate-300"
         >
           <svg
             className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
@@ -3308,30 +3281,102 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
         )}
 
         <div
-          className={clsx(
-            "flex items-center gap-2 overflow-hidden transition-all duration-300 ease-out",
-            filtersExpanded ? "max-w-[800px] opacity-100" : "max-w-0 opacity-0"
-          )}
+          className="flex items-center gap-2 flex-wrap"
         >
-          <Segmented
-            options={["All", "House","Senate"]}
-            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
-            onChange={(v)=>{
-              if (v === "All") {
-                f.set({ chamber: "" });
-              } else {
-                f.set({ chamber: v.toUpperCase() as any });
-              }
-            }}
-          />
+          {/* Mobile: Chamber buttons (no All option) */}
+          <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
+            <button
+              onClick={() => f.set({ chamber: "HOUSE" })}
+              className={clsx(
+                "px-1.5 h-7 rounded-md text-xs",
+                f.chamber === "HOUSE"
+                  ? "bg-[#4B8CFB] text-white"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              House
+            </button>
+            <button
+              onClick={() => f.set({ chamber: "SENATE" })}
+              className={clsx(
+                "px-1.5 h-7 rounded-md text-xs",
+                f.chamber === "SENATE"
+                  ? "bg-[#4B8CFB] text-white"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              Senate
+            </button>
+          </div>
+
+          {/* Desktop: Segmented with All option */}
+          <div className="hidden md:block">
+            <Segmented
+              options={["All", "House","Senate"]}
+              value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
+              onChange={(v)=>{
+                if (v === "All") {
+                  f.set({ chamber: "" });
+                } else {
+                  f.set({ chamber: v.toUpperCase() as any });
+                }
+              }}
+            />
+          </div>
           {f.viewMode !== "tracker" && (
             <>
-              <select className="select !text-xs !h-8 !px-2" value={f.party || ""} onChange={e=>f.set({party:e.target.value as any})}>
-                <option value="">Party</option>
-                <option>Democratic</option><option>Republican</option><option>Independent</option>
-              </select>
+              {/* Party buttons with tinted letters */}
+              <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1 gap-1">
+                <button
+                  onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
+                  className={clsx(
+                    "w-7 h-7 rounded-md text-xs font-bold transition-colors",
+                    f.party === "Democratic"
+                      ? "bg-blue-500 text-white"
+                      : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                  )}
+                  title="Democratic (includes Independents)"
+                >
+                  D
+                </button>
+                <button
+                  onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
+                  className={clsx(
+                    "w-7 h-7 rounded-md text-xs font-bold transition-colors",
+                    f.party === "Republican"
+                      ? "bg-red-500 text-white"
+                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
+                  )}
+                  title="Republican"
+                >
+                  R
+                </button>
+              </div>
+              {/* Mobile: State abbreviations */}
               <select
-                className="select !text-xs !h-8 !px-2 !max-w-[140px]"
+                className="md:hidden select !text-xs !h-8 !px-2 !max-w-[80px]"
+                value={f.state || ""}
+                onChange={(e) => {
+                  const selectedState = e.target.value;
+                  // If selecting a territory without senate, automatically switch to House
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
+                }}
+              >
+                <option value="">State</option>
+                {STATES.map((s) => (
+                  <option key={s.code} value={s.code}>
+                    {s.code}
+                  </option>
+                ))}
+              </select>
+
+              {/* Desktop: Full state names */}
+              <select
+                className="hidden md:block select !text-xs !h-8 !px-2 !max-w-[140px]"
                 value={f.state || ""}
                 onChange={(e) => {
                   const selectedState = e.target.value;
@@ -3506,7 +3551,6 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
   };
 
   const getPlaceholder = () => {
-    if (isMapView) return "Enter address or zipcode";
     if (searchType === "zip") return "Enter address or zipcode";
     if (searchType === "name") return "Enter lawmaker name…";
     return "Enter bill number or title…";
@@ -3514,50 +3558,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
 
   const isActive = f.myLawmakers.length > 0 || f.search.length > 0;
 
-  // Map view: show simple inline search
-  if (isMapView) {
-    return (
-      <div className="relative flex items-center gap-2">
-        <div className="relative">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder={getPlaceholder()}
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch();
-              }
-            }}
-            className="pl-10 pr-4 h-9 text-sm border border-[#E7ECF2] dark:border-slate-900 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#4B8CFB] focus:border-transparent w-[42px] min-[500px]:min-w-[280px] placeholder:opacity-0 min-[500px]:placeholder:opacity-100 transition-all"
-          />
-        </div>
-        {loading ? (
-          <div className="text-xs text-slate-500">Loading...</div>
-        ) : error ? (
-          <div className="text-xs text-red-600">{error}</div>
-        ) : isActive ? (
-          <button
-            onClick={handleClear}
-            className="chip bg-[#4B8CFB] text-white hover:bg-[#3B7CEB] text-xs"
-            title="Clear search"
-          >
-            Showing {filteredCount} ✕
-          </button>
-        ) : null}
-      </div>
-    );
-  }
-
-  // Scorecard view: show dropdown button
+  // All views: show dropdown button
   return (
     <div className="relative">
       {isActive ? (
@@ -3819,7 +3820,7 @@ function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
     : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
     : "#4b5563"; // dark grey for D and F grades
   const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
-  return <span className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
+  return <span className="inline-flex items-center justify-center rounded-full px-1.5 md:px-2.5 py-0.5 md:py-1 text-xs font-bold min-w-[2.25rem] md:min-w-[2.75rem]"
     style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
 }
 

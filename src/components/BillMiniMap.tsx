@@ -186,7 +186,7 @@ export function BillMiniMap({ meta, column, rows, firstSection, secondSection, f
       try {
         if (actionData.type === 'senate') {
           // Load state boundaries for Senate
-          const response = await fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json');
+          const response = await fetch('https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json');
           if (!response.ok) throw new Error('Failed to load state data');
 
           const geoJsonData = await response.json();
