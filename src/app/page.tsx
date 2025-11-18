@@ -876,16 +876,27 @@ export default function Page() {
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
   // Virtual scrolling: calculate which rows to actually render
+  // On mobile, disable virtual scrolling for smooth native scrolling
   const { visibleRows, totalHeight, offsetY, startIndex, endIndex } = useMemo(() => {
     const totalRows = sorted.length;
+
+    // On mobile, render all rows (no virtual scrolling)
+    if (isMobile) {
+      return {
+        visibleRows: sorted,
+        totalHeight: 0,
+        offsetY: 0,
+        startIndex: 0,
+        endIndex: totalRows
+      };
+    }
+
+    // Desktop: use virtual scrolling
     const containerHeight = tableScrollRef.current?.clientHeight || 700;
 
-    // Use responsive row height: mobile has compact padding (py-1.5), desktop has more padding (py-3)
-    const rowHeight = isMobile ? 73 : ROW_HEIGHT;
-
     // Calculate which rows are visible based on scroll position
-    const startIdx = Math.floor(scrollTop / rowHeight);
-    const visibleCount = Math.ceil(containerHeight / rowHeight);
+    const startIdx = Math.floor(scrollTop / ROW_HEIGHT);
+    const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT);
 
     // Add overscan to reduce flickering
     const start = Math.max(0, startIdx - OVERSCAN);
@@ -895,8 +906,8 @@ export default function Page() {
     const visible = sorted.slice(start, end);
 
     // Calculate total height and offset for positioning
-    const total = totalRows * rowHeight;
-    const offset = start * rowHeight;
+    const total = totalRows * ROW_HEIGHT;
+    const offset = start * ROW_HEIGHT;
 
     return {
       visibleRows: visible,
@@ -949,9 +960,9 @@ export default function Page() {
       if (chamberCompare !== 0) return chamberCompare;
 
       // Sort by bill number and title
-      // Extract bill type and number for proper numeric sorting (e.g., "H.R.100" comes after "H.R.99")
-      const nameA = metaA?.display_name || metaA?.short_title || a;
-      const nameB = metaB?.display_name || metaB?.short_title || b;
+      // Use bill_number field for sorting (e.g., "H.R.1422") instead of display_name (e.g., "Enhanced Iran Sanctions Act (H.R.1422)")
+      const nameA = metaA?.bill_number || metaA?.display_name || metaA?.short_title || a;
+      const nameB = metaB?.bill_number || metaB?.display_name || metaB?.short_title || b;
 
       // Check if bill starts with a number vs letter
       // Bills starting with letters (H.R., S., etc.) come before bills starting with numbers (119.H.Amdt., etc.)
@@ -1086,7 +1097,8 @@ export default function Page() {
   const gridTemplate = useMemo(() => {
     // Fixed widths per column so the header background spans the full scroll width
     // Wider columns on mobile - sized so ~3 columns fit on screen (member + 2 data columns)
-    const billsPart = billCols.map(() => isMobile ? "minmax(126px, 126px)" : "minmax(140px, 140px)").join(" ");
+    // Bill columns are 33% wider to allow 2-line headers instead of 3
+    const billsPart = billCols.map(() => isMobile ? "minmax(168px, 168px)" : "minmax(186px, 186px)").join(" ");
     const gradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
     // Member column: wider on mobile for comfortable reading
     // Mobile: min 126px to fit stacked names, max 40vw for responsive sizing
@@ -1380,7 +1392,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'contain' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -1437,10 +1449,10 @@ export default function Page() {
             {/* Endorsements column header - before Overall Grade in AIPAC view */}
             {f.categories.has("AIPAC") && (
               <div className="th group relative select-none flex flex-col">
-                {/* Header title - clickable to view AIPAC page with 3-line height */}
-                <div className="h-[3.375rem] flex items-start">
+                {/* Header title - clickable to view AIPAC page with 2-line height */}
+                <div className="h-[2.5rem] flex items-start">
                   <span
-                    className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                    className="line-clamp-2 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAipacModal(true);
@@ -1596,10 +1608,10 @@ export default function Page() {
                     key={c}
                     className="th group relative select-none flex flex-col justify-end max-w-[14rem]"
                   >
-                    {/* Header title - clickable to view AIPAC page with 3-line height */}
-                    <div className="h-[3.375rem] flex items-start">
+                    {/* Header title - clickable to view AIPAC page with 2-line height */}
+                    <div className="h-[2.5rem] flex items-start">
                       <span
-                        className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+                        className="line-clamp-2 cursor-pointer hover:text-[#4B8CFB] transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowAipacModal(true);
@@ -1668,11 +1680,11 @@ export default function Page() {
                   </div>
                 )}
                 {/* Header title - clickable to view AIPAC page */}
-                <div className={clsx(f.viewMode === "summary" ? "flex items-center" : "h-[4.5rem] flex items-start")}>
+                <div className={clsx(f.viewMode === "summary" ? "flex items-center" : "h-[2.5rem] flex items-start")}>
                   <span
                     className={clsx(
                       "cursor-pointer hover:text-[#4B8CFB] transition-colors",
-                      f.viewMode === "summary" ? "line-clamp-2" : "line-clamp-4"
+                      "line-clamp-2"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1711,9 +1723,9 @@ export default function Page() {
 
           </div>
 
-          {/* Rows Container - Virtual Scrolling */}
-          <div style={{ height: totalHeight, position: 'relative', minWidth: 'max-content' }}>
-            <div style={{ transform: `translateY(${offsetY}px)`, willChange: 'transform', minWidth: 'max-content' }}>
+          {/* Rows Container - conditionally wrapped for virtual scrolling on desktop */}
+          <div style={isMobile ? { minWidth: 'max-content' } : { height: totalHeight, position: 'relative', minWidth: 'max-content' }}>
+            <div style={isMobile ? { minWidth: 'max-content' } : { transform: `translateY(${offsetY}px)`, willChange: 'transform', minWidth: 'max-content' }}>
           {visibleRows.map((r, i) => (
             <div
               key={i}
@@ -2541,8 +2553,9 @@ export default function Page() {
                   if (chamberCompare !== 0) return chamberCompare;
 
                   // Then sort by bill number and title
-                  const nameA = a.meta?.display_name || a.meta?.short_title || a.col;
-                  const nameB = b.meta?.display_name || b.meta?.short_title || b.col;
+                  // Use bill_number field for proper numeric sorting
+                  const nameA = a.meta?.bill_number || a.meta?.display_name || a.meta?.short_title || a.col;
+                  const nameB = b.meta?.bill_number || b.meta?.display_name || b.meta?.short_title || b.col;
 
                   const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
                   const matchA = nameA.match(billRegex);
@@ -2798,21 +2811,19 @@ export default function Page() {
 
 function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
   const f = useFilters();
-  const [filtersExpanded, setFiltersExpanded] = useState(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    // On desktop, always start expanded; on mobile, only expand for map/tracker/category
-    return !isMobile || f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "category";
-  });
+  // Always start with same initial state on server and client to avoid hydration mismatch
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
 
-  // Auto-expand filters in map view, tracker view, and category view; collapse in summary mode on mobile only
+  // Auto-expand filters in map view and tracker view; on mobile, collapse in summary/category modes
   useEffect(() => {
     const checkMobile = () => window.innerWidth < 768;
     const isMobile = checkMobile();
 
-    if (f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "category") {
+    if (f.viewMode === "map" || f.viewMode === "tracker") {
       setFiltersExpanded(true);
     } else if (isMobile) {
-      // On mobile, collapse filters in summary mode
+      // On mobile, collapse chamber/party/state filters in summary and category modes
+      // (category buttons are always visible, so we only need to toggle chamber/party/state)
       setFiltersExpanded(false);
     } else {
       // On desktop, always keep filters expanded
@@ -2848,8 +2859,9 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
     return filtered.sort((a, b) => {
       const metaA = metaByCol.get(a);
       const metaB = metaByCol.get(b);
-      const nameA = metaA?.display_name || metaA?.short_title || a;
-      const nameB = metaB?.display_name || metaB?.short_title || b;
+      // Use bill_number field for proper numeric sorting
+      const nameA = metaA?.bill_number || metaA?.display_name || metaA?.short_title || a;
+      const nameB = metaB?.bill_number || metaB?.display_name || metaB?.short_title || b;
 
       // Check if bill starts with a number vs letter
       // Bills starting with letters (H.R., S., etc.) come before bills starting with numbers (119.H.Amdt., etc.)
@@ -3030,8 +3042,10 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             }}
             className={clsx(
               "p-2 h-9 w-9 rounded-md flex items-center justify-center",
-              f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category"
+              (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") && f.categories.size === 0
                 ? "bg-[#4B8CFB] text-white"
+                : (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") && f.categories.size > 0
+                ? "bg-[#93c5fd] text-slate-900"
                 : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
             )}
             title="Scorecard view"
@@ -3060,8 +3074,8 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
 
         {/* Filter button - mobile only, hide in map mode */}
         {f.viewMode !== "map" && (() => {
-          // Check if there are active filters (party/state only apply to non-tracker views)
-          const hasActiveFilters = f.chamber || f.categories.size > 0 || (f.viewMode !== "tracker" && (f.party || f.state));
+          // Check if there are active chamber/party/state filters (NOT categories - those are always visible)
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
 
           return (
             <button
@@ -3073,28 +3087,12 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                   ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
                   : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
               )}
-              onClick={() => {
-                if (!filtersExpanded && hasActiveFilters) {
-                  // If closed with active filters, clear all filters
-                  f.set({ chamber: "", party: "", state: "", categories: new Set() });
-                } else {
-                  // Otherwise toggle expanded state
-                  setFiltersExpanded(!filtersExpanded);
-                }
-              }}
-              title={!filtersExpanded && hasActiveFilters ? "Clear filters" : "Filters"}
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              title="Filters"
             >
-              {!filtersExpanded && hasActiveFilters ? (
-                // X icon when filters are active but collapsed
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                // Filter icon when no filters or expanded
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
-                </svg>
-              )}
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
+              </svg>
             </button>
           );
         })()}
@@ -3110,8 +3108,8 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
         </div>
       </div>
 
-      {/* Second row: Category filter buttons - Hide in map mode */}
-      {f.viewMode !== "map" && filtersExpanded && (
+      {/* Second row: Category filter buttons - Always visible on mobile, hide in map mode */}
+      {f.viewMode !== "map" && (
         <div className="flex items-center gap-2 px-2 md:px-0">
           {/* Border around issue buttons */}
           <div className="flex items-center flex-wrap gap-1 md:gap-1 px-1.5 md:px-2 py-1 md:py-1 rounded-lg border border-slate-200 dark:border-slate-900 bg-white dark:bg-white/5">
@@ -3258,37 +3256,30 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
           <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
-          {(f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && !filtersExpanded && (
-            <span className="text-xs text-slate-500">
-              ({[
-                f.chamber && f.chamber,
-                f.viewMode !== "tracker" && f.party && f.party,
-                f.viewMode !== "tracker" && f.state && f.state
-              ].filter(Boolean).join(", ")})
-            </span>
-          )}
         </button>
 
-        {/* Clear button when filters are active but collapsed */}
-        {f.viewMode !== "tracker" && (f.chamber || f.party || f.state) && !filtersExpanded && (
+        {/* Single X button when filters are active but collapsed (desktop) */}
+        {!filtersExpanded && (f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && (
           <button
             onClick={() => f.set({ chamber: "", party: "", state: "" })}
-            className="chip-outline text-slate-700 dark:text-slate-800 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-            title="Clear all filters"
+            className="hidden md:flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
+            title="Clear filters"
           >
-            ✕
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </button>
         )}
 
         <div
-          className="flex items-center gap-2 flex-wrap"
+          className="flex items-center gap-1.5"
         >
           {/* Mobile: Chamber buttons (no All option) */}
           <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
             <button
               onClick={() => f.set({ chamber: "HOUSE" })}
               className={clsx(
-                "px-1.5 h-7 rounded-md text-xs",
+                "px-1.5 h-6 rounded-md text-[10px]",
                 f.chamber === "HOUSE"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3299,7 +3290,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             <button
               onClick={() => f.set({ chamber: "SENATE" })}
               className={clsx(
-                "px-1.5 h-7 rounded-md text-xs",
+                "px-1.5 h-6 rounded-md text-[10px]",
                 f.chamber === "SENATE"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3326,11 +3317,11 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
           {f.viewMode !== "tracker" && (
             <>
               {/* Party buttons with tinted letters */}
-              <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1 gap-1">
+              <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
                 <button
                   onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
                   className={clsx(
-                    "w-7 h-7 rounded-md text-xs font-bold transition-colors",
+                    "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
                     f.party === "Democratic"
                       ? "bg-blue-500 text-white"
                       : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
@@ -3342,7 +3333,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                 <button
                   onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
                   className={clsx(
-                    "w-7 h-7 rounded-md text-xs font-bold transition-colors",
+                    "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
                     f.party === "Republican"
                       ? "bg-red-500 text-white"
                       : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
@@ -3354,7 +3345,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
               </div>
               {/* Mobile: State abbreviations */}
               <select
-                className="md:hidden select !text-xs !h-8 !px-2 !max-w-[80px]"
+                className="md:hidden select !text-[10px] !h-6 !px-1.5 !max-w-[70px]"
                 value={f.state || ""}
                 onChange={(e) => {
                   const selectedState = e.target.value;
@@ -3397,13 +3388,17 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
               </select>
             </>
           )}
-          {f.viewMode !== "tracker" && (f.chamber || f.party || f.state) && (
+
+          {/* Single X button to clear all active filters */}
+          {(f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && (
             <button
               onClick={() => f.set({ chamber: "", party: "", state: "" })}
-              className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
-              title="Clear all filters"
+              className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
+              title="Clear filters"
             >
-              Clear
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </button>
           )}
         </div>
@@ -3700,10 +3695,10 @@ function Header({
       <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-0.5 h-[14px]">
         {meta?.bill_number || '\u00A0'}
       </div>
-      {/* Bill title - clickable to view details with fixed 3-line height */}
-      <div className="h-[3.375rem] flex items-start justify-start overflow-hidden">
+      {/* Bill title - clickable to view details with fixed 2-line height */}
+      <div className="h-[2.5rem] flex items-start justify-start overflow-hidden">
         <span
-          className="line-clamp-3 cursor-pointer hover:text-[#4B8CFB] transition-colors"
+          className="line-clamp-2 cursor-pointer hover:text-[#4B8CFB] transition-colors"
           onClick={(e) => {
             e.stopPropagation();
             if (meta && onBillClick) {
@@ -3719,7 +3714,7 @@ function Header({
       {meta && meta.position_to_score && (
         <span
           className={clsx(
-            "text-[10px] text-slate-700 dark:text-slate-200 font-light mt-2 mb-0 flex items-center gap-1",
+            "text-[10px] text-slate-700 dark:text-slate-200 font-light mt-0.5 mb-0 flex items-center gap-1",
             onSort && "cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
           )}
           onClick={onSort}
