@@ -2025,12 +2025,16 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
                     <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
                   </div>
-                  {isPartisanView && 'houseNeutral' in billActionData.stats && billActionData.stats.houseNeutral > 0 && (
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
-                      <span>{'neutralLabel' in billActionData ? billActionData.neutralLabel : 'Independent/Other'} ({billActionData.stats.houseNeutral})</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const stats = billActionData.stats as { houseGood: number; houseBad: number; houseNeutral?: number };
+                    const neutralLabel = 'neutralLabel' in billActionData ? (billActionData as { neutralLabel: string }).neutralLabel : 'Independent/Other';
+                    return isPartisanView && stats.houseNeutral && stats.houseNeutral > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
+                        <span>{neutralLabel} ({stats.houseNeutral})</span>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
                     <span>{billActionData.badLabel} ({billActionData.stats.houseBad})</span>
