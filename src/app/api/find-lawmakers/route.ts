@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
 
+  console.log('Find lawmakers API called with address:', address);
+
   if (!address) {
     return NextResponse.json({ error: 'Address is required' }, { status: 400 });
   }
@@ -214,7 +216,7 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
-    return NextResponse.json({
+    const result = {
       lawmakers,
       // Include district info for debugging/display
       district: {
@@ -222,7 +224,10 @@ export async function GET(request: NextRequest) {
         number: districtNumber,
         name: districtFeature.attributes?.NAME
       }
-    });
+    };
+
+    console.log('Returning success:', JSON.stringify(result, null, 2));
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching lawmakers:', error);
     return NextResponse.json({ error: 'Failed to fetch lawmakers' }, { status: 500 });

@@ -278,8 +278,9 @@ export default function Page() {
   const [metaByCol, setMeta] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
+  const [selectedFromAipac, setSelectedFromAipac] = useState<boolean>(false);
   const [selectedCell, setSelectedCell] = useState<{rowId: string, col: string} | null>(null);
-  const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string } | null>(null);
+  const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string; initialStateFilter?: string } | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
   const [showAipacModal, setShowAipacModal] = useState<boolean>(false);
@@ -344,6 +345,7 @@ export default function Page() {
 
   const closeAllModals = useCallback(() => {
     setSelected(null);
+    setSelectedFromAipac(false);
     setSelectedBill(null);
     setShowAipacModal(false);
     setModalHistory([]);
@@ -364,6 +366,8 @@ export default function Page() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get('view');
+    const billParam = urlParams.get('bill');
+
     if (viewParam === 'tracker' || viewParam === 'map' || viewParam === 'summary' || viewParam === 'all' || viewParam === 'category') {
       f.set({ viewMode: viewParam });
     } else {
@@ -376,12 +380,18 @@ export default function Page() {
       }
       // Returning user stays on "summary" (already the default)
     }
+
+    // If bill parameter is present, select it on the map
+    if (billParam && viewParam === 'map') {
+      setSelectedMapBill(billParam);
+    }
   }, []);
 
   const [sortCol, setSortCol] = useState<string>("__member");
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
   const [selectedElection, setSelectedElection] = useState<"2024" | "2026" | "2022">("2024");
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedMapBill, setSelectedMapBill] = useState<string>("");
 
   // Track expanded bills in tracker accordion
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
@@ -822,11 +832,17 @@ export default function Page() {
     const colCh = inferChamber(meta, sortCol);
     const goodFirst = sortDir === "GOOD_FIRST";
 
+    // Check if this bill was voted on in both chambers
+    const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+    const hasHouseVote = voteTallies.includes("house");
+    const hasSenateVote = voteTallies.includes("senate");
+    const votedInBothChambers = hasHouseVote && hasSenateVote;
+
     const rankFor = (r: Row) => {
       const rawVal = (r as Record<string, unknown>)[sortCol];
 
-      // Check for chamber mismatch
-      const notApplicable = colCh && colCh !== r.chamber;
+      // Check for chamber mismatch (unless voted in both chambers)
+      const notApplicable = !votedInBothChambers && colCh && colCh !== r.chamber;
       if (notApplicable) return 2; // always last
 
       // Check for manual actions where member wasn't eligible (null/undefined/empty)
@@ -922,21 +938,19 @@ export default function Page() {
       const chamberCompare = (chamberOrder[chamberA] || 3) - (chamberOrder[chamberB] || 3);
       if (chamberCompare !== 0) return chamberCompare;
 
-      // Only sort by category if no category filter is active
-      // (when filtering by category, all items are in the same category anyway)
-      if (f.categories.size === 0) {
-        const catsA = (metaA?.categories || "").split(";").map(s => s.trim()).filter(Boolean);
-        const catsB = (metaB?.categories || "").split(";").map(s => s.trim()).filter(Boolean);
-        const catA = catsA[0] || "";
-        const catB = catsB[0] || "";
-        const catCompare = catA.localeCompare(catB);
-        if (catCompare !== 0) return catCompare;
-      }
-
-      // Finally sort by bill number and title
+      // Sort by bill number and title
       // Extract bill type and number for proper numeric sorting (e.g., "H.R.100" comes after "H.R.99")
       const nameA = metaA?.display_name || metaA?.short_title || a;
       const nameB = metaB?.display_name || metaB?.short_title || b;
+
+      // Check if bill starts with a number vs letter
+      // Bills starting with letters (H.R., S., etc.) come before bills starting with numbers (119.H.Amdt., etc.)
+      const startsWithNumberA = /^\d/.test(nameA);
+      const startsWithNumberB = /^\d/.test(nameB);
+
+      if (startsWithNumberA !== startsWithNumberB) {
+        return startsWithNumberA ? 1 : -1; // Bills starting with numbers come after
+      }
 
       // Match bill number pattern: "H.R.123", "S.456", "H.Con.Res.78", etc.
       const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
@@ -1253,7 +1267,7 @@ export default function Page() {
       </div>
 
       <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
-        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} />
+        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} />
       {selected && (
         <MemberModal
           row={selected}
@@ -1264,6 +1278,7 @@ export default function Page() {
           onClose={closeAllModals}
           onBack={modalHistory.length > 0 ? goBackModal : undefined}
           onBillClick={(meta, column) => pushBillModal(meta, column)}
+          initialCategory={selectedFromAipac ? "AIPAC" : null}
         />
       )}
       {selectedBill && (
@@ -1275,6 +1290,7 @@ export default function Page() {
           onClose={closeAllModals}
           onBack={modalHistory.length > 0 ? goBackModal : undefined}
           onMemberClick={(member) => pushMemberModal(member)}
+          initialStateFilter={selectedBill.initialStateFilter}
         />
       )}
 
@@ -1310,9 +1326,37 @@ export default function Page() {
               setSortDir("GOOD_FIRST");
             }}
             members={filtered}
-            onMemberClick={(member) => setSelected(member)}
+            onMemberClick={(member) => {
+              setSelected(member);
+              setSelectedFromAipac(selectedMapBill === "__AIPAC__");
+            }}
             useDistrictMap={true}
             chamber={f.chamber}
+            selectedBillColumn={selectedMapBill}
+            metaByCol={metaByCol}
+            allRows={rows}
+            onBillMapClick={(stateCode) => {
+              // Handle AIPAC/DMFI map selection
+              if (selectedMapBill === "__AIPAC__") {
+                // Navigate to all view with state filter and AIPAC category active
+                f.set({
+                  viewMode: "all",
+                  state: stateCode,
+                  // If we're in Senate mode on the map, keep Senate filter active
+                  chamber: f.chamber === "SENATE" ? "SENATE" : "",
+                  // Activate AIPAC category filter
+                  categories: new Set(["AIPAC"])
+                });
+                return;
+              }
+              // Open bill modal with state filter when clicking on map with bill selected
+              if (selectedMapBill) {
+                const meta = metaByCol.get(selectedMapBill);
+                if (meta) {
+                  setSelectedBill({ meta, column: selectedMapBill, initialStateFilter: stateCode });
+                }
+              }
+            }}
           />
         </div>
 
@@ -2004,7 +2048,15 @@ export default function Page() {
                 const didCosponsor = Number((r as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
 
                 const inferredChamber = inferChamber(meta, c);
-                const notApplicable = inferredChamber && inferredChamber !== r.chamber;
+
+                // Check if this bill was voted on in both chambers
+                const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+                const hasHouseVote = voteTallies.includes("house");
+                const hasSenateVote = voteTallies.includes("senate");
+                const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+                // If voted in both chambers, it applies to all members regardless of chamber
+                const notApplicable = !votedInBothChambers && inferredChamber && inferredChamber !== r.chamber;
 
                 const isManualAction = meta?.type === "MANUAL";
                 const manualActionNotApplicable = isManualAction && (valRaw === null || valRaw === undefined || valRaw === '');
@@ -2754,7 +2806,7 @@ export default function Page() {
   );
 }
 
-function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta> }) {
+function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
   const f = useFilters();
   const [filtersExpanded, setFiltersExpanded] = useState(f.viewMode === "map" || f.viewMode === "tracker");
 
@@ -2767,8 +2819,106 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
     }
   }, [f.viewMode]);
 
+  // Filter bills to only show those with actual data (at least some members have numeric values)
+  const billsWithData = useMemo(() => {
+    const filtered = cols.filter(col => {
+      // Skip manual actions
+      const meta = metaByCol.get(col);
+      if (meta?.type === 'MANUAL') return false;
+
+      // Count how many members have data for this bill
+      let count = 0;
+      for (const row of rows) {
+        const value = row[col];
+        // Skip empty values
+        if (value === undefined || value === null || value === '' || value === -1) continue;
+        const numVal = Number(value);
+        // Accept any numeric value (including point scores like 7.0)
+        if (!isNaN(numVal)) {
+          count++;
+          // Require at least 5 members to have data for the bill to be meaningful
+          if (count >= 5) return true;
+        }
+      }
+      return false;
+    });
+
+    // Sort bills: letters before numbers, then by bill number
+    return filtered.sort((a, b) => {
+      const metaA = metaByCol.get(a);
+      const metaB = metaByCol.get(b);
+      const nameA = metaA?.display_name || metaA?.short_title || a;
+      const nameB = metaB?.display_name || metaB?.short_title || b;
+
+      // Check if bill starts with a number vs letter
+      // Bills starting with letters (H.R., S., etc.) come before bills starting with numbers (119.H.Amdt., etc.)
+      const startsWithNumberA = /^\d/.test(nameA);
+      const startsWithNumberB = /^\d/.test(nameB);
+
+      if (startsWithNumberA !== startsWithNumberB) {
+        return startsWithNumberA ? 1 : -1; // Bills starting with numbers come after
+      }
+
+      // Match bill number pattern: "H.R.123", "S.456", "H.Con.Res.78", etc.
+      const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
+      const matchA = nameA.match(billRegex);
+      const matchB = nameB.match(billRegex);
+
+      // If both have bill numbers, compare bill type first, then number numerically
+      if (matchA && matchB) {
+        const typeA = matchA[1];
+        const typeB = matchB[1];
+        const numA = parseInt(matchA[2], 10);
+        const numB = parseInt(matchB[2], 10);
+
+        // Compare bill type (H.R. vs S. vs H.Con.Res., etc.)
+        const typeCompare = typeA.localeCompare(typeB);
+        if (typeCompare !== 0) return typeCompare;
+
+        // Compare bill number numerically
+        if (numA !== numB) return numA - numB;
+      }
+
+      // Fall back to full alphanumeric comparison for the rest
+      return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, [cols, rows, metaByCol]);
+
   // Territories without senators
   const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
+
+  // Handler for bill selection that auto-switches chamber filter
+  const handleBillSelect = (billColumn: string) => {
+    setSelectedMapBill(billColumn);
+
+    if (!billColumn) {
+      // Reset to no chamber filter when clearing bill selection
+      return;
+    }
+
+    // AIPAC selection can work with any chamber
+    if (billColumn === "__AIPAC__") {
+      // If currently on "All", switch to House by default
+      if (!f.chamber) {
+        f.set({ chamber: 'HOUSE' });
+      }
+      return;
+    }
+
+    // For regular bills, use inferChamber to determine eligibility
+    const meta = metaByCol.get(billColumn);
+    const billChamber = inferChamber(meta, billColumn);
+
+    // Auto-switch chamber if bill is single-chamber and we're not already on the right chamber
+    if (billChamber === 'HOUSE' && f.chamber !== 'HOUSE') {
+      f.set({ chamber: 'HOUSE' });
+    } else if (billChamber === 'SENATE' && f.chamber !== 'SENATE') {
+      f.set({ chamber: 'SENATE' });
+    } else if (billChamber === '' && !f.chamber) {
+      // Multi-chamber bill but "All" is selected - switch to House by default
+      f.set({ chamber: 'HOUSE' });
+    }
+  };
 
   return (
     <div className="mb-1 space-y-2">
@@ -2824,6 +2974,29 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             Tracker
           </button>
         </div>
+
+        {/* Bill selector for map view - Desktop */}
+        {f.viewMode === "map" && (
+          <select
+            className="hidden md:block select !text-xs !h-9 !px-2 max-w-[200px]"
+            value={selectedMapBill}
+            onChange={(e) => handleBillSelect(e.target.value)}
+          >
+            <option value="">Grade</option>
+            <option value="__AIPAC__">AIPAC & DMFI Support</option>
+            <optgroup label="Bills & Actions">
+              {billsWithData.map(col => {
+                const m = metaByCol.get(col);
+                if (!m) return null;
+                return (
+                  <option key={col} value={col}>
+                    {m.display_name || m.short_title || col}
+                  </option>
+                );
+              })}
+            </optgroup>
+          </select>
+        )}
 
         {/* Mobile: Show icon buttons (<768px) */}
         <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
@@ -2882,6 +3055,29 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
             </svg>
           </button>
         </div>
+
+        {/* Bill selector for map view - Mobile */}
+        {f.viewMode === "map" && (
+          <select
+            className="md:hidden select !text-xs !h-9 !px-2 flex-1"
+            value={selectedMapBill}
+            onChange={(e) => handleBillSelect(e.target.value)}
+          >
+            <option value="">Grade</option>
+            <option value="__AIPAC__">AIPAC & DMFI Support</option>
+            <optgroup label="Bills & Actions">
+              {billsWithData.map(col => {
+                const m = metaByCol.get(col);
+                if (!m) return null;
+                return (
+                  <option key={col} value={col}>
+                    {m.display_name || m.short_title || col}
+                  </option>
+                );
+              })}
+            </optgroup>
+          </select>
+        )}
 
         {/* Desktop: Show individual issue buttons (≥985px) - Hide in map mode */}
         {f.viewMode !== "map" && (
@@ -3007,7 +3203,12 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
 
         {/* Search - right-aligned for both map and scorecard */}
         <div className="ml-auto">
-          <UnifiedSearch filteredCount={filteredCount} metaByCol={metaByCol} isMapView={f.viewMode === "map"} isTrackerView={f.viewMode === "tracker"} />
+          <UnifiedSearch
+            filteredCount={filteredCount}
+            metaByCol={metaByCol}
+            isMapView={f.viewMode === "map"}
+            isTrackerView={f.viewMode === "tracker"}
+          />
         </div>
       </div>
 
@@ -3024,6 +3225,29 @@ function Filters({ filteredCount, metaByCol }: { categories: string[]; filteredC
                 f.set({ chamber: v.toUpperCase() as any });
               }
             }}
+            disabledOptions={(() => {
+              const disabled: string[] = [];
+              // If a bill or AIPAC is selected, disable "All"
+              if (selectedMapBill) {
+                disabled.push("All");
+
+                // For regular bills (not AIPAC), check chamber eligibility
+                if (selectedMapBill !== "__AIPAC__") {
+                  const meta = metaByCol.get(selectedMapBill);
+                  const billChamber = inferChamber(meta, selectedMapBill);
+
+                  // If bill is House-only, disable Senate
+                  if (billChamber === "HOUSE") {
+                    disabled.push("Senate");
+                  }
+                  // If bill is Senate-only, disable House
+                  else if (billChamber === "SENATE") {
+                    disabled.push("House");
+                  }
+                }
+              }
+              return disabled;
+            })()}
           />
         </div>
       )}
@@ -3160,19 +3384,23 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
 
       if (data.lawmakers && data.lawmakers.length > 0) {
         const names = data.lawmakers.map((l: any) => l.name);
-        // If in map or tracker mode, automatically switch to summary mode when searching
+
+        // Switch to summary (scorecard) mode when searching from map or tracker
         if (f.viewMode === "map" || f.viewMode === "tracker") {
           f.set({ myLawmakers: names, viewMode: "summary" });
+          setSearchValue("");
+          setIsOpen(false);
         } else {
           f.set({ myLawmakers: names });
+          setSearchValue("");
+          setIsOpen(false);
         }
-        setSearchValue("");
-        setIsOpen(false);
       } else {
         setError('No lawmakers found for this address');
       }
-    } catch {
-      setError('Failed to find lawmakers');
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Failed to find lawmakers: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -3514,23 +3742,29 @@ function Segmented({
   options,
   value,
   onChange,
+  disabledOptions = [],
 }: {
   options: string[];
   value?: string;
   onChange: (v: string) => void;
+  disabledOptions?: string[];
 }) {
   const current = value || options[0];
   return (
     <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
       {options.map((opt) => {
         const isActive = current === opt;
+        const isDisabled = disabledOptions.includes(opt);
         return (
           <button
             key={opt}
-            onClick={() => onChange(opt)}
+            onClick={() => !isDisabled && onChange(opt)}
+            disabled={isDisabled}
             className={clsx(
-              "px-2 h-7 rounded-md text-xs",
-              isActive
+              "px-2 h-7 rounded-md text-xs transition-all",
+              isDisabled
+                ? "opacity-40 cursor-not-allowed"
+                : isActive
                 ? "bg-[#4B8CFB] text-white"
                 : "hover:bg-slate-50 dark:hover:bg-white/10"
             )}

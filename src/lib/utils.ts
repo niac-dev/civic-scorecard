@@ -99,7 +99,7 @@ export function chamberColor(ch?: string): string {
   }
 }
 
-export function inferChamber(meta: { bill_number?: string; chamber?: string; display_name?: string; short_title?: string } | undefined, col: string): "HOUSE" | "SENATE" | "" {
+export function inferChamber(meta: { bill_number?: string; chamber?: string; display_name?: string; short_title?: string; vote_tallies?: string } | undefined, col: string): "HOUSE" | "SENATE" | "" {
   if (!meta) return "";
 
   const chamberValue = (meta.chamber || "").toString().trim().toUpperCase();
@@ -108,10 +108,22 @@ export function inferChamber(meta: { bill_number?: string; chamber?: string; dis
   if (chamberValue === "HOUSE") return "HOUSE";
   if (chamberValue === "SENATE") return "SENATE";
 
-  // Fallback: infer from bill number prefix (check multiple fields)
+  // Infer from bill number prefix first (check multiple fields)
+  // This ensures H.R. bills are always HOUSE and S. bills are always SENATE,
+  // even if they were voted on in both chambers
   const bn = (meta.bill_number || meta.display_name || meta.short_title || col || "").toString().trim();
   if (bn.startsWith("H.R.") || bn.startsWith("H.") || bn.startsWith("H ")) return "HOUSE";
   if (bn.startsWith("S.") || bn.startsWith("S ")) return "SENATE";
+
+  // Check vote_tallies to see if both chambers voted
+  const voteTallies = (meta.vote_tallies || "").toLowerCase();
+  const hasHouseVote = voteTallies.includes("house");
+  const hasSenateVote = voteTallies.includes("senate");
+
+  // If both chambers voted, treat as multi-chamber (return empty string)
+  if (hasHouseVote && hasSenateVote) {
+    return "";
+  }
 
   // If chamber was explicitly empty and we couldn't infer, treat as multi-chamber
   return "";

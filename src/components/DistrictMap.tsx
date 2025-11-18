@@ -1,29 +1,311 @@
 "use client";
 
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { Row } from '@/lib/types';
-import { GRADE_COLORS } from '@/lib/utils';
+import type { Row, Meta } from '@/lib/types';
+import type { PacData } from '@/lib/pacData';
+import { GRADE_COLORS, extractVoteInfo, inferChamber, stateCodeOf } from '@/lib/utils';
+
+// State FIPS mapping
+const stateToFips: Record<string, string> = {
+  'AL': '01', 'AK': '02', 'AZ': '04', 'AR': '05', 'CA': '06',
+  'CO': '08', 'CT': '09', 'DE': '10', 'DC': '11', 'FL': '12',
+  'GA': '13', 'HI': '15', 'ID': '16', 'IL': '17', 'IN': '18',
+  'IA': '19', 'KS': '20', 'KY': '21', 'LA': '22', 'ME': '23',
+  'MD': '24', 'MA': '25', 'MI': '26', 'MN': '27', 'MS': '28',
+  'MO': '29', 'MT': '30', 'NE': '31', 'NV': '32', 'NH': '33',
+  'NJ': '34', 'NM': '35', 'NY': '36', 'NC': '37', 'ND': '38',
+  'OH': '39', 'OK': '40', 'OR': '41', 'PA': '42', 'RI': '44',
+  'SC': '45', 'SD': '46', 'TN': '47', 'TX': '48', 'UT': '49',
+  'VT': '50', 'VA': '51', 'WA': '53', 'WV': '54', 'WI': '55',
+  'WY': '56', 'AS': '60', 'GU': '66', 'MP': '69', 'PR': '72',
+  'VI': '78'
+};
+
+const stateNameMapping: Record<string, string> = {
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+  'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+  'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+  'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+  'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+  'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+  'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+  'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
+  'DC': 'District of Columbia'
+};
 
 interface DistrictMapProps {
   members: Row[];
   onMemberClick?: (member: Row) => void;
   onStateClick?: (stateCode: string) => void;
   chamber?: string; // "HOUSE" or "SENATE"
+  selectedBillColumn?: string;
+  metaByCol?: Map<string, Meta>;
+  allRows?: Row[];
+  onBillMapClick?: (stateCode: string) => void; // Called when clicking on map with bill selected
 }
 
-function DistrictMap({ members, onMemberClick, onStateClick, chamber }: DistrictMapProps) {
+function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBillColumn, metaByCol, allRows, onBillMapClick }: DistrictMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const popup = useRef<maplibregl.Popup | null>(null);
+  const tooltipDiv = useRef<HTMLDivElement>(null);
   const hoveredFeatureId = useRef<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tooltipContent, setTooltipContent] = useState<string>('');
+  const lastEffectiveChamber = useRef<'HOUSE' | 'SENATE' | null>(null);
+  const districtMembersRef = useRef<Record<string, Row | Row[]>>({});
+  const districtGradesRef = useRef<Record<string, string>>({});
+
+  // Use refs to always have latest callbacks and data (avoids stale closures in map event handlers)
+  const onBillMapClickRef = useRef(onBillMapClick);
+  const selectedBillColumnRef = useRef(selectedBillColumn);
+
+  // Load PAC data for AIPAC filtering
+  const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
+
+  useEffect(() => {
+    import('@/lib/pacData').then(({ loadPacData }) => {
+      loadPacData().then(setPacDataMap);
+    });
+  }, []);
+
+  // Compute bill action data for coloring when a bill is selected
+  const billActionData = useMemo(() => {
+    if (!selectedBillColumn || !allRows) return null;
+
+    // Handle AIPAC/DMFI special case
+    if (selectedBillColumn === '__AIPAC__') {
+      const districtActions: Record<string, 'good' | 'bad'> = {};
+      const stateActions: Record<string, { good: number; bad: number }> = {};
+      let houseGood = 0;
+      let houseBad = 0;
+      let senateBothGood = 0;
+      let senateSplit = 0;
+      let senateBothBad = 0;
+
+      allRows.forEach(member => {
+        const pacData = pacDataMap.get(String(member.bioguide_id));
+
+        let hasSupport = false;
+
+        if (pacData) {
+          // Check PAC data for support flags
+          const hasAipacSupport = pacData.aipac_supported_2022 === 1 || pacData.aipac_supported_2024 === 1 || pacData.aipac_supported_2026 === 1;
+          const hasDmfiSupport = pacData.dmfi_supported_2022 === 1 || pacData.dmfi_supported_2024 === 1 || pacData.dmfi_supported_2026 === 1;
+          hasSupport = hasAipacSupport || hasDmfiSupport;
+        }
+        const state = stateCodeOf(member.state);
+
+        if (member.chamber === 'HOUSE') {
+          const district = String(member.district || '00').padStart(2, '0');
+          const fips = stateToFips[state];
+          if (fips) {
+            const key = `${fips}${district}`;
+            // No support = good (green), has support = bad (red)
+            districtActions[key] = hasSupport ? 'bad' : 'good';
+            if (hasSupport) houseBad++; else houseGood++;
+          }
+        } else if (member.chamber === 'SENATE') {
+          if (!stateActions[state]) {
+            stateActions[state] = { good: 0, bad: 0 };
+          }
+          if (hasSupport) {
+            stateActions[state].bad++;
+          } else {
+            stateActions[state].good++;
+          }
+        }
+      });
+
+      // Calculate Senate stats
+      Object.values(stateActions).forEach(actions => {
+        if (actions.good === 2) senateBothGood++;
+        else if (actions.good === 1 && actions.bad === 1) senateSplit++;
+        else if (actions.bad === 2) senateBothBad++;
+        else if (actions.good === 1) senateBothGood++; // Only one senator, no support
+        else if (actions.bad === 1) senateBothBad++; // Only one senator, has support
+      });
+
+      return {
+        districtActions,
+        stateActions,
+        goodLabel: 'Does not receive AIPAC/DMFI support',
+        badLabel: 'Receives AIPAC/DMFI support',
+        goodValue: 0, // Not receiving support = good
+        stats: { houseGood, houseBad, senateBothGood, senateSplit, senateBothBad },
+        meta: { display_name: 'AIPAC & DMFI Support' } as Meta,
+        effectiveChamber: (chamber || 'SENATE') as 'HOUSE' | 'SENATE'
+      };
+    }
+
+    // Normal bill handling
+    if (!metaByCol) return null;
+    const meta = metaByCol.get(selectedBillColumn);
+    if (!meta) return null;
+
+    const voteInfo = extractVoteInfo(meta);
+    const position = (meta.position_to_score || '').toUpperCase();
+    const isAgainst = position.includes('AGAINST') || position.includes('OPPOSE');
+
+    // Map district/state to action
+    const districtActions: Record<string, 'good' | 'bad'> = {};
+    const stateActions: Record<string, { good: number; bad: number }> = {};
+
+    // Generate labels based on action type
+    let goodLabel = '';
+    let badLabel = '';
+    const actionTypes = (meta.action_types || '').toLowerCase();
+
+    // Check action_types first since it's explicitly set in metadata
+    if (actionTypes.includes('cosponsor')) {
+      // Cosponsorship action
+      goodLabel = isAgainst ? 'Has not cosponsored' : 'Cosponsored';
+      badLabel = isAgainst ? 'Cosponsored' : 'Has not cosponsored';
+    } else if (actionTypes.includes('vote') || voteInfo.voteResult) {
+      // Vote-based action
+      goodLabel = isAgainst ? 'Voted against' : 'Voted in favor';
+      badLabel = isAgainst ? 'Voted in favor' : 'Voted against';
+    } else if (voteInfo.dateIntroduced) {
+      // Fallback to cosponsor if we have an introduced date but no explicit action type
+      goodLabel = isAgainst ? 'Has not cosponsored' : 'Cosponsored';
+      badLabel = isAgainst ? 'Cosponsored' : 'Has not cosponsored';
+    } else {
+      goodLabel = 'Good action';
+      badLabel = 'Bad action';
+    }
+
+    // Check if there's a specific cosponsor column for more accurate counting
+    // Only use _cosponsor column for SUPPORT bills (to get accurate cosponsor counts)
+    // For OPPOSE bills, use the main score column (which includes sponsors + cosponsors)
+    const cosponsorColumn = (actionTypes.includes('cosponsor') && !isAgainst) ? `${selectedBillColumn}_cosponsor` : null;
+
+    // Determine what counts as "good" based on data source:
+    // - For vote actions (using main score column): positive score = aligned with us = GOOD
+    // - For cosponsor actions with _cosponsor column (SUPPORT only): 1.0 = cosponsored = good
+    // - For cosponsor actions using main column (OPPOSE): positive score = didn't cosponsor = good
+    const goodValue = 1; // Default: positive score = aligned with us = GOOD
+
+    allRows.forEach(member => {
+      // For SUPPORT cosponsor actions, prefer the specific _cosponsor column if it exists
+      let rawValue = member[selectedBillColumn];
+      let useCosponsorColumn = false;
+
+      if (cosponsorColumn && member[cosponsorColumn] !== undefined) {
+        rawValue = member[cosponsorColumn];
+        useCosponsorColumn = true;
+      }
+
+      // Skip if no data (undefined, null, empty string, or non-numeric)
+      if (rawValue === undefined || rawValue === null || rawValue === '' || rawValue === -1) return;
+      const value = Number(rawValue);
+      if (isNaN(value)) return;
+
+      // Convert point values to binary: any positive value = took action (1), zero = didn't take action (0)
+      // For cosponsor columns, 1.0 = cosponsored, 0.0 = did not cosponsor
+      const binaryValue = value > 0 ? 1 : 0;
+      const isGood = binaryValue === goodValue;
+      const state = stateCodeOf(member.state);
+
+      if (member.chamber === 'HOUSE') {
+        const district = String(member.district || '00').padStart(2, '0');
+        const fips = stateToFips[state];
+        if (fips) {
+          const key = `${fips}${district}`;
+          districtActions[key] = isGood ? 'good' : 'bad';
+        }
+      } else if (member.chamber === 'SENATE') {
+        if (!stateActions[state]) {
+          stateActions[state] = { good: 0, bad: 0 };
+        }
+        if (isGood) {
+          stateActions[state].good++;
+        } else {
+          stateActions[state].bad++;
+        }
+      }
+    });
+
+    // Count stats
+    let houseGood = 0;
+    let houseBad = 0;
+    let senateBothGood = 0;
+    let senateSplit = 0;
+    let senateBothBad = 0;
+
+    Object.values(districtActions).forEach(action => {
+      if (action === 'good') houseGood++;
+      else houseBad++;
+    });
+
+    Object.values(stateActions).forEach(actions => {
+      if (actions.good === 2) senateBothGood++;
+      else if (actions.good === 1 && actions.bad === 1) senateSplit++;
+      else if (actions.bad === 2) senateBothBad++;
+      else if (actions.good === 1) senateBothGood++; // Only one senator has data
+      else if (actions.bad === 1) senateBothBad++;
+    });
+
+    // Determine effective chamber for display (same logic as map rendering)
+    let effectiveChamber: 'HOUSE' | 'SENATE' = 'SENATE';
+    if (!chamber) {
+      const hasHouseData = houseGood + houseBad > 0;
+      const hasSenateData = senateBothGood + senateSplit + senateBothBad > 0;
+
+      if (hasHouseData && !hasSenateData) {
+        effectiveChamber = 'HOUSE';
+      } else if (!hasHouseData && hasSenateData) {
+        effectiveChamber = 'SENATE';
+      } else if (hasHouseData && hasSenateData) {
+        effectiveChamber = 'HOUSE'; // Prefer House (more granular)
+      }
+    } else {
+      effectiveChamber = chamber as 'HOUSE' | 'SENATE';
+    }
+
+    return {
+      districtActions,
+      stateActions,
+      goodLabel,
+      badLabel,
+      goodValue, // Include for consistent tooltip logic
+      stats: { houseGood, houseBad, senateBothGood, senateSplit, senateBothBad },
+      meta,
+      effectiveChamber
+    };
+  }, [selectedBillColumn, metaByCol, allRows, chamber, pacDataMap]);
+
+  // Ref for billActionData to avoid stale closures
+  const billActionDataRef = useRef(billActionData);
+
+  // Keep refs updated with latest values
+  useEffect(() => {
+    onBillMapClickRef.current = onBillMapClick;
+    selectedBillColumnRef.current = selectedBillColumn;
+    billActionDataRef.current = billActionData;
+  }, [onBillMapClick, selectedBillColumn, billActionData]);
+
+  // Compute the actual chamber the map should display (for dependency tracking)
+  const mapChamberView = useMemo(() => {
+    if (chamber) return chamber;
+    if (billActionData) return billActionData.effectiveChamber;
+    return 'SENATE'; // Default to state view when no chamber set
+  }, [chamber, billActionData]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
+
+    // Only rebuild map if chamber view actually changed
+    if (map.current && lastEffectiveChamber.current === mapChamberView) {
+      // Chamber hasn't changed, skip rebuild
+      return;
+    }
+
+    // Track the current chamber view
+    lastEffectiveChamber.current = mapChamberView as 'HOUSE' | 'SENATE';
 
     // Reset loading state
     setLoading(true);
@@ -77,8 +359,25 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
       if (!map.current) return;
 
       try {
-        const isSenate = chamber === 'SENATE' || !chamber; // Both mode (no chamber) shows states too
+        // When bill action data is present and chamber is not set, auto-detect based on bill data
+        let isSenate = chamber === 'SENATE' || !chamber; // Both mode (no chamber) shows states too
         const isBothMode = !chamber; // Both mode when chamber is empty/undefined
+
+        // If we have bill action data and no specific chamber selected, choose based on data
+        if (billActionData && !chamber) {
+          const hasHouseData = Object.keys(billActionData.districtActions).length > 0;
+          const hasSenateData = Object.keys(billActionData.stateActions).length > 0;
+
+          // Prefer House view if we have House data, otherwise Senate
+          if (hasHouseData && !hasSenateData) {
+            isSenate = false;
+          } else if (!hasHouseData && hasSenateData) {
+            isSenate = true;
+          } else if (hasHouseData && hasSenateData) {
+            // If both have data, show House (more granular)
+            isSenate = false;
+          }
+        }
 
         // Load appropriate GeoJSON file based on chamber
         const dataUrl = isSenate
@@ -284,6 +583,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
             }
           });
 
+          // Update refs for tooltip access
+          districtMembersRef.current = districtMembers;
+          districtGradesRef.current = districtGrades;
+
         } else {
           // For House: map districts to individual representatives
           members.forEach((member) => {
@@ -303,6 +606,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
             }
           });
 
+          // Update refs for tooltip access
+          districtMembersRef.current = districtMembers;
+          districtGradesRef.current = districtGrades;
+
         }
 
         // Create FIPS to state abbr reverse lookup for Senate matching
@@ -313,11 +620,52 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           }
         });
 
-        // Add fill layer for districts/states with colors based on grades or presidential projections
+        // Add fill layer for districts/states with colors based on grades or bill actions
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let fillColor: any;
 
-        if (Object.keys(districtGrades).length > 0) {
+        // Check if we're in bill action coloring mode
+        if (billActionData) {
+          if (isSenate) {
+            // Senate mode: color states based on senator actions
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const colorParts: any[] = [];
+
+            Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
+              const stateName = stateNameMapping[stateCode];
+              if (stateName) {
+                let color = '#E5E7EB'; // default gray
+                if (actions.good === 2) {
+                  color = GRADE_COLORS.A; // Both senators good
+                } else if (actions.good === 1 && actions.bad === 1) {
+                  color = GRADE_COLORS.C; // Split
+                } else if (actions.bad === 2) {
+                  color = GRADE_COLORS.F; // Both senators bad
+                } else if (actions.good === 1) {
+                  color = GRADE_COLORS.A; // Only one senator has data, good
+                } else if (actions.bad === 1) {
+                  color = GRADE_COLORS.F; // Only one senator has data, bad
+                }
+                colorParts.push(['==', ['get', 'name'], stateName], color);
+              }
+            });
+
+            colorParts.push('#E5E7EB'); // fallback color
+            fillColor = ['case', ...colorParts];
+          } else {
+            // House mode: color districts based on member actions
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const colorParts: any[] = [];
+
+            Object.entries(billActionData.districtActions).forEach(([key, action]) => {
+              const color = action === 'good' ? GRADE_COLORS.A : GRADE_COLORS.F;
+              colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
+            });
+
+            colorParts.push('#E5E7EB'); // fallback color
+            fillColor = ['case', ...colorParts];
+          }
+        } else if (Object.keys(districtGrades).length > 0) {
           // Senate or House mode: Use grade colors
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
@@ -846,7 +1194,6 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
           // Update hover state
           if (feature.id !== undefined && feature.id !== hoveredFeatureId.current) {
-            console.log('Hovering feature ID:', feature.id, 'Properties:', feature.properties);
             if (hoveredFeatureId.current !== null) {
               map.current.setFeatureState(
                 { source: 'districts', id: hoveredFeatureId.current },
@@ -870,11 +1217,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
               )?.[1];
 
               if (stateFips) {
-                const stateMembers = districtMembers[stateFips];
+                const stateMembers = districtMembersRef.current[stateFips];
                 const stateAbbr = fipsToState[stateFips] || stateName;
 
                 if (stateMembers && Array.isArray(stateMembers)) {
-                  const avgGrade = districtGrades[stateFips] || 'N/A';
+                  const avgGrade = districtGradesRef.current[stateFips] || 'N/A';
 
                   // Helper function to get grade chip styling (50% larger)
                   const getGradeChipStyle = (grade: string) => {
@@ -939,7 +1286,59 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                   } else {
                     // Senate mode: Show senators with photo on left, info on right (like scorecard)
                     const senators = stateMembers.filter(m => m.chamber === 'SENATE');
-                    const senatorsHtml = senators.map((senator, idx) => `
+                    const senatorsHtml = senators.map((senator, idx) => {
+                      // Get bill action for this senator if bill is selected
+                      let billActionHtml = '';
+                      if (billActionData && selectedBillColumn) {
+                        // Handle AIPAC/DMFI special case
+                        if (selectedBillColumn === '__AIPAC__') {
+                          const pacData = pacDataMap.get(String(senator.bioguide_id));
+
+                          let hasSupport = false;
+
+                          if (pacData) {
+                            const hasAipacSupport = pacData.aipac_supported_2022 === 1 || pacData.aipac_supported_2024 === 1 || pacData.aipac_supported_2026 === 1;
+                            const hasDmfiSupport = pacData.dmfi_supported_2022 === 1 || pacData.dmfi_supported_2024 === 1 || pacData.dmfi_supported_2026 === 1;
+                            hasSupport = hasAipacSupport || hasDmfiSupport;
+                          }
+                          const isGood = !hasSupport; // Not receiving support is good
+                          const actionLabel = isGood ? billActionData.goodLabel : billActionData.badLabel;
+                          const checkmark = isGood ? '✓' : '✗';
+                          const checkColor = isGood ? '#10B981' : '#EF4444';
+                          billActionHtml = `
+                            <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
+                              <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                            </div>
+                          `;
+                        } else {
+                          // Check for _cosponsor column for SUPPORT bills only
+                          const actionTypes = (billActionData.meta.action_types || '').toLowerCase();
+                          const position = (billActionData.meta.position_to_score || '').toUpperCase();
+                          const isAgainstBill = position.includes('AGAINST') || position.includes('OPPOSE');
+                          const cosponsorColumn = (actionTypes.includes('cosponsor') && !isAgainstBill) ? `${selectedBillColumn}_cosponsor` : null;
+                          let rawValue = senator[selectedBillColumn];
+                          if (cosponsorColumn && senator[cosponsorColumn] !== undefined) {
+                            rawValue = senator[cosponsorColumn];
+                          }
+                          if (rawValue !== undefined && rawValue !== null && rawValue !== '' && rawValue !== -1) {
+                            const value = Number(rawValue);
+                            if (!isNaN(value)) {
+                              const binaryValue = value > 0 ? 1 : 0;
+                              // Use consistent goodValue from billActionData
+                              const isGood = binaryValue === billActionData.goodValue;
+                              const actionLabel = isGood ? billActionData.goodLabel : billActionData.badLabel;
+                              const checkmark = isGood ? '✓' : '✗';
+                              const checkColor = isGood ? '#10B981' : '#EF4444';
+                              billActionHtml = `
+                                <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
+                                  <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                                </div>
+                              `;
+                            }
+                          }
+                        }
+                      }
+                      return `
                       <div style="${idx > 0 ? 'margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(71, 85, 105, 0.3);' : ''}">
                         <div style="display: flex; align-items: center; gap: 12px;">
                           ${senator.photo_url ? `
@@ -959,10 +1358,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                               <span style="${getPartyBadgeStyle(senator.party || '')}">${normalizeParty(senator.party || '')}</span>
                               <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${senator.Grade || 'N/A'}</span>
                             </div>
+                            ${billActionHtml}
                           </div>
                         </div>
                       </div>
-                    `).join('');
+                    `}).join('');
 
                     html = `
                       <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px;">
@@ -974,7 +1374,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                     `;
                   }
 
-                  setTooltipContent(html);
+                  // Show tooltip in fixed position (upper right)
+                  if (tooltipDiv.current) {
+                    tooltipDiv.current.innerHTML = html;
+                    tooltipDiv.current.style.display = 'block';
+                  }
                 }
               }
             }
@@ -985,7 +1389,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
             if (stateFips && cd && popup.current) {
               const districtKey = `${stateFips}${cd}`;
-              const member = districtMembers[districtKey];
+              const member = districtMembersRef.current[districtKey];
               const stateAbbr = fipsToState[stateFips] || 'Unknown';
 
               // Get full state name
@@ -1040,6 +1444,58 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                 const primaryTextColor = isDarkMode ? '#ffffff' : '#334155';
                 const secondaryTextColor = isDarkMode ? '#ffffff' : '#475569';
 
+                // Get bill action for this member if bill is selected
+                let billActionHtml = '';
+                if (billActionData && selectedBillColumn) {
+                  // Handle AIPAC/DMFI special case
+                  if (selectedBillColumn === '__AIPAC__') {
+                    const pacData = pacDataMap.get(String(member.bioguide_id));
+
+                    let hasSupport = false;
+
+                    if (pacData) {
+                      const hasAipacSupport = pacData.aipac_supported_2022 === 1 || pacData.aipac_supported_2024 === 1 || pacData.aipac_supported_2026 === 1;
+                      const hasDmfiSupport = pacData.dmfi_supported_2022 === 1 || pacData.dmfi_supported_2024 === 1 || pacData.dmfi_supported_2026 === 1;
+                      hasSupport = hasAipacSupport || hasDmfiSupport;
+                    }
+                    const isGood = !hasSupport; // Not receiving support is good
+                    const actionLabel = isGood ? billActionData.goodLabel : billActionData.badLabel;
+                    const checkmark = isGood ? '✓' : '✗';
+                    const checkColor = isGood ? '#10B981' : '#EF4444';
+                    billActionHtml = `
+                      <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
+                        <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                      </div>
+                    `;
+                  } else {
+                    // Check for _cosponsor column for SUPPORT bills only
+                    const actionTypes = (billActionData.meta.action_types || '').toLowerCase();
+                    const position = (billActionData.meta.position_to_score || '').toUpperCase();
+                    const isAgainstBill = position.includes('AGAINST') || position.includes('OPPOSE');
+                    const cosponsorColumn = (actionTypes.includes('cosponsor') && !isAgainstBill) ? `${selectedBillColumn}_cosponsor` : null;
+                    let rawValue = member[selectedBillColumn];
+                    if (cosponsorColumn && member[cosponsorColumn] !== undefined) {
+                      rawValue = member[cosponsorColumn];
+                    }
+                    if (rawValue !== undefined && rawValue !== null && rawValue !== '' && rawValue !== -1) {
+                      const value = Number(rawValue);
+                      if (!isNaN(value)) {
+                        const binaryValue = value > 0 ? 1 : 0;
+                        // Use consistent goodValue from billActionData
+                        const isGood = binaryValue === billActionData.goodValue;
+                        const actionLabel = isGood ? billActionData.goodLabel : billActionData.badLabel;
+                        const checkmark = isGood ? '✓' : '✗';
+                        const checkColor = isGood ? '#10B981' : '#EF4444';
+                        billActionHtml = `
+                          <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
+                            <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                          </div>
+                        `;
+                      }
+                    }
+                  }
+                }
+
                 const html = `
                   <div style="font-family: system-ui, -apple-system, sans-serif; padding: 12px;">
                     <div style="font-size: 15px; color: ${secondaryTextColor}; margin-bottom: 6px;">
@@ -1063,12 +1519,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                           <span style="${getPartyBadgeStyle(member.party || '')}">${normalizeParty(member.party || '')}</span>
                           <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${member.Grade || 'N/A'}</span>
                         </div>
+                        ${billActionHtml}
                       </div>
                     </div>
                   </div>
                 `;
 
-                setTooltipContent(html);
+                // Show tooltip in fixed position (upper right)
+                if (tooltipDiv.current) {
+                  tooltipDiv.current.innerHTML = html;
+                  tooltipDiv.current.style.display = 'block';
+                }
               }
             }
           }
@@ -1087,7 +1548,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
           }
 
           map.current.getCanvas().style.cursor = '';
-          setTooltipContent('');
+
+          // Hide tooltip
+          if (tooltipDiv.current) {
+            tooltipDiv.current.style.display = 'none';
+          }
         });
 
         // Add click handler
@@ -1109,9 +1574,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
                 const stateMembers = districtMembers[stateFips];
                 const stateAbbr = fipsToState[stateFips];
 
-
+                // If AIPAC mode is selected, navigate to scorecard AIPAC view
+                if (selectedBillColumnRef.current === '__AIPAC__' && stateAbbr && onBillMapClickRef.current) {
+                  onBillMapClickRef.current(stateAbbr);
+                }
+                // If bill is selected, open bill modal with state filter
+                // Use refs to get latest values (avoids stale closures)
+                else if (billActionDataRef.current && stateAbbr && onBillMapClickRef.current) {
+                  onBillMapClickRef.current(stateAbbr);
+                }
                 // Both mode and Senate mode: navigate to state summary view
-                if (stateAbbr && onStateClick) {
+                else if (stateAbbr && onStateClick) {
                   onStateClick(stateAbbr);
                 }
               }
@@ -1123,10 +1596,20 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
 
             if (stateFips && cd) {
               const districtKey = `${stateFips}${cd}`;
-              const member = districtMembers[districtKey];
+              const member = districtMembersRef.current[districtKey];
+              const stateAbbr = fipsToState[stateFips];
 
-
-              if (member && !Array.isArray(member) && onMemberClick) {
+              // If AIPAC mode is selected, open member modal with AIPAC section active
+              if (selectedBillColumnRef.current === '__AIPAC__' && member && !Array.isArray(member) && onMemberClick) {
+                onMemberClick(member);
+              }
+              // If bill is selected, open bill modal with state filter
+              // Use refs to get latest values (avoids stale closures)
+              else if (billActionDataRef.current && stateAbbr && onBillMapClickRef.current) {
+                onBillMapClickRef.current(stateAbbr);
+              }
+              // Otherwise open member modal
+              else if (member && !Array.isArray(member) && onMemberClick) {
                 onMemberClick(member);
               }
             }
@@ -1152,7 +1635,207 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
         map.current = null;
       }
     };
-  }, [members, onMemberClick, onStateClick, chamber]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chamber, mapChamberView]); // Only rebuild map when chamber view changes, not on every members update
+
+  // Separate effect to update map colors without recreating the map
+  useEffect(() => {
+    const updateColors = () => {
+      if (!map.current || !map.current.isStyleLoaded()) return;
+      if (!map.current.getLayer('districts-fill')) return;
+
+      // Determine current map view (Senate = states, House = districts)
+      const mapSource = map.current.getSource('districts');
+      if (!mapSource) return;
+
+      // Build the new fill color expression
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let fillColor: any;
+
+      // Match the initial map setup logic for determining Senate vs House view
+      let isSenate = chamber === 'SENATE' || !chamber;
+
+      // If we have bill action data and no specific chamber, use the bill's effective chamber
+      if (billActionData && !chamber) {
+        isSenate = billActionData.effectiveChamber === 'SENATE';
+      }
+
+      if (billActionData) {
+        if (isSenate) {
+          // Senate mode: color states
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const colorParts: any[] = [];
+          Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
+            const stateName = stateNameMapping[stateCode];
+            if (stateName) {
+              let color = '#E5E7EB';
+              if (actions.good === 2) color = GRADE_COLORS.A;
+              else if (actions.good === 1 && actions.bad === 1) color = GRADE_COLORS.C;
+              else if (actions.bad === 2) color = GRADE_COLORS.F;
+              else if (actions.good === 1) color = GRADE_COLORS.A;
+              else if (actions.bad === 1) color = GRADE_COLORS.F;
+              colorParts.push(['==', ['get', 'name'], stateName], color);
+            }
+          });
+          colorParts.push('#E5E7EB');
+          fillColor = ['case', ...colorParts];
+        } else {
+          // House mode: color districts
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const colorParts: any[] = [];
+          Object.entries(billActionData.districtActions).forEach(([key, action]) => {
+            const color = action === 'good' ? GRADE_COLORS.A : GRADE_COLORS.F;
+            colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
+          });
+          colorParts.push('#E5E7EB');
+          fillColor = ['case', ...colorParts];
+        }
+      } else {
+        // No bill selected - use grade colors
+        const gradeColors: Record<string, string> = {
+          'A+': GRADE_COLORS.A, 'A': GRADE_COLORS.A, 'A-': GRADE_COLORS.A,
+          'B+': GRADE_COLORS.B, 'B': GRADE_COLORS.B, 'B-': GRADE_COLORS.B,
+          'C+': GRADE_COLORS.C, 'C': GRADE_COLORS.C, 'C-': GRADE_COLORS.C,
+          'D+': GRADE_COLORS.D, 'D': GRADE_COLORS.D, 'D-': GRADE_COLORS.D,
+          'F': GRADE_COLORS.F
+        };
+
+        // Build grade color expression
+        const districtGrades: Record<string, string> = {};
+
+        if (isSenate) {
+          // For Senate/All view: aggregate member grades by state
+          const membersByState: Record<string, Row[]> = {};
+
+          members.forEach(member => {
+            const state = stateCodeOf(member.state);
+            const stateName = stateNameMapping[state];
+            if (stateName) {
+              if (!membersByState[stateName]) {
+                membersByState[stateName] = [];
+              }
+              membersByState[stateName].push(member);
+            }
+          });
+
+          // Calculate average grade for each state
+          const gradeValues: Record<string, number> = {
+            'A+': 100, 'A': 95, 'A-': 90,
+            'B+': 87, 'B': 83, 'B-': 80,
+            'C+': 77, 'C': 73, 'C-': 70,
+            'D+': 67, 'D': 63, 'D-': 60,
+            'F': 50
+          };
+
+          // Also build member mapping for tooltips
+          const districtMembers: Record<string, Row[]> = {};
+
+          Object.entries(membersByState).forEach(([stateName, stateMembers]) => {
+            const validGrades = stateMembers
+              .map(m => gradeValues[String(m.Grade || '')])
+              .filter(v => v !== undefined);
+
+            if (validGrades.length > 0) {
+              const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
+
+              // Convert back to letter grade
+              let avgGrade = 'N/A';
+              if (avg >= 98) avgGrade = 'A+';
+              else if (avg >= 93) avgGrade = 'A';
+              else if (avg >= 88.5) avgGrade = 'A-';
+              else if (avg >= 85) avgGrade = 'B+';
+              else if (avg >= 81.5) avgGrade = 'B';
+              else if (avg >= 78.5) avgGrade = 'B-';
+              else if (avg >= 75) avgGrade = 'C+';
+              else if (avg >= 71.5) avgGrade = 'C';
+              else if (avg >= 68.5) avgGrade = 'C-';
+              else if (avg >= 65) avgGrade = 'D+';
+              else if (avg >= 61.5) avgGrade = 'D';
+              else if (avg >= 55) avgGrade = 'D-';
+              else avgGrade = 'F';
+
+              districtGrades[stateName] = avgGrade;
+
+              // Store members by FIPS for tooltip access
+              const stateAbbr = Object.entries(stateNameMapping).find(([abbr, name]) => name === stateName)?.[0];
+              const fips = stateAbbr ? stateToFips[stateAbbr] : undefined;
+              if (fips) {
+                districtMembers[fips] = stateMembers;
+              }
+            }
+          });
+
+          // Update refs for tooltip access
+          districtGradesRef.current = {};
+          districtMembersRef.current = districtMembers;
+          Object.entries(districtGrades).forEach(([stateName, grade]) => {
+            const stateAbbr = Object.entries(stateNameMapping).find(([abbr, name]) => name === stateName)?.[0];
+            const fips = stateAbbr ? stateToFips[stateAbbr] : undefined;
+            if (fips) {
+              districtGradesRef.current[fips] = grade;
+            }
+          });
+        } else {
+          // For House view: use individual member grades
+          const districtMembers: Record<string, Row> = {};
+
+          members.forEach(member => {
+            if (member.chamber === 'HOUSE') {
+              const grade = String(member.Grade || '');
+              const state = stateCodeOf(member.state);
+              const district = String(member.district || '00').padStart(2, '0');
+              const fips = stateToFips[state];
+              if (fips && grade) {
+                const districtKey = `${fips}${district}`;
+                districtGrades[districtKey] = grade;
+                districtMembers[districtKey] = member;
+              }
+            }
+          });
+
+          // Update refs for tooltip access
+          districtGradesRef.current = districtGrades;
+          districtMembersRef.current = districtMembers;
+        }
+
+        if (Object.keys(districtGrades).length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const matchExpression: any[] = [
+            'match',
+            isSenate ? ['get', 'name'] : ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']]
+          ];
+          Object.entries(districtGrades).forEach(([key, grade]) => {
+            matchExpression.push(key);
+            matchExpression.push(gradeColors[grade] || '#9ca3af');
+          });
+          matchExpression.push('#e5e7eb');
+          fillColor = matchExpression;
+        } else {
+          fillColor = '#e5e7eb';
+        }
+      }
+
+      // Update the paint property
+      try {
+        map.current.setPaintProperty('districts-fill', 'fill-color', fillColor);
+      } catch {
+        // Layer may not exist yet, ignore
+      }
+    };
+
+    // Try to update immediately
+    updateColors();
+
+    // Also set up a listener to update when the map finishes loading
+    // This ensures colors are updated even if members data was available before map loaded
+    if (map.current && !map.current.isStyleLoaded()) {
+      const handleLoad = () => {
+        updateColors();
+      };
+      map.current.once('idle', handleLoad);
+    }
+  }, [billActionData, chamber, members]);
+
 
   return (
     <div className="relative w-full h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
@@ -1173,11 +1856,48 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber }: District
       <div ref={mapContainer} className="w-full h-full" />
 
       {/* Fixed tooltip in upper right corner */}
-      {tooltipContent && (
-        <div
-          className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-slate-900 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-sm"
-          dangerouslySetInnerHTML={{ __html: tooltipContent }}
-        />
+      <div
+        ref={tooltipDiv}
+        className="absolute top-4 right-4 z-20 rounded-xl border border-white/30 dark:border-slate-900 bg-white/75 dark:bg-[#1a2332]/75 backdrop-blur-md shadow-xl max-w-sm"
+        style={{ display: 'none' }}
+      />
+
+      {/* Bill action legend */}
+      {billActionData && (
+        <div className="absolute bottom-4 left-4 z-20 rounded-lg border border-white/30 dark:border-slate-900 bg-white/90 dark:bg-[#1a2332]/90 backdrop-blur-md shadow-lg p-3 max-w-md">
+          <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-2">
+            {billActionData.meta.display_name || billActionData.meta.short_title || selectedBillColumn}
+          </div>
+          <div className="flex flex-wrap gap-3 text-[10px] text-slate-600 dark:text-slate-400">
+            {billActionData.effectiveChamber === 'SENATE' ? (
+              <>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
+                  <span>Both: {billActionData.goodLabel} ({billActionData.stats.senateBothGood})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.C }} />
+                  <span>Split ({billActionData.stats.senateSplit})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
+                  <span>Both: {billActionData.badLabel} ({billActionData.stats.senateBothBad})</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
+                  <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
+                  <span>{billActionData.badLabel} ({billActionData.stats.houseBad})</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

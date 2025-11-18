@@ -51,6 +51,7 @@ interface MemberModalProps {
   onClose: () => void;
   onBack?: () => void;
   onBillClick?: (meta: Meta, column: string) => void;
+  initialCategory?: string | null;
 }
 
 export function MemberModal({
@@ -62,9 +63,10 @@ export function MemberModal({
   onClose,
   onBack,
   onBillClick,
+  initialCategory = null,
 }: MemberModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showAipacSection, setShowAipacSection] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
+  const [showAipacSection, setShowAipacSection] = useState(initialCategory === "AIPAC");
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +79,13 @@ export function MemberModal({
       }, 100);
     }
   };
+
+  // When opening from AIPAC map, activate AIPAC section
+  useEffect(() => {
+    if (initialCategory === "AIPAC") {
+      setShowAipacSection(true);
+    }
+  }, [initialCategory]);
 
   // Load PAC data when component mounts
   useEffect(() => {
@@ -109,7 +118,15 @@ export function MemberModal({
       .map((c) => {
         const meta = metaByCol.get(c);
         const inferredChamber = inferChamber(meta, c);
-        let notApplicable = inferredChamber && inferredChamber !== row.chamber;
+
+        // Check if this bill was voted on in both chambers
+        const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+        const hasHouseVote = voteTallies.includes("house");
+        const hasSenateVote = voteTallies.includes("senate");
+        const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+        // If voted in both chambers, it applies to all members regardless of chamber
+        let notApplicable = !votedInBothChambers && inferredChamber && inferredChamber !== row.chamber;
 
         // Check raw value before converting to number
         const rawVal = (row as Record<string, unknown>)[c];

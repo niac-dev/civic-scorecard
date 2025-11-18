@@ -5,6 +5,7 @@ import type { Row } from "@/lib/types";
 import { MemberCard } from "@/components/MemberCard";
 import { partyLabel } from "@/lib/utils";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
+import { AipacMiniMap } from "@/components/AipacMiniMap";
 
 interface AipacModalProps {
   rows: Row[];
@@ -129,6 +130,11 @@ export function AipacModal({ rows, onClose, onMemberClick }: AipacModalProps) {
                 Clear
               </button>
             )}
+          </div>
+
+          {/* Geographic Distribution Map */}
+          <div className="mb-6">
+            <AipacMiniMap supported={supported} notSupported={notSupported} />
           </div>
 
           {/* First Section - Supported */}

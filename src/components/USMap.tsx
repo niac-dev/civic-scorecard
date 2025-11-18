@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 import USAMap from "react-usa-map";
 import DistrictMap from "./DistrictMap";
-import type { Row } from "@/lib/types";
+import type { Row, Meta } from "@/lib/types";
 
 type USMapProps = {
   stateColors: Record<string, string>;
@@ -13,6 +13,10 @@ type USMapProps = {
   onMemberClick?: (member: Row) => void;
   useDistrictMap?: boolean;
   chamber?: string;
+  selectedBillColumn?: string;
+  metaByCol?: Map<string, Meta>;
+  allRows?: Row[];
+  onBillMapClick?: (stateCode: string) => void;
 };
 
 // State names mapping
@@ -30,7 +34,7 @@ const STATE_NAMES: Record<string, string> = {
   WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-export default function USMap({ stateColors, onStateClick, members, onMemberClick, useDistrictMap = false, chamber }: USMapProps) {
+export default function USMap({ stateColors, onStateClick, members, onMemberClick, useDistrictMap = false, chamber, selectedBillColumn, metaByCol, allRows, onBillMapClick }: USMapProps) {
   // Add hover effects and tooltips after component mounts
   useEffect(() => {
     // Only run effect if not using district map
@@ -65,18 +69,14 @@ export default function USMap({ stateColors, onStateClick, members, onMemberClic
         // Change to hover color
         stateElement.setAttribute('fill', '#4699d3'); // hover color
 
-        // Create text label for state name with white fill and black stroke
+        // Create text label for state name with black fill
         const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         textElement.setAttribute('id', `label-${stateCode}`);
         textElement.setAttribute('x', String(centerX));
         textElement.setAttribute('y', String(centerY));
         textElement.setAttribute('text-anchor', 'middle');
         textElement.setAttribute('dominant-baseline', 'middle');
-        textElement.setAttribute('fill', 'white');
-        textElement.setAttribute('stroke', 'black');
-        textElement.setAttribute('stroke-width', '3');
-        textElement.setAttribute('stroke-linejoin', 'round');
-        textElement.setAttribute('paint-order', 'stroke');
+        textElement.setAttribute('fill', 'black');
         textElement.setAttribute('font-size', '14');
         textElement.setAttribute('font-weight', 'bold');
         textElement.setAttribute('pointer-events', 'none');
@@ -101,7 +101,7 @@ export default function USMap({ stateColors, onStateClick, members, onMemberClic
 
   // If district map is requested and we have member data, render it
   if (useDistrictMap && members) {
-    return <DistrictMap members={members} onMemberClick={onMemberClick} onStateClick={onStateClick} chamber={chamber} />;
+    return <DistrictMap members={members} onMemberClick={onMemberClick} onStateClick={onStateClick} chamber={chamber} selectedBillColumn={selectedBillColumn} metaByCol={metaByCol} allRows={allRows} onBillMapClick={onBillMapClick} />;
   }
 
   // Helper functions for the state map

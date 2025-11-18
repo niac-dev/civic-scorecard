@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf } from "@/lib/utils";
 import clsx from "clsx";
+import { BillMiniMap } from "@/components/BillMiniMap";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -108,6 +109,7 @@ interface BillModalProps {
   onClose: () => void;
   onBack?: () => void;
   onMemberClick?: (member: Row) => void;
+  initialStateFilter?: string;
 }
 
 // Helper function to calculate partisan breakdown
@@ -136,12 +138,31 @@ function PartisanPills({ members }: { members: Row[] }) {
   );
 }
 
-export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBack, onMemberClick }: BillModalProps) {
+export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBack, onMemberClick, initialStateFilter }: BillModalProps) {
   const position = (meta?.position_to_score || '').toUpperCase();
   const isSupport = position === 'SUPPORT';
   const [firstExpanded, setFirstExpanded] = useState(false);
   const [secondExpanded, setSecondExpanded] = useState(false);
   const [thirdExpanded, setThirdExpanded] = useState(false);
+  const [partyFilter, setPartyFilter] = useState<string>("");
+  const [stateFilter, setStateFilter] = useState<string>(initialStateFilter || "");
+  const accordionSectionRef = useRef<HTMLDivElement>(null);
+
+  // When clicking on map with state filter, expand all accordion sections and scroll to them
+  useEffect(() => {
+    if (initialStateFilter) {
+      setFirstExpanded(true);
+      setSecondExpanded(true);
+      setThirdExpanded(true);
+
+      // Scroll to accordion section after a brief delay to let accordions expand
+      setTimeout(() => {
+        if (accordionSectionRef.current) {
+          accordionSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [initialStateFilter]);
 
   // Find sponsor member
   const sponsorMember = useMemo(() => {
@@ -329,6 +350,49 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     };
   }, [meta, column, rows, isSupport, sponsorMember, manualScoringMeta]);
 
+  // Get unique states from all sections for filter dropdown
+  const uniqueStates = useMemo(() => {
+    const statesSet = new Set<string>();
+    [...firstSection, ...secondSection, ...thirdSection].forEach(member => {
+      if (member.state) statesSet.add(stateCodeOf(member.state));
+    });
+    return Array.from(statesSet).sort();
+  }, [firstSection, secondSection, thirdSection]);
+
+  // Filter sections based on party and state
+  const filteredFirstSection = useMemo(() => {
+    let filtered = firstSection;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (stateFilter) {
+      filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
+    }
+    return filtered;
+  }, [firstSection, partyFilter, stateFilter]);
+
+  const filteredSecondSection = useMemo(() => {
+    let filtered = secondSection;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (stateFilter) {
+      filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
+    }
+    return filtered;
+  }, [secondSection, partyFilter, stateFilter]);
+
+  const filteredThirdSection = useMemo(() => {
+    let filtered = thirdSection;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (stateFilter) {
+      filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
+    }
+    return filtered;
+  }, [thirdSection, partyFilter, stateFilter]);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -411,7 +475,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               {/* Sponsor */}
               {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
                 <div className="text-sm text-slate-600 dark:text-slate-300">
-                  <span className="font-medium">Sponsor:</span>
+                  <span className="font-bold">Sponsor:</span>
                   {sponsorMember ? (
                     <button
                       className="mt-2 w-full text-left py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
@@ -466,11 +530,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   <>
                     {voteInfo.voteResult ? (
                       <div className="text-sm text-slate-600 dark:text-slate-300">
-                        <span className="font-medium">Status:</span> {voteInfo.voteResult}
+                        <span className="font-bold">Status:</span> {voteInfo.voteResult}
                       </div>
                     ) : voteInfo.dateIntroduced ? (
                       <div className="text-sm text-slate-600 dark:text-slate-300">
-                        <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
+                        <span className="font-bold">Date Introduced:</span> {voteInfo.dateIntroduced}
                       </div>
                     ) : null}
                   </>
@@ -479,7 +543,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               {/* Category */}
               {meta.categories && (
                 <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                  <span className="font-medium">Category:</span>
+                  <span className="font-bold">Category:</span>
                   <div className="flex flex-wrap gap-1">
                     {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
                       <span key={c} className="chip-xs">{c}</span>
@@ -505,11 +569,84 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             )}
 
+            {/* Links */}
+            {(meta.congress_url || meta.learn_more_link) && (
+              <div>
+                <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
+                  Links
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {meta.congress_url && (
+                    <a
+                      href={meta.congress_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                    >
+                      Congress.gov
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+                  {meta.learn_more_link && (
+                    <a
+                      href={meta.learn_more_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                    >
+                      Learn more
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Member Lists - Accordion Sections */}
             {(firstSection.length > 0 || secondSection.length > 0) && (
               <div className="space-y-4">
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Filter:</span>
+                  <select
+                    className="select !text-xs !h-8 !px-2"
+                    value={partyFilter}
+                    onChange={(e) => setPartyFilter(e.target.value)}
+                  >
+                    <option value="">All Parties</option>
+                    <option value="Democrat">Democrat</option>
+                    <option value="Republican">Republican</option>
+                    <option value="Independent">Independent</option>
+                  </select>
+                  <select
+                    className="select !text-xs !h-8 !px-2"
+                    value={stateFilter}
+                    onChange={(e) => setStateFilter(e.target.value)}
+                  >
+                    <option value="">All States</option>
+                    {uniqueStates.map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
+                  {(partyFilter || stateFilter) && (
+                    <button
+                      onClick={() => {
+                        setPartyFilter("");
+                        setStateFilter("");
+                      }}
+                      className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 !text-xs !px-2 !h-8"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
                 {/* First Section - Cosponsored / Voted in favor */}
-                <div>
+                <div ref={accordionSectionRef}>
                   <h2
                     className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200 flex items-center gap-2 cursor-pointer hover:text-slate-900 dark:hover:text-slate-50 transition-colors"
                     onClick={() => setFirstExpanded(!firstExpanded)}
@@ -522,8 +659,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       )}
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
-                      <span className="whitespace-nowrap">{firstLabel}: {firstSection.length}</span>
-                      <PartisanPills members={firstSection} />
+                      <span className="whitespace-nowrap">{firstLabel}: {filteredFirstSection.length}{(partyFilter || stateFilter) && ` of ${firstSection.length}`}</span>
+                      <PartisanPills members={filteredFirstSection} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
@@ -536,7 +673,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   </h2>
                   {firstExpanded && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
-                      {firstSection.map((member) => {
+                      {filteredFirstSection.map((member) => {
                         const isSponsor = sponsorMember && member.bioguide_id === sponsorMember.bioguide_id;
                         return (
                           <div
@@ -586,9 +723,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                         );
                       })}
-                      {firstSection.length === 0 && (
+                      {filteredFirstSection.length === 0 && (
                         <div className="col-span-full text-center py-4 text-xs text-slate-500 dark:text-slate-400">
-                          None found
+                          {(partyFilter || stateFilter) ? "No matches for current filters" : "None found"}
                         </div>
                       )}
                     </div>
@@ -615,8 +752,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       )}
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
-                      <span className="whitespace-nowrap">{secondLabel}: {secondSection.length}</span>
-                      <PartisanPills members={secondSection} />
+                      <span className="whitespace-nowrap">{secondLabel}: {filteredSecondSection.length}{(partyFilter || stateFilter) && ` of ${secondSection.length}`}</span>
+                      <PartisanPills members={filteredSecondSection} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
@@ -629,7 +766,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   </h2>
                   {secondExpanded && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
-                      {secondSection.map((member) => (
+                      {filteredSecondSection.map((member) => (
                         <div
                           key={member.bioguide_id}
                           className={clsx(
@@ -676,9 +813,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                         </div>
                       ))}
-                      {secondSection.length === 0 && (
+                      {filteredSecondSection.length === 0 && (
                         <div className="col-span-full text-center py-4 text-xs text-slate-500 dark:text-slate-400">
-                          None found
+                          {(partyFilter || stateFilter) ? "No matches for current filters" : "None found"}
                         </div>
                       )}
                     </div>
@@ -700,8 +837,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         )}
                       </svg>
                       <span className="flex items-center flex-wrap flex-1 min-w-0">
-                        <span className="whitespace-nowrap">{thirdLabel}: {thirdSection.length}</span>
-                        <PartisanPills members={thirdSection} />
+                        <span className="whitespace-nowrap">{thirdLabel}: {filteredThirdSection.length}{(partyFilter || stateFilter) && ` of ${thirdSection.length}`}</span>
+                        <PartisanPills members={filteredThirdSection} />
                       </span>
                       <svg
                         viewBox="0 0 20 20"
@@ -714,7 +851,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </h2>
                     {thirdExpanded && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
-                        {thirdSection.map((member) => (
+                        {filteredThirdSection.map((member) => (
                           <div
                             key={member.bioguide_id}
                             className={clsx(
@@ -768,6 +905,22 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             )}
 
+            {/* Geographic Distribution Map */}
+            {(firstSection.length > 0 || secondSection.length > 0) && (
+              <BillMiniMap
+                meta={meta}
+                column={column}
+                rows={rows}
+                firstSection={firstSection}
+                secondSection={secondSection}
+                firstIsGood={firstIsGood}
+                secondIsGood={secondIsGood}
+                firstLabel={firstLabel}
+                secondLabel={secondLabel}
+                manualScoringMeta={manualScoringMeta}
+              />
+            )}
+
             {/* Notes */}
             {meta.notes && (
               <div>
@@ -777,43 +930,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 <p className="text-sm text-slate-700 dark:text-slate-200">
                   {meta.notes}
                 </p>
-              </div>
-            )}
-
-            {/* Links */}
-            {(meta.congress_url || meta.learn_more_link) && (
-              <div>
-                <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                  Links
-                </h2>
-                <div className="flex flex-col gap-2">
-                  {meta.congress_url && (
-                    <a
-                      href={meta.congress_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                    >
-                      Congress.gov
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
-                  {meta.learn_more_link && (
-                    <a
-                      href={meta.learn_more_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                    >
-                      Learn more
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
-                </div>
               </div>
             )}
           </div>
