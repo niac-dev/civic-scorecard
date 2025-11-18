@@ -2814,15 +2814,15 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
   // Always start with same initial state on server and client to avoid hydration mismatch
   const [filtersExpanded, setFiltersExpanded] = useState(true);
 
-  // Auto-expand filters in map view and tracker view; on mobile, collapse in summary/category modes
+  // Auto-expand filters in map view; on mobile, collapse in summary/category/tracker modes
   useEffect(() => {
     const checkMobile = () => window.innerWidth < 768;
     const isMobile = checkMobile();
 
-    if (f.viewMode === "map" || f.viewMode === "tracker") {
+    if (f.viewMode === "map") {
       setFiltersExpanded(true);
     } else if (isMobile) {
-      // On mobile, collapse chamber/party/state filters in summary and category modes
+      // On mobile, collapse chamber/party/state filters in summary, category, and tracker modes
       // (category buttons are always visible, so we only need to toggle chamber/party/state)
       setFiltersExpanded(false);
     } else {
