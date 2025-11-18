@@ -101,8 +101,14 @@ export default function BillPage() {
       // Determine the chamber for this bill
       const billChamber = inferChamber(billMeta, column);
 
+      // Check if this bill was voted on in both chambers
+      const voteTallies = (billMeta?.vote_tallies || "").toLowerCase();
+      const hasHouseVote = voteTallies.includes("house");
+      const hasSenateVote = voteTallies.includes("senate");
+      const votedInBothChambers = hasHouseVote && hasSenateVote;
+
       // Split members into supporters (positive score) and opposers (0 or negative)
-      // Only include members from the appropriate chamber
+      // Only include members from the appropriate chamber (unless voted in both)
       // Exclude the sponsor from cosponsors list (but include them for votes)
       // Also exclude members who were not eligible to vote (null/undefined in CSV)
       const support: Row[] = [];
@@ -116,8 +122,8 @@ export default function BillPage() {
       const fullPoints = Number(billMeta?.points ?? 0);
 
       rows.forEach((row) => {
-        // Skip members from the wrong chamber
-        if (billChamber && row.chamber !== billChamber) {
+        // Skip members from the wrong chamber (unless voted in both)
+        if (!votedInBothChambers && billChamber && row.chamber !== billChamber) {
           return;
         }
 
@@ -181,8 +187,8 @@ export default function BillPage() {
         const worstGroup: Row[] = []; // 0 points
 
         rows.forEach((row) => {
-          // Skip members from the wrong chamber
-          if (billChamber && row.chamber !== billChamber) {
+          // Skip members from the wrong chamber (unless voted in both)
+          if (!votedInBothChambers && billChamber && row.chamber !== billChamber) {
             return;
           }
 

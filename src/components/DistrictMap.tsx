@@ -142,6 +142,82 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       };
     }
 
+    // Handle Partisan special case
+    if (selectedBillColumn === '__PARTISAN__') {
+      const districtActions: Record<string, 'good' | 'bad' | 'neutral'> = {};
+      const stateActions: Record<string, { republican: number; democrat: number; other: number }> = {};
+      let houseRepublican = 0;
+      let houseDemocrat = 0;
+      let houseOther = 0;
+      let senateBothDemocrat = 0;
+      let senateSplit = 0;
+      let senateBothRepublican = 0;
+
+      allRows.forEach(member => {
+        const party = String(member.party || '').toLowerCase();
+        const state = stateCodeOf(member.state);
+
+        let partyType: 'republican' | 'democrat' | 'other';
+        if (party === 'republican' || party === 'r') {
+          partyType = 'republican';
+        } else if (party === 'democratic' || party === 'democrat' || party === 'd') {
+          partyType = 'democrat';
+        } else {
+          partyType = 'other';
+        }
+
+        if (member.chamber === 'HOUSE') {
+          const district = String(member.district || '00').padStart(2, '0');
+          const fips = stateToFips[state];
+          if (fips) {
+            const key = `${fips}${district}`;
+            if (partyType === 'democrat') {
+              districtActions[key] = 'good'; // Blue
+              houseDemocrat++;
+            } else if (partyType === 'republican') {
+              districtActions[key] = 'bad'; // Red
+              houseRepublican++;
+            } else {
+              districtActions[key] = 'neutral'; // Purple/Other
+              houseOther++;
+            }
+          }
+        } else if (member.chamber === 'SENATE') {
+          if (!stateActions[state]) {
+            stateActions[state] = { republican: 0, democrat: 0, other: 0 };
+          }
+          stateActions[state][partyType]++;
+        }
+      });
+
+      // Calculate Senate stats
+      Object.values(stateActions).forEach(actions => {
+        if (actions.democrat === 2) senateBothDemocrat++;
+        else if (actions.republican === 2) senateBothRepublican++;
+        else senateSplit++; // Mixed or has independent/other
+      });
+
+      return {
+        districtActions,
+        stateActions,
+        goodLabel: 'Democrat',
+        badLabel: 'Republican',
+        neutralLabel: 'Independent/Other',
+        goodValue: 1,
+        stats: {
+          houseGood: houseDemocrat,
+          houseBad: houseRepublican,
+          houseNeutral: houseOther,
+          senateBothGood: senateBothDemocrat,
+          senateSplit,
+          senateBothBad: senateBothRepublican
+        },
+        meta: { display_name: 'Partisan' } as Meta,
+        effectiveChamber: (chamber || 'SENATE') as 'HOUSE' | 'SENATE',
+        isPartisan: true
+      };
+    }
+
     // Normal bill handling
     if (!metaByCol) return null;
     const meta = metaByCol.get(selectedBillColumn);
@@ -626,6 +702,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
         // Check if we're in bill action coloring mode
         if (billActionData) {
+          // Check if this is partisan view
+          const isPartisanView = selectedBillColumn === '__PARTISAN__';
+
           if (isSenate) {
             // Senate mode: color states based on senator actions
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -635,16 +714,32 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
               const stateName = stateNameMapping[stateCode];
               if (stateName) {
                 let color = '#E5E7EB'; // default gray
-                if (actions.good === 2) {
-                  color = GRADE_COLORS.A; // Both senators good
-                } else if (actions.good === 1 && actions.bad === 1) {
-                  color = GRADE_COLORS.C; // Split
-                } else if (actions.bad === 2) {
-                  color = GRADE_COLORS.F; // Both senators bad
-                } else if (actions.good === 1) {
-                  color = GRADE_COLORS.A; // Only one senator has data, good
-                } else if (actions.bad === 1) {
-                  color = GRADE_COLORS.F; // Only one senator has data, bad
+
+                // Check if this is partisan view
+                if (isPartisanView && 'republican' in actions) {
+                  // Partisan view: republican/democrat/other
+                  const partisanActions = actions as { republican: number; democrat: number; other: number };
+                  if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
+                    color = '#2563eb'; // Blue - Both Democrats
+                  } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
+                    color = '#dc2626'; // Red - Both Republicans
+                  } else {
+                    color = '#9333ea'; // Purple - Split/Mixed
+                  }
+                } else if (!isPartisanView && 'good' in actions) {
+                  // Regular bill view: good/bad
+                  const regularActions = actions as { good: number; bad: number };
+                  if (regularActions.good === 2) {
+                    color = GRADE_COLORS.A; // Both senators good
+                  } else if (regularActions.good === 1 && regularActions.bad === 1) {
+                    color = GRADE_COLORS.C; // Split
+                  } else if (regularActions.bad === 2) {
+                    color = GRADE_COLORS.F; // Both senators bad
+                  } else if (regularActions.good === 1) {
+                    color = GRADE_COLORS.A; // Only one senator has data, good
+                  } else if (regularActions.bad === 1) {
+                    color = GRADE_COLORS.F; // Only one senator has data, bad
+                  }
                 }
                 colorParts.push(['==', ['get', 'name'], stateName], color);
               }
@@ -658,7 +753,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             const colorParts: any[] = [];
 
             Object.entries(billActionData.districtActions).forEach(([key, action]) => {
-              const color = action === 'good' ? GRADE_COLORS.A : GRADE_COLORS.F;
+              let color: string;
+              if (action === 'good') {
+                // Democrat blue or "good" action green
+                color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
+              } else if (action === 'bad') {
+                // Republican red or "bad" action red
+                color = isPartisanView ? '#dc2626' : GRADE_COLORS.F;
+              } else {
+                // Independent/Other purple
+                color = '#9333ea';
+              }
               colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
             });
 
@@ -1661,6 +1766,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       }
 
       if (billActionData) {
+        // Check if this is partisan view
+        const isPartisanView = selectedBillColumn === '__PARTISAN__';
+
         if (isSenate) {
           // Senate mode: color states
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1669,11 +1777,28 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             const stateName = stateNameMapping[stateCode];
             if (stateName) {
               let color = '#E5E7EB';
-              if (actions.good === 2) color = GRADE_COLORS.A;
-              else if (actions.good === 1 && actions.bad === 1) color = GRADE_COLORS.C;
-              else if (actions.bad === 2) color = GRADE_COLORS.F;
-              else if (actions.good === 1) color = GRADE_COLORS.A;
-              else if (actions.bad === 1) color = GRADE_COLORS.F;
+
+              // Check if this is partisan view
+              if (isPartisanView && 'republican' in actions) {
+                // Partisan view: republican/democrat/other
+                const partisanActions = actions as { republican: number; democrat: number; other: number };
+                if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
+                  color = '#2563eb'; // Blue - Both Democrats
+                } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
+                  color = '#dc2626'; // Red - Both Republicans
+                } else {
+                  color = '#9333ea'; // Purple - Split/Mixed
+                }
+              } else if (!isPartisanView && 'good' in actions) {
+                // Regular bill view: good/bad
+                const regularActions = actions as { good: number; bad: number };
+                if (regularActions.good === 2) color = GRADE_COLORS.A;
+                else if (regularActions.good === 1 && regularActions.bad === 1) color = GRADE_COLORS.C;
+                else if (regularActions.bad === 2) color = GRADE_COLORS.F;
+                else if (regularActions.good === 1) color = GRADE_COLORS.A;
+                else if (regularActions.bad === 1) color = GRADE_COLORS.F;
+              }
+
               colorParts.push(['==', ['get', 'name'], stateName], color);
             }
           });
@@ -1684,7 +1809,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const colorParts: any[] = [];
           Object.entries(billActionData.districtActions).forEach(([key, action]) => {
-            const color = action === 'good' ? GRADE_COLORS.A : GRADE_COLORS.F;
+            let color: string;
+            if (action === 'good') {
+              color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
+            } else if (action === 'bad') {
+              color = isPartisanView ? '#dc2626' : GRADE_COLORS.F;
+            } else {
+              // Independent/Other purple (neutral)
+              color = '#9333ea';
+            }
             colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
           });
           colorParts.push('#E5E7EB');
@@ -1863,42 +1996,51 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       />
 
       {/* Bill action legend */}
-      {billActionData && (
-        <div className="absolute bottom-4 left-4 z-20 rounded-lg border border-white/30 dark:border-slate-900 bg-white/90 dark:bg-[#1a2332]/90 backdrop-blur-md shadow-lg p-3 max-w-md">
-          <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-2">
-            {billActionData.meta.display_name || billActionData.meta.short_title || selectedBillColumn}
+      {billActionData && (() => {
+        const isPartisanView = selectedBillColumn === '__PARTISAN__';
+        return (
+          <div className="absolute bottom-4 left-4 z-20 rounded-lg border border-white/30 dark:border-slate-900 bg-white/90 dark:bg-[#1a2332]/90 backdrop-blur-md shadow-lg p-3 max-w-md">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              {billActionData.meta.display_name || billActionData.meta.short_title || selectedBillColumn}
+            </div>
+            <div className="flex flex-wrap gap-3 text-[10px] text-slate-600 dark:text-slate-400">
+              {billActionData.effectiveChamber === 'SENATE' ? (
+                <>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
+                    <span>Both: {billActionData.goodLabel} ({billActionData.stats.senateBothGood})</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#9333ea' : GRADE_COLORS.C }} />
+                    <span>Split ({billActionData.stats.senateSplit})</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
+                    <span>Both: {billActionData.badLabel} ({billActionData.stats.senateBothBad})</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
+                    <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
+                  </div>
+                  {isPartisanView && (billActionData.stats as any).houseNeutral > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
+                      <span>{(billActionData as any).neutralLabel} ({(billActionData.stats as any).houseNeutral})</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
+                    <span>{billActionData.badLabel} ({billActionData.stats.houseBad})</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 text-[10px] text-slate-600 dark:text-slate-400">
-            {billActionData.effectiveChamber === 'SENATE' ? (
-              <>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
-                  <span>Both: {billActionData.goodLabel} ({billActionData.stats.senateBothGood})</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.C }} />
-                  <span>Split ({billActionData.stats.senateSplit})</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
-                  <span>Both: {billActionData.badLabel} ({billActionData.stats.senateBothBad})</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
-                  <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
-                  <span>{billActionData.badLabel} ({billActionData.stats.houseBad})</span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

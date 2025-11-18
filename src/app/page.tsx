@@ -2424,13 +2424,19 @@ export default function Page() {
                   .map((s) => s.trim())
                   .filter(Boolean);
 
+                // Check if this bill was voted on in both chambers
+                const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+                const hasHouseVote = voteTallies.includes("house");
+                const hasSenateVote = voteTallies.includes("senate");
+                const votedInBothChambers = hasHouseVote && hasSenateVote;
+
                 // Count cosponsors dynamically from the wide CSV if this is a cosponsor action
                 const isCosponsor = actionType.includes('cosponsor');
                 if (isCosponsor && !meta.cosponsors) {
                   const cosponsorCol = `${col}_cosponsor`;
                   const cosponsorCount = rows.filter(row => {
-                    // Only count members from the appropriate chamber
-                    if (inferredChamber && row.chamber !== inferredChamber) {
+                    // Only count members from the appropriate chamber (unless voted in both)
+                    if (!votedInBothChambers && inferredChamber && row.chamber !== inferredChamber) {
                       return false;
                     }
                     // Check if they cosponsored
@@ -2896,8 +2902,8 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
       return;
     }
 
-    // AIPAC selection can work with any chamber
-    if (billColumn === "__AIPAC__") {
+    // AIPAC and Partisan selections can work with any chamber
+    if (billColumn === "__AIPAC__" || billColumn === "__PARTISAN__") {
       // If currently on "All", switch to House by default
       if (!f.chamber) {
         f.set({ chamber: 'HOUSE' });
@@ -2983,6 +2989,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             onChange={(e) => handleBillSelect(e.target.value)}
           >
             <option value="">Grade</option>
+            <option value="__PARTISAN__">Partisan</option>
             <option value="__AIPAC__">AIPAC & DMFI Support</option>
             <optgroup label="Bills & Actions">
               {billsWithData.map(col => {
@@ -3064,6 +3071,7 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             onChange={(e) => handleBillSelect(e.target.value)}
           >
             <option value="">Grade</option>
+            <option value="__PARTISAN__">Partisan</option>
             <option value="__AIPAC__">AIPAC & DMFI Support</option>
             <optgroup label="Bills & Actions">
               {billsWithData.map(col => {
@@ -3236,13 +3244,22 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
                   const meta = metaByCol.get(selectedMapBill);
                   const billChamber = inferChamber(meta, selectedMapBill);
 
-                  // If bill is House-only, disable Senate
-                  if (billChamber === "HOUSE") {
-                    disabled.push("Senate");
-                  }
-                  // If bill is Senate-only, disable House
-                  else if (billChamber === "SENATE") {
-                    disabled.push("House");
+                  // Check if this bill was voted on in both chambers
+                  const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+                  const hasHouseVote = voteTallies.includes("house");
+                  const hasSenateVote = voteTallies.includes("senate");
+                  const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+                  // Only disable chambers if bill was NOT voted in both chambers
+                  if (!votedInBothChambers) {
+                    // If bill is House-only, disable Senate
+                    if (billChamber === "HOUSE") {
+                      disabled.push("Senate");
+                    }
+                    // If bill is Senate-only, disable House
+                    else if (billChamber === "SENATE") {
+                      disabled.push("House");
+                    }
                   }
                 }
               }

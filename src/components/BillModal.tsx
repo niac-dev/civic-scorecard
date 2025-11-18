@@ -203,6 +203,12 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     const billChamber = inferChamber(meta, column);
     const fullPoints = Number(meta?.points ?? 0);
 
+    // Check if this bill was voted on in both chambers
+    const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+    const hasHouseVote = voteTallies.includes("house");
+    const hasSenateVote = voteTallies.includes("senate");
+    const votedInBothChambers = hasHouseVote && hasSenateVote;
+
     // Check if this is a manual scoring item with custom labels
     const billLabel = meta.display_name || meta.short_title || column;
     const hasManualScoring = manualScoringMeta && Array.from(manualScoringMeta.keys()).some(key => key.startsWith(billLabel + '|'));
@@ -212,7 +218,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
       const scoreGroups = new Map<number, { rows: Row[]; label: string }>();
 
       rows.forEach((row) => {
-        if (billChamber && row.chamber !== billChamber) return;
+        // Filter by chamber only if not voted in both chambers
+        if (!votedInBothChambers && billChamber && row.chamber !== billChamber) return;
         const val = (row as Record<string, unknown>)[column];
         if (val === null || val === undefined || val === '') return;
 
@@ -255,8 +262,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     const sponsorBioguideId = sponsorMember?.bioguide_id || null;
 
     rows.forEach((row) => {
-      // Filter by chamber if applicable
-      if (billChamber && row.chamber !== billChamber) {
+      // Filter by chamber only if not voted in both chambers
+      if (!votedInBothChambers && billChamber && row.chamber !== billChamber) {
         return;
       }
 
