@@ -4,11 +4,11 @@
 // ===== GRADE COLOR CONFIGURATION =====
 // Single source of truth for all grade colors across the app
 export const GRADE_COLORS = {
-  A: "#3A8663",  // forest green
-  B: "#79C7A2",  // mint green
-  C: "#F0E3A4",  // pale yellow
-  D: "#E7B983",  // tan
-  F: "#B48662",  // brown
+  A: "#3A8663",  // muted emerald
+  B: "#72B594",  // soft herbal green
+  C: "#CABBD3",  // lavender-gray midpoint
+  D: "#A88DBA",  // dusty mauve
+  F: "#775A97",  // muted deep purple
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 
@@ -86,9 +86,12 @@ export function gradeColor(grade: string): string {
 
 export function gradeTextColor(grade: string): string {
   const g = (grade || "").trim().toUpperCase();
-  if (g.startsWith("A")) return "#ffffff"; // white for dark green
-  if (g.startsWith("F")) return "#ffffff"; // white for brown
-  return "#4b5563"; // dark gray for others (B, C, D)
+  if (g.startsWith("A")) return "#ffffff"; // white for dark emerald
+  if (g.startsWith("B")) return "#4b5563"; // dark gray for soft green
+  if (g.startsWith("C")) return "#4b5563"; // dark gray for light lavender
+  if (g.startsWith("D")) return "#ffffff"; // white for dusty mauve
+  if (g.startsWith("F")) return "#ffffff"; // white for deep purple
+  return "#4b5563"; // dark gray for unknown
 }
 
 export function isTruthy(val: unknown): boolean {

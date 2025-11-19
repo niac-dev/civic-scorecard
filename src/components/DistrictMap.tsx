@@ -1738,6 +1738,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                       : grade.startsWith("F") ? GRADE_COLORS.F
                       : GRADE_COLORS.default;
                     const textColor = grade.startsWith("A") ? "#ffffff"
+                      : grade.startsWith("B") ? "#4b5563"
+                      : grade.startsWith("C") ? "#4b5563"
+                      : grade.startsWith("D") ? "#ffffff"
                       : grade.startsWith("F") ? "#ffffff"
                       : "#4b5563";
                     return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
@@ -1931,6 +1934,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     : grade.startsWith("F") ? GRADE_COLORS.F
                     : GRADE_COLORS.default;
                   const textColor = grade.startsWith("A") ? "#ffffff"
+                    : grade.startsWith("B") ? "#4b5563"
+                    : grade.startsWith("C") ? "#4b5563"
+                    : grade.startsWith("D") ? "#ffffff"
                     : grade.startsWith("F") ? "#ffffff"
                     : "#4b5563";
                   return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
