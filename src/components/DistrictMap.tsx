@@ -2606,31 +2606,31 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 <>
                   {billActionData.effectiveChamber === 'SENATE' ? (
                     <>
-                      {billActionData.stats.senateA > 0 && (
+                      {(billActionData.stats.senateA ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
                           <span>A ({billActionData.stats.senateA})</span>
                         </div>
                       )}
-                      {billActionData.stats.senateB > 0 && (
+                      {(billActionData.stats.senateB ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.B }} />
                           <span>B ({billActionData.stats.senateB})</span>
                         </div>
                       )}
-                      {billActionData.stats.senateC > 0 && (
+                      {(billActionData.stats.senateC ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.C }} />
                           <span>C ({billActionData.stats.senateC})</span>
                         </div>
                       )}
-                      {billActionData.stats.senateD > 0 && (
+                      {(billActionData.stats.senateD ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.D }} />
                           <span>D ({billActionData.stats.senateD})</span>
                         </div>
                       )}
-                      {billActionData.stats.senateF > 0 && (
+                      {(billActionData.stats.senateF ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
                           <span>F ({billActionData.stats.senateF})</span>
@@ -2639,31 +2639,31 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     </>
                   ) : (
                     <>
-                      {billActionData.stats.houseA > 0 && (
+                      {(billActionData.stats.houseA ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.A }} />
                           <span>A ({billActionData.stats.houseA})</span>
                         </div>
                       )}
-                      {billActionData.stats.houseB > 0 && (
+                      {(billActionData.stats.houseB ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.B }} />
                           <span>B ({billActionData.stats.houseB})</span>
                         </div>
                       )}
-                      {billActionData.stats.houseC > 0 && (
+                      {(billActionData.stats.houseC ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.C }} />
                           <span>C ({billActionData.stats.houseC})</span>
                         </div>
                       )}
-                      {billActionData.stats.houseD > 0 && (
+                      {(billActionData.stats.houseD ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.D }} />
                           <span>D ({billActionData.stats.houseD})</span>
                         </div>
                       )}
-                      {billActionData.stats.houseF > 0 && (
+                      {(billActionData.stats.houseF ?? 0) > 0 && (
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GRADE_COLORS.F }} />
                           <span>F ({billActionData.stats.houseF})</span>
