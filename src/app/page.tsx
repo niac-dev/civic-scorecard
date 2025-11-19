@@ -1340,13 +1340,12 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl relative" onScroll={handleScroll} style={{ overscrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
               style={{
                 gridTemplateColumns: gridTemplate,
-                position: 'sticky'
               }}
             >
             <div
@@ -1354,7 +1353,6 @@ export default function Page() {
                 "th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group flex flex-col justify-between",
                 f.viewMode === "summary" && "!py-2"
               )}
-              style={{ position: 'sticky', left: 0 }}
               onClick={() => {
                 if (sortCol === "__member") {
                   // Cycle: alphabet asc → alphabet desc → district asc → district desc → alphabet asc
@@ -1687,7 +1685,6 @@ export default function Page() {
               {/* member + photo */}
               <div
                 className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
-                style={{ position: 'sticky', left: 0 }}
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
