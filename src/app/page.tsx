@@ -1763,10 +1763,10 @@ export default function Page() {
                   </div>
 
                   {/* Badges - chamber and party */}
-                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 whitespace-nowrap flex-wrap mb-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap flex-wrap mb-1">
                     {/* Chamber */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
+                      className="px-1.5 py-0.5 rounded-md text-[14px] font-semibold"
                       style={{
                         color: '#64748b',
                         backgroundColor: `${chamberColor(r.chamber)}20`,
@@ -1777,7 +1777,7 @@ export default function Page() {
 
                     {/* Party - just letter */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
+                      className="px-1.5 py-0.5 rounded-md text-[14px] font-medium border"
                       style={partyBadgeStyle(r.party)}
                     >
                       {(() => {
@@ -1791,7 +1791,7 @@ export default function Page() {
                   </div>
 
                   {/* State and District */}
-                  <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                  <div className="text-[14px] text-slate-600 dark:text-slate-400 text-center">
                     {(() => {
                       const stateCode = stateCodeOf(r.state);
                       // Get full state name from the state code
