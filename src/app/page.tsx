@@ -3008,11 +3008,23 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             value={f.state || ""}
             onChange={(e) => {
               const selectedState = e.target.value;
-              // If selecting a territory without senate, automatically switch to House
-              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                f.set({ state: selectedState, chamber: "HOUSE" });
+              // If in map view and selecting a state, go to scorecard with that state filter
+              if (f.viewMode === "map" && selectedState) {
+                // If selecting a territory without senate, automatically switch to House
+                if (territoriesWithoutSenate.includes(selectedState)) {
+                  f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                } else {
+                  f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                }
+                setSortCol("__district");
+                setSortDir("GOOD_FIRST");
               } else {
-                f.set({ state: selectedState });
+                // Otherwise just set the state filter
+                if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                  f.set({ state: selectedState, chamber: "HOUSE" });
+                } else {
+                  f.set({ state: selectedState });
+                }
               }
             }}
           >
@@ -3117,11 +3129,23 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             value={f.state || ""}
             onChange={(e) => {
               const selectedState = e.target.value;
-              // If selecting a territory without senate, automatically switch to House
-              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                f.set({ state: selectedState, chamber: "HOUSE" });
+              // If in map view and selecting a state, go to scorecard with that state filter
+              if (f.viewMode === "map" && selectedState) {
+                // If selecting a territory without senate, automatically switch to House
+                if (territoriesWithoutSenate.includes(selectedState)) {
+                  f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                } else {
+                  f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                }
+                setSortCol("__district");
+                setSortDir("GOOD_FIRST");
               } else {
-                f.set({ state: selectedState });
+                // Otherwise just set the state filter
+                if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                  f.set({ state: selectedState, chamber: "HOUSE" });
+                } else {
+                  f.set({ state: selectedState });
+                }
               }
             }}
           >
