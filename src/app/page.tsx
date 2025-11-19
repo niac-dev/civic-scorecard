@@ -3878,6 +3878,7 @@ function VoteIcon({ ok }: { ok: boolean }) {
         <path
           d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z"
           fill="#FFFFFF"
+          transform="translate(0, -2)"
         />
       </svg>
     );

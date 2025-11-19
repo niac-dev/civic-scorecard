@@ -34,7 +34,7 @@ export function VoteIcon({ ok }: { ok: boolean }) {
     return (
       <svg viewBox="0 0 20 20" className="h-10 w-10" aria-hidden="true" role="img">
         <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.A} />
-        <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#FFFFFF" />
+        <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#FFFFFF" transform="translate(0, -2)" />
       </svg>
     );
   }
