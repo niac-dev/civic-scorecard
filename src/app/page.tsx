@@ -3823,7 +3823,7 @@ function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
     : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
     : "#4b5563"; // dark grey for D and F grades
   const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
-  return <span className="inline-flex items-center justify-center rounded-full px-1.5 md:px-2.5 py-0.5 md:py-1 text-xs font-bold min-w-[2.25rem] md:min-w-[2.75rem]"
+  return <span className="inline-flex items-center justify-center rounded-full w-12 h-12 md:w-[3.7rem] md:h-[3.7rem] text-xs md:text-sm font-bold"
     style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
 }
 
