@@ -3402,16 +3402,17 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </div>
           {f.viewMode !== "tracker" && (
             <>
-              {/* Party buttons with tinted letters */}
+              {/* Party buttons with uniform colors */}
               <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
                 <button
                   onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
                   className={clsx(
                     "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
                     f.party === "Democratic"
-                      ? "bg-blue-500 text-white"
+                      ? "text-white"
                       : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
                   )}
+                  style={f.party === "Democratic" ? { backgroundColor: "#2563EB" } : undefined}
                   title="Democratic (includes Independents)"
                 >
                   D
@@ -3421,9 +3422,10 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                   className={clsx(
                     "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
                     f.party === "Republican"
-                      ? "bg-red-500 text-white"
+                      ? "text-white"
                       : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
                   )}
+                  style={f.party === "Republican" ? { backgroundColor: "#DC2626" } : undefined}
                   title="Republican"
                 >
                   R
