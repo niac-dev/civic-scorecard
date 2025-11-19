@@ -1749,7 +1749,7 @@ export default function Page() {
                 {/* Desktop: Text section with name and badges */}
                 <div className="hidden md:flex md:flex-col md:justify-center min-w-0 md:order-2">
                   {/* Name */}
-                  <div className="font-bold text-[24px] leading-6 text-slate-800 dark:text-white mb-1">
+                  <div className="font-bold text-[24px] leading-6 text-slate-800 dark:text-white mb-1 text-center">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
