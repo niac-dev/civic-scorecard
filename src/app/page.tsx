@@ -3081,7 +3081,7 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* Filter button - Desktop, all modes */}
         {(() => {
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state)) || f.categories.size > 0;
 
           return (
             <button
@@ -3190,8 +3190,8 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* Filter button - mobile only, all modes */}
         {(() => {
-          // Check if there are active chamber/party/state filters (NOT categories - those are always visible)
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
+          // Check if there are active filters including categories/issues
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state)) || f.categories.size > 0;
 
           return (
             <button
@@ -3358,35 +3358,6 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
       {/* Third row: Scorecard view - Filters */}
       {f.viewMode !== "map" && filtersExpanded && (
       <div className="relative flex items-center gap-2 px-2 md:px-0">
-        {/* Desktop: Filter expand button */}
-        <button
-          onClick={() => setFiltersExpanded(!filtersExpanded)}
-          className="hidden md:flex items-center gap-2 text-sm text-slate-700 dark:text-white hover:text-slate-900 dark:hover:text-slate-300"
-        >
-          <svg
-            className={clsx("w-4 h-4 transition-transform", filtersExpanded && "rotate-90")}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-          <span className={clsx(filtersExpanded && "max-[500px]:hidden")}>Filters</span>
-        </button>
-
-        {/* Single X button when filters are active but collapsed (desktop) */}
-        {!filtersExpanded && (f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && (
-          <button
-            onClick={() => f.set({ chamber: "", party: "", state: "" })}
-            className="hidden md:flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
-            title="Clear filters"
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        )}
-
         <div
           className="flex items-center gap-1.5"
         >
