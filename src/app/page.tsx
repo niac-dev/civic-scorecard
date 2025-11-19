@@ -1130,13 +1130,13 @@ export default function Page() {
     const memberCol = isMobile ? "minmax(126px, min(40vw, 162px))" : "300px";
     // In summary mode: member col + grade cols + endorsements col
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} minmax(144px, 144px)`;
+      return `${memberCol} ${gradesPart} 9.6rem`;
     }
     // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols
     if (f.categories.has("AIPAC")) {
-      // First grade column is Overall Grade (135px on mobile), then endorsements (144px), then remaining grade columns
+      // First grade column is Overall Grade (135px on mobile), then endorsements (9.6rem), then remaining grade columns
       const restGradesPart = gradeColumns.slice(1).map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
-      return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)"} minmax(144px, 144px) ${restGradesPart} ${billsPart}`;
+      return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)"} 9.6rem ${restGradesPart} ${billsPart}`;
     }
     // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols
     if (f.categories.has("Civil Rights & Immigration")) {
