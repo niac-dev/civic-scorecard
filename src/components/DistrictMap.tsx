@@ -617,14 +617,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           const hasHouseData = Object.keys(billActionData.districtActions).length > 0;
           const hasSenateData = Object.keys(billActionData.stateActions).length > 0;
 
-          // Prefer House view if we have House data, otherwise Senate
+          // When "All" is selected, prefer Senate/states view for better overview
           if (hasHouseData && !hasSenateData) {
             isSenate = false;
           } else if (!hasHouseData && hasSenateData) {
             isSenate = true;
           } else if (hasHouseData && hasSenateData) {
-            // If both have data, show House (more granular)
-            isSenate = false;
+            // If both have data, show Senate/states when "All" is selected
+            isSenate = true;
           }
         }
 
