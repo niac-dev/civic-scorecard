@@ -4,11 +4,11 @@
 // ===== GRADE COLOR CONFIGURATION =====
 // Single source of truth for all grade colors across the app
 export const GRADE_COLORS = {
-  A: "#2F7255",  // dark green
-  B: "#5ECF9A",  // bright green
+  A: "#1FA37D",  // teal green
+  B: "#7DDFA8",  // light green
   C: "#F7D34C",  // bright yellow
-  D: "#F39958",  // orange
-  F: "#9A4F2C",  // brown
+  D: "#F39A2C",  // bright orange
+  F: "#C13821",  // red
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 
