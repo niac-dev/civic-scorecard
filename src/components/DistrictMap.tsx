@@ -553,6 +553,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       return;
     }
 
+    // If map exists and we're just changing from undefined to a value, don't rebuild
+    if (map.current && !lastEffectiveChamber.current && mapChamberView) {
+      lastEffectiveChamber.current = mapChamberView as 'HOUSE' | 'SENATE';
+      return;
+    }
+
     // Track the current chamber view
     lastEffectiveChamber.current = mapChamberView as 'HOUSE' | 'SENATE';
 
