@@ -4,11 +4,11 @@
 // ===== GRADE COLOR CONFIGURATION =====
 // Single source of truth for all grade colors across the app
 export const GRADE_COLORS = {
-  A: "#30558C",  // dark blue
-  B: "#93c5fd",  // light blue
-  C: "#b6dfcc",  // mint green
-  D: "#D4B870",  // tan/gold
-  F: "#C38B32",  // bronze/gold
+  A: "#428063",  // dark green
+  B: "#84dfb5",  // light green
+  C: "#fcf2a9",  // light yellow
+  D: "#f5c28e",  // peach/tan
+  F: "#955f39",  // brown
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 
@@ -86,8 +86,9 @@ export function gradeColor(grade: string): string {
 
 export function gradeTextColor(grade: string): string {
   const g = (grade || "").trim().toUpperCase();
-  if (g.startsWith("A")) return "#ffffff"; // white for dark blue
-  return "#4b5563"; // dark gray for others
+  if (g.startsWith("A")) return "#ffffff"; // white for dark green
+  if (g.startsWith("F")) return "#ffffff"; // white for brown
+  return "#4b5563"; // dark gray for others (B, C, D)
 }
 
 export function isTruthy(val: unknown): boolean {

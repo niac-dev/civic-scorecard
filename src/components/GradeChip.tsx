@@ -15,10 +15,9 @@ export function GradeChip({ grade, isOverall }: GradeChipProps) {
     : grade.startsWith("F") ? GRADE_COLORS.F
     : GRADE_COLORS.default;
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
-  const textColor = grade.startsWith("A") ? "#ffffff" // white for A grades
-    : grade.startsWith("B") ? "#4b5563" // dark grey for B grades
-    : grade.startsWith("C") ? "#4b5563" // dark grey for C grades
-    : "#4b5563"; // dark grey for D and F grades
+  const textColor = grade.startsWith("A") ? "#ffffff" // white for A (dark green)
+    : grade.startsWith("F") ? "#ffffff" // white for F (brown)
+    : "#4b5563"; // dark grey for B, C, D (light colors)
   const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return (
     <span
