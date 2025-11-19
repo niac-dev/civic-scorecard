@@ -3020,41 +3020,6 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </button>
         </div>
 
-        {/* Bill selector for map view - Desktop */}
-        {f.viewMode === "map" && (
-          <select
-            className="hidden md:block select !text-xs !h-9 !px-2 max-w-[200px]"
-            value={selectedMapBill}
-            onChange={(e) => handleBillSelect(e.target.value)}
-          >
-            <option value="">Overall Grade</option>
-            <option value="__PARTISAN__">Partisan</option>
-            <option value="__AIPAC__">AIPAC & DMFI Support</option>
-            {categories.filter(cat => cat !== "AIPAC").map(cat => {
-              const billsInCategory = billsWithData.filter(col => {
-                const meta = metaByCol.get(col);
-                return meta?.categories?.includes(cat);
-              });
-
-              if (billsInCategory.length === 0) return null;
-
-              return (
-                <optgroup key={cat} label={cat}>
-                  {billsInCategory.map(col => {
-                    const meta = metaByCol.get(col);
-                    const displayName = meta?.display_name || meta?.short_title || meta?.bill_number || col;
-                    return (
-                      <option key={col} value={col}>
-                        {displayName}
-                      </option>
-                    );
-                  })}
-                </optgroup>
-              );
-            })}
-          </select>
-        )}
-
         {/* State selector - Desktop (for Map and Scorecard views) */}
         {f.viewMode !== "tracker" && (
           <select
@@ -3306,7 +3271,7 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
         </div>
       )}
 
-      {/* Third row: Map view - chamber filter */}
+      {/* Third row: Map view - chamber filter and bill selector */}
       {f.viewMode === "map" && (
         <div className="flex items-center gap-3 px-2 md:px-0">
           <Segmented
@@ -3352,6 +3317,39 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
               return disabled;
             })()}
           />
+
+          {/* Bill selector for map view */}
+          <select
+            className="select !text-xs !h-9 !px-2 max-w-[200px]"
+            value={selectedMapBill}
+            onChange={(e) => handleBillSelect(e.target.value)}
+          >
+            <option value="">Overall Grade</option>
+            <option value="__PARTISAN__">Partisan</option>
+            <option value="__AIPAC__">AIPAC & DMFI Support</option>
+            {categories.filter(cat => cat !== "AIPAC").map(cat => {
+              const billsInCategory = billsWithData.filter(col => {
+                const meta = metaByCol.get(col);
+                return meta?.categories?.includes(cat);
+              });
+
+              if (billsInCategory.length === 0) return null;
+
+              return (
+                <optgroup key={cat} label={cat}>
+                  {billsInCategory.map(col => {
+                    const meta = metaByCol.get(col);
+                    const displayName = meta?.display_name || meta?.short_title || meta?.bill_number || col;
+                    return (
+                      <option key={col} value={col}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              );
+            })}
+          </select>
         </div>
       )}
 
