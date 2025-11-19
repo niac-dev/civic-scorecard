@@ -1346,7 +1346,7 @@ export default function Page() {
         <div
           className={clsx(
             "card rounded-lg md:rounded-2xl p-0 md:p-4",
-            f.viewMode !== "map" && "hidden"
+            f.viewMode !== "map" && "invisible absolute pointer-events-none"
           )}
         >
           <USMap

@@ -2557,16 +2557,25 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       }
     };
 
-    // Try to update immediately
-    updateColors();
+    // Only update colors if map is ready
+    if (!map.current) return;
 
-    // Also set up a listener to update when the map finishes loading
-    // This ensures colors are updated even if members data was available before map loaded
-    if (map.current && !map.current.isStyleLoaded()) {
+    // If map is already loaded, update immediately
+    if (map.current.isStyleLoaded() && map.current.getLayer('districts-fill')) {
+      updateColors();
+    } else {
+      // Otherwise wait for the map to be ready
       const handleLoad = () => {
         updateColors();
       };
       map.current.once('idle', handleLoad);
+
+      // Cleanup function to remove listener if component unmounts
+      return () => {
+        if (map.current) {
+          map.current.off('idle', handleLoad);
+        }
+      };
     }
   }, [billActionData, chamber, members]);
 
