@@ -1831,7 +1831,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                               const binaryValue = value > 0 ? 1 : 0;
                               // Use consistent goodValue from billActionData
                               const isGood = binaryValue === currentBillActionData.goodValue;
-                              const actionLabel = isGood ? currentBillActionData.goodLabel : currentBillActionData.badLabel;
+                              const actionLabel = isGood
+                                ? (currentBillActionData.goodLabel || 'Positive action')
+                                : (currentBillActionData.badLabel || 'Negative action');
                               const checkmark = isGood ? '✓' : '✗';
                               const checkColor = isGood ? '#10B981' : '#EF4444';
                               billActionHtml = `
@@ -2025,7 +2027,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                           }
                         } else {
                           // Fallback to billActionData labels
-                          actionLabel = isGood ? currentBillActionData.goodLabel : currentBillActionData.badLabel;
+                          actionLabel = isGood
+                            ? (currentBillActionData.goodLabel || 'Positive action')
+                            : (currentBillActionData.badLabel || 'Negative action');
                         }
 
                         const checkmark = isGood ? '✓' : '✗';
