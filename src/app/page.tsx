@@ -17,6 +17,10 @@ import { AipacModal } from "@/components/AipacModal";
 
 import clsx from "clsx";
 
+// Virtual scrolling configuration
+const ROW_HEIGHT = 85; // Approximate height of each row in pixels
+const OVERSCAN = 5; // Number of extra rows to render above/below visible area
+
 // --- States helper (dropdown + normalization) ---
 const STATES: { code: string; name: string }[] = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
@@ -408,7 +412,8 @@ export default function Page() {
   // Ref for the tracker container
   const trackerScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll state for header tooltips
+  // Virtual scrolling state
+  const [scrollTop, setScrollTop] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -880,12 +885,54 @@ export default function Page() {
     });
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
-  // Virtual scrolling: DISABLED to support sticky column positioning
-  // Virtual scrolling uses transform which breaks position: sticky
-  const visibleRows = useMemo(() => sorted, [sorted]);
+  // Virtual scrolling: calculate which rows to actually render
+  // On mobile, disable virtual scrolling for smooth native scrolling
+  const { visibleRows, totalHeight, offsetY, startIndex, endIndex } = useMemo(() => {
+    const totalRows = sorted.length;
 
-  // Scroll handler - hide tooltips while scrolling
-  const handleScroll = useCallback(() => {
+    // On mobile, render all rows (no virtual scrolling)
+    if (isMobile) {
+      return {
+        visibleRows: sorted,
+        totalHeight: 0,
+        offsetY: 0,
+        startIndex: 0,
+        endIndex: totalRows
+      };
+    }
+
+    // Desktop: use virtual scrolling
+    const containerHeight = tableScrollRef.current?.clientHeight || 700;
+
+    // Calculate which rows are visible based on scroll position
+    const startIdx = Math.floor(scrollTop / ROW_HEIGHT);
+    const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT);
+
+    // Add overscan to reduce flickering
+    const start = Math.max(0, startIdx - OVERSCAN);
+    const end = Math.min(totalRows, startIdx + visibleCount + OVERSCAN);
+
+    // Slice the sorted array to only visible rows
+    const visible = sorted.slice(start, end);
+
+    // Calculate total height and offset for positioning
+    const total = totalRows * ROW_HEIGHT;
+    const offset = start * ROW_HEIGHT;
+
+    return {
+      visibleRows: visible,
+      totalHeight: total,
+      offsetY: offset,
+      startIndex: start,
+      endIndex: end
+    };
+  }, [sorted, scrollTop, isMobile]);
+
+  // Scroll handler for virtual scrolling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    setScrollTop(target.scrollTop);
+
     // Hide header tooltips while scrolling
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
@@ -1671,8 +1718,9 @@ export default function Page() {
 
           </div>
 
-          {/* Rows Container */}
-          <div style={{ minWidth: 'max-content' }}>
+          {/* Rows Container - conditionally wrapped for virtual scrolling on desktop */}
+          <div style={isMobile ? { minWidth: 'max-content' } : { height: totalHeight, position: 'relative', minWidth: 'max-content' }}>
+            <div style={isMobile ? { minWidth: 'max-content' } : { transform: `translateY(${offsetY}px)`, willChange: 'transform', minWidth: 'max-content' }}>
           {visibleRows.map((r, i) => (
             <div
               key={i}
@@ -1684,7 +1732,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
@@ -2337,6 +2385,7 @@ export default function Page() {
 
             </div>
           ))}
+            </div>
           </div>
         </div>
         </div>
