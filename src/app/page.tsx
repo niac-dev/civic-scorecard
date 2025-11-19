@@ -1732,7 +1732,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
