@@ -200,11 +200,25 @@ function chamberColor(ch?: string): string {
 
 function partyBadgeStyle(p?: string) {
   const label = partyLabel(p).toLowerCase();
-  const base =
-    label.startsWith("rep") ? "#EF4444" : // red
-    label.startsWith("dem") ? "#3B82F6" : // blue
-    label.startsWith("ind") ? "#10B981" : // green
-    "#94A3B8";                            // slate fallback
+
+  // Solid colors with white text for D/R
+  if (label.startsWith("rep")) {
+    return {
+      color: "#FFFFFF",
+      backgroundColor: "#DC2626", // red-600
+      borderColor: "#DC2626",
+    };
+  }
+  if (label.startsWith("dem")) {
+    return {
+      color: "#FFFFFF",
+      backgroundColor: "#2563EB", // blue-600
+      borderColor: "#2563EB",
+    };
+  }
+
+  // Keep subtle styling for independents and others
+  const base = label.startsWith("ind") ? "#10B981" : "#94A3B8";
   return {
     color: base,
     backgroundColor: `${base}1A`, // ~10% alpha

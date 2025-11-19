@@ -1759,10 +1759,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                   // Helper function to get party badge styling (50% larger)
                   const getPartyBadgeStyle = (party: string) => {
                     const label = (party || '').toLowerCase();
-                    const baseColor = label.startsWith("rep") ? "#EF4444"
-                      : label.startsWith("dem") ? "#3B82F6"
-                      : label.startsWith("ind") ? "#10B981"
-                      : "#94A3B8";
+
+                    // Solid colors with white text for D/R
+                    if (label.startsWith("rep")) {
+                      return `color: #FFFFFF; background-color: #DC2626; border: 1px solid #DC2626; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
+                    }
+                    if (label.startsWith("dem")) {
+                      return `color: #FFFFFF; background-color: #2563EB; border: 1px solid #2563EB; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
+                    }
+
+                    // Keep subtle styling for independents and others
+                    const baseColor = label.startsWith("ind") ? "#10B981" : "#94A3B8";
                     return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
                   };
 
@@ -1930,10 +1937,17 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 // Helper function to get party badge styling (50% larger)
                 const getPartyBadgeStyle = (party: string) => {
                   const label = (party || '').toLowerCase();
-                  const baseColor = label.startsWith("rep") ? "#EF4444"
-                    : label.startsWith("dem") ? "#3B82F6"
-                    : label.startsWith("ind") ? "#10B981"
-                    : "#94A3B8";
+
+                  // Solid colors with white text for D/R
+                  if (label.startsWith("rep")) {
+                    return `color: #FFFFFF; background-color: #DC2626; border: 1px solid #DC2626; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
+                  }
+                  if (label.startsWith("dem")) {
+                    return `color: #FFFFFF; background-color: #2563EB; border: 1px solid #2563EB; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
+                  }
+
+                  // Keep subtle styling for independents and others
+                  const baseColor = label.startsWith("ind") ? "#10B981" : "#94A3B8";
                   return `color: ${baseColor}; background-color: ${baseColor}1A; border: 1px solid ${baseColor}66; display: inline-flex; align-items: center; border-radius: 9px; padding: 2px 6px; font-size: 15px; font-weight: 500;`;
                 };
 
