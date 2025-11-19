@@ -1740,29 +1740,16 @@ export default function Page() {
                   <img
                     src={getProxiedImageUrl(String(r.photo_url))}
                     alt=""
-                    className="w-[80%] md:w-[70px] h-auto md:h-[70px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
+                    className="w-[80%] md:w-[105px] h-auto md:h-[105px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                   />
                 ) : (
-                  <div className="w-[80%] md:w-[70px] h-auto md:h-[70px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
+                  <div className="w-[80%] md:w-[105px] h-auto md:h-[105px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
                 )}
 
-                {/* Desktop: Text section with role, name, and badges */}
+                {/* Desktop: Text section with name and badges */}
                 <div className="hidden md:flex md:flex-col md:justify-center min-w-0 md:order-2">
-                  {/* Role/Title - top */}
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
-                    {(() => {
-                      if (r.chamber === "SENATE") return "Senator";
-                      if (r.chamber === "HOUSE") {
-                        const delegateStates = ["AS", "DC", "GU", "MP", "PR", "VI"];
-                        const state = stateCodeOf(r.state);
-                        return delegateStates.includes(state) ? "Delegate" : "Representative";
-                      }
-                      return "";
-                    })()}
-                  </div>
-
-                  {/* Name - middle */}
-                  <div className="font-bold text-[16px] leading-5 text-slate-800 dark:text-white">
+                  {/* Name */}
+                  <div className="font-bold text-[24px] leading-6 text-slate-800 dark:text-white mb-1">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
@@ -1775,8 +1762,8 @@ export default function Page() {
                     })()}
                   </div>
 
-                  {/* Badges - bottom */}
-                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 whitespace-nowrap flex-wrap mt-1">
+                  {/* Badges - chamber and party */}
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 whitespace-nowrap flex-wrap mb-1">
                     {/* Chamber */}
                     <span
                       className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
@@ -1788,18 +1775,30 @@ export default function Page() {
                       {r.chamber === "HOUSE" ? "House" : r.chamber === "SENATE" ? "Senate" : (r.chamber || "")}
                     </span>
 
-                    {/* Party */}
+                    {/* Party - just letter */}
                     <span
                       className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
                       style={partyBadgeStyle(r.party)}
                     >
-                      {partyLabel(r.party)}
+                      {(() => {
+                        const p = (r.party ?? "").trim().toLowerCase();
+                        if (p.startsWith("dem")) return "D";
+                        if (p.startsWith("rep")) return "R";
+                        if (p.startsWith("ind")) return "I";
+                        return (r.party ?? "").charAt(0).toUpperCase();
+                      })()}
                     </span>
+                  </div>
 
-                    {/* District */}
-                    <span className="text-[11px]">
-                      {r.chamber === "HOUSE" ? `${stateCodeOf(r.state)}-${r.district || '1'}` : stateCodeOf(r.state)}
-                    </span>
+                  {/* State and District */}
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                    {(() => {
+                      const stateCode = stateCodeOf(r.state);
+                      // Get full state name from the state code
+                      const stateName = r.state || stateCode;
+                      const district = r.chamber === "HOUSE" && r.district ? ` • District ${r.district}` : "";
+                      return `${stateName}${district}`;
+                    })()}
                   </div>
                 </div>
 
