@@ -144,14 +144,16 @@ function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean })
 function VoteIcon({ ok }: { ok: boolean }) {
   if (ok) {
     return (
-      <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true" role="img">
-        <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+      <svg viewBox="0 0 20 20" className="h-10 w-10" aria-hidden="true" role="img">
+        <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.A} />
+        <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#FFFFFF" />
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true" role="img">
-      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+    <svg viewBox="0 0 20 20" className="h-10 w-10" aria-hidden="true" role="img">
+      <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.F} />
+      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#FFFFFF" />
     </svg>
   );
 }
