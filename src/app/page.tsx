@@ -2844,16 +2844,13 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
   // Always start with same initial state on server and client to avoid hydration mismatch
   const [filtersExpanded, setFiltersExpanded] = useState(true);
 
-  // Auto-expand filters in map view; on mobile, collapse in summary/category/tracker modes
+  // Auto-expand/collapse filters based on view mode and screen size
   useEffect(() => {
     const checkMobile = () => window.innerWidth < 768;
     const isMobile = checkMobile();
 
-    if (f.viewMode === "map") {
-      setFiltersExpanded(true);
-    } else if (isMobile) {
-      // On mobile, collapse chamber/party/state filters in summary, category, and tracker modes
-      // (category buttons are always visible, so we only need to toggle chamber/party/state)
+    if (isMobile) {
+      // On mobile, collapse filters in all modes by default
       setFiltersExpanded(false);
     } else {
       // On desktop, always keep filters expanded
@@ -3049,7 +3046,7 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           return (
             <button
               className={clsx(
-                "hidden md:flex items-center gap-2 px-3 h-9 rounded-md text-sm border transition-colors",
+                "hidden md:flex items-center justify-center p-2 h-9 w-9 rounded-md border transition-colors",
                 filtersExpanded
                   ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
                   : hasActiveFilters
@@ -3057,12 +3054,11 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                   : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
               )}
               onClick={() => setFiltersExpanded(!filtersExpanded)}
-              title="Filters"
+              title="Toggle filters"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
               </svg>
-              <span>Filters</span>
             </button>
           );
         })()}
@@ -3270,7 +3266,7 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
       )}
 
       {/* Third row: Map view - chamber filter and bill selector */}
-      {f.viewMode === "map" && (
+      {f.viewMode === "map" && filtersExpanded && (
         <div className="flex items-center gap-3 px-2 md:px-0">
           <Segmented
             options={["All", "House","Senate"]}
