@@ -132,7 +132,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       // Determine effective chamber based on data availability (matches auto-detection logic)
       let effectiveChamber: 'HOUSE' | 'SENATE' = chamber === 'SENATE' ? 'SENATE' : chamber === 'HOUSE' ? 'HOUSE' : 'SENATE';
       if (!chamber) {
-        // Auto-detect: prefer House if we have House data
+        // Auto-detect: prefer Senate/states when "All" is selected for better overview
         const hasHouseData = Object.keys(districtActions).length > 0;
         const hasSenateData = Object.keys(stateActions).length > 0;
         if (hasHouseData && !hasSenateData) {
@@ -140,8 +140,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         } else if (!hasHouseData && hasSenateData) {
           effectiveChamber = 'SENATE';
         } else if (hasHouseData && hasSenateData) {
-          // If both have data, prefer House (more granular)
-          effectiveChamber = 'HOUSE';
+          // If both have data, prefer Senate/states when "All" is selected
+          effectiveChamber = 'SENATE';
         }
       }
 
