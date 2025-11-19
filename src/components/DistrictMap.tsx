@@ -542,7 +542,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
     if (chamber) return chamber;
     if (billActionData) return billActionData.effectiveChamber;
     return 'SENATE'; // Default to state view when no chamber set
-  }, [chamber, billActionData]);
+  }, [chamber, billActionData?.effectiveChamber]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
