@@ -3013,7 +3013,8 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* Filter button - Desktop, all modes */}
         {(() => {
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state)) || f.categories.size > 0;
+          // Categories don't affect filter button in scorecard/tracker view
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
 
           return (
             <button
@@ -3121,8 +3122,8 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* Filter button - mobile only, all modes */}
         {(() => {
-          // Check if there are active filters including categories/issues
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state)) || f.categories.size > 0;
+          // Categories don't affect filter button in scorecard/tracker view
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
 
           return (
             <button
@@ -3171,13 +3172,18 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                 }
               }}
               className={clsx(
-                "px-2.5 md:px-2 py-1.5 md:py-0 md:h-7 rounded-md text-xs md:text-sm leading-tight text-center",
+                "px-2.5 md:px-2 py-1.5 md:py-0 md:h-7 rounded-md text-xs md:text-sm leading-tight text-center flex items-center gap-1",
                 f.categories.has("Civil Rights & Immigration")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              Civil Rights &<br className="md:hidden" /> Immigration
+              <span>Civil Rights &<br className="md:hidden" /> Immigration</span>
+              {f.categories.has("Civil Rights & Immigration") && (
+                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              )}
             </button>
             <button
               onClick={() => {
@@ -3189,13 +3195,18 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                 }
               }}
               className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
                 f.categories.has("Iran")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              Iran
+              <span>Iran</span>
+              {f.categories.has("Iran") && (
+                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              )}
             </button>
             <button
               onClick={() => {
@@ -3207,13 +3218,18 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                 }
               }}
               className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
                 f.categories.has("Israel-Gaza")
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              Israel-Gaza
+              <span>Israel-Gaza</span>
+              {f.categories.has("Israel-Gaza") && (
+                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              )}
             </button>
             <button
               onClick={() => {
@@ -3225,13 +3241,18 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                 }
               }}
               className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap",
+                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
                 f.categories.has("AIPAC") && f.viewMode === "category"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              AIPAC
+              <span>AIPAC</span>
+              {f.categories.has("AIPAC") && f.viewMode === "category" && (
+                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
