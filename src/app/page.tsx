@@ -1343,55 +1343,51 @@ export default function Page() {
       {/* Views Container with Sliding Animation */}
       <div className="relative overflow-hidden">
         {/* Map View */}
-        <div
-          className={clsx(
-            "card rounded-lg md:rounded-2xl p-0 md:p-4 transition-all duration-500 ease-in-out",
-            f.viewMode === "map"
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-full opacity-0 absolute inset-0 pointer-events-none"
-          )}
-        >
-          <USMap
-            stateColors={stateColors}
-            onStateClick={(stateCode) => {
-              f.set({ state: stateCode, viewMode: "summary" });
-              setSortCol("__district");
-              setSortDir("GOOD_FIRST");
-            }}
-            members={filtered}
-            onMemberClick={(member) => {
-              setSelected(member);
-              setSelectedFromAipac(selectedMapBill === "__AIPAC__");
-            }}
-            useDistrictMap={true}
-            chamber={f.chamber}
-            selectedBillColumn={selectedMapBill}
-            metaByCol={metaByCol}
-            allRows={rows}
-            onBillMapClick={(stateCode) => {
-              // Handle AIPAC/DMFI map selection
-              if (selectedMapBill === "__AIPAC__") {
-                // Navigate to all view with state filter and AIPAC category active
-                f.set({
-                  viewMode: "all",
-                  state: stateCode,
-                  // If we're in Senate mode on the map, keep Senate filter active
-                  chamber: f.chamber === "SENATE" ? "SENATE" : "",
-                  // Activate AIPAC category filter
-                  categories: new Set(["AIPAC"])
-                });
-                return;
-              }
-              // Open bill modal with state filter when clicking on map with bill selected
-              if (selectedMapBill) {
-                const meta = metaByCol.get(selectedMapBill);
-                if (meta) {
-                  setSelectedBill({ meta, column: selectedMapBill, initialStateFilter: stateCode });
+        {f.viewMode === "map" && (
+          <div className="card rounded-lg md:rounded-2xl p-0 md:p-4">
+            <USMap
+              key={`map-${selectedMapBill}-${f.chamber}`}
+              stateColors={stateColors}
+              onStateClick={(stateCode) => {
+                f.set({ state: stateCode, viewMode: "summary" });
+                setSortCol("__district");
+                setSortDir("GOOD_FIRST");
+              }}
+              members={filtered}
+              onMemberClick={(member) => {
+                setSelected(member);
+                setSelectedFromAipac(selectedMapBill === "__AIPAC__");
+              }}
+              useDistrictMap={true}
+              chamber={f.chamber}
+              selectedBillColumn={selectedMapBill}
+              metaByCol={metaByCol}
+              allRows={rows}
+              onBillMapClick={(stateCode) => {
+                // Handle AIPAC/DMFI map selection
+                if (selectedMapBill === "__AIPAC__") {
+                  // Navigate to all view with state filter and AIPAC category active
+                  f.set({
+                    viewMode: "all",
+                    state: stateCode,
+                    // If we're in Senate mode on the map, keep Senate filter active
+                    chamber: f.chamber === "SENATE" ? "SENATE" : "",
+                    // Activate AIPAC category filter
+                    categories: new Set(["AIPAC"])
+                  });
+                  return;
                 }
-              }
-            }}
-          />
-        </div>
+                // Open bill modal with state filter when clicking on map with bill selected
+                if (selectedMapBill) {
+                  const meta = metaByCol.get(selectedMapBill);
+                  if (meta) {
+                    setSelectedBill({ meta, column: selectedMapBill, initialStateFilter: stateCode });
+                  }
+                }
+              }}
+            />
+          </div>
+        )}
 
         {/* Table View */}
         <div
