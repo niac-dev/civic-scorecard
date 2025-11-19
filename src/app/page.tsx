@@ -1352,7 +1352,13 @@ export default function Page() {
           <USMap
             stateColors={stateColors}
             onStateClick={(stateCode) => {
-              f.set({ state: stateCode, viewMode: "summary" });
+              // Go to scorecard filtered by state
+              // If in Senate mode, also set chamber to Senate
+              f.set({
+                state: stateCode,
+                viewMode: "summary",
+                chamber: f.chamber === "SENATE" ? "SENATE" : ""
+              });
               setSortCol("__district");
               setSortDir("GOOD_FIRST");
             }}
@@ -1367,26 +1373,7 @@ export default function Page() {
             metaByCol={metaByCol}
             allRows={rows}
             onBillMapClick={(stateCode) => {
-              // Handle AIPAC/DMFI map selection
-              if (selectedMapBill === "__AIPAC__") {
-                // Navigate to all view with state filter and AIPAC category active
-                f.set({
-                  viewMode: "all",
-                  state: stateCode,
-                  // If we're in Senate mode on the map, keep Senate filter active
-                  chamber: f.chamber === "SENATE" ? "SENATE" : "",
-                  // Activate AIPAC category filter
-                  categories: new Set(["AIPAC"])
-                });
-                return;
-              }
-              // Open bill modal with state filter when clicking on map with bill selected
-              if (selectedMapBill) {
-                const meta = metaByCol.get(selectedMapBill);
-                if (meta) {
-                  setSelectedBill({ meta, column: selectedMapBill, initialStateFilter: stateCode });
-                }
-              }
+              // This is no longer used since we simplified click behavior
             }}
           />
         </div>

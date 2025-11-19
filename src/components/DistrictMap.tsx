@@ -2116,54 +2116,31 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           const feature = e.features[0];
 
           if (isSenate) {
-            // Senate or Both mode: handle state clicks
+            // Senate or All mode: clicking on state goes to scorecard filtered by that state
             const stateName = feature.properties?.name;
-            if (stateName) {
+            if (stateName && onStateClick) {
               // Find FIPS from state name and convert to state abbreviation
               const stateFips = Object.entries(stateToFips).find(([name, fips]) =>
                 name.toLowerCase() === stateName.toLowerCase()
               )?.[1];
 
               if (stateFips) {
-                const stateMembers = districtMembers[stateFips];
                 const stateAbbr = fipsToState[stateFips];
-
-                // If AIPAC mode is selected, navigate to scorecard AIPAC view
-                if (selectedBillColumnRef.current === '__AIPAC__' && stateAbbr && onBillMapClickRef.current) {
-                  onBillMapClickRef.current(stateAbbr);
-                }
-                // If bill is selected, open bill modal with state filter
-                // Use refs to get latest values (avoids stale closures)
-                else if (billActionDataRef.current && stateAbbr && onBillMapClickRef.current) {
-                  onBillMapClickRef.current(stateAbbr);
-                }
-                // Both mode and Senate mode: navigate to state summary view
-                else if (stateAbbr && onStateClick) {
+                if (stateAbbr) {
                   onStateClick(stateAbbr);
                 }
               }
             }
           } else {
-            // House mode: click on representative
+            // House mode: clicking on district opens that member's card
             const stateFips = feature.properties?.STATEFP;
             const cd = feature.properties?.CD118FP;
 
             if (stateFips && cd) {
               const districtKey = `${stateFips}${cd}`;
               const member = districtMembersRef.current[districtKey];
-              const stateAbbr = fipsToState[stateFips];
 
-              // If AIPAC mode is selected, open member modal with AIPAC section active
-              if (selectedBillColumnRef.current === '__AIPAC__' && member && !Array.isArray(member) && onMemberClick) {
-                onMemberClick(member);
-              }
-              // If bill is selected, open bill modal with state filter
-              // Use refs to get latest values (avoids stale closures)
-              else if (billActionDataRef.current && stateAbbr && onBillMapClickRef.current) {
-                onBillMapClickRef.current(stateAbbr);
-              }
-              // Otherwise open member modal
-              else if (member && !Array.isArray(member) && onMemberClick) {
+              if (member && !Array.isArray(member) && onMemberClick) {
                 onMemberClick(member);
               }
             }
