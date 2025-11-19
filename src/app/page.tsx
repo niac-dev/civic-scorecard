@@ -9,6 +9,7 @@ import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
 import { GRADE_COLORS, extractVoteInfo, inferChamber } from "@/lib/utils";
+import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
@@ -118,6 +119,15 @@ function lastName(full?: string) {
   const maybe = parts[parts.length - 1] || "";
   // strip common suffix punctuation
   return maybe.replace(/[.,]/g, "").toLowerCase();
+}
+
+function formatNameFirstLast(name: string | unknown): string {
+  const nameStr = String(name || '');
+  if (nameStr.includes(', ')) {
+    const [last, first] = nameStr.split(', ');
+    return `${first} ${last}`;
+  }
+  return nameStr;
 }
 
 function gradeRank(g?: string): number {
@@ -1446,9 +1456,9 @@ export default function Page() {
               </span>
             </div>
 
-            {/* Endorsements column header - before Overall Grade in AIPAC view */}
+            {/* Endorsements column header - in AIPAC view */}
             {f.categories.has("AIPAC") && (
-              <div className="th group relative select-none flex flex-col">
+              <div className="th group relative select-none flex flex-col border-r border-[#E7ECF2] dark:border-slate-900">
                 {/* Header title - clickable to view AIPAC page with 2-line height */}
                 <div className="h-[2.5rem] flex items-start">
                   <span
@@ -1488,7 +1498,7 @@ export default function Page() {
               </div>
             )}
 
-            {gradeColumns.map((gradeCol, idx) => {
+            {!f.categories.has("AIPAC") && gradeColumns.map((gradeCol, idx) => {
               const isOverallGrade = gradeCol.header === "Overall Grade";
               const isSummaryMode = f.viewMode === "summary";
               const isCategoryHeader = isSummaryMode && !isOverallGrade;
@@ -1743,7 +1753,7 @@ export default function Page() {
                 {/* Photo - shown second on mobile, first on desktop */}
                 {r.photo_url ? (
                   <img
-                    src={String(r.photo_url)}
+                    src={getProxiedImageUrl(String(r.photo_url))}
                     alt=""
                     className="w-[80%] md:w-[70px] h-auto md:h-[70px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                   />
@@ -1865,7 +1875,85 @@ export default function Page() {
                 </div>
               </div>
 
-              {gradeColumns.map((gradeCol, idx) => {
+              {/* Endorsements column - in AIPAC view (replaces grade columns) */}
+              {f.categories.has("AIPAC") && (
+                <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
+                  {(() => {
+                    // Check if member has reject AIPAC commitment text (takes priority)
+                    const rejectCommitment = r.reject_aipac_commitment;
+                    const rejectLink = r.reject_aipac_link;
+                    const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
+
+                    if (hasRejectCommitment) {
+                      return (
+                        <div className="flex items-start gap-1">
+                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
+                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
+                          </svg>
+                          <span className="text-xs text-slate-800 dark:text-white font-bold">
+                            {rejectLink && String(rejectLink).startsWith('http') ? (
+                              <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
+                                {rejectCommitment}
+                              </a>
+                            ) : (
+                              rejectCommitment
+                            )}
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    const pacData = pacDataMap.get(String(r.bioguide_id));
+                    const aipac = isAipacEndorsed(pacData, r.aipac_supported);
+                    const dmfi = isDmfiEndorsed(pacData, r.dmfi_supported);
+
+                    if (aipac && dmfi) {
+                      return (
+                        <div className="flex items-center gap-1">
+                          <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                          </svg>
+                          <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
+                        </div>
+                      );
+                    }
+
+                    if (aipac || dmfi) {
+                      return (
+                        <div className="space-y-0.5">
+                          {aipac && (
+                            <div className="flex items-center gap-1">
+                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                              </svg>
+                              <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
+                            </div>
+                          )}
+                          {dmfi && (
+                            <div className="flex items-center gap-1">
+                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
+                              </svg>
+                              <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex items-center gap-1">
+                        <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
+                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
+                        </svg>
+                        <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {!f.categories.has("AIPAC") && gradeColumns.map((gradeCol, idx) => {
                 const isOverall = idx === 0;
                 const isSummaryMode = f.viewMode === "summary";
 
@@ -1874,7 +1962,7 @@ export default function Page() {
                     <div
                       className={clsx(
                         "td flex items-center justify-center !py-0 md:!py-3",
-                        idx === gradeColumns.length - 1 && !f.categories.has("AIPAC") && "border-r border-[#E7ECF2] dark:border-slate-900",
+                        idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-slate-900",
                         isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
                       onClick={() => {
@@ -1892,84 +1980,6 @@ export default function Page() {
                     >
                       <GradeChip grade={String(r[gradeCol.field] || "N/A")} isOverall={isOverall} />
                     </div>
-
-                    {/* Endorsements column - after Overall Grade in AIPAC view */}
-                    {idx === 0 && f.categories.has("AIPAC") && (
-                      <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
-                        {(() => {
-                          // Check if member has reject AIPAC commitment text (takes priority)
-                          const rejectCommitment = r.reject_aipac_commitment;
-                          const rejectLink = r.reject_aipac_link;
-                          const hasRejectCommitment = rejectCommitment && String(rejectCommitment).length > 10;
-
-                          if (hasRejectCommitment) {
-                            return (
-                              <div className="flex items-start gap-1">
-                                <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
-                                  <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
-                                </svg>
-                                <span className="text-xs text-slate-800 dark:text-white font-bold">
-                                  {rejectLink && String(rejectLink).startsWith('http') ? (
-                                    <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
-                                      {rejectCommitment}
-                                    </a>
-                                  ) : (
-                                    rejectCommitment
-                                  )}
-                                </span>
-                              </div>
-                            );
-                          }
-
-                          const pacData = pacDataMap.get(String(r.bioguide_id));
-                          const aipac = isAipacEndorsed(pacData, r.aipac_supported);
-                          const dmfi = isDmfiEndorsed(pacData, r.dmfi_supported);
-
-                          if (aipac && dmfi) {
-                            return (
-                              <div className="flex items-center gap-1">
-                                <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                  <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                                </svg>
-                                <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
-                              </div>
-                            );
-                          }
-
-                          if (aipac || dmfi) {
-                            return (
-                              <div className="space-y-0.5">
-                                {aipac && (
-                                  <div className="flex items-center gap-1">
-                                    <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                                    </svg>
-                                    <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
-                                  </div>
-                                )}
-                                {dmfi && (
-                                  <div className="flex items-center gap-1">
-                                    <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                                    </svg>
-                                    <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div className="flex items-center gap-1">
-                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                              </svg>
-                              <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
                   </React.Fragment>
                 );
               })}
@@ -2189,7 +2199,21 @@ export default function Page() {
                         <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
                           <span className="font-medium">NIAC Action Position:</span> {formatPositionTooltip(meta)}
                         </div>
-                        {meta.description && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">{meta.description}</div>}
+                        {meta.description && (
+                          <div className="text-xs text-slate-700 dark:text-slate-200 mt-2 normal-case font-normal">
+                            {meta.description}{' '}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCell(null);
+                                setSelectedBill({ meta, column: c });
+                              }}
+                              className="text-[#4B8CFB] hover:text-[#3B7CEB] font-medium cursor-pointer"
+                            >
+                              More &gt;&gt;
+                            </button>
+                          </div>
+                        )}
                         {meta.sponsor && <div className="text-xs text-slate-700 dark:text-slate-200 mt-2"><span className="font-medium">Sponsor:</span> {meta.sponsor}</div>}
                         {(meta.chamber || (meta.categories || "").split(";").filter(Boolean).length > 0) && (
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -2587,13 +2611,13 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "1fr 0.6fr" : "40px calc(100% - 320px) 100px 180px",
+                      gridTemplateColumns: isMobile ? "1fr 80px 120px" : "40px calc(100% - 320px) 100px 180px",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
                     <div className="th pl-4">Bill Information</div>
                     <div className="th text-center">Our Position</div>
-                    <div className="th text-center hidden md:block">Sponsor</div>
+                    <div className="th text-center">Sponsor</div>
                   </div>
 
                   {/* Bill Rows - Grouped by Category */}
@@ -2619,7 +2643,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "1fr 0.6fr" : "40px calc(100% - 320px) 100px 180px",
+                                  gridTemplateColumns: isMobile ? "1fr 80px 120px" : "40px calc(100% - 320px) 100px 180px",
                                   alignItems: "center",
                                 }}
                                 onClick={() => {
@@ -2701,22 +2725,22 @@ export default function Page() {
 
                                 {/* Sponsor */}
                                 <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 hidden md:block min-w-0"
+                                  className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0"
                                 >
                                   {bill.sponsor ? (
-                                    <div className="flex items-center gap-2 max-w-full">
+                                    <div className="flex items-center gap-1 md:gap-2 max-w-full">
                                       {bill.sponsor.photo_url ? (
                                         <img
-                                          src={String(bill.sponsor.photo_url)}
+                                          src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
                                           alt=""
-                                          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                          className="h-6 w-6 md:h-8 md:w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                                         />
                                       ) : (
-                                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                                        <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                                       )}
-                                      <div className="flex-1 min-w-0">
+                                      <div className="flex-1 min-w-0 hidden md:block">
                                         <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
-                                          {bill.sponsor.full_name}
+                                          {formatNameFirstLast(bill.sponsor.full_name)}
                                         </div>
                                         <div className="flex items-center gap-1 text-xs mt-0.5">
                                           <span
@@ -2730,9 +2754,17 @@ export default function Page() {
                                           </span>
                                         </div>
                                       </div>
+                                      <div className="flex-1 min-w-0 md:hidden">
+                                        <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight">
+                                          {formatNameFirstLast(bill.sponsor.full_name).split(' ').pop()}
+                                        </div>
+                                        <div className="text-[9px] text-slate-500 dark:text-slate-400">
+                                          {stateCodeOf(bill.sponsor.state)}
+                                        </div>
+                                      </div>
                                     </div>
                                   ) : (
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">No sponsor</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
                                   )}
                                 </div>
                               </div>
@@ -2809,7 +2841,7 @@ export default function Page() {
   );
 }
 
-function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
+function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
   const f = useFilters();
   // Always start with same initial state on server and client to avoid hydration mismatch
   const [filtersExpanded, setFiltersExpanded] = useState(true);
@@ -2909,9 +2941,9 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
       return;
     }
 
-    // AIPAC and Partisan selections can work with any chamber
+    // AIPAC/Partisan selections can work with any chamber - no need to auto-switch
     if (billColumn === "__AIPAC__" || billColumn === "__PARTISAN__") {
-      // If currently on "All", switch to House by default
+      // If currently on "All", switch to House by default for AIPAC/Partisan
       if (!f.chamber) {
         f.set({ chamber: 'HOUSE' });
       }
@@ -2995,20 +3027,31 @@ function Filters({ filteredCount, metaByCol, cols, selectedMapBill, setSelectedM
             value={selectedMapBill}
             onChange={(e) => handleBillSelect(e.target.value)}
           >
-            <option value="">Grade</option>
+            <option value="">Overall Grade</option>
             <option value="__PARTISAN__">Partisan</option>
             <option value="__AIPAC__">AIPAC & DMFI Support</option>
-            <optgroup label="Bills & Actions">
-              {billsWithData.map(col => {
-                const m = metaByCol.get(col);
-                if (!m) return null;
-                return (
-                  <option key={col} value={col}>
-                    {m.display_name || m.short_title || col}
-                  </option>
-                );
-              })}
-            </optgroup>
+            {categories.filter(cat => cat !== "AIPAC").map(cat => {
+              const billsInCategory = billsWithData.filter(col => {
+                const meta = metaByCol.get(col);
+                return meta?.categories?.includes(cat);
+              });
+
+              if (billsInCategory.length === 0) return null;
+
+              return (
+                <optgroup key={cat} label={cat}>
+                  {billsInCategory.map(col => {
+                    const meta = metaByCol.get(col);
+                    const displayName = meta?.display_name || meta?.short_title || meta?.bill_number || col;
+                    return (
+                      <option key={col} value={col}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              );
+            })}
           </select>
         )}
 
