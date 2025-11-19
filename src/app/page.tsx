@@ -3055,6 +3055,30 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </select>
         )}
 
+        {/* State selector - Desktop (for Map and Scorecard views) */}
+        {f.viewMode !== "tracker" && (
+          <select
+            className="hidden md:block select !text-xs !h-9 !px-2 !max-w-[140px]"
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              // If selecting a territory without senate, automatically switch to House
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+            }}
+          >
+            <option value="">State</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         {/* Mobile: Show icon buttons (<768px) */}
         <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
           <button
@@ -3114,6 +3138,30 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             </svg>
           </button>
         </div>
+
+        {/* State selector - Mobile (for Map and Scorecard views) */}
+        {f.viewMode !== "tracker" && (
+          <select
+            className="md:hidden select !text-[10px] !h-9 !px-2 !max-w-[100px]"
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              // If selecting a territory without senate, automatically switch to House
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+            }}
+          >
+            <option value="">State</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.code}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Filter button - mobile only, hide in map mode */}
         {f.viewMode !== "map" && (() => {
@@ -3386,49 +3434,6 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                   R
                 </button>
               </div>
-              {/* Mobile: State abbreviations */}
-              <select
-                className="md:hidden select !text-[10px] !h-6 !px-1.5 !max-w-[70px]"
-                value={f.state || ""}
-                onChange={(e) => {
-                  const selectedState = e.target.value;
-                  // If selecting a territory without senate, automatically switch to House
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }}
-              >
-                <option value="">State</option>
-                {STATES.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.code}
-                  </option>
-                ))}
-              </select>
-
-              {/* Desktop: Full state names */}
-              <select
-                className="hidden md:block select !text-xs !h-8 !px-2 !max-w-[140px]"
-                value={f.state || ""}
-                onChange={(e) => {
-                  const selectedState = e.target.value;
-                  // If selecting a territory without senate, automatically switch to House
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }}
-              >
-                <option value="">State</option>
-                {STATES.map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
             </>
           )}
 
