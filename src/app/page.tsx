@@ -2841,22 +2841,8 @@ export default function Page() {
 
 function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
   const f = useFilters();
-  // Always start with same initial state on server and client to avoid hydration mismatch
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
-
-  // Auto-expand/collapse filters based on view mode and screen size
-  useEffect(() => {
-    const checkMobile = () => window.innerWidth < 768;
-    const isMobile = checkMobile();
-
-    if (isMobile) {
-      // On mobile, collapse filters in all modes by default
-      setFiltersExpanded(false);
-    } else {
-      // On desktop, always keep filters expanded
-      setFiltersExpanded(true);
-    }
-  }, [f.viewMode]);
+  // Default to collapsed/inactive state
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Filter bills to only show those with actual data (at least some members have numeric values)
   const billsWithData = useMemo(() => {
