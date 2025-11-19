@@ -5,10 +5,10 @@
 // Single source of truth for all grade colors across the app
 export const GRADE_COLORS = {
   A: "#3A8663",  // muted emerald
-  B: "#72B594",  // soft herbal green
-  C: "#CABBD3",  // lavender-gray midpoint
-  D: "#A88DBA",  // dusty mauve
-  F: "#775A97",  // muted deep purple
+  B: "#72B594",  // soft green
+  C: "#E8D97A",  // muted wheat yellow
+  D: "#D9BE5E",  // soft mustard
+  F: "#BAA04A",  // antique gold (negative but not harsh)
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 
@@ -88,9 +88,9 @@ export function gradeTextColor(grade: string): string {
   const g = (grade || "").trim().toUpperCase();
   if (g.startsWith("A")) return "#ffffff"; // white for dark emerald
   if (g.startsWith("B")) return "#4b5563"; // dark gray for soft green
-  if (g.startsWith("C")) return "#4b5563"; // dark gray for light lavender
-  if (g.startsWith("D")) return "#ffffff"; // white for dusty mauve
-  if (g.startsWith("F")) return "#ffffff"; // white for deep purple
+  if (g.startsWith("C")) return "#4b5563"; // dark gray for wheat yellow
+  if (g.startsWith("D")) return "#4b5563"; // dark gray for soft mustard
+  if (g.startsWith("F")) return "#4b5563"; // dark gray for antique gold
   return "#4b5563"; // dark gray for unknown
 }
 

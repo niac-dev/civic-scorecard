@@ -3857,9 +3857,9 @@ function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
   const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
   const textColor = grade.startsWith("A") ? "#ffffff" // white for A (dark emerald)
     : grade.startsWith("B") ? "#4b5563" // dark grey for B (soft green)
-    : grade.startsWith("C") ? "#4b5563" // dark grey for C (light lavender)
-    : grade.startsWith("D") ? "#ffffff" // white for D (dusty mauve)
-    : grade.startsWith("F") ? "#ffffff" // white for F (deep purple)
+    : grade.startsWith("C") ? "#4b5563" // dark grey for C (wheat yellow)
+    : grade.startsWith("D") ? "#4b5563" // dark grey for D (soft mustard)
+    : grade.startsWith("F") ? "#4b5563" // dark grey for F (antique gold)
     : "#4b5563"; // dark grey for unknown
   const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return <span className="inline-flex items-center justify-center rounded-full w-12 h-12 md:w-[3.7rem] md:h-[3.7rem] text-xs md:text-sm font-bold"
