@@ -3079,6 +3079,31 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </select>
         )}
 
+        {/* Filter button - Desktop, all modes */}
+        {(() => {
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
+
+          return (
+            <button
+              className={clsx(
+                "hidden md:flex items-center gap-2 px-3 h-9 rounded-md text-sm border transition-colors",
+                filtersExpanded
+                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
+                  : hasActiveFilters
+                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
+                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
+              )}
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              title="Filters"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
+              </svg>
+              <span>Filters</span>
+            </button>
+          );
+        })()}
+
         {/* Mobile: Show icon buttons (<768px) */}
         <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
           <button
@@ -3163,8 +3188,8 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </select>
         )}
 
-        {/* Filter button - mobile only, hide in map mode */}
-        {f.viewMode !== "map" && (() => {
+        {/* Filter button - mobile only, all modes */}
+        {(() => {
           // Check if there are active chamber/party/state filters (NOT categories - those are always visible)
           const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
 
