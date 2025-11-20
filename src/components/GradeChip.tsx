@@ -24,7 +24,7 @@ export function GradeChip({ grade, isOverall }: GradeChipProps) {
   const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]"
+      className="inline-flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold min-w-[3rem]"
       style={{ background: `${color}${opacity}`, color: textColor, border }}
     >
       {grade}

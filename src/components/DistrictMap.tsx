@@ -1743,7 +1743,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                       : grade.startsWith("D") ? "#4b5563"
                       : grade.startsWith("F") ? "#ffffff"
                       : "#4b5563";
-                    return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
+                    return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 6px 16px; font-size: 15px; font-weight: 600; min-width: 52px;`;
                   };
 
                   // Helper function to normalize party label
@@ -1939,7 +1939,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     : grade.startsWith("D") ? "#4b5563"
                     : grade.startsWith("F") ? "#ffffff"
                     : "#4b5563";
-                  return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 3px 12px; font-size: 15px; font-weight: 600; min-width: 48px;`;
+                  return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 6px 16px; font-size: 15px; font-weight: 600; min-width: 52px;`;
                 };
 
                 // Helper function to get party badge styling (50% larger)
