@@ -1740,7 +1740,7 @@ export default function Page() {
             <div
               key={i}
               className={clsx(
-                "grid min-w-max transition group items-start",
+                "grid min-w-max transition group items-center md:items-start",
                 "hover:bg-slate-50 dark:hover:bg-slate-800",
                 "border-b border-[#E7ECF2] dark:border-slate-900"
               )}
