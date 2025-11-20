@@ -17,9 +17,6 @@ import { AipacModal } from "@/components/AipacModal";
 
 import clsx from "clsx";
 
-// Virtual scrolling configuration
-const ROW_HEIGHT = 85; // Approximate height of each row in pixels
-const OVERSCAN = 5; // Number of extra rows to render above/below visible area
 
 // --- States helper (dropdown + normalization) ---
 const STATES: { code: string; name: string }[] = [
@@ -303,6 +300,7 @@ export default function Page() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
   const [selectedFromAipac, setSelectedFromAipac] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{rowId: string, col: string} | null>(null);
   const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string; initialStateFilter?: string } | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
@@ -370,6 +368,7 @@ export default function Page() {
   const closeAllModals = useCallback(() => {
     setSelected(null);
     setSelectedFromAipac(false);
+    setSelectedCategory(null);
     setSelectedBill(null);
     setShowAipacModal(false);
     setModalHistory([]);
@@ -415,6 +414,8 @@ export default function Page() {
   const [sortDir, setSortDir] = useState<"GOOD_FIRST" | "BAD_FIRST">("GOOD_FIRST");
   const [selectedElection, setSelectedElection] = useState<"2024" | "2026" | "2022">("2024");
   const [isMobile, setIsMobile] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
   const [selectedMapBill, setSelectedMapBill] = useState<string>("");
 
   // Track expanded bills in tracker accordion
@@ -426,17 +427,56 @@ export default function Page() {
   // Ref for the tracker container
   const trackerScrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Virtual scrolling state
-  const [scrollTop, setScrollTop] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track mobile viewport for responsive column widths
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsLargeScreen(width > 1150);
+    };
+
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
+
+  // Check for horizontal overflow to conditionally enable scrolling
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (tableScrollRef.current) {
+        // Check the first grid child (header or first row) width vs container
+        const gridChild = tableScrollRef.current.querySelector('.grid');
+        if (gridChild) {
+          const hasOverflow = gridChild.scrollWidth > tableScrollRef.current.clientWidth;
+          setHasHorizontalOverflow(hasOverflow);
+        }
+      }
+    };
+
+    // Initial check with delay to ensure DOM is ready
+    const timer = setTimeout(checkOverflow, 150);
+
+    window.addEventListener('resize', checkOverflow);
+
+    // Use ResizeObserver to detect content changes
+    const observer = new ResizeObserver(checkOverflow);
+    if (tableScrollRef.current) {
+      observer.observe(tableScrollRef.current);
+      // Also observe the grid content
+      const gridChild = tableScrollRef.current.querySelector('.grid');
+      if (gridChild) {
+        observer.observe(gridChild);
+      }
+    }
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkOverflow);
+      observer.disconnect();
+    };
   }, []);
 
   // Remove all title attributes on mobile/touch devices to prevent double-tap issue
@@ -899,54 +939,11 @@ export default function Page() {
     });
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
-  // Virtual scrolling: calculate which rows to actually render
-  // On mobile, disable virtual scrolling for smooth native scrolling
-  const { visibleRows, totalHeight, offsetY, startIndex, endIndex } = useMemo(() => {
-    const totalRows = sorted.length;
+  // Render all rows (virtual scrolling disabled due to variable row heights causing jitter)
+  const visibleRows = sorted;
 
-    // On mobile, render all rows (no virtual scrolling)
-    if (isMobile) {
-      return {
-        visibleRows: sorted,
-        totalHeight: 0,
-        offsetY: 0,
-        startIndex: 0,
-        endIndex: totalRows
-      };
-    }
-
-    // Desktop: use virtual scrolling
-    const containerHeight = tableScrollRef.current?.clientHeight || 700;
-
-    // Calculate which rows are visible based on scroll position
-    const startIdx = Math.floor(scrollTop / ROW_HEIGHT);
-    const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT);
-
-    // Add overscan to reduce flickering
-    const start = Math.max(0, startIdx - OVERSCAN);
-    const end = Math.min(totalRows, startIdx + visibleCount + OVERSCAN);
-
-    // Slice the sorted array to only visible rows
-    const visible = sorted.slice(start, end);
-
-    // Calculate total height and offset for positioning
-    const total = totalRows * ROW_HEIGHT;
-    const offset = start * ROW_HEIGHT;
-
-    return {
-      visibleRows: visible,
-      totalHeight: total,
-      offsetY: offset,
-      startIndex: start,
-      endIndex: end
-    };
-  }, [sorted, scrollTop, isMobile]);
-
-  // Scroll handler for virtual scrolling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    setScrollTop(target.scrollTop);
-
+  // Scroll handler - hide tooltips while scrolling
+  const handleScroll = useCallback(() => {
     // Hide header tooltips while scrolling
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
@@ -1122,29 +1119,33 @@ export default function Page() {
     // Fixed widths per column so the header background spans the full scroll width
     // Wider columns on mobile - sized so ~3 columns fit on screen (member + 2 data columns)
     // Bill columns are 33% wider to allow 2-line headers instead of 3
-    const billsPart = billCols.map(() => isMobile ? "minmax(168px, 168px)" : "minmax(186px, 186px)").join(" ");
-    const gradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
+    const billsPart = billCols.map(() => isMobile ? "minmax(168px, 168px)" : (isLargeScreen ? "minmax(210px, 210px)" : "minmax(186px, 186px)")).join(" ");
+    const gradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
     // Member column: wider on mobile for comfortable reading
     // Mobile: min 126px to fit stacked names, max 40vw for responsive sizing
     // Desktop: fixed 300px for comfortable reading with photos
-    const memberCol = isMobile ? "minmax(126px, min(40vw, 162px))" : "300px";
+    // Large screens (>1150px): 400px for more spacious layout
+    const memberCol = isMobile ? "minmax(126px, min(40vw, 162px))" : (isLargeScreen ? "400px" : "300px");
+    // Endorsements column: fixed on mobile/desktop, grows on large screens
+    const endorsementsCol = isLargeScreen ? "minmax(9.6rem, 1fr)" : "9.6rem";
+
     // In summary mode: member col + grade cols + endorsements col
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} 9.6rem`;
+      return `${memberCol} ${gradesPart} ${endorsementsCol}`;
     }
     // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols
     if (f.categories.has("AIPAC")) {
       // First grade column is Overall Grade (135px on mobile), then endorsements (9.6rem), then remaining grade columns
-      const restGradesPart = gradeColumns.slice(1).map(() => isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)").join(" ");
-      return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : "minmax(160px, 160px)"} 9.6rem ${restGradesPart} ${billsPart}`;
+      const restGradesPart = gradeColumns.slice(1).map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
+      return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")} ${endorsementsCol} ${restGradesPart} ${billsPart}`;
     }
     // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols
     if (f.categories.has("Civil Rights & Immigration")) {
       return `${memberCol} ${gradesPart} ${billsPart}`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col
-    return `${memberCol} ${gradesPart} ${billsPart} 9.6rem`;
-  }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile]);
+    return `${memberCol} ${gradesPart} ${billsPart} ${endorsementsCol}`;
+  }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile, isLargeScreen]);
 
   // Calculate average grades per state for map coloring
   const stateColors = useMemo(() => {
@@ -1314,7 +1315,7 @@ export default function Page() {
       </div>
 
       <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
-        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} />
+        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} setSortCol={setSortCol} setSortDir={setSortDir} />
       {selected && (
         <MemberModal
           row={selected}
@@ -1325,7 +1326,7 @@ export default function Page() {
           onClose={closeAllModals}
           onBack={modalHistory.length > 0 ? goBackModal : undefined}
           onBillClick={(meta, column) => pushBillModal(meta, column)}
-          initialCategory={selectedFromAipac ? "AIPAC" : null}
+          initialCategory={selectedCategory || (selectedFromAipac ? "AIPAC" : null)}
         />
       )}
       {selectedBill && (
@@ -1395,13 +1396,13 @@ export default function Page() {
         {/* Table View */}
         <div
           className={clsx(
-            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out",
+            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out w-fit max-w-full",
             f.viewMode !== "map" && f.viewMode !== "tracker"
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className="overflow-x-auto overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl" onScroll={handleScroll} style={{ overscrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}>
+          <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
             {/* Header */}
             <div
               className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
@@ -1732,21 +1733,21 @@ export default function Page() {
 
           </div>
 
-          {/* Rows Container - conditionally wrapped for virtual scrolling on desktop */}
-          <div style={isMobile ? { minWidth: 'max-content' } : { height: totalHeight, position: 'relative', minWidth: 'max-content' }}>
-            <div style={isMobile ? { minWidth: 'max-content' } : { transform: `translateY(${offsetY}px)`, willChange: 'transform', minWidth: 'max-content' }}>
+          {/* Rows Container */}
+          <div style={{ minWidth: 'max-content' }}>
           {visibleRows.map((r, i) => (
             <div
               key={i}
               className={clsx(
-                "grid min-w-max transition group",
-                "hover:bg-slate-50 dark:hover:bg-slate-800"
+                "grid min-w-max transition group items-center",
+                "hover:bg-slate-50 dark:hover:bg-slate-800",
+                "border-b border-[#E7ECF2] dark:border-slate-900"
               )}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 flex flex-col md:flex-row md:items-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td px-0 py-0 md:py-3 flex flex-col md:flex-row items-center md:justify-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
@@ -1754,16 +1755,16 @@ export default function Page() {
                   <img
                     src={getProxiedImageUrl(String(r.photo_url))}
                     alt=""
-                    className="w-[80%] md:w-[105px] h-auto md:h-[105px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
+                    className="w-[80%] md:w-[105px] xl:w-[140px] h-auto md:h-[105px] xl:h-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                   />
                 ) : (
-                  <div className="w-[80%] md:w-[105px] h-auto md:h-[105px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
+                  <div className="w-[80%] md:w-[105px] xl:w-[140px] h-auto md:h-[105px] xl:h-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
                 )}
 
                 {/* Desktop: Text section with name and badges */}
-                <div className="hidden md:flex md:flex-col md:justify-center min-w-0 md:order-2">
+                <div className="hidden md:flex md:flex-col min-w-0 md:order-2">
                   {/* Name */}
-                  <div className="font-bold text-[24px] leading-6 text-slate-800 dark:text-white mb-1 text-center">
+                  <div className="font-bold text-[24px] xl:text-[28px] leading-6 xl:leading-7 text-slate-800 dark:text-white mb-1 text-center">
                     {(() => {
                       const fullName = String(r.full_name || "");
                       const commaIndex = fullName.indexOf(",");
@@ -1780,7 +1781,7 @@ export default function Page() {
                   <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 whitespace-nowrap flex-wrap mb-1">
                     {/* Chamber */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[14px] font-semibold"
+                      className="px-1.5 py-0.5 rounded-md text-[14px] xl:text-[16px] font-semibold"
                       style={{
                         color: '#64748b',
                         backgroundColor: `${chamberColor(r.chamber)}20`,
@@ -1791,7 +1792,7 @@ export default function Page() {
 
                     {/* Party - just letter */}
                     <span
-                      className="px-1.5 py-0.5 rounded-md text-[14px] font-medium border"
+                      className="px-1.5 py-0.5 rounded-md text-[14px] xl:text-[16px] font-medium border"
                       style={partyBadgeStyle(r.party)}
                     >
                       {(() => {
@@ -1805,7 +1806,7 @@ export default function Page() {
                   </div>
 
                   {/* State and District */}
-                  <div className="text-[14px] text-slate-600 dark:text-slate-400 text-center">
+                  <div className="text-[14px] xl:text-[16px] text-slate-600 dark:text-slate-400 text-center">
                     {(() => {
                       const stateCode = stateCodeOf(r.state);
                       // Get full state name from the state code
@@ -1885,10 +1886,10 @@ export default function Page() {
                     if (hasRejectCommitment) {
                       return (
                         <div className="flex items-start gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
+                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 md:h-4 md:w-4 xl:h-5 xl:w-5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
                             <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
                           </svg>
-                          <span className="text-xs text-slate-800 dark:text-white font-bold">
+                          <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white font-bold">
                             {rejectLink && String(rejectLink).startsWith('http') ? (
                               <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
                                 {rejectCommitment}
@@ -1908,10 +1909,8 @@ export default function Page() {
                     if (aipac && dmfi) {
                       return (
                         <div className="flex items-center gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                          </svg>
-                          <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
+                          <VoteIcon ok={false} size="tiny" />
+                          <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
                         </div>
                       );
                     }
@@ -1921,18 +1920,14 @@ export default function Page() {
                         <div className="space-y-0.5">
                           {aipac && (
                             <div className="flex items-center gap-1">
-                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                              </svg>
-                              <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
+                              <VoteIcon ok={false} size="tiny" />
+                              <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by AIPAC</span>
                             </div>
                           )}
                           {dmfi && (
                             <div className="flex items-center gap-1">
-                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                              </svg>
-                              <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
+                              <VoteIcon ok={false} size="tiny" />
+                              <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by DMFI</span>
                             </div>
                           )}
                         </div>
@@ -1941,10 +1936,8 @@ export default function Page() {
 
                     return (
                       <div className="flex items-center gap-1">
-                        <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                        </svg>
-                        <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
+                        <VoteIcon ok={true} size="tiny" />
+                        <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
                       </div>
                     );
                   })()}
@@ -1968,15 +1961,17 @@ export default function Page() {
 
                         if (isOverall) {
                           // Overall grade opens member card
+                          setSelectedCategory(null);
                           setSelected(r);
                         } else {
-                          // Category grade switches to that category view
-                          f.set({ viewMode: "category", categories: new Set([gradeCol.header]) });
+                          // Category grade opens member card with that category activated
+                          setSelectedCategory(gradeCol.header);
+                          setSelected(r);
                         }
                       }}
-                      title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} bills`) : undefined}
+                      title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`) : undefined}
                     >
-                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} isOverall={isOverall} />
+                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
                     </div>
                   </React.Fragment>
                 );
@@ -1995,7 +1990,7 @@ export default function Page() {
                   // Election column
                   if (c === "__election") {
                     return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-slate-900">
+                      <div key={c} className="td !px-0 py-0 md:py-3 flex items-center justify-center text-sm tabular">
                         {getElectionLabel(electionYear)}
                       </div>
                     );
@@ -2012,7 +2007,7 @@ export default function Page() {
                       totalSupport = (aipac ? (pacData?.aipac_total_2022 || 0) : 0) + (dmfi ? (pacData?.dmfi_total_2022 || 0) : 0);
                     }
                     return (
-                      <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular font-medium border-b border-[#E7ECF2] dark:border-slate-900">
+                      <div key={c} className="td !px-0 py-0 md:py-3 flex items-center justify-center text-sm tabular font-medium">
                         {totalSupport > 0 ? `$${totalSupport.toLocaleString()}` : "—"}
                       </div>
                     );
@@ -2047,7 +2042,7 @@ export default function Page() {
                   }
 
                   return (
-                    <div key={c} className="td !px-0 !py-0 flex items-center justify-center text-sm tabular border-b border-[#E7ECF2] dark:border-slate-900">
+                    <div key={c} className="td !px-0 py-0 md:py-3 flex items-center justify-center text-sm tabular">
                       {amount > 0 ? `$${amount.toLocaleString()}` : "—"}
                     </div>
                   );
@@ -2134,7 +2129,7 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="group/cell relative td !px-0 !py-0 flex items-center justify-center border-b border-[#E7ECF2] dark:border-slate-900 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="group/cell relative td !px-0 py-0 md:py-3 flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     {...(!isMobile && { title: tooltipText })}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2331,10 +2326,10 @@ export default function Page() {
                     if (hasRejectCommitment) {
                       return (
                         <div className="flex items-start gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
+                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 md:h-4 md:w-4 xl:h-5 xl:w-5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
                             <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
                           </svg>
-                          <span className="text-xs text-slate-800 dark:text-white font-bold">
+                          <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white font-bold">
                             {rejectLink && String(rejectLink).startsWith('http') ? (
                               <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
                                 {rejectCommitment}
@@ -2354,10 +2349,8 @@ export default function Page() {
                     if (aipac && dmfi) {
                       return (
                         <div className="flex items-center gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                            <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                          </svg>
-                          <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
+                          <VoteIcon ok={false} size="tiny" />
+                          <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by AIPAC and DMFI</span>
                         </div>
                       );
                     }
@@ -2367,18 +2360,14 @@ export default function Page() {
                         <div className="space-y-0.5">
                           {aipac && (
                             <div className="flex items-center gap-1">
-                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                              </svg>
-                              <span className="text-xs text-slate-800 dark:text-white">Supported by AIPAC</span>
+                              <VoteIcon ok={false} size="tiny" />
+                              <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by AIPAC</span>
                             </div>
                           )}
                           {dmfi && (
                             <div className="flex items-center gap-1">
-                              <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                                <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                              </svg>
-                              <span className="text-xs text-slate-800 dark:text-white">Supported by DMFI</span>
+                              <VoteIcon ok={false} size="tiny" />
+                              <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Supported by DMFI</span>
                             </div>
                           )}
                         </div>
@@ -2387,10 +2376,8 @@ export default function Page() {
 
                     return (
                       <div className="flex items-center gap-1">
-                        <svg viewBox="0 0 20 20" className="h-3 w-3 flex-shrink-0" aria-hidden="true" role="img">
-                          <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                        </svg>
-                        <span className="text-xs text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
+                        <VoteIcon ok={true} size="tiny" />
+                        <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white">Not supported by AIPAC or DMFI</span>
                       </div>
                     );
                   })()}
@@ -2399,7 +2386,6 @@ export default function Page() {
 
             </div>
           ))}
-            </div>
           </div>
         </div>
         </div>
@@ -2839,7 +2825,7 @@ export default function Page() {
   );
 }
 
-function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[] }) {
+function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows, setSortCol, setSortDir }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[]; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void }) {
   const f = useFilters();
   // Default to collapsed/inactive state
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -3003,44 +2989,57 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* State selector - Desktop (for Map and Scorecard views) */}
         {f.viewMode !== "tracker" && (
-          <select
-            className="hidden md:block select !text-xs !h-9 !px-2 !max-w-[140px]"
-            value={f.state || ""}
-            onChange={(e) => {
-              const selectedState = e.target.value;
-              // If in map view and selecting a state, go to scorecard with that state filter
-              if (f.viewMode === "map" && selectedState) {
-                // If selecting a territory without senate, automatically switch to House
-                if (territoriesWithoutSenate.includes(selectedState)) {
-                  f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+          <div className="hidden md:flex items-center gap-1">
+            <select
+              className="select !text-xs !h-9 !px-2 !max-w-[140px]"
+              value={f.state || ""}
+              onChange={(e) => {
+                const selectedState = e.target.value;
+                // If in map view and selecting a state, go to scorecard with that state filter
+                if (f.viewMode === "map" && selectedState) {
+                  // If selecting a territory without senate, automatically switch to House
+                  if (territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                  } else {
+                    f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                  }
+                  setSortCol("__district");
+                  setSortDir("GOOD_FIRST");
                 } else {
-                  f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                  // Otherwise just set the state filter
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
                 }
-                setSortCol("__district");
-                setSortDir("GOOD_FIRST");
-              } else {
-                // Otherwise just set the state filter
-                if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                  f.set({ state: selectedState, chamber: "HOUSE" });
-                } else {
-                  f.set({ state: selectedState });
-                }
-              }
-            }}
-          >
-            <option value="">State</option>
-            {STATES.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+              }}
+            >
+              <option value="">State</option>
+              {STATES.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {f.state && (
+              <button
+                onClick={() => f.set({ state: "" })}
+                className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
+                title="Clear state filter"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
 
         {/* Filter button - Desktop, all modes */}
         {(() => {
           // Categories don't affect filter button in scorecard/tracker view
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
 
           return (
             <button
@@ -3124,44 +3123,57 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
 
         {/* State selector - Mobile (for Map and Scorecard views) */}
         {f.viewMode !== "tracker" && (
-          <select
-            className="md:hidden select !text-[10px] !h-9 !px-2 !max-w-[100px]"
-            value={f.state || ""}
-            onChange={(e) => {
-              const selectedState = e.target.value;
-              // If in map view and selecting a state, go to scorecard with that state filter
-              if (f.viewMode === "map" && selectedState) {
-                // If selecting a territory without senate, automatically switch to House
-                if (territoriesWithoutSenate.includes(selectedState)) {
-                  f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+          <div className="md:hidden flex items-center gap-1">
+            <select
+              className="select !text-[10px] !h-9 !px-2 !max-w-[100px]"
+              value={f.state || ""}
+              onChange={(e) => {
+                const selectedState = e.target.value;
+                // If in map view and selecting a state, go to scorecard with that state filter
+                if (f.viewMode === "map" && selectedState) {
+                  // If selecting a territory without senate, automatically switch to House
+                  if (territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                  } else {
+                    f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                  }
+                  setSortCol("__district");
+                  setSortDir("GOOD_FIRST");
                 } else {
-                  f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                  // Otherwise just set the state filter
+                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                    f.set({ state: selectedState, chamber: "HOUSE" });
+                  } else {
+                    f.set({ state: selectedState });
+                  }
                 }
-                setSortCol("__district");
-                setSortDir("GOOD_FIRST");
-              } else {
-                // Otherwise just set the state filter
-                if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                  f.set({ state: selectedState, chamber: "HOUSE" });
-                } else {
-                  f.set({ state: selectedState });
-                }
-              }
-            }}
-          >
-            <option value="">State</option>
-            {STATES.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.code}
-              </option>
-            ))}
-          </select>
+              }}
+            >
+              <option value="">State</option>
+              {STATES.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.code}
+                </option>
+              ))}
+            </select>
+            {f.state && (
+              <button
+                onClick={() => f.set({ state: "" })}
+                className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
+                title="Clear state filter"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
 
         {/* Filter button - mobile only, all modes */}
         {(() => {
           // Categories don't affect filter button in scorecard/tracker view
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && (f.party || f.state));
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
 
           return (
             <button
@@ -3459,9 +3471,9 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           )}
 
           {/* Single X button to clear all active filters */}
-          {(f.chamber || (f.viewMode !== "tracker" && (f.party || f.state))) && (
+          {(f.chamber || (f.viewMode !== "tracker" && f.party)) && (
             <button
-              onClick={() => f.set({ chamber: "", party: "", state: "" })}
+              onClick={() => f.set({ chamber: "", party: "" })}
               className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
               title="Clear filters"
             >
@@ -3871,57 +3883,46 @@ function Progress({ value }:{ value:number }) {
   );
 }
 
-function GradeChip({ grade, isOverall }:{ grade:string; isOverall?: boolean }) {
+function GradeChip({ grade }:{ grade:string }) {
   const color = grade.startsWith("A") ? GRADE_COLORS.A
     : grade.startsWith("B") ? GRADE_COLORS.B
     : grade.startsWith("C") ? GRADE_COLORS.C
     : grade.startsWith("D") ? GRADE_COLORS.D
     : grade.startsWith("F") ? GRADE_COLORS.F
     : GRADE_COLORS.default;
-  const opacity = isOverall ? "FF" : "E6"; // fully opaque for overall, 90% opaque (10% transparent) for others
-  const textColor = grade.startsWith("A") ? "#ffffff" // white for A (vibrant green)
-    : grade.startsWith("B") ? "#4b5563" // dark grey for B (light green)
-    : grade.startsWith("C") ? "#4b5563" // dark grey for C (pale sage)
-    : grade.startsWith("D") ? "#4b5563" // dark grey for D (mid-grey)
-    : grade.startsWith("F") ? "#ffffff" // white for F (deep stone grey)
-    : "#4b5563"; // dark grey for unknown
-  const border = isOverall ? "2px solid #000000" : "none"; // black border for overall grades
-  return <span className="inline-flex items-center justify-center rounded-full px-3 py-2 md:px-4 md:py-2.5 text-xs md:text-sm font-bold min-w-[3rem] md:min-w-[3.7rem]"
-    style={{ background: `${color}${opacity}`, color: textColor, border }}>{grade}</span>;
+  const border = `8px solid ${color}`;
+
+  // Split grade into letter and modifier (+/-)
+  const letter = grade.charAt(0);
+  const modifier = grade.slice(1);
+
+  return <span className="inline-flex items-center justify-center rounded-full w-12 h-12 md:w-16 md:h-16 xl:w-20 xl:h-20 text-2xl md:text-3xl xl:text-4xl font-extrabold bg-white dark:bg-white"
+    style={{ color: color, border: border }}>
+    {letter}
+    {modifier && <span className="text-sm md:text-lg xl:text-xl">{modifier}</span>}
+  </span>;
 }
 
-function VoteIcon({ ok }: { ok: boolean }) {
+function VoteIcon({ ok, small = false, size = "large" }: { ok: boolean; small?: boolean; size?: "large" | "small" | "tiny" }) {
+  // Support legacy 'small' prop for backwards compatibility
+  const effectiveSize = small ? "small" : size;
+
+  const sizeClass = effectiveSize === "tiny" ? "h-4 w-4 flex-shrink-0"
+    : effectiveSize === "small" ? "h-5 w-5"
+    : "h-10 w-10 xl:h-12 xl:w-12";
+
   if (ok) {
-    // checkmark
     return (
-      <svg
-        viewBox="0 0 20 20"
-        className="h-10 w-10"
-        aria-hidden="true"
-        role="img"
-      >
+      <svg viewBox="0 0 20 20" className={sizeClass} aria-hidden="true" role="img">
         <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.A} />
-        <path
-          d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z"
-          fill="#FFFFFF"
-          transform="translate(0, -2)"
-        />
+        <path d="M8.5 13.5l-3-3 -1.5 1.5 4.5 4.5 8-8 -1.5-1.5z" fill="#FFFFFF" transform="translate(0, -1.5)" />
       </svg>
     );
   }
-  // X mark
   return (
-    <svg
-      viewBox="0 0 20 20"
-      className="h-10 w-10"
-      aria-hidden="true"
-      role="img"
-    >
-      <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.F} />
-      <path
-        d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z"
-        fill="#FFFFFF"
-      />
+    <svg viewBox="0 0 20 20" className={sizeClass} aria-hidden="true" role="img">
+      <circle cx="10" cy="10" r="10" fill="#A96A63" />
+      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#FFFFFF" />
     </svg>
   );
 }
