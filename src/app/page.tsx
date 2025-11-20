@@ -1410,6 +1410,7 @@ export default function Page() {
                 gridTemplateColumns: gridTemplate,
               }}
             >
+            {/* Member column header */}
             <div
               className={clsx(
                 "th pl-4 sticky left-0 z-40 bg-white dark:bg-slate-900 border-r border-[#E7ECF2] dark:border-slate-900 cursor-pointer group flex flex-col justify-between",
@@ -1739,7 +1740,7 @@ export default function Page() {
             <div
               key={i}
               className={clsx(
-                "grid min-w-max transition group items-center",
+                "grid min-w-max transition group items-start",
                 "hover:bg-slate-50 dark:hover:bg-slate-800",
                 "border-b border-[#E7ECF2] dark:border-slate-900"
               )}
@@ -1747,7 +1748,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td px-0 py-0 md:py-3 flex flex-col md:flex-row items-center md:justify-center gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
@@ -1755,10 +1756,11 @@ export default function Page() {
                   <img
                     src={getProxiedImageUrl(String(r.photo_url))}
                     alt=""
-                    className="w-[80%] md:w-[105px] xl:w-[140px] h-auto md:h-[105px] xl:h-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
+                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
+                    style={{ height: 'auto' }}
                   />
                 ) : (
-                  <div className="w-[80%] md:w-[105px] xl:w-[140px] h-auto md:h-[105px] xl:h-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" />
+                  <div className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" style={{ height: 'auto' }} />
                 )}
 
                 {/* Desktop: Text section with name and badges */}
@@ -1876,7 +1878,7 @@ export default function Page() {
 
               {/* Endorsements column - in AIPAC view (replaces grade columns) */}
               {f.categories.has("AIPAC") && (
-                <div className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center">
+                <div className="td px-2 flex items-center">
                   {(() => {
                     // Check if member has reject AIPAC commitment text (takes priority)
                     const rejectCommitment = r.reject_aipac_commitment;
@@ -1947,13 +1949,16 @@ export default function Page() {
               {!f.categories.has("AIPAC") && gradeColumns.map((gradeCol, idx) => {
                 const isOverall = idx === 0;
                 const isSummaryMode = f.viewMode === "summary";
+                const isLastGrade = idx === gradeColumns.length - 1;
+                // Only add border-r if last grade AND not in summary mode (summary has endorsements after)
+                const shouldHaveBorder = isLastGrade && !isSummaryMode;
 
                 return (
                   <React.Fragment key={gradeCol.field}>
                     <div
                       className={clsx(
                         "td flex items-center justify-center !py-0 md:!py-3",
-                        idx === gradeColumns.length - 1 && "border-r border-[#E7ECF2] dark:border-slate-900",
+                        shouldHaveBorder && "border-r border-[#E7ECF2] dark:border-slate-900",
                         isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
                       onClick={() => {
@@ -2313,7 +2318,7 @@ export default function Page() {
               {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
                 <div
-                  className="td border-r border-[#E7ECF2] dark:border-slate-900 px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                  className="td px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                   onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
                   title="Click to view AIPAC details"
                 >

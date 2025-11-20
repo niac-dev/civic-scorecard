@@ -22,8 +22,8 @@ export function GradeChip({ grade }: GradeChipProps) {
 
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full w-12 h-12 xl:w-16 xl:h-16 text-2xl xl:text-3xl font-extrabold bg-white dark:bg-white"
-      style={{ color: color, border: border }}
+      className="inline-flex items-center justify-center rounded-full w-12 h-12 xl:w-16 xl:h-16 text-2xl xl:text-3xl font-extrabold bg-white dark:bg-white flex-shrink-0"
+      style={{ color: color, border: border, aspectRatio: '1' }}
     >
       {letter}
       {modifier && <span className="text-sm xl:text-lg">{modifier}</span>}
