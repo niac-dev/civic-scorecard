@@ -1729,7 +1729,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 if (stateMembers && Array.isArray(stateMembers)) {
                   const avgGrade = districtGradesRef.current[stateFips] || 'N/A';
 
-                  // Helper function to get grade chip styling (50% larger)
+                  // Helper function to get grade chip styling
                   const getGradeChipStyle = (grade: string) => {
                     const color = grade.startsWith("A") ? GRADE_COLORS.A
                       : grade.startsWith("B") ? GRADE_COLORS.B
@@ -1737,13 +1737,16 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                       : grade.startsWith("D") ? GRADE_COLORS.D
                       : grade.startsWith("F") ? GRADE_COLORS.F
                       : GRADE_COLORS.default;
-                    const textColor = grade.startsWith("A") ? "#ffffff"
-                      : grade.startsWith("B") ? "#4b5563"
-                      : grade.startsWith("C") ? "#4b5563"
-                      : grade.startsWith("D") ? "#4b5563"
-                      : grade.startsWith("F") ? "#ffffff"
-                      : "#4b5563";
-                    return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 6px 16px; font-size: 15px; font-weight: 600; min-width: 52px;`;
+                    return `background: white; color: ${color}; border: 6px solid ${color}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;`;
+                  };
+
+                  // Helper function to render grade with smaller modifier
+                  const renderGrade = (grade: string) => {
+                    const letter = grade.charAt(0);
+                    const modifier = grade.slice(1);
+                    return modifier
+                      ? `${letter}<span style="font-size: 11px;">${modifier}</span>`
+                      : letter;
                   };
 
                   // Helper function to normalize party label
@@ -1796,7 +1799,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                         </div>
                         <div style="display: flex; align-items: center; gap: 9px;">
                           <span style="font-size: 15px; color: ${secondaryTextColor}; font-weight: 500;">Average Grade:</span>
-                          <span style="${getGradeChipStyle(avgGrade)}">${avgGrade}</span>
+                          <span style="${getGradeChipStyle(avgGrade)}">${renderGrade(avgGrade)}</span>
                         </div>
                       </div>
                     `;
@@ -1880,7 +1883,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                             </div>
                             <div style="display: flex; gap: 6px; align-items: center;">
                               <span style="${getPartyBadgeStyle(senator.party || '')}">${normalizeParty(senator.party || '')}</span>
-                              <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${senator.Grade || 'N/A'}</span>
+                              <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${renderGrade(String(senator.Grade || 'N/A'))}</span>
                             </div>
                             ${billActionHtml}
                           </div>
@@ -1925,7 +1928,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
               const districtDisplay = cd === '00' ? 'At-Large' : `District ${parseInt(cd, 10)}`;
 
               if (member && !Array.isArray(member)) {
-                // Helper function to get grade chip styling (50% larger)
+                // Helper function to get grade chip styling
                 const getGradeChipStyle = (grade: string) => {
                   const color = grade.startsWith("A") ? GRADE_COLORS.A
                     : grade.startsWith("B") ? GRADE_COLORS.B
@@ -1933,13 +1936,16 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     : grade.startsWith("D") ? GRADE_COLORS.D
                     : grade.startsWith("F") ? GRADE_COLORS.F
                     : GRADE_COLORS.default;
-                  const textColor = grade.startsWith("A") ? "#ffffff"
-                    : grade.startsWith("B") ? "#4b5563"
-                    : grade.startsWith("C") ? "#4b5563"
-                    : grade.startsWith("D") ? "#4b5563"
-                    : grade.startsWith("F") ? "#ffffff"
-                    : "#4b5563";
-                  return `background: ${color}; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; padding: 6px 16px; font-size: 15px; font-weight: 600; min-width: 52px;`;
+                  return `background: white; color: ${color}; border: 6px solid ${color}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;`;
+                };
+
+                // Helper function to render grade with smaller modifier
+                const renderGrade = (grade: string) => {
+                  const letter = grade.charAt(0);
+                  const modifier = grade.slice(1);
+                  return modifier
+                    ? `${letter}<span style="font-size: 11px;">${modifier}</span>`
+                    : letter;
                 };
 
                 // Helper function to get party badge styling (50% larger)
@@ -2093,7 +2099,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center;">
                           <span style="${getPartyBadgeStyle(member.party || '')}">${normalizeParty(member.party || '')}</span>
-                          <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${member.Grade || 'N/A'}</span>
+                          <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${renderGrade(String(member.Grade || 'N/A'))}</span>
                         </div>
                         ${billActionHtml}
                       </div>
@@ -2195,13 +2201,34 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
   // Separate effect to update map colors without recreating the map
   useEffect(() => {
+    console.log('Color effect - members:', members?.length, 'allRows:', allRows?.length, 'selectedBillColumn:', selectedBillColumn);
+
+    // For overall grade view (no bill selected), only check allRows
+    if (!selectedBillColumn || selectedBillColumn === '') {
+      if (!allRows || allRows.length === 0) {
+        console.log('Overall grade view: no allRows data, skipping');
+        return;
+      }
+      console.log('Overall grade view: using allRows data');
+    } else {
+      // For bill views, check members
+      if (!members || members.length === 0) {
+        console.log('Bill view: no members data, skipping');
+        return;
+      }
+      console.log('Bill view: using members data');
+    }
+
     const updateColors = () => {
-      if (!map.current || !map.current.isStyleLoaded()) return;
+      console.log('updateColors called - map exists:', !!map.current, 'has layer:', !!map.current?.getLayer('districts-fill'));
+      if (!map.current) return;
       if (!map.current.getLayer('districts-fill')) return;
 
       // Determine current map view (Senate = states, House = districts)
       const mapSource = map.current.getSource('districts');
       if (!mapSource) return;
+
+      console.log('Proceeding with updateColors');
 
       // Build the new fill color expression
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2228,6 +2255,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
         // For grade view, populate tooltip refs from members data
         if (isGradeView) {
+          // Use allRows for overall grade to include all members, not just filtered ones
+          const membersForTooltips = allRows || members;
+
           if (isSenate) {
             // Senate: aggregate by state and calculate average grade
             const membersByState: Record<string, Row[]> = {};
@@ -2240,7 +2270,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
               'F': 50
             };
 
-            members.forEach(member => {
+            membersForTooltips.forEach(member => {
               const state = stateCodeOf(member.state);
               const fips = stateToFips[state];
               if (fips && member.chamber === 'SENATE') {
@@ -2283,7 +2313,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           } else {
             // House: individual districts
             const districtMembers: Record<string, Row> = {};
-            members.forEach(member => {
+            membersForTooltips.forEach(member => {
               if (member.chamber === 'HOUSE') {
                 const state = stateCodeOf(member.state);
                 const district = String(member.district || '00').padStart(2, '0');
@@ -2426,11 +2456,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         // Build grade color expression
         const districtGrades: Record<string, string> = {};
 
+        // Use allRows for overall grade coloring to include all members, not just filtered ones
+        const membersToColor = allRows || members;
+
         if (isSenate) {
           // For Senate/All view: aggregate member grades by state
           const membersByState: Record<string, Row[]> = {};
 
-          members.forEach(member => {
+          membersToColor.forEach(member => {
             const state = stateCodeOf(member.state);
             const stateName = stateNameMapping[state];
             if (stateName) {
@@ -2502,7 +2535,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // For House view: use individual member grades
           const districtMembers: Record<string, Row> = {};
 
-          members.forEach(member => {
+          membersToColor.forEach(member => {
             if (member.chamber === 'HOUSE') {
               const grade = String(member.Grade || '');
               const state = stateCodeOf(member.state);
@@ -2557,26 +2590,58 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
     };
 
     // Only update colors if map is ready
-    if (!map.current) return;
+    if (!map.current) {
+      console.log('No map.current');
+      return;
+    }
 
-    // If map is already loaded, update immediately
+    console.log('Checking if map ready - isStyleLoaded:', map.current.isStyleLoaded(), 'has layer:', !!map.current.getLayer('districts-fill'));
+
+    // Try to update immediately if map is ready
     if (map.current.isStyleLoaded() && map.current.getLayer('districts-fill')) {
+      console.log('Map ready immediately, calling updateColors');
       updateColors();
     } else {
+      console.log('Map not ready, attaching event listeners');
       // Otherwise wait for the map to be ready
       const handleLoad = () => {
-        updateColors();
+        console.log('idle event fired');
+        // Double-check the layer exists when idle fires
+        if (map.current && map.current.getLayer('districts-fill')) {
+          console.log('Layer exists on idle, calling updateColors');
+          updateColors();
+        } else {
+          console.log('Layer still missing on idle');
+        }
       };
+
       map.current.once('idle', handleLoad);
 
-      // Cleanup function to remove listener if component unmounts
+      // Also try on styledata event as a backup
+      const handleStyleData = () => {
+        console.log('styledata event fired');
+        if (map.current && map.current.getLayer('districts-fill')) {
+          console.log('Layer exists on styledata, calling updateColors');
+          updateColors();
+          // Remove idle listener since we already updated
+          if (map.current) {
+            map.current.off('idle', handleLoad);
+          }
+        } else {
+          console.log('Layer still missing on styledata');
+        }
+      };
+      map.current.once('styledata', handleStyleData);
+
+      // Cleanup function to remove listeners if component unmounts
       return () => {
         if (map.current) {
           map.current.off('idle', handleLoad);
+          map.current.off('styledata', handleStyleData);
         }
       };
     }
-  }, [billActionData, chamber, members]);
+  }, [billActionData, chamber, members, allRows, selectedBillColumn]);
 
 
   return (

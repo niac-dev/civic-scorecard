@@ -534,7 +534,7 @@ export function MemberModal({
                           {/* Always show status message at the top */}
                           <div className="py-3 flex items-start gap-3 bg-slate-50 dark:bg-white/5 -mx-2 px-2 rounded mb-4">
                             <div className="mt-0.5">
-                              <VoteIcon ok={!hasSupport} />
+                              <VoteIcon ok={!hasSupport} small />
                             </div>
                             <div className="flex-1">
                               {row.reject_aipac_commitment ? (
@@ -856,7 +856,7 @@ export function MemberModal({
                       return (
                         <div className="py-3 flex items-start gap-3 bg-slate-50 dark:bg-white/5 -mx-2 px-2 rounded mb-2">
                           <div className="mt-0.5">
-                            <VoteIcon ok={!hasAnySupport} />
+                            <VoteIcon ok={!hasAnySupport} small />
                           </div>
                           <div className="flex-1">
                             <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -923,7 +923,7 @@ export function MemberModal({
                                 ) : it.waiver ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : (
-                                  <VoteIcon ok={it.ok} />
+                                  <VoteIcon ok={it.ok} small />
                                 )}
                               </div>
                               <span className="font-medium">

@@ -4,11 +4,11 @@
 // ===== GRADE COLOR CONFIGURATION =====
 // Single source of truth for all grade colors across the app
 export const GRADE_COLORS = {
-  A: "#16A34A",  // vibrant green
-  B: "#6CCB82",  // fresh light green
-  C: "#C8D7CC",  // pale sage-grey
-  D: "#A6A8A3",  // neutral mid-grey
-  F: "#6E6F6C",  // deep stone grey
+  A: "#0A6F7A",  // deep blue-emerald
+  B: "#2DA0A2",  // aqua-teal
+  C: "#9CCB99",  // soft warm green (new midpoint)
+  D: "#CFC98A",  // muted yellow-green (smooth transition)
+  F: "#E8D3BD",  // pale apricot-grey (soft negative)
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 
@@ -86,11 +86,11 @@ export function gradeColor(grade: string): string {
 
 export function gradeTextColor(grade: string): string {
   const g = (grade || "").trim().toUpperCase();
-  if (g.startsWith("A")) return "#ffffff"; // white for vibrant green
-  if (g.startsWith("B")) return "#4b5563"; // dark gray for light green
-  if (g.startsWith("C")) return "#4b5563"; // dark gray for pale sage
-  if (g.startsWith("D")) return "#4b5563"; // dark gray for mid-grey
-  if (g.startsWith("F")) return "#ffffff"; // white for deep stone grey
+  if (g.startsWith("A")) return "#ffffff"; // white for dark teal-green
+  if (g.startsWith("B")) return "#ffffff"; // white for deep teal
+  if (g.startsWith("C")) return "#4b5563"; // dark gray for medium green
+  if (g.startsWith("D")) return "#4b5563"; // dark gray for light sage
+  if (g.startsWith("F")) return "#4b5563"; // dark gray for pale sage-beige
   return "#4b5563"; // dark gray for unknown
 }
 

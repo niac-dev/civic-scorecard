@@ -1,6 +1,6 @@
 // src/components/MemberCard.tsx
 import { Row } from "@/lib/types";
-import { partyBadgeStyle, partyLabel, stateCodeOf, gradeColor, gradeTextColor, isTruthy } from "@/lib/utils";
+import { partyBadgeStyle, partyLabel, stateCodeOf, gradeColor, isTruthy } from "@/lib/utils";
 
 interface MemberCardProps {
   member: Row;
@@ -29,17 +29,23 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
       <div className="flex-1 min-w-0">
         <div className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 overflow-hidden">
           <span className="truncate">{member.full_name}</span>
-          {grade && (
-            <span
-              className="flex-shrink-0 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[2rem]"
-              style={{
-                backgroundColor: gradeColor(String(grade)),
-                color: gradeTextColor(String(grade))
-              }}
-            >
-              {grade}
-            </span>
-          )}
+          {grade && (() => {
+            const gradeStr = String(grade);
+            const letter = gradeStr.charAt(0);
+            const modifier = gradeStr.slice(1);
+            return (
+              <span
+                className="flex-shrink-0 inline-flex items-center justify-center rounded-full w-8 h-8 text-base font-extrabold bg-white dark:bg-white"
+                style={{
+                  color: gradeColor(gradeStr),
+                  border: `4px solid ${gradeColor(gradeStr)}`
+                }}
+              >
+                {letter}
+                {modifier && <span className="text-[10px]">{modifier}</span>}
+              </span>
+            );
+          })()}
         </div>
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
           <span
