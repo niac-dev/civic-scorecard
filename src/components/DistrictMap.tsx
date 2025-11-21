@@ -515,7 +515,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
     // - For cosponsor actions using main column (OPPOSE): positive score = didn't cosponsor = good
     const goodValue = 1; // Default: positive score = aligned with us = GOOD
 
-    allRows.forEach(member => {
+    // Use allRows if available, otherwise fall back to members
+    const dataSourceRows = allRows || members;
+    if (!dataSourceRows) return { goodCount: 0, badCount: 0, absentCount: 0, goodLabel: '', badLabel: '', isVote: false };
+
+    dataSourceRows.forEach(member => {
       // For SUPPORT cosponsor actions, prefer the specific _cosponsor column if it exists
       let rawValue = member[selectedBillColumn];
       let useCosponsorColumn = false;
