@@ -1831,8 +1831,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                           `;
                         } else {
                           // Check for _cosponsor column for SUPPORT bills only
-                          const actionTypes = (currentBillActionData.meta.action_types || '').toLowerCase();
-                          const position = (currentBillActionData.meta.position_to_score || '').toUpperCase();
+                          const actionTypes = (currentBillActionData.meta?.action_types || '').toLowerCase();
+                          const position = (currentBillActionData.meta?.position_to_score || '').toUpperCase();
                           const isAgainstBill = position.includes('AGAINST') || position.includes('OPPOSE');
                           const cosponsorColumn = (actionTypes.includes('cosponsor') && !isAgainstBill) ? `${currentBillColumn}_cosponsor` : null;
                           let rawValue = senator[currentBillColumn];
@@ -2027,8 +2027,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     `;
                   } else {
                     // Check for _cosponsor column for bills with cosponsorship action
-                    const actionTypes = (currentBillActionData.meta.action_types || '').toLowerCase();
-                    const position = (currentBillActionData.meta.position_to_score || '').toUpperCase();
+                    const actionTypes = (currentBillActionData.meta?.action_types || '').toLowerCase();
+                    const position = (currentBillActionData.meta?.position_to_score || '').toUpperCase();
                     const isAgainstBill = position.includes('AGAINST') || position.includes('OPPOSE');
                     const hasCosponsor = actionTypes.includes('cosponsor');
                     const hasVote = actionTypes.includes('vote');
@@ -2541,14 +2541,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       />
 
       {/* Bill action legend */}
-      {billActionData && (() => {
+      {billActionData && billActionData.stats && (() => {
         const isPartisanView = selectedBillColumn === '__PARTISAN__';
         const isGradeView = 'isGrade' in billActionData && (billActionData as { isGrade: boolean }).isGrade;
 
         return (
           <div className="absolute bottom-4 left-4 z-20 rounded-lg border border-white/30 dark:border-slate-900 bg-white/90 dark:bg-[#1a2332]/90 backdrop-blur-md shadow-lg p-3 max-w-md">
             <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              {billActionData.meta.display_name || billActionData.meta.short_title || selectedBillColumn}
+              {billActionData.meta?.display_name || billActionData.meta?.short_title || selectedBillColumn}
             </div>
             <div className="flex flex-wrap gap-3 text-[10px] text-slate-600 dark:text-slate-400">
               {isGradeView ? (
