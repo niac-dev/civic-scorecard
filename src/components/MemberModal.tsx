@@ -291,6 +291,7 @@ export function MemberModal({
                   <img
                     src={String(row.photo_url)}
                     alt=""
+                    loading="lazy"
                     className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
                   />
                 ) : (

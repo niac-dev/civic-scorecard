@@ -128,7 +128,7 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
       if (!map.current) return;
 
       try {
-        const response = await fetch('/data/districts/congressional-districts-118th.geojson');
+        const response = await fetch('/data/districts/congressional-districts-simplified.geojson');
         if (!response.ok) throw new Error('Failed to load district data');
 
         const geoJsonData = await response.json();

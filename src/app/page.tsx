@@ -4,6 +4,8 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+// react-window available but not used yet due to complexity of row rendering
+// import { List } from "react-window";
 import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
@@ -388,6 +390,11 @@ export default function Page() {
 
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Progressive row loading for performance
+  const INITIAL_ROWS = 30;
+  const LOAD_MORE_ROWS = 30;
+  const [visibleRowCount, setVisibleRowCount] = useState(INITIAL_ROWS);
 
   // Track mobile viewport for responsive column widths
   useEffect(() => {
@@ -898,11 +905,23 @@ export default function Page() {
     });
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
-  // Render all rows (virtual scrolling disabled due to variable row heights causing jitter)
-  const visibleRows = sorted;
+  // Progressive loading - only render visible rows for performance
+  const visibleRows = useMemo(() => sorted.slice(0, visibleRowCount), [sorted, visibleRowCount]);
+  const hasMoreRows = visibleRowCount < sorted.length;
 
-  // Scroll handler - hide tooltips while scrolling
-  const handleScroll = useCallback(() => {
+  // Reset visible row count when filters change
+  useEffect(() => {
+    setVisibleRowCount(INITIAL_ROWS);
+  }, [f.state, f.party, f.chamber, f.categories, f.billColumn, sortCol, sortDir]);
+
+  // Scroll handler - hide tooltips while scrolling + infinite scroll
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    // Infinite scroll: load more when near bottom
+    if (hasMoreRows && target.scrollHeight - target.scrollTop - target.clientHeight < 500) {
+      setVisibleRowCount(prev => Math.min(prev + LOAD_MORE_ROWS, sorted.length));
+    }
+
     // Hide header tooltips while scrolling
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
@@ -911,7 +930,7 @@ export default function Page() {
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
     }, 150);
-  }, []);
+  }, [hasMoreRows, sorted.length]);
 
   // All columns for the member card (chamber-filtered only, not category-filtered)
   const allBillCols = useMemo(() => {
@@ -1722,6 +1741,7 @@ export default function Page() {
                   <img
                     src={getProxiedImageUrl(String(r.photo_url))}
                     alt=""
+                    loading="lazy"
                     className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                     style={{ height: 'auto' }}
                   />
@@ -2357,6 +2377,18 @@ export default function Page() {
 
             </div>
           ))}
+          {/* Loading indicator for progressive loading */}
+          {hasMoreRows && (
+            <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Loading more ({visibleRows.length} of {sorted.length})...</span>
+              </div>
+            </div>
+          )}
           </div>
         </div>
         </div>
@@ -2694,6 +2726,7 @@ export default function Page() {
                                         <img
                                           src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
                                           alt=""
+                                          loading="lazy"
                                           className="h-8 w-8 md:h-11 md:w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                                         />
                                       ) : (

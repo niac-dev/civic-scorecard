@@ -145,7 +145,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
       try {
         const dataUrl = isSenate
           ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'
-          : '/data/districts/congressional-districts-118th.geojson';
+          : '/data/districts/congressional-districts-simplified.geojson';
 
         console.log('MiniDistrictMap: Loading', dataUrl);
         const response = await fetch(dataUrl);
@@ -596,7 +596,7 @@ function FullscreenMap({ member }: { member: Row }) {
       try {
         const dataUrl = isSenate
           ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'
-          : '/data/districts/congressional-districts-118th.geojson';
+          : '/data/districts/congressional-districts-simplified.geojson';
 
         const response = await fetch(dataUrl);
         if (!response.ok) throw new Error(`Failed to load data: ${response.status}`);

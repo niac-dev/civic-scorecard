@@ -718,7 +718,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         // Load appropriate GeoJSON file based on chamber
         const dataUrl = isSenate
           ? 'https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/geojson/us-states.json'  // State boundaries GeoJSON for Senate
-          : '/data/districts/congressional-districts-118th.geojson';    // District boundaries for House
+          : '/data/districts/congressional-districts-simplified.geojson';    // District boundaries for House
 
         const response = await fetch(dataUrl);
 

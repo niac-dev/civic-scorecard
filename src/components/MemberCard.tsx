@@ -21,6 +21,7 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
         <img
           src={String(member.photo_url)}
           alt=""
+          loading="lazy"
           className="h-8 w-8 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
         />
       ) : (

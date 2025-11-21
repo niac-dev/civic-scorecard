@@ -531,6 +531,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         <img
                           src={String(sponsorMember.photo_url)}
                           alt=""
+                          loading="lazy"
                           className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                         />
                       ) : (
@@ -772,6 +773,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               <img
                                 src={String(member.photo_url)}
                                 alt=""
+                                loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                               />
                             ) : (
@@ -863,6 +865,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             <img
                               src={String(member.photo_url)}
                               alt=""
+                              loading="lazy"
                               className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                             />
                           ) : (
@@ -948,6 +951,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               <img
                                 src={String(member.photo_url)}
                                 alt=""
+                                loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                               />
                             ) : (
