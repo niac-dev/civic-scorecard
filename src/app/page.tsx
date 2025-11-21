@@ -8,12 +8,13 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
 import { AipacModal } from "@/components/AipacModal";
+import { GradeChip, VoteIcon } from "@/components/GradeChip";
 
 import clsx from "clsx";
 
@@ -55,19 +56,6 @@ function stateCodeOf(s: string | undefined): string {
   if (!raw) return "";
   const hit = NAME_TO_CODE[raw.toLowerCase()];
   return hit ?? raw.toUpperCase(); // fall back to original
-}
-
-function partyLabel(p?: string) {
-  const raw = (p ?? "").trim();
-  if (!raw) return "";
-  const s = raw.toLowerCase();
-  // normalize any form of Democratic/Democrat -> "Democrat"
-  if (s.startsWith("democ")) return "Democrat";
-  // Capitalize each word for other parties (e.g., "republican" -> "Republican")
-  return raw
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
 }
 
 function formatPositionTooltip(meta: Meta | undefined): string {
@@ -192,35 +180,6 @@ function chamberColor(ch?: string): string {
     default:
       return "#94A3B8"; // slate fallback
   }
-}
-
-
-function partyBadgeStyle(p?: string) {
-  const label = partyLabel(p).toLowerCase();
-
-  // Solid colors with white text for D/R
-  if (label.startsWith("rep")) {
-    return {
-      color: "#FFFFFF",
-      backgroundColor: "#DC2626", // red-600
-      borderColor: "#DC2626",
-    };
-  }
-  if (label.startsWith("dem")) {
-    return {
-      color: "#FFFFFF",
-      backgroundColor: "#2563EB", // blue-600
-      borderColor: "#2563EB",
-    };
-  }
-
-  // Keep subtle styling for independents and others
-  const base = label.startsWith("ind") ? "#10B981" : "#94A3B8";
-  return {
-    color: base,
-    backgroundColor: `${base}1A`, // ~10% alpha
-    borderColor: `${base}66`,     // ~40% alpha
-  };
 }
 
 function ZipcodeSearch() {
@@ -1120,12 +1079,12 @@ export default function Page() {
     // Wider columns on mobile - sized so ~3 columns fit on screen (member + 2 data columns)
     // Bill columns are 33% wider to allow 2-line headers instead of 3
     const billsPart = billCols.map(() => isMobile ? "minmax(168px, 168px)" : (isLargeScreen ? "minmax(210px, 210px)" : "minmax(186px, 186px)")).join(" ");
-    const gradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
+    const gradesPart = gradeColumns.map(() => isMobile ? "minmax(85px, 85px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
     // Member column: wider on mobile for comfortable reading
     // Mobile: min 126px to fit stacked names, max 40vw for responsive sizing
     // Desktop: fixed 300px for comfortable reading with photos
     // Large screens (>1150px): 400px for more spacious layout
-    const memberCol = isMobile ? "minmax(126px, min(40vw, 162px))" : (isLargeScreen ? "400px" : "300px");
+    const memberCol = isMobile ? "minmax(90px, min(40vw, 120px))" : (isLargeScreen ? "400px" : "300px");
     // Endorsements column: fixed on mobile/desktop, grows on large screens
     const endorsementsCol = isLargeScreen ? "minmax(9.6rem, 1fr)" : "9.6rem";
 
@@ -1542,7 +1501,14 @@ export default function Page() {
                         }
                       }}
                     >
-                      <div className="uppercase leading-tight">{gradeCol.header}</div>
+                      <div className="uppercase leading-tight">
+                        {gradeCol.header === "Civil Rights & Immigration" ? (
+                          <>
+                            <span className="hidden md:inline">Civil </span>
+                            <span>Rights & Immigration</span>
+                          </>
+                        ) : gradeCol.header}
+                      </div>
                     </div>
                     {!isSummaryMode && (
                       <div
@@ -1740,7 +1706,7 @@ export default function Page() {
             <div
               key={i}
               className={clsx(
-                "grid min-w-max transition group items-center md:items-start",
+                "grid min-w-max transition group items-center",
                 "hover:bg-slate-50 dark:hover:bg-slate-800",
                 "border-b border-[#E7ECF2] dark:border-slate-900"
               )}
@@ -1748,7 +1714,7 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900"
+                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
@@ -1957,7 +1923,7 @@ export default function Page() {
                   <React.Fragment key={gradeCol.field}>
                     <div
                       className={clsx(
-                        "td flex items-center justify-center !py-0 md:!py-3",
+                        "td flex items-center justify-center !py-0 h-full",
                         shouldHaveBorder && "border-r border-[#E7ECF2] dark:border-slate-900",
                         isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
@@ -1976,7 +1942,7 @@ export default function Page() {
                       }}
                       title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`) : undefined}
                     >
-                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
+                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} size="small" />
                     </div>
                   </React.Fragment>
                 );
@@ -2134,7 +2100,7 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="group/cell relative td !px-0 py-0 md:py-3 flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="group/cell relative td !px-0 !py-0 h-full flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     {...(!isMobile && { title: tooltipText })}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2600,7 +2566,7 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "1fr 80px 120px" : "40px calc(100% - 320px) 100px 180px",
+                      gridTemplateColumns: isMobile ? "1fr 80px 160px" : "40px calc(100% - 380px) 100px 240px",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
@@ -2632,7 +2598,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "1fr 80px 120px" : "40px calc(100% - 320px) 100px 180px",
+                                  gridTemplateColumns: isMobile ? "1fr 80px 160px" : "40px calc(100% - 380px) 100px 240px",
                                   alignItems: "center",
                                 }}
                                 onClick={() => {
@@ -2722,10 +2688,10 @@ export default function Page() {
                                         <img
                                           src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
                                           alt=""
-                                          className="h-6 w-6 md:h-8 md:w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                          className="h-8 w-8 md:h-11 md:w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                                         />
                                       ) : (
-                                        <div className="h-6 w-6 md:h-8 md:w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                                        <div className="h-8 w-8 md:h-11 md:w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                                       )}
                                       <div className="flex-1 min-w-0 hidden md:block">
                                         <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
@@ -2745,7 +2711,7 @@ export default function Page() {
                                       </div>
                                       <div className="flex-1 min-w-0 md:hidden">
                                         <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight">
-                                          {formatNameFirstLast(bill.sponsor.full_name).split(' ').pop()}
+                                          {formatNameFirstLast(bill.sponsor.full_name)}
                                         </div>
                                         <div className="text-[9px] text-slate-500 dark:text-slate-400">
                                           {stateCodeOf(bill.sponsor.state)}
@@ -2996,7 +2962,12 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
         {f.viewMode !== "tracker" && (
           <div className="hidden md:flex items-center gap-1">
             <select
-              className="select !text-xs !h-9 !px-2 !max-w-[140px]"
+              className={clsx(
+                "select !text-sm !h-9 !px-2 !max-w-[140px] !cursor-pointer",
+                f.state
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
+              )}
               value={f.state || ""}
               onChange={(e) => {
                 const selectedState = e.target.value;
@@ -3130,7 +3101,12 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
         {f.viewMode !== "tracker" && (
           <div className="md:hidden flex items-center gap-1">
             <select
-              className="select !text-[10px] !h-9 !px-2 !max-w-[100px]"
+              className={clsx(
+                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
+                f.state
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
+              )}
               value={f.state || ""}
               onChange={(e) => {
                 const selectedState = e.target.value;
@@ -3885,50 +3861,6 @@ function Progress({ value }:{ value:number }) {
       </div>
       <span className="text-xs tabular text-slate-800 dark:text-white min-w-[32px]">{percent}%</span>
     </div>
-  );
-}
-
-function GradeChip({ grade }:{ grade:string }) {
-  const color = grade.startsWith("A") ? GRADE_COLORS.A
-    : grade.startsWith("B") ? GRADE_COLORS.B
-    : grade.startsWith("C") ? GRADE_COLORS.C
-    : grade.startsWith("D") ? GRADE_COLORS.D
-    : grade.startsWith("F") ? GRADE_COLORS.F
-    : GRADE_COLORS.default;
-  const border = `8px solid ${color}`;
-
-  // Split grade into letter and modifier (+/-)
-  const letter = grade.charAt(0);
-  const modifier = grade.slice(1);
-
-  return <span className="inline-flex items-center justify-center rounded-full w-12 h-12 md:w-16 md:h-16 xl:w-20 xl:h-20 text-2xl md:text-3xl xl:text-4xl font-extrabold bg-white dark:bg-white"
-    style={{ color: color, border: border }}>
-    {letter}
-    {modifier && <span className="text-sm md:text-lg xl:text-xl">{modifier}</span>}
-  </span>;
-}
-
-function VoteIcon({ ok, small = false, size = "large" }: { ok: boolean; small?: boolean; size?: "large" | "small" | "tiny" }) {
-  // Support legacy 'small' prop for backwards compatibility
-  const effectiveSize = small ? "small" : size;
-
-  const sizeClass = effectiveSize === "tiny" ? "h-4 w-4 flex-shrink-0"
-    : effectiveSize === "small" ? "h-5 w-5"
-    : "h-10 w-10 xl:h-12 xl:w-12";
-
-  if (ok) {
-    return (
-      <svg viewBox="0 0 20 20" className={sizeClass} aria-hidden="true" role="img">
-        <circle cx="10" cy="10" r="10" fill={GRADE_COLORS.A} />
-        <path d="M8.5 13.5l-3-3 -1.5 1.5 4.5 4.5 8-8 -1.5-1.5z" fill="#FFFFFF" transform="translate(0, -1.5)" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 20 20" className={sizeClass} aria-hidden="true" role="img">
-      <circle cx="10" cy="10" r="10" fill="#A96A63" />
-      <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#FFFFFF" />
-    </svg>
   );
 }
 

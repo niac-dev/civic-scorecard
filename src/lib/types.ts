@@ -46,6 +46,9 @@ export type Row = {
   office_address?: string;
   district_offices?: string;
   committees?: string;
+  birth_year?: string | number;
+  age?: string | number;
+  years_in_office?: string | number;
   aipac_supported?: string | number | boolean;
   dmfi_supported?: string | number | boolean;
   reject_aipac_commitment?: string;

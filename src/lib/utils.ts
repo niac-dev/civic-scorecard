@@ -7,10 +7,29 @@ export const GRADE_COLORS = {
   A: "#0A6F7A",  // deep blue-emerald
   B: "#2DA0A2",  // aqua-teal
   C: "#9CCB99",  // soft warm green (new midpoint)
-  D: "#CFC98A",  // muted yellow-green (smooth transition)
-  F: "#E8D3BD",  // pale apricot-grey (soft negative)
+  D: "#DCD77F",  // muted yellow-green (smooth transition)
+  F: "#CFC98A",  // pale apricot-grey (soft negative)
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
+
+// Comprehensive grade to color mapping (includes +/- modifiers)
+// Single source of truth for all grade color mappings across the app
+export const GRADE_COLOR_MAP: Record<string, string> = {
+  'A+': GRADE_COLORS.A,
+  'A': GRADE_COLORS.A,
+  'A-': GRADE_COLORS.A,
+  'B+': GRADE_COLORS.B,
+  'B': GRADE_COLORS.B,
+  'B-': GRADE_COLORS.B,
+  'C+': GRADE_COLORS.C,
+  'C': GRADE_COLORS.C,
+  'C-': GRADE_COLORS.C,
+  'D+': GRADE_COLORS.D,
+  'D': GRADE_COLORS.D,
+  'D-': GRADE_COLORS.D,
+  'F': GRADE_COLORS.F,
+  'N/A': GRADE_COLORS.default
+};
 
 const NAME_TO_CODE: Record<string, string> = {
   "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",

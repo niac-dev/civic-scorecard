@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber, stateCodeOf } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel } from "@/lib/utils";
 import clsx from "clsx";
 import { BillMiniMap } from "@/components/BillMiniMap";
 
@@ -31,18 +31,6 @@ function formatNameFirstLast(name: string | unknown): string {
   return nameStr;
 }
 
-// Party label helper
-function partyLabel(p?: string) {
-  const raw = (p ?? "").trim();
-  if (!raw) return "";
-  const s = raw.toLowerCase();
-  if (s.startsWith("democ")) return "Democrat";
-  return raw
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
-}
-
 // Chamber color helper
 function chamberColor(ch?: string): string {
   switch (ch) {
@@ -53,21 +41,6 @@ function chamberColor(ch?: string): string {
     default:
       return "#94A3B8";
   }
-}
-
-// Party badge style helper
-function partyBadgeStyle(p?: string) {
-  const label = partyLabel(p).toLowerCase();
-  const base =
-    label.startsWith("rep") ? "#EF4444" :
-    label.startsWith("dem") ? "#3B82F6" :
-    label.startsWith("ind") ? "#10B981" :
-    "#94A3B8";
-  return {
-    color: base,
-    backgroundColor: `${base}1A`,
-    borderColor: `${base}66`,
-  };
 }
 
 // State code to full name mapping
@@ -440,13 +413,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         <div className="w-full max-w-3xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
           {/* Header - sticky (just bill name and navigation) */}
           <div className="p-4 border-b border-[#E7ECF2] dark:border-slate-900 sticky top-0 bg-white dark:bg-slate-800 z-10">
-            {/* Bill number and navigation buttons row - mobile only */}
-            <div className="flex items-end justify-between mb-2 md:hidden">
-              {meta.bill_number && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 italic pl-7">
-                  {meta.bill_number}
-                </div>
-              )}
+            {/* Navigation buttons row - mobile only */}
+            <div className="flex items-end justify-end mb-2 md:hidden">
               <div className="flex gap-1 flex-shrink-0">
                 {onBack && (
                   <button
@@ -495,13 +463,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 )}
                 <div className="flex-1 min-w-0">
                   <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {meta.short_title || meta.display_name || `${meta.bill_number || column}`}
+                    {meta.display_name || column}
                   </h1>
-                  {meta.bill_number && (
-                    <div className="hidden md:block text-sm text-slate-500 dark:text-slate-400 italic mt-0.5">
-                      {meta.bill_number}
-                    </div>
-                  )}
                 </div>
               </div>
 

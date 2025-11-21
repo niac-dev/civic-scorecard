@@ -52,6 +52,8 @@ html {
 .th { @apply px-3 py-2 text-[13px] md:text-[16px] font-semibold tracking-wide text-slate-800 dark:text-white; }
 .td { @apply px-3 py-1.5 md:py-3 text-sm text-slate-800 dark:text-white; }
 .select { @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/15 px-3 text-sm text-slate-900 dark:text-white; }
+/* Ensure dropdown options always have proper colors */
+.select option { @apply bg-white dark:bg-slate-800 text-slate-900 dark:text-white; }
 .input { @apply h-9 w-64 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 px-3 text-sm text-slate-900 dark:text-white; }
 .chip { @apply h-8 px-3 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-sm text-slate-700 dark:text-slate-500 hover:bg-[#dae2ec] dark:hover:bg-white/15; }
 .chip-outline { @apply h-8 px-3 rounded-full border border-[#E7ECF2] dark:border-slate-900 text-sm hover:bg-white dark:hover:bg-white/5; }

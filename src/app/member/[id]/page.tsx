@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS } from "@/lib/utils";
+import { GRADE_COLORS, partyBadgeStyle, partyLabel } from "@/lib/utils";
 import clsx from "clsx";
 
 function isTrue(v: unknown): boolean {
@@ -82,17 +82,6 @@ function stateCodeOf(s: string | undefined): string {
   return NAME_TO_CODE[raw.toLowerCase()] ?? raw.toUpperCase();
 }
 
-function partyLabel(p?: string) {
-  const raw = (p ?? "").trim();
-  if (!raw) return "";
-  const s = raw.toLowerCase();
-  if (s.startsWith("democ")) return "Democrat";
-  return raw
-    .split(/\s+/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(" ");
-}
-
 function chamberColor(ch?: string): string {
   switch (ch) {
     case "HOUSE":
@@ -102,20 +91,6 @@ function chamberColor(ch?: string): string {
     default:
       return "#94A3B8";
   }
-}
-
-function partyBadgeStyle(p?: string) {
-  const label = partyLabel(p).toLowerCase();
-  const base =
-    label.startsWith("rep") ? "#EF4444" :
-    label.startsWith("dem") ? "#3B82F6" :
-    label.startsWith("ind") ? "#10B981" :
-    "#94A3B8";
-  return {
-    color: base,
-    backgroundColor: `${base}1A`,
-    borderColor: `${base}66`,
-  };
 }
 
 function GradeChip({ grade, isOverall }: { grade: string; isOverall?: boolean }) {
@@ -295,23 +270,20 @@ export default function MemberPage() {
               ) : (
                 <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300" />
               )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="text-xl font-bold text-slate-900">
-                    {(() => {
-                      const fullName = String(row.full_name || "");
-                      const commaIndex = fullName.indexOf(",");
-                      if (commaIndex > -1) {
-                        const first = fullName.slice(commaIndex + 1).trim();
-                        const last = fullName.slice(0, commaIndex).trim();
-                        return `${first} ${last}`;
-                      }
-                      return fullName;
-                    })()}
-                  </div>
-                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+              <div className="flex-1 min-w-0 mr-4">
+                <div className="text-[30px] font-bold text-slate-900 leading-tight mb-2">
+                  {(() => {
+                    const fullName = String(row.full_name || "");
+                    const commaIndex = fullName.indexOf(",");
+                    if (commaIndex > -1) {
+                      const first = fullName.slice(commaIndex + 1).trim();
+                      const last = fullName.slice(0, commaIndex).trim();
+                      return `${first} ${last}`;
+                    }
+                    return fullName;
+                  })()}
                 </div>
-                <div className="text-xs text-slate-600 flex items-center gap-2 mb-3">
+                <div className="text-xs text-slate-600 flex flex-wrap items-center gap-2 mb-3">
                   <span
                     className="px-1.5 py-0.5 rounded-md text-[11px] font-semibold"
                     style={{
@@ -321,14 +293,35 @@ export default function MemberPage() {
                   >
                     {chamberTag}
                   </span>
+                  <span className="text-slate-400">•</span>
                   <span
                     className="px-1.5 py-0.5 rounded-md text-[11px] font-medium border"
                     style={partyBadgeStyle(row.party)}
                   >
                     {partyLabel(row.party)}
                   </span>
+                  <span className="text-slate-400">•</span>
                   <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
                 </div>
+
+                {/* Birth year, age, and years in office */}
+                {(row.birth_year || row.age || row.years_in_office !== undefined) && (
+                  <div className="text-xs text-slate-600 mb-3">
+                    {(row.birth_year || row.age) && (
+                      <>
+                        <span className="font-medium">Born:</span>{" "}
+                        {row.birth_year && <span>{row.birth_year}</span>}
+                        {row.age && <span> ({row.age})</span>}
+                      </>
+                    )}
+                    {row.years_in_office !== undefined && (
+                      <>
+                        {(row.birth_year || row.age) && <span> • </span>}
+                        <span className="font-medium">Years in office:</span> {Number(row.years_in_office) === 0 ? 'Freshman' : row.years_in_office}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {/* Committee Assignments */}
                 {(() => {
@@ -353,7 +346,11 @@ export default function MemberPage() {
                 })()}
               </div>
 
-              <div className="flex items-center gap-2 print:hidden">
+              <div className="flex items-center justify-center">
+                <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+              </div>
+
+              <div className="flex items-center gap-2 print:hidden ml-12">
                 <button
                   className="chip-outline text-slate-700 hover:bg-slate-100"
                   onClick={() => window.print()}

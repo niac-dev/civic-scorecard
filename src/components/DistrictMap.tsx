@@ -5,7 +5,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row, Meta } from '@/lib/types';
 import type { PacData } from '@/lib/pacData';
-import { GRADE_COLORS, extractVoteInfo, inferChamber, stateCodeOf } from '@/lib/utils';
+import { GRADE_COLORS, GRADE_COLOR_MAP, extractVoteInfo, inferChamber, stateCodeOf } from '@/lib/utils';
 
 // State FIPS mapping
 const stateToFips: Record<string, string> = {
@@ -36,6 +36,81 @@ const stateNameMapping: Record<string, string> = {
   'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming',
   'DC': 'District of Columbia'
 };
+
+// Centralized grade calculation - single source of truth
+function calculateStateAverageGrades(
+  members: Row[],
+  stateToFips: Record<string, string>
+): {
+  gradesByFips: Record<string, string>;
+  gradesByStateName: Record<string, string>;
+  membersByFips: Record<string, Row[]>;
+} {
+  const membersByFips: Record<string, Row[]> = {};
+  const gradesByFips: Record<string, string> = {};
+  const gradesByStateName: Record<string, string> = {};
+
+  const gradeValues: Record<string, number> = {
+    'A+': 100, 'A': 95, 'A-': 90,
+    'B+': 87, 'B': 83, 'B-': 80,
+    'C+': 77, 'C': 73, 'C-': 70,
+    'D+': 67, 'D': 63, 'D-': 60,
+    'F': 50
+  };
+
+  // Group senators by state FIPS
+  members.forEach(member => {
+    if (member.chamber === 'SENATE') {
+      const stateCode = stateCodeOf(member.state);
+      const fips = stateToFips[stateCode];
+      if (fips) {
+        if (!membersByFips[fips]) {
+          membersByFips[fips] = [];
+        }
+        membersByFips[fips].push(member);
+      }
+    }
+  });
+
+  // Calculate average grade for each state
+  Object.entries(membersByFips).forEach(([fips, stateMembers]) => {
+    const validGrades = stateMembers
+      .map(m => gradeValues[String(m.Grade || '')])
+      .filter(v => v !== undefined);
+
+    if (validGrades.length > 0) {
+      const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
+      let avgGrade = 'N/A';
+      if (avg >= 98) avgGrade = 'A+';
+      else if (avg >= 93) avgGrade = 'A';
+      else if (avg >= 88.5) avgGrade = 'A-';
+      else if (avg >= 85) avgGrade = 'B+';
+      else if (avg >= 81.5) avgGrade = 'B';
+      else if (avg >= 78.5) avgGrade = 'B-';
+      else if (avg >= 75) avgGrade = 'C+';
+      else if (avg >= 71.5) avgGrade = 'C';
+      else if (avg >= 68.5) avgGrade = 'C-';
+      else if (avg >= 65) avgGrade = 'D+';
+      else if (avg >= 61.5) avgGrade = 'D';
+      else if (avg >= 55) avgGrade = 'D-';
+      else avgGrade = 'F';
+
+      // Store by FIPS for tooltip lookup
+      gradesByFips[fips] = avgGrade;
+
+      // Store by state name for map matching
+      const stateAbbr = Object.entries(stateToFips).find(([abbr, f]) =>
+        f === fips && abbr.length === 2
+      )?.[0];
+      const stateName = stateAbbr ? stateNameMapping[stateAbbr] : undefined;
+      if (stateName) {
+        gradesByStateName[stateName] = avgGrade;
+      }
+    }
+  });
+
+  return { gradesByFips, gradesByStateName, membersByFips };
+}
 
 interface DistrictMapProps {
   members: Row[];
@@ -75,7 +150,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
   // Compute bill action data for coloring when a bill is selected
   const billActionData = useMemo(() => {
-    if (!allRows) return null;
+    // Use allRows if available, otherwise fall back to members
+    const dataSource = allRows || members;
+    if (!dataSource || dataSource.length === 0) return null;
 
     // Handle overall grade (no specific bill/category selected)
     if (!selectedBillColumn || selectedBillColumn === '') {
@@ -84,7 +161,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       let houseA = 0, houseB = 0, houseC = 0, houseD = 0, houseF = 0;
       let senateAA = 0, senateBB = 0, senateCC = 0, senateDD = 0, senateFF = 0, senateMixed = 0;
 
-      allRows.forEach(member => {
+      dataSource.forEach(member => {
         const memberData = member as Record<string, unknown>;
         const gradeValue = String(memberData.Grade || 'N/A');
         const state = stateCodeOf(member.state);
@@ -178,7 +255,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       let senateSplit = 0;
       let senateBothBad = 0;
 
-      allRows.forEach(member => {
+      dataSource.forEach(member => {
         const pacData = pacDataMap.get(String(member.bioguide_id));
 
         let hasSupport = false;
@@ -244,7 +321,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       let senateSplit = 0;
       let senateBothRepublican = 0;
 
-      allRows.forEach(member => {
+      dataSource.forEach(member => {
         const party = String(member.party || '').toLowerCase();
         const state = stateCodeOf(member.state);
 
@@ -323,7 +400,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       else if (categoryName === 'Israel_Gaza') categoryName = 'Israel-Gaza';
       else categoryName = categoryName.replace(/_/g, ' ');
 
-      allRows.forEach(member => {
+      dataSource.forEach(member => {
         const memberData = member as Record<string, unknown>;
         const gradeValue = String(memberData[selectedBillColumn] || 'N/A');
         const state = stateCodeOf(member.state);
@@ -525,7 +602,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       meta,
       effectiveChamber
     };
-  }, [selectedBillColumn, metaByCol, allRows, chamber, pacDataMap]);
+  }, [selectedBillColumn, metaByCol, allRows, members, chamber, pacDataMap]);
 
   // Ref for billActionData to avoid stale closures
   const billActionDataRef = useRef(billActionData);
@@ -661,7 +738,6 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
               const cd = feature.properties?.CD118FP || '';
               customId = `${statefp}-${cd}`;
             }
-            console.log('Set feature ID:', customId, 'for', feature.properties?.NAMELSAD);
 
             return {
               type: 'Feature',
@@ -681,23 +757,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           promoteId: 'customId'  // Use customId property as the feature ID
         });
 
-        // Create a grade color map for districts (matching main app color scheme)
-        const gradeColors: Record<string, string> = {
-          'A+': GRADE_COLORS.A,
-          'A': GRADE_COLORS.A,
-          'A-': GRADE_COLORS.A,
-          'B+': GRADE_COLORS.B,
-          'B': GRADE_COLORS.B,
-          'B-': GRADE_COLORS.B,
-          'C+': GRADE_COLORS.C,
-          'C': GRADE_COLORS.C,
-          'C-': GRADE_COLORS.C,
-          'D+': GRADE_COLORS.D,
-          'D': GRADE_COLORS.D,
-          'D-': GRADE_COLORS.D,
-          'F': GRADE_COLORS.F,
-          'N/A': '#E5E7EB'  // gray
-        };
+        // Use shared grade color map from utils
+        const gradeColors = { ...GRADE_COLOR_MAP, 'N/A': '#E5E7EB' };  // gray for N/A
 
         // State name/abbreviation to FIPS code mapping
         const stateToFips: Record<string, string> = {
@@ -776,73 +837,19 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         const districtMembers: Record<string, Row | Row[]> = {};
 
         if (isSenate) {
-          // For Senate or Both mode: group members by state and calculate average grade
-          const membersByState: Record<string, Row[]> = {};
-
-          // Use allRows for grade coloring to show all members, not just filtered ones
+          // For Senate or Both mode: use centralized grade calculation
           const membersToColor = allRows || members;
-          const senateMembersCount = membersToColor.filter(m => m.chamber === 'SENATE').length;
-          const houseMembersCount = membersToColor.filter(m => m.chamber === 'HOUSE').length;
 
-          membersToColor.forEach((member) => {
-            // In Both mode, include all members; in Senate mode, only senators
-            if (isBothMode || member.chamber === 'SENATE') {
-              const state = member.state;
-              const fips = getStateFips(state);
+          // Use centralized function for consistent grade calculation
+          const { gradesByFips, gradesByStateName, membersByFips } =
+            calculateStateAverageGrades(membersToColor, stateToFips);
 
+          // Store grades by state name for map matching
+          Object.assign(districtGrades, gradesByStateName);
 
-              if (fips) {
-                if (!membersByState[fips]) {
-                  membersByState[fips] = [];
-                }
-                membersByState[fips].push(member);
-              }
-            }
-          });
-
-
-          // Calculate average grade for each state
-          Object.entries(membersByState).forEach(([fips, stateMembers]) => {
-            // Convert grades to numeric values for averaging
-            const gradeValues: Record<string, number> = {
-              'A+': 100, 'A': 95, 'A-': 90,
-              'B+': 87, 'B': 83, 'B-': 80,
-              'C+': 77, 'C': 73, 'C-': 70,
-              'D+': 67, 'D': 63, 'D-': 60,
-              'F': 50
-            };
-
-            const validGrades = stateMembers
-              .map(m => gradeValues[String(m.Grade || '')])
-              .filter(v => v !== undefined);
-
-            if (validGrades.length > 0) {
-              const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
-
-              // Convert back to letter grade
-              let avgGrade = 'N/A';
-              if (avg >= 98) avgGrade = 'A+';
-              else if (avg >= 93) avgGrade = 'A';
-              else if (avg >= 88.5) avgGrade = 'A-';
-              else if (avg >= 85) avgGrade = 'B+';
-              else if (avg >= 81.5) avgGrade = 'B';
-              else if (avg >= 78.5) avgGrade = 'B-';
-              else if (avg >= 75) avgGrade = 'C+';
-              else if (avg >= 71.5) avgGrade = 'C';
-              else if (avg >= 68.5) avgGrade = 'C-';
-              else if (avg >= 65) avgGrade = 'D+';
-              else if (avg >= 61.5) avgGrade = 'D';
-              else if (avg >= 55) avgGrade = 'D-';
-              else avgGrade = 'F';
-
-              districtGrades[fips] = avgGrade;
-              districtMembers[fips] = stateMembers;
-            }
-          });
-
-          // Update refs for tooltip access
-          districtMembersRef.current = districtMembers;
-          districtGradesRef.current = districtGrades;
+          // Store members and grades by FIPS for tooltip access
+          districtMembersRef.current = membersByFips;
+          districtGradesRef.current = gradesByFips;
 
         } else {
           // For House: map districts to individual representatives
@@ -950,11 +957,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           const isPartisanView = selectedBillColumn === '__PARTISAN__';
           const isGradeView = 'isGrade' in billActionData && (billActionData as { isGrade: boolean }).isGrade;
 
-          // Grade color mapping
-          const gradeColorMap: Record<string, string> = {
-            'A': GRADE_COLORS.A, 'B': GRADE_COLORS.B, 'C': GRADE_COLORS.C,
-            'D': GRADE_COLORS.D, 'F': GRADE_COLORS.F
-          };
+          // Use shared grade color map from utils
 
           // For grade view, populate tooltip refs from allRows
           if (isGradeView) {
@@ -1135,7 +1138,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
               if (isGradeView) {
                 // Grade view: action is a grade letter (A, B, C, D, F)
-                color = gradeColorMap[action] || '#9ca3af'; // gray for unknown grades
+                color = GRADE_COLOR_MAP[action] || '#9ca3af'; // gray for unknown grades
               } else if (action === 'good') {
                 // Democrat blue or "good" action green
                 color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
@@ -1160,13 +1163,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // Senate or House mode: Use grade colors
           // Check if we're aggregating by state (no district data)
           const firstKey = Object.keys(districtGrades)[0];
-          const aggregatingByState = firstKey.length === 2; // FIPS codes are 2 digits
+          // State names are longer (e.g., "Alabama"), district keys are short (e.g., "0101")
+          const aggregatingByState = firstKey.length > 4;
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
             'match',
             isSenate || aggregatingByState
-              ? (isSenate ? ['get', 'name'] : ['get', 'STATEFP'])  // For states: use 'name' for Senate GeoJSON, 'STATEFP' for House
+              ? ['get', 'name']  // For states: use 'name' property from GeoJSON
               : ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']] // For districts, concatenate STATEFP and CD118FP
           ];
 
@@ -1175,31 +1179,11 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
           // Add all district/state grade pairs
           Object.entries(districtGrades).forEach(([key, grade]) => {
-            let matchKey;
-            if (isSenate) {
-              // Convert FIPS to state abbreviation, then to full name
-              const stateAbbr = fipsToStateAbbr[key];
-              // Find the full state name
-              const stateEntry = Object.entries(stateToFips).find(([name]) =>
-                name.length === 2 && name === stateAbbr
-              );
-              if (stateEntry) {
-                // Get the full name version
-                const fullNameEntry = Object.entries(stateToFips).find(([name, fips]) =>
-                  fips === key && name.length > 2
-                );
-                matchKey = fullNameEntry ? fullNameEntry[0].toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : stateAbbr;
-              } else {
-                matchKey = key;
-              }
-            } else {
-              matchKey = key;
-            }
-            if (matchKey) {
-              matchExpression.push(matchKey);
-              matchExpression.push(gradeColors[grade] || '#9ca3af');
-              entryCount++;
-            }
+            // Keys are already in the correct format (state names for Senate, district codes for House)
+            const color = gradeColors[grade] || '#9ca3af';
+            matchExpression.push(key);
+            matchExpression.push(color);
+            entryCount++;
           });
 
           // Only use match expression if we have at least one entry
@@ -1809,12 +1793,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     const senatorsHtml = senators.map((senator, idx) => {
                       // Get bill action for this senator if bill is selected
                       let billActionHtml = '';
+                      let actionIconChip = ''; // Will replace grade chip when bill is selected
                       const currentBillColumn = selectedBillColumnRef.current;
                       const currentBillActionData = billActionDataRef.current;
                       const isGradeView = currentBillActionData && 'isGrade' in currentBillActionData && currentBillActionData.isGrade;
+                      const isPartisanView = currentBillColumn === '__PARTISAN__';
 
                       // Only show bill action info if we have a bill selected and it's not a grade view
-                      if (currentBillActionData && currentBillColumn && !isGradeView) {
+                      if (currentBillActionData && currentBillColumn && !isGradeView && !isPartisanView) {
                         // Handle AIPAC/DMFI special case
                         if (currentBillColumn === '__AIPAC__') {
                           const pacData = pacDataMap.get(String(senator.bioguide_id));
@@ -1828,11 +1814,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                           }
                           const isGood = !hasSupport; // Not receiving support is good
                           const actionLabel = isGood ? currentBillActionData.goodLabel : currentBillActionData.badLabel;
-                          const checkmark = isGood ? '✓' : '✗';
-                          const checkColor = isGood ? '#10B981' : '#EF4444';
+
+                          // Create icon chip to replace grade chip
+                          const iconColor = isGood ? '#16a34a' : '#ef4444';
+                          const iconSymbol = isGood ? '✓' : '✕';
+                          actionIconChip = `<span style="background: white; color: ${iconColor}; border: 6px solid ${iconColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;">${iconSymbol}</span>`;
+
                           billActionHtml = `
-                            <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
-                              <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                            <div style="margin-top: 6px; font-size: 13px; font-weight: 600; color: ${secondaryTextColor};">
+                              ${actionLabel}
                             </div>
                           `;
                         } else {
@@ -1854,11 +1844,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                               const actionLabel = isGood
                                 ? (currentBillActionData.goodLabel || 'Positive action')
                                 : (currentBillActionData.badLabel || 'Negative action');
-                              const checkmark = isGood ? '✓' : '✗';
-                              const checkColor = isGood ? '#10B981' : '#EF4444';
+
+                              // Create icon chip to replace grade chip
+                              const iconColor = isGood ? '#16a34a' : '#ef4444';
+                              const iconSymbol = isGood ? '✓' : '✕';
+                              actionIconChip = `<span style="background: white; color: ${iconColor}; border: 6px solid ${iconColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;">${iconSymbol}</span>`;
+
                               billActionHtml = `
-                                <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
-                                  <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                                <div style="margin-top: 6px; font-size: 13px; font-weight: 600; color: ${secondaryTextColor};">
+                                  ${actionLabel}
                                 </div>
                               `;
                             }
@@ -1883,7 +1877,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                             </div>
                             <div style="display: flex; gap: 6px; align-items: center;">
                               <span style="${getPartyBadgeStyle(senator.party || '')}">${normalizeParty(senator.party || '')}</span>
-                              <span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${renderGrade(String(senator.Grade || 'N/A'))}</span>
+                              ${actionIconChip || `<span style="${getGradeChipStyle(String(senator.Grade || 'N/A'))}">${renderGrade(String(senator.Grade || 'N/A'))}</span>`}
                             </div>
                             ${billActionHtml}
                           </div>
@@ -1987,12 +1981,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
                 // Get bill action for this member if bill is selected
                 let billActionHtml = '';
+                let actionIconChip = ''; // Will replace grade chip when bill is selected
                 const currentBillColumn = selectedBillColumnRef.current;
                 const currentBillActionData = billActionDataRef.current;
                 const isGradeView = currentBillActionData && 'isGrade' in currentBillActionData && currentBillActionData.isGrade;
+                const isPartisanView = currentBillColumn === '__PARTISAN__';
 
                 // Only show bill action info if we have a bill selected and it's not a grade view
-                if (currentBillActionData && currentBillColumn && !isGradeView) {
+                if (currentBillActionData && currentBillColumn && !isGradeView && !isPartisanView) {
                   // Handle AIPAC/DMFI special case
                   if (currentBillColumn === '__AIPAC__') {
                     const pacData = pacDataMap.get(String(member.bioguide_id));
@@ -2014,11 +2010,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
                     const isGood = !hasSupport; // Not receiving support is good
                     const actionLabel = isGood ? currentBillActionData.goodLabel : currentBillActionData.badLabel;
-                    const checkmark = isGood ? '✓' : '✗';
-                    const checkColor = isGood ? '#10B981' : '#EF4444';
+
+                    // Create icon chip to replace grade chip
+                    const iconColor = isGood ? '#16a34a' : '#ef4444';
+                    const iconSymbol = isGood ? '✓' : '✕';
+                    actionIconChip = `<span style="background: white; color: ${iconColor}; border: 6px solid ${iconColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;">${iconSymbol}</span>`;
+
                     billActionHtml = `
-                      <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
-                        <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                      <div style="margin-top: 6px; font-size: 13px; font-weight: 600; color: ${secondaryTextColor};">
+                        ${actionLabel}
                       </div>
                     `;
                   } else {
@@ -2066,11 +2066,14 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                             : (currentBillActionData.badLabel || 'Negative action');
                         }
 
-                        const checkmark = isGood ? '✓' : '✗';
-                        const checkColor = isGood ? '#10B981' : '#EF4444';
+                        // Create icon chip to replace grade chip
+                        const iconColor = isGood ? '#16a34a' : '#ef4444';
+                        const iconSymbol = isGood ? '✓' : '✕';
+                        actionIconChip = `<span style="background: white; color: ${iconColor}; border: 6px solid ${iconColor}; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; width: 36px; height: 36px; font-size: 18px; font-weight: 800;">${iconSymbol}</span>`;
+
                         billActionHtml = `
-                          <div style="margin-top: 6px; font-size: 13px; color: ${secondaryTextColor};">
-                            <span style="color: ${checkColor}; font-weight: 600;">${checkmark}</span> ${actionLabel}
+                          <div style="margin-top: 6px; font-size: 13px; font-weight: 600; color: ${secondaryTextColor};">
+                            ${actionLabel}
                           </div>
                         `;
                       }
@@ -2099,7 +2102,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                         </div>
                         <div style="display: flex; gap: 6px; align-items: center;">
                           <span style="${getPartyBadgeStyle(member.party || '')}">${normalizeParty(member.party || '')}</span>
-                          <span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${renderGrade(String(member.Grade || 'N/A'))}</span>
+                          ${actionIconChip || `<span style="${getGradeChipStyle(String(member.Grade || 'N/A'))}">${renderGrade(String(member.Grade || 'N/A'))}</span>`}
                         </div>
                         ${billActionHtml}
                       </div>
@@ -2201,34 +2204,25 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
   // Separate effect to update map colors without recreating the map
   useEffect(() => {
-    console.log('Color effect - members:', members?.length, 'allRows:', allRows?.length, 'selectedBillColumn:', selectedBillColumn);
-
     // For overall grade view (no bill selected), only check allRows
     if (!selectedBillColumn || selectedBillColumn === '') {
       if (!allRows || allRows.length === 0) {
-        console.log('Overall grade view: no allRows data, skipping');
         return;
       }
-      console.log('Overall grade view: using allRows data');
     } else {
       // For bill views, check members
       if (!members || members.length === 0) {
-        console.log('Bill view: no members data, skipping');
         return;
       }
-      console.log('Bill view: using members data');
     }
 
     const updateColors = () => {
-      console.log('updateColors called - map exists:', !!map.current, 'has layer:', !!map.current?.getLayer('districts-fill'));
       if (!map.current) return;
       if (!map.current.getLayer('districts-fill')) return;
 
       // Determine current map view (Senate = states, House = districts)
       const mapSource = map.current.getSource('districts');
       if (!mapSource) return;
-
-      console.log('Proceeding with updateColors');
 
       // Build the new fill color expression
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2247,69 +2241,23 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         const isPartisanView = selectedBillColumn === '__PARTISAN__';
         const isGradeView = 'isGrade' in billActionData && (billActionData as { isGrade: boolean }).isGrade;
 
-        // Grade color mapping
-        const gradeColorMap: Record<string, string> = {
-          'A': GRADE_COLORS.A, 'B': GRADE_COLORS.B, 'C': GRADE_COLORS.C,
-          'D': GRADE_COLORS.D, 'F': GRADE_COLORS.F
-        };
+        // Use allRows for overall grade to include all members, not just filtered ones
+        const membersForTooltips = allRows || members;
 
         // For grade view, populate tooltip refs from members data
         if (isGradeView) {
-          // Use allRows for overall grade to include all members, not just filtered ones
-          const membersForTooltips = allRows || members;
 
           if (isSenate) {
-            // Senate: aggregate by state and calculate average grade
-            const membersByState: Record<string, Row[]> = {};
-            const districtGrades: Record<string, string> = {};
-            const gradeValues: Record<string, number> = {
-              'A+': 100, 'A': 95, 'A-': 90,
-              'B+': 87, 'B': 83, 'B-': 80,
-              'C+': 77, 'C': 73, 'C-': 70,
-              'D+': 67, 'D': 63, 'D-': 60,
-              'F': 50
-            };
+            // Senate: use centralized grade calculation
+            const { gradesByFips, gradesByStateName, membersByFips } =
+              calculateStateAverageGrades(membersForTooltips, stateToFips);
 
-            membersForTooltips.forEach(member => {
-              const state = stateCodeOf(member.state);
-              const fips = stateToFips[state];
-              if (fips && member.chamber === 'SENATE') {
-                if (!membersByState[fips]) {
-                  membersByState[fips] = [];
-                }
-                membersByState[fips].push(member);
-              }
-            });
+            // Store grades by state name for map matching
+            const districtGrades: Record<string, string> = gradesByStateName;
 
-            // Calculate average grade for each state
-            Object.entries(membersByState).forEach(([fips, stateMembers]) => {
-              const validGrades = stateMembers
-                .map(m => gradeValues[String(m.Grade || '')])
-                .filter(v => v !== undefined);
-
-              if (validGrades.length > 0) {
-                const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
-                let avgGrade = 'N/A';
-                if (avg >= 98) avgGrade = 'A+';
-                else if (avg >= 93) avgGrade = 'A';
-                else if (avg >= 88.5) avgGrade = 'A-';
-                else if (avg >= 85) avgGrade = 'B+';
-                else if (avg >= 81.5) avgGrade = 'B';
-                else if (avg >= 78.5) avgGrade = 'B-';
-                else if (avg >= 75) avgGrade = 'C+';
-                else if (avg >= 71.5) avgGrade = 'C';
-                else if (avg >= 68.5) avgGrade = 'C-';
-                else if (avg >= 65) avgGrade = 'D+';
-                else if (avg >= 61.5) avgGrade = 'D';
-                else if (avg >= 55) avgGrade = 'D-';
-                else avgGrade = 'F';
-
-                districtGrades[fips] = avgGrade;
-              }
-            });
-
-            districtMembersRef.current = membersByState;
-            districtGradesRef.current = districtGrades;
+            // Store members and grades by FIPS for tooltip access
+            districtMembersRef.current = membersByFips;
+            districtGradesRef.current = gradesByFips;
           } else {
             // House: individual districts
             const districtMembers: Record<string, Row> = {};
@@ -2366,48 +2314,45 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // Senate mode: color states
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const colorParts: any[] = [];
-          Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
-            const stateName = stateNameMapping[stateCode];
-            if (stateName) {
-              let color = '#E5E7EB';
 
-              if (isGradeView && 'grades' in actions) {
-                // Grade view: calculate worst grade from array
-                const gradeActions = actions as { grades: string[] };
-                const hasF = gradeActions.grades.some(g => g.startsWith('F'));
-                const hasD = gradeActions.grades.some(g => g.startsWith('D'));
-                const hasC = gradeActions.grades.some(g => g.startsWith('C'));
-                const hasB = gradeActions.grades.some(g => g.startsWith('B'));
-                const allA = gradeActions.grades.every(g => g.startsWith('A'));
-
-                if (hasF) color = GRADE_COLORS.F;
-                else if (hasD) color = GRADE_COLORS.D;
-                else if (hasC) color = GRADE_COLORS.C;
-                else if (hasB) color = GRADE_COLORS.B;
-                else if (allA) color = GRADE_COLORS.A;
-              } else if (isPartisanView && 'republican' in actions) {
-                // Partisan view: republican/democrat/other
-                const partisanActions = actions as { republican: number; democrat: number; other: number };
-                if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
-                  color = '#2563eb'; // Blue - Both Democrats
-                } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
-                  color = '#dc2626'; // Red - Both Republicans
-                } else {
-                  color = '#9333ea'; // Purple - Split/Mixed
-                }
-              } else if (!isPartisanView && 'good' in actions) {
-                // Regular bill view: good/bad
-                const regularActions = actions as { good: number; bad: number };
-                if (regularActions.good === 2) color = GRADE_COLORS.A;
-                else if (regularActions.good === 1 && regularActions.bad === 1) color = GRADE_COLORS.C;
-                else if (regularActions.bad === 2) color = GRADE_COLORS.F;
-                else if (regularActions.good === 1) color = GRADE_COLORS.A;
-                else if (regularActions.bad === 1) color = GRADE_COLORS.F;
-              }
-
+          if (isGradeView) {
+            // For grade view, use the average grades from centralized calculation
+            const { gradesByStateName } = calculateStateAverageGrades(membersForTooltips, stateToFips);
+            Object.entries(gradesByStateName).forEach(([stateName, avgGrade]) => {
+              const color = GRADE_COLOR_MAP[avgGrade] || '#E5E7EB';
               colorParts.push(['==', ['get', 'name'], stateName], color);
-            }
-          });
+            });
+          } else {
+            // For partisan/bill views, use billActionData
+            Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
+              const stateName = stateNameMapping[stateCode];
+              if (stateName) {
+                let color = '#E5E7EB';
+
+                if (isPartisanView && 'republican' in actions) {
+                  // Partisan view: republican/democrat/other
+                  const partisanActions = actions as { republican: number; democrat: number; other: number };
+                  if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
+                    color = '#2563eb'; // Blue - Both Democrats
+                  } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
+                    color = '#dc2626'; // Red - Both Republicans
+                  } else {
+                    color = '#9333ea'; // Purple - Split/Mixed
+                  }
+                } else if (!isPartisanView && 'good' in actions) {
+                  // Regular bill view: good/bad
+                  const regularActions = actions as { good: number; bad: number };
+                  if (regularActions.good === 2) color = GRADE_COLORS.A;
+                  else if (regularActions.good === 1 && regularActions.bad === 1) color = GRADE_COLORS.C;
+                  else if (regularActions.bad === 2) color = GRADE_COLORS.F;
+                  else if (regularActions.good === 1) color = GRADE_COLORS.A;
+                  else if (regularActions.bad === 1) color = GRADE_COLORS.F;
+                }
+
+                colorParts.push(['==', ['get', 'name'], stateName], color);
+              }
+            });
+          }
 
           if (colorParts.length > 0) {
             colorParts.push('#E5E7EB');
@@ -2424,7 +2369,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
             if (isGradeView) {
               // Grade view: action is a grade letter (A, B, C, D, F)
-              color = gradeColorMap[action] || '#9ca3af'; // gray for unknown grades
+              color = GRADE_COLOR_MAP[action] || '#9ca3af'; // gray for unknown grades
             } else if (action === 'good') {
               color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
             } else if (action === 'bad') {
@@ -2444,14 +2389,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           }
         }
       } else {
-        // No bill selected - use grade colors
-        const gradeColors: Record<string, string> = {
-          'A+': GRADE_COLORS.A, 'A': GRADE_COLORS.A, 'A-': GRADE_COLORS.A,
-          'B+': GRADE_COLORS.B, 'B': GRADE_COLORS.B, 'B-': GRADE_COLORS.B,
-          'C+': GRADE_COLORS.C, 'C': GRADE_COLORS.C, 'C-': GRADE_COLORS.C,
-          'D+': GRADE_COLORS.D, 'D': GRADE_COLORS.D, 'D-': GRADE_COLORS.D,
-          'F': GRADE_COLORS.F
-        };
+        // No bill selected - use shared grade color map from utils
+        const gradeColors: Record<string, string> = { ...GRADE_COLOR_MAP, 'N/A': '#E5E7EB' };
 
         // Build grade color expression
         const districtGrades: Record<string, string> = {};
@@ -2460,77 +2399,16 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         const membersToColor = allRows || members;
 
         if (isSenate) {
-          // For Senate/All view: aggregate member grades by state
-          const membersByState: Record<string, Row[]> = {};
+          // For Senate/All view: use centralized grade calculation
+          const { gradesByFips, gradesByStateName, membersByFips } =
+            calculateStateAverageGrades(membersToColor, stateToFips);
 
-          membersToColor.forEach(member => {
-            const state = stateCodeOf(member.state);
-            const stateName = stateNameMapping[state];
-            if (stateName) {
-              if (!membersByState[stateName]) {
-                membersByState[stateName] = [];
-              }
-              membersByState[stateName].push(member);
-            }
-          });
+          // Store grades by state name for map matching
+          Object.assign(districtGrades, gradesByStateName);
 
-          // Calculate average grade for each state
-          const gradeValues: Record<string, number> = {
-            'A+': 100, 'A': 95, 'A-': 90,
-            'B+': 87, 'B': 83, 'B-': 80,
-            'C+': 77, 'C': 73, 'C-': 70,
-            'D+': 67, 'D': 63, 'D-': 60,
-            'F': 50
-          };
-
-          // Also build member mapping for tooltips
-          const districtMembers: Record<string, Row[]> = {};
-
-          Object.entries(membersByState).forEach(([stateName, stateMembers]) => {
-            const validGrades = stateMembers
-              .map(m => gradeValues[String(m.Grade || '')])
-              .filter(v => v !== undefined);
-
-            if (validGrades.length > 0) {
-              const avg = validGrades.reduce((a, b) => a + b, 0) / validGrades.length;
-
-              // Convert back to letter grade
-              let avgGrade = 'N/A';
-              if (avg >= 98) avgGrade = 'A+';
-              else if (avg >= 93) avgGrade = 'A';
-              else if (avg >= 88.5) avgGrade = 'A-';
-              else if (avg >= 85) avgGrade = 'B+';
-              else if (avg >= 81.5) avgGrade = 'B';
-              else if (avg >= 78.5) avgGrade = 'B-';
-              else if (avg >= 75) avgGrade = 'C+';
-              else if (avg >= 71.5) avgGrade = 'C';
-              else if (avg >= 68.5) avgGrade = 'C-';
-              else if (avg >= 65) avgGrade = 'D+';
-              else if (avg >= 61.5) avgGrade = 'D';
-              else if (avg >= 55) avgGrade = 'D-';
-              else avgGrade = 'F';
-
-              districtGrades[stateName] = avgGrade;
-
-              // Store members by FIPS for tooltip access
-              const stateAbbr = Object.entries(stateNameMapping).find(([abbr, name]) => name === stateName)?.[0];
-              const fips = stateAbbr ? stateToFips[stateAbbr] : undefined;
-              if (fips) {
-                districtMembers[fips] = stateMembers;
-              }
-            }
-          });
-
-          // Update refs for tooltip access
-          districtGradesRef.current = {};
-          districtMembersRef.current = districtMembers;
-          Object.entries(districtGrades).forEach(([stateName, grade]) => {
-            const stateAbbr = Object.entries(stateNameMapping).find(([abbr, name]) => name === stateName)?.[0];
-            const fips = stateAbbr ? stateToFips[stateAbbr] : undefined;
-            if (fips) {
-              districtGradesRef.current[fips] = grade;
-            }
-          });
+          // Store members and grades by FIPS for tooltip access
+          districtMembersRef.current = membersByFips;
+          districtGradesRef.current = gradesByFips;
         } else {
           // For House view: use individual member grades
           const districtMembers: Record<string, Row> = {};
@@ -2564,8 +2442,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           let entryCount = 0;
           Object.entries(districtGrades).forEach(([key, grade]) => {
             if (key && (gradeColors[grade] || grade)) {
+              // key is already a state name (from membersByState), use it directly
+              const color = gradeColors[grade] || '#9ca3af';
               matchExpression.push(key);
-              matchExpression.push(gradeColors[grade] || '#9ca3af');
+              matchExpression.push(color);
               entryCount++;
             }
           });
@@ -2591,27 +2471,18 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
     // Only update colors if map is ready
     if (!map.current) {
-      console.log('No map.current');
       return;
     }
 
-    console.log('Checking if map ready - isStyleLoaded:', map.current.isStyleLoaded(), 'has layer:', !!map.current.getLayer('districts-fill'));
-
     // Try to update immediately if map is ready
     if (map.current.isStyleLoaded() && map.current.getLayer('districts-fill')) {
-      console.log('Map ready immediately, calling updateColors');
       updateColors();
     } else {
-      console.log('Map not ready, attaching event listeners');
       // Otherwise wait for the map to be ready
       const handleLoad = () => {
-        console.log('idle event fired');
         // Double-check the layer exists when idle fires
         if (map.current && map.current.getLayer('districts-fill')) {
-          console.log('Layer exists on idle, calling updateColors');
           updateColors();
-        } else {
-          console.log('Layer still missing on idle');
         }
       };
 
@@ -2619,16 +2490,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
       // Also try on styledata event as a backup
       const handleStyleData = () => {
-        console.log('styledata event fired');
         if (map.current && map.current.getLayer('districts-fill')) {
-          console.log('Layer exists on styledata, calling updateColors');
           updateColors();
           // Remove idle listener since we already updated
           if (map.current) {
             map.current.off('idle', handleLoad);
           }
-        } else {
-          console.log('Layer still missing on styledata');
         }
       };
       map.current.once('styledata', handleStyleData);
