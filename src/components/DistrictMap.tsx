@@ -762,7 +762,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         });
 
         // Use shared grade color map from utils
-        const gradeColors = { ...GRADE_COLOR_MAP, 'N/A': '#E5E7EB' };  // gray for N/A
+        const gradeColors: Record<string, string> = { ...GRADE_COLOR_MAP, 'N/A': '#E5E7EB' };  // gray for N/A
 
         // State name/abbreviation to FIPS code mapping
         const stateToFips: Record<string, string> = {
