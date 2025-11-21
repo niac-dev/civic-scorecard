@@ -701,8 +701,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
         // If we have bill action data and no specific chamber selected, choose based on data
         if (billActionData && !chamber) {
-          const hasHouseData = Object.keys(billActionData.districtActions).length > 0;
-          const hasSenateData = Object.keys(billActionData.stateActions).length > 0;
+          const hasHouseData = billActionData.districtActions ? Object.keys(billActionData.districtActions).length > 0 : false;
+          const hasSenateData = billActionData.stateActions ? Object.keys(billActionData.stateActions).length > 0 : false;
 
           // When "All" is selected, prefer Senate/states view for better overview
           if (hasHouseData && !hasSenateData) {
@@ -1078,7 +1078,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const colorParts: any[] = [];
 
-            Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
+            Object.entries(billActionData.stateActions || {}).forEach(([stateCode, actions]) => {
               const stateName = stateNameMapping[stateCode];
               if (stateName) {
                 let color = '#E5E7EB'; // default gray
@@ -1137,7 +1137,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const colorParts: any[] = [];
 
-            Object.entries(billActionData.districtActions).forEach(([key, action]) => {
+            Object.entries(billActionData.districtActions || {}).forEach(([key, action]) => {
               let color: string;
 
               if (isGradeView) {
@@ -2328,7 +2328,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             });
           } else {
             // For partisan/bill views, use billActionData
-            Object.entries(billActionData.stateActions).forEach(([stateCode, actions]) => {
+            Object.entries(billActionData.stateActions || {}).forEach(([stateCode, actions]) => {
               const stateName = stateNameMapping[stateCode];
               if (stateName) {
                 let color = '#E5E7EB';
@@ -2368,7 +2368,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // House mode: color districts
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const colorParts: any[] = [];
-          Object.entries(billActionData.districtActions).forEach(([key, action]) => {
+          Object.entries(billActionData.districtActions || {}).forEach(([key, action]) => {
             let color: string;
 
             if (isGradeView) {
