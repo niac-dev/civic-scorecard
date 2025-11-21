@@ -1274,7 +1274,7 @@ export default function Page() {
       </div>
 
       <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
-        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} setSortCol={setSortCol} setSortDir={setSortDir} />
+        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} />
       {selected && (
         <MemberModal
           row={selected}
@@ -2683,7 +2683,13 @@ export default function Page() {
                                   className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0"
                                 >
                                   {bill.sponsor ? (
-                                    <div className="flex items-center gap-1 md:gap-2 max-w-full">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelected(bill.sponsor);
+                                      }}
+                                      className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full"
+                                    >
                                       {bill.sponsor.photo_url ? (
                                         <img
                                           src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
@@ -2717,7 +2723,7 @@ export default function Page() {
                                           {stateCodeOf(bill.sponsor.state)}
                                         </div>
                                       </div>
-                                    </div>
+                                    </button>
                                   ) : (
                                     <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
                                   )}
@@ -2796,7 +2802,7 @@ export default function Page() {
   );
 }
 
-function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows, setSortCol, setSortDir }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[]; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void }) {
+function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows, setSortCol, setSortDir, tableScrollRef }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[]; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null> }) {
   const f = useFilters();
   // Default to collapsed/inactive state
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -2989,6 +2995,12 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                     f.set({ state: selectedState });
                   }
                 }
+                // Scroll table to top when state is selected (with delay to let React re-render)
+                if (selectedState && tableScrollRef.current) {
+                  setTimeout(() => {
+                    tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 50);
+                }
               }}
             >
               <option value="">State</option>
@@ -3127,6 +3139,12 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
                   } else {
                     f.set({ state: selectedState });
                   }
+                }
+                // Scroll table to top when state is selected (with delay to let React re-render)
+                if (selectedState && tableScrollRef.current) {
+                  setTimeout(() => {
+                    tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 50);
                 }
               }}
             >
