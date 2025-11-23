@@ -1,5 +1,19 @@
 import { ImageResponse } from 'next/og';
 
+// Fetch external image and convert to base64 data URL
+async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    return `data:${contentType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 // Load fonts
 async function loadHandwritingFont() {
   const response = await fetch(
@@ -35,11 +49,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const [, handwritingFont, interFont] = await Promise.all([
-      params,
-      loadHandwritingFont(),
-      loadInterFont(),
-    ]);
     const url = new URL(request.url);
     const baseUrl = `${url.protocol}//${url.host}`;
 
@@ -51,7 +60,15 @@ export async function GET(
     const chamber = url.searchParams.get('chamber') || 'Representative';
     const party = url.searchParams.get('party') || 'I';
     const location = url.searchParams.get('location') || '';
-    const photo = url.searchParams.get('photo') || '';
+    const photoUrl = url.searchParams.get('photo') || '';
+
+    // Fetch all resources in parallel
+    const [, handwritingFont, interFont, photo] = await Promise.all([
+      params,
+      loadHandwritingFont(),
+      loadInterFont(),
+      photoUrl ? fetchImageAsDataUrl(photoUrl) : Promise.resolve(null),
+    ]);
 
     // Parse sentences from JSON param
     let sentences: Sentence[] = [];
