@@ -82,7 +82,7 @@ interface BillModalProps {
   manualScoringMeta?: Map<string, string>;
   onClose: () => void;
   onBack?: () => void;
-  onMemberClick?: (member: Row) => void;
+  onMemberClick?: (member: Row, category?: string) => void;
   initialStateFilter?: string;
 }
 
@@ -517,7 +517,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   {sponsorMember ? (
                     <button
                       className="text-left py-1 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                      onClick={() => onMemberClick?.(sponsorMember)}
+                      onClick={() => {
+                        const firstCategory = meta.categories?.split(';')[0]?.trim();
+                        onMemberClick?.(sponsorMember, firstCategory);
+                      }}
                     >
                       {/* Photo */}
                       {sponsorMember.photo_url ? (
@@ -757,7 +760,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
                               onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                             )}
-                            onClick={() => onMemberClick?.(member)}
+                            onClick={() => {
+                              const firstCategory = meta.categories?.split(';')[0]?.trim();
+                              onMemberClick?.(member, firstCategory);
+                            }}
                           >
                             {/* Photo */}
                             {member.photo_url ? (
@@ -849,7 +855,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
                             onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                           )}
-                          onClick={() => onMemberClick?.(member)}
+                          onClick={() => {
+                            const firstCategory = meta.categories?.split(';')[0]?.trim();
+                            onMemberClick?.(member, firstCategory);
+                          }}
                         >
                           {/* Photo */}
                           {member.photo_url ? (
@@ -935,7 +944,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
                               onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
                             )}
-                            onClick={() => onMemberClick?.(member)}
+                            onClick={() => {
+                              const firstCategory = meta.categories?.split(';')[0]?.trim();
+                              onMemberClick?.(member, firstCategory);
+                            }}
                           >
                             {/* Photo */}
                             {member.photo_url ? (

@@ -1071,9 +1071,18 @@ export function MemberModal({
                                       }
                                     }
 
-                                    // Check if they cosponsored each bill
-                                    const cosponsoredPreferred = preferredCol ? (Number((row as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1) : false;
-                                    const cosponsoredNonPreferred = nonPreferredCol ? (Number((row as Record<string, unknown>)[`${nonPreferredCol}_cosponsor`] ?? 0) === 1) : false;
+                                    // Check if they cosponsored (or sponsored) each bill
+                                    // Sponsors have positive points on main column but _cosponsor = 0
+                                    const preferredMainPoints = preferredCol ? Number((row as Record<string, unknown>)[preferredCol] ?? 0) : 0;
+                                    const cosponsoredPreferred = preferredCol ? (
+                                      (Number((row as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1) ||
+                                      preferredMainPoints > 0  // Sponsors have positive points
+                                    ) : false;
+                                    const nonPreferredMainPoints = nonPreferredCol ? Number((row as Record<string, unknown>)[nonPreferredCol] ?? 0) : 0;
+                                    const cosponsoredNonPreferred = nonPreferredCol ? (
+                                      (Number((row as Record<string, unknown>)[`${nonPreferredCol}_cosponsor`] ?? 0) === 1) ||
+                                      nonPreferredMainPoints > 0  // Sponsors have positive points
+                                    ) : false;
 
                                     if (isPreferred) {
                                       // This is the preferred bill (H.Con.Res.38)
@@ -1174,18 +1183,21 @@ export function MemberModal({
 
                                       if (!isPreferred) {
                                         // This is the non-preferred bill
-                                        // Check if they cosponsored the preferred bill
-                                        let cosponsoredPreferred = false;
+                                        // Check if they cosponsored (or sponsored) the preferred bill
+                                        let supportedPreferred = false;
                                         for (const col of billCols) {
                                           const pairMeta = metaByCol.get(col);
                                           if (pairMeta?.pair_key === pairKey && isTrue((pairMeta as Record<string, unknown>).preferred)) {
-                                            cosponsoredPreferred = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
+                                            // Check both cosponsor status AND main column points (for sponsors)
+                                            const didCosponsorPreferred = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
+                                            const hasPreferredPoints = Number((row as Record<string, unknown>)[col] ?? 0) > 0;
+                                            supportedPreferred = didCosponsorPreferred || hasPreferredPoints;
                                             break;
                                           }
                                         }
 
-                                        if (cosponsoredPreferred && !it.didCosponsor) {
-                                          actionDescription = 'Cosponsored preferred bill';
+                                        if (supportedPreferred && !it.didCosponsor) {
+                                          actionDescription = 'Supported preferred bill';
                                         } else {
                                           actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                                         }
@@ -1198,8 +1210,11 @@ export function MemberModal({
                                       actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
                                     }
                                   } else if (isVote) {
-                                    // For votes, determine what they actually voted based on NIAC position and whether they got points
-                                    if (isSupport) {
+                                    // Check for "Voted Present" (partial points, between 0 and full points)
+                                    const votedPresent = it.val > 0 && it.val < maxPoints;
+                                    if (votedPresent) {
+                                      actionDescription = 'Voted Present';
+                                    } else if (isSupport) {
                                       // NIAC supports: getting points = voted YES, no points = voted NO
                                       actionDescription = it.ok ? 'Voted in favor' : 'Voted against';
                                     } else {

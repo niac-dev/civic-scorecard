@@ -17,6 +17,7 @@ import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
 import { AipacModal } from "@/components/AipacModal";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
+import { loadSentenceRules, generateSentencesSync, type Sentence } from "@/lib/generateSentences";
 
 import clsx from "clsx";
 
@@ -266,6 +267,7 @@ export default function Page() {
   const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string; initialStateFilter?: string } | null>(null);
   const [pacDataMap, setPacDataMap] = useState<Map<string, PacData>>(new Map());
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
+  const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
   const [showAipacModal, setShowAipacModal] = useState<boolean>(false);
 
   // Modal history stack for back navigation
@@ -276,7 +278,7 @@ export default function Page() {
   const [modalHistory, setModalHistory] = useState<ModalHistoryItem[]>([]);
 
   // Helper to navigate to a modal while preserving history
-  const pushMemberModal = useCallback((member: Row) => {
+  const pushMemberModal = useCallback((member: Row, category?: string) => {
     // Save current modal to history if one is open
     if (selected) {
       setModalHistory(prev => [...prev, { type: 'member', data: selected }]);
@@ -285,6 +287,10 @@ export default function Page() {
     }
     setSelected(member);
     setSelectedBill(null);
+    // Set the category if provided (e.g., from bill modal click)
+    if (category) {
+      setSelectedCategory(category);
+    }
   }, [selected, selectedBill]);
 
   const pushBillModal = useCallback((meta: Meta, column: string) => {
@@ -335,12 +341,51 @@ export default function Page() {
     setModalHistory([]);
   }, []);
 
+  // Open share page for a member (used from scorecard hover overlay)
+  const openSharePage = useCallback((row: Row) => {
+    const fullName = String(row.full_name || '');
+    const commaIdx = fullName.indexOf(',');
+    const displayName = commaIdx > -1
+      ? `${fullName.slice(commaIdx + 1).trim()} ${fullName.slice(0, commaIdx).trim()}`
+      : fullName;
+
+    const chamber = row.chamber === 'SENATE' ? 'Senator' : 'Representative';
+    const party = row.party === 'Democratic' ? 'D' : row.party === 'Republican' ? 'R' : 'I';
+    const location = row.chamber === 'SENATE' ? row.state : row.district ? `${row.state}-${row.district}` : row.state;
+
+    const pacData = pacDataMap.get(String(row.bioguide_id));
+    const pacTotalLastElection = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0)
+    ) : 0;
+    const pacTotal2026 = pacData ? (
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) : 0;
+
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+
+    const params = new URLSearchParams({
+      name: displayName,
+      grade: String(row.Grade || 'N/A'),
+      total: String(Math.round(Number(row.Total || 0))),
+      max: String(Math.round(Number(row.Max_Possible || 0))),
+      chamber,
+      party,
+      location: String(location || ''),
+      photo: String(row.photo_url || ''),
+      sentences: encodeURIComponent(JSON.stringify(sentences)),
+    });
+
+    window.open(`/member/${row.bioguide_id}/share?${params.toString()}`, '_blank');
+  }, [pacDataMap, sentenceRules]);
+
   useEffect(() => { (async () => {
-    const [data, pacData, manualMeta] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta()]);
+    const [data, pacData, manualMeta, rules] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta(), loadSentenceRules()]);
     const { rows, columns, metaByCol, categories } = data;
     setRows(rows); setCols(columns); setMeta(metaByCol); setCategories(categories);
     setPacDataMap(pacData);
     setManualScoringMeta(manualMeta);
+    setSentenceRules(rules);
   })(); }, []);
 
   const f = useFilters();
@@ -1315,7 +1360,7 @@ export default function Page() {
           manualScoringMeta={manualScoringMeta}
           onClose={closeAllModals}
           onBack={modalHistory.length > 0 ? goBackModal : undefined}
-          onMemberClick={(member) => pushMemberModal(member)}
+          onMemberClick={(member, category) => pushMemberModal(member, category)}
           initialStateFilter={selectedBill.initialStateFilter}
         />
       )}
@@ -1736,9 +1781,36 @@ export default function Page() {
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch"
+                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch relative group/member"
                 onClick={() => setSelected(r)}
               >
+                {/* Hover overlay with action buttons - desktop only */}
+                <div className="hidden md:flex absolute inset-0 bg-slate-900/80 dark:bg-slate-900/90 opacity-0 group-hover/member:opacity-100 transition-opacity duration-200 items-center justify-center gap-2 xl:gap-3 z-30 rounded-lg flex-col xl:flex-row">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(r);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-800 rounded-lg font-medium text-sm transition-colors shadow-lg"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    View Profile
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openSharePage(r);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-[#30558C] hover:bg-[#254470] text-white rounded-lg font-medium text-sm transition-colors shadow-lg"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Generate Image
+                  </button>
+                </div>
                 {/* Photo - shown second on mobile, first on desktop */}
                 {r.photo_url ? (
                   <img
@@ -1877,9 +1949,7 @@ export default function Page() {
                     if (hasRejectCommitment) {
                       return (
                         <div className="flex items-start gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 md:h-4 md:w-4 xl:h-5 xl:w-5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
-                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
-                          </svg>
+                          <VoteIcon ok={true} size="tiny" />
                           <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white font-bold">
                             {rejectLink && String(rejectLink).startsWith('http') ? (
                               <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
@@ -2296,6 +2366,22 @@ export default function Page() {
                             }
                           })()}
                         </div>
+
+                        {/* View member scorecard button */}
+                        <div className="mt-3 pt-3 border-t border-[#E7ECF2] dark:border-slate-900">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCell(null);
+                              const firstCategory = meta.categories?.split(';')[0]?.trim();
+                              setSelectedCategory(firstCategory || null);
+                              setSelected(r);
+                            }}
+                            className="w-full text-center text-sm font-medium text-[#4B8CFB] hover:text-[#3B7CEB] py-2 px-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                          >
+                            View {lastName(String(r.full_name || "")).charAt(0).toUpperCase() + lastName(String(r.full_name || "")).slice(1)}&apos;s full scorecard
+                          </button>
+                        </div>
                         </div>
                       </>,
                       document.body
@@ -2320,9 +2406,7 @@ export default function Page() {
                     if (hasRejectCommitment) {
                       return (
                         <div className="flex items-start gap-1">
-                          <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 md:h-4 md:w-4 xl:h-5 xl:w-5 flex-shrink-0 mt-0.5" aria-hidden="true" role="img">
-                            <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" strokeWidth="0.5" stroke="#10B981" />
-                          </svg>
+                          <VoteIcon ok={true} size="tiny" />
                           <span className="text-xs md:text-sm lg:text-base xl:text-lg text-slate-800 dark:text-white font-bold">
                             {rejectLink && String(rejectLink).startsWith('http') ? (
                               <a href={String(rejectLink)} target="_blank" rel="noopener noreferrer" className="hover:text-[#4B8CFB] underline">
