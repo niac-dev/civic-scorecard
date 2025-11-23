@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
 
 export default function SharePageClient() {
   const params = useParams();
@@ -89,15 +88,20 @@ export default function SharePageClient() {
       <div className="max-w-2xl mx-auto">
         {/* Close button */}
         <div className="flex justify-end mb-4">
-          <Link
-            href={`/member/${memberId}`}
+          <button
+            onClick={() => {
+              // Try to close the tab, fall back to going back in history
+              window.close();
+              // If window.close() didn't work (tab wasn't opened by script), go back
+              setTimeout(() => window.history.back(), 100);
+            }}
             className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </Link>
+          </button>
         </div>
 
         {/* Image preview */}
