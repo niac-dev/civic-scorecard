@@ -59,6 +59,61 @@ html {
 .chip-outline { @apply h-8 px-3 rounded-full border border-[#E7ECF2] dark:border-slate-900 text-sm hover:bg-white dark:hover:bg-white/5; }
 .chip-xs { @apply px-2 py-0.5 rounded-full bg-[#E7ECF2] dark:bg-white/10 text-[11px] text-slate-700 dark:text-slate-200; }
 
+/* GradeChip responsive sizing */
+/* Ratios: border 12%, text 55%, modifier 21% */
+/* Mobile: 48px */
+.grade-chip {
+  width: 48px !important;
+  height: 48px !important;
+  border-width: 6px !important;
+  font-size: 26px !important;
+}
+.grade-chip-modifier {
+  font-size: 10px !important;
+}
+/* Tablet: 56px */
+@media (min-width: 768px) {
+  .grade-chip {
+    width: 56px !important;
+    height: 56px !important;
+    border-width: 7px !important;
+    font-size: 31px !important;
+  }
+  .grade-chip-modifier {
+    font-size: 12px !important;
+  }
+}
+/* Desktop: 80px */
+@media (min-width: 1280px) {
+  .grade-chip {
+    width: 80px !important;
+    height: 80px !important;
+    border-width: 10px !important;
+    font-size: 44px !important;
+  }
+  .grade-chip-modifier {
+    font-size: 17px !important;
+  }
+}
+
+/* VoteIcon chip size - matches grade-chip */
+.vote-icon-chip {
+  width: 52px;
+  height: 52px;
+}
+@media (min-width: 768px) {
+  .vote-icon-chip {
+    width: 60px;
+    height: 60px;
+  }
+}
+@media (min-width: 1280px) {
+  .vote-icon-chip {
+    width: 84px;
+    height: 84px;
+  }
+}
+
 .tabular { font-variant-numeric: tabular-nums; }
 .card { @apply rounded-2xl border border-[#E7ECF2] dark:border-transparent bg-white dark:bg-white/5 shadow-sm; }
 

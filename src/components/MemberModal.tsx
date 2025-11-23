@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import clsx from "clsx";
 import type { Row, Meta } from "@/lib/types";
 import {
@@ -18,6 +18,7 @@ import {
 } from "@/lib/pacData";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
 import { MiniDistrictMap } from "@/components/MiniDistrictMap";
+import { loadSentenceRules, generateSentencesSync, Sentence } from "@/lib/generateSentences";
 
 function formatPositionLegislation(
   meta: Meta | undefined,
@@ -68,7 +69,91 @@ export function MemberModal({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
   const [showAipacSection, setShowAipacSection] = useState(initialCategory === "AIPAC");
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
+  const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
   const actionsRef = useRef<HTMLDivElement>(null);
+
+  // Load sentence rules from CSV
+  useEffect(() => {
+    loadSentenceRules().then(setSentenceRules);
+  }, []);
+
+  // Build OG image URL with member data as params
+  const getOgImageUrl = useCallback(() => {
+    const fullName = String(row.full_name || '');
+    const commaIdx = fullName.indexOf(',');
+    const displayName = commaIdx > -1
+      ? `${fullName.slice(commaIdx + 1).trim()} ${fullName.slice(0, commaIdx).trim()}`
+      : fullName;
+
+    const chamber = row.chamber === 'SENATE' ? 'Senator' : 'Representative';
+    const party = row.party === 'Democratic' ? 'D' : row.party === 'Republican' ? 'R' : 'I';
+    const location = row.chamber === 'SENATE' ? row.state : row.district ? `${row.state}-${row.district}` : row.state;
+
+    // Calculate PAC money for sentence generation
+    // For House: use 2024 (last election)
+    // For Senate: use 2024/2022 (last election) and 2026 (next election) separately
+    const pacTotalLastElection = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0)
+    ) : 0;
+    const pacTotal2026 = pacData ? (
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) : 0;
+
+    // Generate sentences based on voting record using CSV rules
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+
+    const params = new URLSearchParams({
+      name: displayName,
+      grade: String(row.Grade || 'N/A'),
+      total: String(Math.round(Number(row.Total || 0))),
+      max: String(Math.round(Number(row.Max_Possible || 0))),
+      chamber,
+      party,
+      location: String(location || ''),
+      photo: String(row.photo_url || ''),
+      sentences: encodeURIComponent(JSON.stringify(sentences)),
+    });
+
+    return `/api/og/member/${row.bioguide_id}?${params.toString()}`;
+  }, [row, pacData, sentenceRules]);
+
+  const handleDownloadImage = useCallback(() => {
+    // Navigate to share page with the same params
+    const fullName = String(row.full_name || '');
+    const commaIdx = fullName.indexOf(',');
+    const displayName = commaIdx > -1
+      ? `${fullName.slice(commaIdx + 1).trim()} ${fullName.slice(0, commaIdx).trim()}`
+      : fullName;
+
+    const chamber = row.chamber === 'SENATE' ? 'Senator' : 'Representative';
+    const party = row.party === 'Democratic' ? 'D' : row.party === 'Republican' ? 'R' : 'I';
+    const location = row.chamber === 'SENATE' ? row.state : row.district ? `${row.state}-${row.district}` : row.state;
+
+    const pacTotalLastElection = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0)
+    ) : 0;
+    const pacTotal2026 = pacData ? (
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) : 0;
+
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+
+    const params = new URLSearchParams({
+      name: displayName,
+      grade: String(row.Grade || 'N/A'),
+      total: String(Math.round(Number(row.Total || 0))),
+      max: String(Math.round(Number(row.Max_Possible || 0))),
+      chamber,
+      party,
+      location: String(location || ''),
+      photo: String(row.photo_url || ''),
+      sentences: encodeURIComponent(JSON.stringify(sentences)),
+    });
+
+    window.open(`/member/${row.bioguide_id}/share?${params.toString()}`, '_blank');
+  }, [row, pacData, sentenceRules]);
 
   // Scroll to actions section on mobile when category is clicked
   const scrollToActions = () => {
@@ -232,59 +317,55 @@ export function MemberModal({
       />
       {/* Modal */}
       <div className="fixed inset-2 min-[900px]:inset-10 z-[110] flex items-start justify-center overflow-hidden">
-        <div className="w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
-          {/* Header */}
-          <div className="flex flex-col p-6 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative">
-            {/* Close button and external link - upper right corner on desktop, own row on mobile */}
-            <div className="flex justify-between mb-3 min-[900px]:mb-0 min-[900px]:absolute min-[900px]:top-4 min-[900px]:right-4 gap-2 z-10">
-              {/* Back button - only shown if there's history */}
-              <div className="min-[900px]:hidden">
-                {onBack && (
-                  <button
-                    className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                    onClick={onBack}
-                    title="Back"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-2">
-                {onBack && (
-                  <button
-                    className="hidden min-[900px]:block p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                    onClick={onBack}
-                    title="Back"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                  </button>
-                )}
+        <div className="relative w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
+          {/* Floating navigation buttons - sticky at top */}
+          <div className="sticky top-0 z-50 flex justify-end p-2 pointer-events-none">
+            <div className="flex gap-2 pointer-events-auto">
+              {/* Generate Image button */}
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                onClick={handleDownloadImage}
+                title="Generate Shareable Image"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+              {onBack && (
                 <button
-                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                  onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
-                  title="Open in new tab"
+                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                  onClick={onBack}
+                  title="Back"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                 </button>
-                <button
-                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800"
-                  onClick={onClose}
-                  title="Close"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              )}
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
+                title="Open in new tab"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </button>
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                onClick={onClose}
+                title="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
+          </div>
+          {/* Header */}
+          <div className="flex flex-col p-6 pt-0 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative -mt-12">
             {/* Three column layout on wide screens */}
-            <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-32" : "min-[900px]:pr-24")}>
+            <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
               <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0">
                 {row.photo_url ? (
@@ -391,23 +472,28 @@ export function MemberModal({
                     <span>{row.office_phone}</span>
                   </a>
                 )}
-              </div>
 
-              {/* Column 2.5: Grade chip (vertically centered with member info) */}
-              <div className="flex items-center justify-center min-[900px]:justify-start">
-                <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                {/* District Map link - shown on mobile only */}
+                {row.state && (
+                  <a
+                    href={`/member/${row.bioguide_id}#map`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-[900px]:hidden flex text-xs text-[#4B8CFB] hover:text-[#3a7de8] items-center gap-1 mt-2 transition-colors"
+                  >
+                    <span>District Map</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                )}
               </div>
 
               {/* Column 3: Map (only on wide screens) */}
-              <div className="hidden min-[900px]:block min-[900px]:ml-12">
+              <div className="hidden min-[900px]:block min-[900px]:ml-12 min-[900px]:mt-8">
                 {row.state && <MiniDistrictMap member={row} />}
               </div>
             </div>
-          </div>
-
-          {/* Map on mobile - show below, centered - outside padded container */}
-          <div className="min-[900px]:hidden mt-4 px-6 pb-6 flex justify-center border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800">
-            {row.state && <MiniDistrictMap member={row} />}
           </div>
 
           {/* Content - 2 Column Layout */}
@@ -434,22 +520,13 @@ export function MemberModal({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">All Issues</div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs text-slate-600 dark:text-slate-400">
-                        {Number(row.Total || 0).toFixed(0)}/{Number(row.Max_Possible || 0).toFixed(0)}
-                      </div>
-                      <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
-                    </div>
+                    <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
                   </div>
                 </button>
 
                 {categories.filter(cat => cat !== "AIPAC").map((category) => {
                   const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
-                  const totalField = `Total_${fieldSuffix}` as keyof Row;
-                  const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
                   const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-                  const total = Number(row[totalField] || 0).toFixed(0);
-                  const maxPossible = Number(row[maxField] || 0).toFixed(0);
 
                   return (
                     <button
@@ -471,12 +548,7 @@ export function MemberModal({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{category}</div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
-                            {total}/{maxPossible}
-                          </div>
-                          <GradeChip grade={String(row[gradeField] || "N/A")} />
-                        </div>
+                        <GradeChip grade={String(row[gradeField] || "N/A")} />
                       </div>
                     </button>
                   );
@@ -484,11 +556,16 @@ export function MemberModal({
 
                 {/* AIPAC/DMFI Endorsement card */}
                 {(() => {
-                  const hasRejectCommitment = !!(row.reject_commitment && String(row.reject_commitment).trim());
-                  const rejectCommitment = String(row.reject_commitment || "").trim();
-                  const rejectLink = row.reject_commitment_link;
+                  // Check both reject fields for custom commitment
+                  const hasRejectCommitment = !!(
+                    (row.reject_commitment && String(row.reject_commitment).trim()) ||
+                    (row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim())
+                  );
                   const aipac = isAipacEndorsed(pacData);
                   const dmfi = isDmfiEndorsed(pacData);
+
+                  // If they have a reject commitment, they're "not supported" (good)
+                  const isGood = hasRejectCommitment || (!aipac && !dmfi);
 
                   return (
                     <button
@@ -505,14 +582,13 @@ export function MemberModal({
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-medium text-slate-700 dark:text-slate-200">AIPAC/DMFI</div>
-                        {hasRejectCommitment ? (
-                          <VoteIcon ok={true} size="chip" />
-                        ) : aipac || dmfi ? (
-                          <VoteIcon ok={false} size="chip" />
-                        ) : (
-                          <VoteIcon ok={true} size="chip" />
-                        )}
+                        <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                          {isGood ? "Not supported by AIPAC or DMFI" :
+                           aipac && dmfi ? "Supported by AIPAC & DMFI" :
+                           aipac ? "Supported by AIPAC" :
+                           "Supported by DMFI"}
+                        </div>
+                        <VoteIcon ok={isGood} size="chip" />
                       </div>
                     </button>
                   );
@@ -534,6 +610,9 @@ export function MemberModal({
                       const aipac = isAipacEndorsed(pacData);
                       const dmfi = isDmfiEndorsed(pacData);
                       const hasSupport = aipac || dmfi;
+                      // Custom reject commitment means they're "good" even if they have support data
+                      const hasRejectCommitment = !!(row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim());
+                      const isGood = hasRejectCommitment || !hasSupport;
 
                       // Check if there's ANY financial data across all years
                       const hasAnyFinancialData = pacData && (
@@ -552,7 +631,7 @@ export function MemberModal({
                           {/* Always show status message at the top */}
                           <div className="py-3 flex items-start gap-3 bg-slate-50 dark:bg-white/5 -mx-2 px-2 rounded mb-4">
                             <div className="mt-0.5">
-                              <VoteIcon ok={!hasSupport} small />
+                              <VoteIcon ok={isGood} small />
                             </div>
                             <div className="flex-1">
                               {row.reject_aipac_commitment ? (
@@ -838,19 +917,28 @@ export function MemberModal({
                       const category = selectedCategory || "All Issues";
                       let title = category;
                       let grade: string | number | undefined = row.Grade;
+                      let total = Number(row.Total || 0).toFixed(0);
+                      let maxPossible = Number(row.Max_Possible || 0).toFixed(0);
 
                       if (selectedCategory) {
                         const fieldSuffix = selectedCategory.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                         const gradeField = `Grade_${fieldSuffix}` as keyof Row;
+                        const totalField = `Total_${fieldSuffix}` as keyof Row;
+                        const maxField = `Max_Possible_${fieldSuffix}` as keyof Row;
                         title = selectedCategory;
                         grade = row[gradeField] as string | number | undefined;
+                        total = Number(row[totalField] || 0).toFixed(0);
+                        maxPossible = Number(row[maxField] || 0).toFixed(0);
                       }
 
                       return (
                         <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-                            <GradeChip grade={String(grade || "N/A")} isOverall={!selectedCategory} />
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-slate-600 dark:text-slate-400">{total}/{maxPossible}</span>
+                              <GradeChip grade={String(grade || "N/A")} scale={2} />
+                            </div>
                           </div>
                         </div>
                       );

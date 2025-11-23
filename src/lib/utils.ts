@@ -7,8 +7,8 @@ export const GRADE_COLORS = {
   A: "#0A6F7A",  // deep blue-emerald
   B: "#2DA0A2",  // aqua-teal
   C: "#9CCB99",  // soft warm green (new midpoint)
-  D: "#DCD77F",  // muted yellow-green (smooth transition)
-  F: "#CFC98A",  // pale apricot-grey (soft negative)
+  D: "#ccb254",  // muted yellow-green (smooth transition)
+  F: "#A96A63",  // pale apricot-grey (soft negative)
   default: "#94A3B8"  // gray for N/A or unknown
 } as const;
 

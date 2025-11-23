@@ -2033,8 +2033,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     const hasCosponsor = actionTypes.includes('cosponsor');
                     const hasVote = actionTypes.includes('vote');
 
-                    // Use _cosponsor column for all bills with cosponsorship action type
-                    const cosponsorColumn = hasCosponsor ? `${currentBillColumn}_cosponsor` : null;
+                    // Use _cosponsor column only for SUPPORT bills (to get accurate cosponsor status)
+                    // For OPPOSE bills, use the main score column (positive = didn't cosponsor = good)
+                    const cosponsorColumn = (hasCosponsor && !isAgainstBill) ? `${currentBillColumn}_cosponsor` : null;
                     let rawValue = member[currentBillColumn];
                     if (cosponsorColumn && member[cosponsorColumn] !== undefined) {
                       rawValue = member[cosponsorColumn];

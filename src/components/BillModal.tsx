@@ -4,6 +4,7 @@ import type { Meta, Row } from "@/lib/types";
 import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel } from "@/lib/utils";
 import clsx from "clsx";
 import { BillMiniMap } from "@/components/BillMiniMap";
+import { VoteIcon } from "@/components/GradeChip";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -101,10 +102,10 @@ function PartisanPills({ members }: { members: Row[] }) {
   return (
     <span className="inline-flex items-center gap-1.5 ml-2">
       <span className="text-slate-400 dark:text-slate-500">|</span>
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700">
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#C5312E] text-white">
         R: {rCount}
       </span>
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#315CA8] text-white">
         D: {dCount}
       </span>
     </span>
@@ -451,16 +452,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
             {/* Title and navigation - desktop layout */}
             <div className="flex items-center justify-between">
               {/* Title */}
-              <div className="flex items-start gap-2 flex-1 min-w-0">
-                {isSupport ? (
-                  <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0 mt-1" aria-hidden="true" role="img">
-                    <path d="M7.5 13.0l-2.5-2.5  -1.5 1.5 4 4 8-8 -1.5-1.5 -6.5 6.5z" fill="#10B981" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 20 20" className="h-5 w-5 flex-shrink-0 mt-1" aria-hidden="true" role="img">
-                    <path d="M5 6.5L6.5 5 10 8.5 13.5 5 15 6.5 11.5 10 15 13.5 13.5 15 10 11.5 6.5 15 5 13.5 8.5 10z" fill="#F97066" />
-                  </svg>
-                )}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <VoteIcon ok={isSupport} size="medium" />
                 <div className="flex-1 min-w-0">
                   <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                     {meta.display_name || column}
@@ -507,7 +500,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
           <div className="p-6 space-y-6">
             {/* Description at top */}
             {meta.description && (
-              <p className="text-sm text-slate-700 dark:text-slate-200">
+              <p className="text-base text-slate-700 dark:text-slate-200 ml-11 -mt-4 -mb-4">
                 {meta.description}
               </p>
             )}
@@ -519,11 +512,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
             <div className="space-y-2">
               {/* Sponsor */}
               {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
-                <div className="text-sm text-slate-600 dark:text-slate-300">
+                <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
                   <span className="font-bold">Sponsor:</span>
                   {sponsorMember ? (
                     <button
-                      className="mt-2 w-full text-left py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                      className="text-left py-1 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
                       onClick={() => onMemberClick?.(sponsorMember)}
                     >
                       {/* Photo */}
@@ -532,40 +525,38 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           src={String(sponsorMember.photo_url)}
                           alt=""
                           loading="lazy"
-                          className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
                       )}
                       {/* Info */}
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-[13px]">
                           {formatNameFirstLast(sponsorMember.full_name)}
                         </span>
-                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                          <span
-                            className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
-                            style={{
-                              color: '#64748b',
-                              backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
-                            }}
-                          >
-                            {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
-                          </span>
-                          <span
-                            className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
-                            style={partyBadgeStyle(sponsorMember.party)}
-                          >
-                            {partyLabel(sponsorMember.party)}
-                          </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                            {formatStateDistrict(sponsorMember)}
-                          </span>
-                        </div>
+                        <span
+                          className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                          style={{
+                            color: '#64748b',
+                            backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
+                          }}
+                        >
+                          {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
+                        </span>
+                        <span
+                          className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                          style={partyBadgeStyle(sponsorMember.party)}
+                        >
+                          {partyLabel(sponsorMember.party)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {formatStateDistrict(sponsorMember)}
+                        </span>
                       </div>
                     </button>
                   ) : (
-                    <span className="ml-2">{meta.sponsor_name || meta.sponsor}</span>
+                    <span>{meta.sponsor_name || meta.sponsor}</span>
                   )}
                 </div>
               )}

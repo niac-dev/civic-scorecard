@@ -1381,9 +1381,11 @@ export default function Page() {
           )}
         >
           <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
+            {/* Header wrapper - extends full width for shadow */}
+            <div className="sticky top-0 z-30 min-w-max w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm">
             {/* Header */}
             <div
-              className="grid min-w-max sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm"
+              className="grid min-w-max"
               style={{
                 gridTemplateColumns: gridTemplate,
               }}
@@ -1437,7 +1439,7 @@ export default function Page() {
 
             {/* Endorsements column header - in AIPAC view */}
             {f.categories.has("AIPAC") && (
-              <div className="th group relative select-none flex flex-col border-r border-[#E7ECF2] dark:border-slate-900">
+              <div className="th group relative select-none flex flex-col">
                 {/* Header title - clickable to view AIPAC page with 2-line height */}
                 <div className="h-[2.5rem] flex items-start">
                   <span
@@ -1447,7 +1449,7 @@ export default function Page() {
                       setShowAipacModal(true);
                     }}
                   >
-                    Supported by AIPAC or DMFI
+                    AIPAC or DMFI Support
                   </span>
                 </div>
 
@@ -1666,7 +1668,7 @@ export default function Page() {
             {/* Endorsements column header - shown after bills in non-AIPAC views */}
             {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
               <div className={clsx(
-                "th border-r border-[#E7ECF2] dark:border-slate-900 group relative select-none flex flex-col",
+                "th group relative select-none flex flex-col",
                 f.viewMode === "summary" && "!py-2"
               )}>
                 {/* Empty space for bill number alignment - hide in summary mode */}
@@ -1687,7 +1689,7 @@ export default function Page() {
                       setShowAipacModal(true);
                     }}
                   >
-                    Supported by AIPAC or DMFI
+                    AIPAC or DMFI Support
                   </span>
                 </div>
 
@@ -1717,6 +1719,7 @@ export default function Page() {
               </div>
             )}
 
+          </div>
           </div>
 
           {/* Rows Container */}
@@ -1962,7 +1965,7 @@ export default function Page() {
                       }}
                       title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`) : undefined}
                     >
-                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} size="small" />
+                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
                     </div>
                   </React.Fragment>
                 );
@@ -2997,6 +3000,31 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           </button>
         </div>
 
+        {/* Filter button - Desktop, all modes */}
+        {(() => {
+          // Categories don't affect filter button in scorecard/tracker view
+          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
+
+          return (
+            <button
+              className={clsx(
+                "hidden md:flex items-center justify-center p-2 h-9 w-9 rounded-md border transition-colors",
+                filtersExpanded
+                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
+                  : hasActiveFilters
+                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
+                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
+              )}
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              title="Toggle filters"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
+              </svg>
+            </button>
+          );
+        })()}
+
         {/* State selector - Desktop (for Map and Scorecard views) */}
         {f.viewMode !== "tracker" && (
           <div className="hidden md:flex items-center gap-1">
@@ -3056,31 +3084,6 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             )}
           </div>
         )}
-
-        {/* Filter button - Desktop, all modes */}
-        {(() => {
-          // Categories don't affect filter button in scorecard/tracker view
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
-
-          return (
-            <button
-              className={clsx(
-                "hidden md:flex items-center justify-center p-2 h-9 w-9 rounded-md border transition-colors",
-                filtersExpanded
-                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
-                  : hasActiveFilters
-                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
-                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
-              )}
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              title="Toggle filters"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
-              </svg>
-            </button>
-          );
-        })()}
 
         {/* Mobile: Show icon buttons (<768px) */}
         <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
