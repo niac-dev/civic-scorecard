@@ -157,20 +157,24 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
   // AIPAC/DMFI support sentence
   const rejectsAipac = row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim() !== '';
 
+  // Check if member has any AIPAC/DMFI support flags for any year
+  const hasLobbySupport = Boolean(
+    row.aipac_supported || row.dmfi_supported ||
+    (row as Record<string, unknown>).aipac_supported_2026 || (row as Record<string, unknown>).dmfi_supported_2026
+  );
+
   if (chamber === 'SENATE') {
     if (rejectsAipac) {
       sentences.push({ text: 'Publicly rejects AIPAC and DMFI.', isGood: true });
-    } else if (pacTotal2026 && pacTotal2026 > 0) {
+    } else if (hasLobbySupport && pacTotal2026 && pacTotal2026 > 0) {
       sentences.push({ text: `Has already accepted $${pacTotal2026.toLocaleString()} in support from the Israel Lobby for their next election.`, isGood: false });
-    } else if (pacTotal && pacTotal > 0) {
+    } else if (hasLobbySupport && pacTotal && pacTotal > 0) {
       sentences.push({ text: `Received $${pacTotal.toLocaleString()} in support from the Israel Lobby last election.`, isGood: false });
-    } else {
-      sentences.push({ text: 'Does not take money from AIPAC and DMFI.', isGood: true });
     }
   } else {
     if (rejectsAipac) {
       sentences.push({ text: 'Publicly rejects support from AIPAC and DMFI.', isGood: true });
-    } else if (pacTotal && pacTotal > 0) {
+    } else if (hasLobbySupport && pacTotal && pacTotal > 0) {
       sentences.push({ text: `Received $${pacTotal.toLocaleString()} in support from the Israel Lobby last election.`, isGood: false });
     }
   }

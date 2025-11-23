@@ -1163,8 +1163,10 @@ export default function Page() {
       return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")} ${endorsementsCol} ${restGradesPart} ${billsPart}`;
     }
     // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols
+    // Wider grade columns on mobile to fit "Rights & Immigration" text
     if (f.categories.has("Civil Rights & Immigration")) {
-      return `${memberCol} ${gradesPart} ${billsPart}`;
+      const civilRightsGradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
+      return `${memberCol} ${civilRightsGradesPart} ${billsPart}`;
     }
     // member col + grade cols + dynamic bill cols + endorsements col
     return `${memberCol} ${gradesPart} ${billsPart} ${endorsementsCol}`;

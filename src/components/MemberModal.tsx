@@ -367,7 +367,7 @@ export function MemberModal({
             {/* Three column layout on wide screens */}
             <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
-              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0">
+              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0 mt-10 min-[900px]:mt-0">
                 {row.photo_url ? (
                   <img
                     src={String(row.photo_url)}
@@ -1198,16 +1198,32 @@ export function MemberModal({
 
                                         if (supportedPreferred && !it.didCosponsor) {
                                           actionDescription = 'Supported preferred bill';
+                                        } else if (it.didCosponsor) {
+                                          actionDescription = 'Cosponsored';
+                                        } else if (it.val > 0) {
+                                          actionDescription = 'Sponsored';
                                         } else {
-                                          actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                          actionDescription = 'Has not cosponsored';
                                         }
                                       } else {
-                                        // Preferred bill - standard description
-                                        actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                        // Preferred bill - check for sponsor
+                                        if (it.didCosponsor) {
+                                          actionDescription = 'Cosponsored';
+                                        } else if (it.val > 0) {
+                                          actionDescription = 'Sponsored';
+                                        } else {
+                                          actionDescription = 'Has not cosponsored';
+                                        }
                                       }
                                     } else {
-                                      // Not a paired bill - standard description
-                                      actionDescription = it.didCosponsor ? 'Cosponsored' : 'Has not cosponsored';
+                                      // Not a paired bill - check for sponsor
+                                      if (it.didCosponsor) {
+                                        actionDescription = 'Cosponsored';
+                                      } else if (it.val > 0) {
+                                        actionDescription = 'Sponsored';
+                                      } else {
+                                        actionDescription = 'Has not cosponsored';
+                                      }
                                     }
                                   } else if (isVote) {
                                     // Check for "Voted Present" (partial points, between 0 and full points)
