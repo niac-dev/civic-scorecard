@@ -1,5 +1,5 @@
 chamber,columns,checkPositivePoints,goodText,badText,ending
-HOUSE,"H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor;H.Con.Res.40 — Iran War Powers Resolution_cosponsor",true,Cosponsored,Did not cosponsor,War Powers Resolution against war on Iran.
+HOUSE,"H.Con.Res.38 — Iran War Powers Resolution (Preferred);H.Con.Res.40 — Iran War Powers Resolution;H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor;H.Con.Res.40 — Iran War Powers Resolution_cosponsor",true,Cosponsored,Did not cosponsor,War Powers Resolution against war on Iran.
 HOUSE,"H.R.1422 — Enhanced Iran Sanctions Act_cosponsor",false,,Supports,AIPAC's collective punishment sanctions on Iranians.
 HOUSE,"H.Res.166 — MEK Bill_cosponsor",false,,Sponsored,the MEK bill.
 HOUSE,"H_R_2619_Travel_to_Iran_Amendment",true,Voted to prevent a ban on,Voted to ban,U.S. travel to Iran.

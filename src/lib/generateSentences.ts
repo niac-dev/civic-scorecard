@@ -88,51 +88,62 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
   const chamberRules = rules.filter(r => r.chamber === chamber);
 
   for (const rule of chamberRules) {
-    for (const col of rule.columns) {
-      const value = row[col];
-      const isBlockTheBombs = col.includes('Block the Bombs');
+    const isBlockTheBombs = rule.columns.some(col => col.includes('Block the Bombs'));
 
-      if (rule.checkPositivePoints) {
-        // Check if member was absent for this item
-        const absentCol = `${col}_absent`;
-        const wasAbsent = Number(row[absentCol] ?? 0) === 1;
-        const isCosponsorCol = col.includes('_cosponsor');
-
+    if (rule.checkPositivePoints) {
+      // First pass: check ALL columns for any positive points
+      let foundPositive = false;
+      for (const col of rule.columns) {
+        const value = row[col];
         if (hasPositivePoints(value)) {
-          if (rule.goodText) {
-            const sentence = { text: `${rule.goodText} ${rule.ending}`, isGood: true };
-            if (isBlockTheBombs) {
-              blockTheBombsSentence = sentence;
-            } else {
-              sentences.push(sentence);
-            }
-          }
-          break;
-        } else if (isCosponsorCol && value !== undefined && value !== null && value !== '') {
-          // For cosponsorship: 0 means "didn't cosponsor" which is a real action
-          if (rule.badText) {
-            const sentence = { text: `${rule.badText} ${rule.ending}`, isGood: false };
-            if (isBlockTheBombs) {
-              blockTheBombsSentence = sentence;
-            } else {
-              sentences.push(sentence);
-            }
-          }
-          break;
-        } else if (!isCosponsorCol && !wasAbsent && value !== undefined && value !== null && value !== '') {
-          // For votes: show bad if they have a value (were eligible), weren't absent, and didn't get positive points
-          // Empty value means they weren't eligible to vote (e.g., not on committee)
-          if (rule.badText) {
-            const sentence = { text: `${rule.badText} ${rule.ending}`, isGood: false };
-            if (isBlockTheBombs) {
-              blockTheBombsSentence = sentence;
-            } else {
-              sentences.push(sentence);
-            }
-          }
+          foundPositive = true;
           break;
         }
+      }
+
+      if (foundPositive) {
+        // Show good text
+        if (rule.goodText) {
+          const sentence = { text: `${rule.goodText} ${rule.ending}`, isGood: true };
+          if (isBlockTheBombs) {
+            blockTheBombsSentence = sentence;
+          } else {
+            sentences.push(sentence);
+          }
+        }
       } else {
+        // Second pass: check if they had opportunity to act (has value or cosponsor column exists)
+        let hadOpportunity = false;
+        for (const col of rule.columns) {
+          const value = row[col];
+          const isCosponsorCol = col.includes('_cosponsor');
+          const absentCol = `${col}_absent`;
+          const wasAbsent = Number(row[absentCol] ?? 0) === 1;
+
+          if (isCosponsorCol && value !== undefined && value !== null && value !== '') {
+            // Cosponsor column with a value (0 = didn't cosponsor)
+            hadOpportunity = true;
+            break;
+          } else if (!isCosponsorCol && !wasAbsent && value !== undefined && value !== null && value !== '') {
+            // Vote/score column with a value and not absent
+            hadOpportunity = true;
+            break;
+          }
+        }
+
+        if (hadOpportunity && rule.badText) {
+          const sentence = { text: `${rule.badText} ${rule.ending}`, isGood: false };
+          if (isBlockTheBombs) {
+            blockTheBombsSentence = sentence;
+          } else {
+            sentences.push(sentence);
+          }
+        }
+      }
+    } else {
+      // checkPositivePoints = false: bad action if they have positive points
+      for (const col of rule.columns) {
+        const value = row[col];
         if (hasPositivePoints(value)) {
           if (rule.badText) {
             sentences.push({ text: `${rule.badText} ${rule.ending}`, isGood: false });
