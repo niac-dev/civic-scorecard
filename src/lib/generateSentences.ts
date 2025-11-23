@@ -119,8 +119,9 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
             }
           }
           break;
-        } else if (!isCosponsorCol && !wasAbsent) {
-          // For votes: show bad if they weren't absent and didn't get positive points
+        } else if (!isCosponsorCol && !wasAbsent && value !== undefined && value !== null && value !== '') {
+          // For votes: show bad if they have a value (were eligible), weren't absent, and didn't get positive points
+          // Empty value means they weren't eligible to vote (e.g., not on committee)
           if (rule.badText) {
             const sentence = { text: `${rule.badText} ${rule.ending}`, isGood: false };
             if (isBlockTheBombs) {
