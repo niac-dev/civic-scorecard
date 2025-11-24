@@ -245,7 +245,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      // Skip sponsor for cosponsor bills (we'll add them at the top separately)
+      // Skip sponsor for cosponsor bills
       if (isCosponsor && sponsorBioguideId && row.bioguide_id === sponsorBioguideId) {
         return;
       }
@@ -282,11 +282,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         }
       }
     });
-
-    // For cosponsor bills, add sponsor at the top of the support list
-    if (isCosponsor && sponsorMember) {
-      support.unshift(sponsorMember);
-    }
 
     let fLabel = 'Support';
     let sLabel = 'Oppose';
@@ -501,66 +496,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
           <div className="p-6 space-y-6">
             {/* Bill metadata */}
             <div className="space-y-2">
-              {/* Sponsor */}
-              {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
-                <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                  <span className="font-bold">Sponsor:</span>
-                  {sponsorMember ? (
-                    <button
-                      className="text-left py-1 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                      onClick={() => {
-                        const firstCategory = meta.categories?.split(';')[0]?.trim();
-                        onMemberClick?.(sponsorMember, firstCategory);
-                      }}
-                    >
-                      {/* Photo */}
-                      {sponsorMember.bioguide_id ? (
-                        <img
-                          src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275')}
-                          alt=""
-                          loading="lazy"
-                          className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
-                          onError={(e) => {
-                            const target = e.currentTarget;
-                            if (!target.dataset.fallback && sponsorMember.photo_url) {
-                              target.dataset.fallback = '1';
-                              target.src = String(sponsorMember.photo_url);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
-                      )}
-                      {/* Info */}
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                          {formatNameFirstLast(sponsorMember.full_name)}
-                        </span>
-                        <span
-                          className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
-                          style={{
-                            color: '#64748b',
-                            backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
-                          }}
-                        >
-                          {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
-                        </span>
-                        <span
-                          className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
-                          style={partyBadgeStyle(sponsorMember.party)}
-                        >
-                          {partyLabel(sponsorMember.party)}
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {formatStateDistrict(sponsorMember)}
-                        </span>
-                      </div>
-                    </button>
-                  ) : (
-                    <span>{meta.sponsor_name || meta.sponsor}</span>
-                  )}
-                </div>
-              )}
               {/* Date Introduced / Status */}
               {(() => {
                 const voteInfo = extractVoteInfo(meta);
@@ -720,6 +655,71 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </div>
                   )}
                 </div>
+
+                {/* Sponsor */}
+                {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
+                  <div className="mb-4">
+                    <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Sponsor</div>
+                    {sponsorMember ? (
+                      <div
+                        className="text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                        onClick={() => {
+                          const firstCategory = meta.categories?.split(';')[0]?.trim();
+                          onMemberClick?.(sponsorMember, firstCategory);
+                        }}
+                      >
+                        {/* Photo */}
+                        {sponsorMember.bioguide_id ? (
+                          <img
+                            src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275')}
+                            alt=""
+                            loading="lazy"
+                            className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.fallback && sponsorMember.photo_url) {
+                                target.dataset.fallback = '1';
+                                target.src = String(sponsorMember.photo_url);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                        )}
+                        {/* Info */}
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                            {formatNameFirstLast(sponsorMember.full_name)}
+                          </span>
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                              style={{
+                                color: '#64748b',
+                                backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
+                              }}
+                            >
+                              {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
+                            </span>
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                              style={partyBadgeStyle(sponsorMember.party)}
+                            >
+                              {partyLabel(sponsorMember.party)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              {formatStateDistrict(sponsorMember)}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Grade chip */}
+                        <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-600 dark:text-slate-300">{meta.sponsor_name || meta.sponsor}</div>
+                    )}
+                  </div>
+                )}
 
                 {/* First Section - Cosponsored / Voted in favor */}
                 <div ref={accordionSectionRef}>

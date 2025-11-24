@@ -421,9 +421,9 @@ export default function Page() {
       // Check if user has visited before
       const hasVisited = localStorage.getItem("hasVisitedScorecard");
       if (!hasVisited) {
-        // First visit - default to map view
+        // First visit - default to scorecard view for all browsers
         localStorage.setItem("hasVisitedScorecard", "true");
-        f.set({ viewMode: "map" });
+        f.set({ viewMode: "summary" });
       }
       // Returning user stays on "summary" (already the default)
     }

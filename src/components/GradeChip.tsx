@@ -68,7 +68,9 @@ export function GradeChip({ grade, scale = 1, size = "default" }: GradeChipProps
   const scaledBorder = Math.round(SIZES.mobile.border * scale);
   // Smaller font for incomplete text: "Incomplete" (10 chars) needs ~0.28, "Inc" (3 chars) needs ~0.55
   const scaledText = Math.round(SIZES.mobile.text * scale * (showFullIncomplete ? 0.28 : isIncomplete ? 0.55 : 1));
-  const scaledModifier = Math.round(SIZES.mobile.modifier * scale);
+  // For small chips (scale < 1), increase modifier size proportionally so it's more visible
+  const modifierBoost = scale < 1 ? 1.5 : 1;
+  const scaledModifier = Math.round(SIZES.mobile.modifier * scale * modifierBoost);
 
   // Determine CSS class based on size prop
   const sizeClass = size === "xl" ? "grade-chip-xl"
