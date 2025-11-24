@@ -4,7 +4,8 @@ import type { Meta, Row } from "@/lib/types";
 import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel } from "@/lib/utils";
 import clsx from "clsx";
 import { BillMiniMap } from "@/components/BillMiniMap";
-import { VoteIcon } from "@/components/GradeChip";
+import { VoteIcon, GradeChip } from "@/components/GradeChip";
+import { isGradeIncomplete } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -498,16 +499,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
 
           {/* Content */}
           <div className="p-6 space-y-6">
-            {/* Description at top */}
-            {meta.description && (
-              <p className="text-base text-slate-700 dark:text-slate-200 ml-11 -mt-4 -mb-4">
-                {meta.description}
-              </p>
-            )}
-
-            {/* Divider */}
-            <div className="border-t border-[#E7ECF2] dark:border-slate-900"></div>
-
             {/* Bill metadata */}
             <div className="space-y-2">
               {/* Sponsor */}
@@ -535,7 +526,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       )}
                       {/* Info */}
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-[13px]">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                           {formatNameFirstLast(sponsorMember.full_name)}
                         </span>
                         <span
@@ -597,11 +588,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             </div>
 
-            {/* Analysis */}
+            {/* Description */}
             {meta.analysis && (
               <div>
                 <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                  Analysis
+                  Description
                 </h2>
                 <p className="text-sm text-slate-700 dark:text-slate-200">
                   {meta.analysis}
@@ -802,6 +793,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                                 </span>
                               </div>
                             </div>
+                            {/* Grade chip */}
+                            <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                           </div>
                         );
                       })}
@@ -897,6 +890,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               </span>
                             </div>
                           </div>
+                          {/* Grade chip */}
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                       ))}
                       {filteredSecondSection.length === 0 && (
@@ -986,6 +981,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                                 </span>
                               </div>
                             </div>
+                            {/* Grade chip */}
+                            <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                           </div>
                         ))}
                       </div>

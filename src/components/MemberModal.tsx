@@ -72,6 +72,7 @@ export function MemberModal({
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
   const [pacDataLoaded, setPacDataLoaded] = useState(false);
   const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
+  const [showExpandedMap, setShowExpandedMap] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
 
   // Load sentence rules from CSV
@@ -414,11 +415,11 @@ export function MemberModal({
             </div>
           </div>
           {/* Header */}
-          <div className="flex flex-col p-6 pt-0 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative -mt-12">
+          <div className="flex flex-col p-6 pt-10 min-[900px]:pt-0 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative -mt-12">
             {/* Three column layout on wide screens */}
             <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
-              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0 mt-10">
+              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-2 min-[900px]:mb-0 mt-2 min-[900px]:mt-10">
                 {row.photo_url ? (
                   <img
                     src={String(row.photo_url)}
@@ -432,7 +433,7 @@ export function MemberModal({
               </div>
 
               {/* Column 2: Member info */}
-              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-4 min-[900px]:mb-0 min-[900px]:mr-4 mt-10">
+              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-2 min-[900px]:mb-0 min-[900px]:mr-4 mt-0 min-[900px]:mt-10">
                 {/* Title (Representative/Senator/Delegate) */}
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
                   {(() => {
@@ -482,14 +483,18 @@ export function MemberModal({
                     {partyLabel(row.party)}
                   </span>
                   <span className="text-slate-400 dark:text-slate-500">•</span>
-                  <span>
+                  {/* District - clickable to open expanded map */}
+                  <button
+                    onClick={() => setShowExpandedMap(true)}
+                    className="text-[#4B8CFB] hover:underline cursor-pointer"
+                  >
                     {row.chamber === "SENATE"
                       ? stateCodeOf(row.state)
                       : row.district
                         ? `${stateCodeOf(row.state)}-${row.district}`
                         : `${stateCodeOf(row.state)}-At Large`
                     }
-                  </span>
+                  </button>
                 </div>
 
                 {/* Birth year, age, and years in office */}
@@ -524,31 +529,17 @@ export function MemberModal({
                   </a>
                 )}
 
-                {/* District Map link - shown on mobile only */}
-                {row.state && (
-                  <a
-                    href={`/member/${row.bioguide_id}#map`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="min-[900px]:hidden flex text-xs text-[#4B8CFB] hover:text-[#3a7de8] items-center gap-1 mt-2 transition-colors"
-                  >
-                    <span>District Map</span>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                )}
               </div>
 
               {/* Column 3: Map (only on wide screens) */}
-              <div className="hidden min-[900px]:block min-[900px]:ml-12 min-[900px]:mt-8">
+              <div className="hidden min-[1075px]:block min-[1075px]:ml-12 min-[1075px]:mt-8">
                 {row.state && <MiniDistrictMap member={row} />}
               </div>
             </div>
           </div>
 
           {/* Content - 2 Column Layout */}
-          <div className="p-6">
+          <div className="p-4 min-[900px]:p-6">
             <div className="flex flex-col min-[900px]:flex-row gap-6 items-start">
               {/* Left Column: Issue Grade Filters (1/3 width on desktop, full width on mobile) */}
               <div className="w-full min-[900px]:w-1/3 min-[900px]:flex-shrink-0 space-y-3">
@@ -1319,6 +1310,17 @@ export function MemberModal({
           </div>
         </div>
       </div>
+
+      {/* Expanded map modal - triggered by clicking district */}
+      {showExpandedMap && row.state && (
+        <div className="contents">
+          <MiniDistrictMap
+            member={row}
+            initialExpanded={true}
+            onClose={() => setShowExpandedMap(false)}
+          />
+        </div>
+      )}
     </>
   );
 }

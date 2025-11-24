@@ -6,6 +6,7 @@ import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
 import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete } from "@/lib/utils";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
+import { BillModal } from "@/components/BillModal";
 import clsx from "clsx";
 
 function isTrue(v: unknown): boolean {
@@ -101,10 +102,12 @@ export default function MemberPage() {
   const id = params.id as string;
 
   const [row, setRow] = useState<Row | null>(null);
+  const [allRows, setAllRows] = useState<Row[]>([]);
   const [billCols, setBillCols] = useState<string[]>([]);
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedBill, setSelectedBill] = useState<{ meta: Meta; column: string } | null>(null);
   const [districtOfficesExpanded, setDistrictOfficesExpanded] = useState<boolean>(false);
   const [committeesExpanded, setCommitteesExpanded] = useState<boolean>(false);
   const [gradesExpanded, setGradesExpanded] = useState<boolean>(true);
@@ -128,6 +131,7 @@ export default function MemberPage() {
       }
 
       setRow(member);
+      setAllRows(rows);
       setMetaByCol(meta);
       setCategories(cats);
       setPacData(pacDataMap.get(id));
@@ -154,9 +158,18 @@ export default function MemberPage() {
     .map((col) => {
       const meta = metaByCol.get(col);
       const inferred = inferChamber(meta, col);
-      const na = inferred && inferred !== row.chamber;
+      let na = inferred && inferred !== row.chamber;
       const raw = (row as Record<string, unknown>)[col];
       const val = Number(raw ?? 0);
+
+      // Check if member was not in office for this vote
+      const notInOfficeCol = `${col}_not_in_office`;
+      const wasNotInOffice = Number((row as Record<string, unknown>)[notInOfficeCol] ?? 0) === 1;
+
+      // For manual actions (like committee votes or amendments), null/undefined/empty means not applicable
+      if (meta?.type === 'MANUAL' && (raw === null || raw === undefined || raw === '')) {
+        na = true;
+      }
 
       let waiver = false;
       const isPreferred = meta ? isTrue((meta as Record<string, unknown>).preferred) : false;
@@ -177,13 +190,14 @@ export default function MemberPage() {
         na,
         ok: !na && val > 0,
         waiver,
+        wasNotInOffice,
         label: meta?.display_name || meta?.short_title || meta?.bill_number || col,
         stance: meta?.position_to_score || "",
         categories: (meta?.categories || "").split(";").map(c => c.trim()).filter(Boolean),
         val
       };
     })
-    .filter((it) => !it.na)
+    .filter((it) => !it.na && !it.wasNotInOffice)
     .sort((a, b) => {
       // Sort by first category alphabetically
       const catA = a.categories[0] || "";
@@ -309,8 +323,9 @@ export default function MemberPage() {
                 })()}
               </div>
 
-              <div className="flex items-center justify-center">
-                <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
+              <div className="flex flex-col items-center justify-center">
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Grade</div>
+                <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} size="xl" />
               </div>
 
               <div className="flex items-center gap-2 print:hidden ml-12">
@@ -389,8 +404,7 @@ export default function MemberPage() {
                   <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-            {gradesExpanded && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={clsx("grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-3", !gradesExpanded && "hidden print:grid")}>
               {/* Overall Grade card */}
               <button
                 onClick={() => {
@@ -412,7 +426,7 @@ export default function MemberPage() {
                   <div className="text-xs tabular text-slate-700">
                     {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                   </div>
-                  <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
+                  <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} size="sm" />
                 </div>
               </button>
 
@@ -439,7 +453,7 @@ export default function MemberPage() {
                       <div className="text-xs tabular text-slate-700">
                         {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
                       </div>
-                      <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} />
+                      <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} size="sm" />
                     </div>
                   </button>
                 );
@@ -519,7 +533,6 @@ export default function MemberPage() {
                 );
               })()}
             </div>
-            )}
             </div>
 
             {/* Votes & Actions */}
@@ -538,8 +551,7 @@ export default function MemberPage() {
                   <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              {votesActionsExpanded && (
-                <div className="space-y-4">
+              <div className={clsx("space-y-4", !votesActionsExpanded && "hidden print:block")}>
                   {(() => {
                     // Group items by category
                     const itemsByCategory = new Map<string, typeof items>();
@@ -564,16 +576,16 @@ export default function MemberPage() {
                         <div key={category} className="rounded-lg border border-[#E7ECF2] bg-slate-50 p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <div className="text-xs font-semibold text-slate-700">{category}</div>
-                            <GradeChip grade={grade} />
+                            <GradeChip grade={grade} size="large" />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 print:grid-cols-3 gap-3">
                             {categoryItems.map(({ col, meta, ok, waiver, label, stance, val }) => {
                               // Check if member was absent on this vote
                               const absentCol = `${col}_absent`;
                               const wasAbsent = Boolean((row as Record<string, unknown>)[absentCol]);
 
                               return (
-                                <div key={col} className="rounded-lg border border-[#E7ECF2] bg-white p-3 cursor-pointer hover:border-[#4B8CFB] transition" onClick={() => window.open(`/bill/${encodeURIComponent(col)}`, '_blank')}>
+                                <div key={col} className="rounded-lg border border-[#E7ECF2] bg-white p-3 cursor-pointer hover:border-[#4B8CFB] transition" onClick={() => meta && setSelectedBill({ meta, column: col })}>
                                   <div className="text-[13px] font-medium leading-5 text-slate-700 hover:text-[#4B8CFB] mb-1.5">
                                     {label}
                                   </div>
@@ -642,7 +654,6 @@ export default function MemberPage() {
                     </div>
                   )}
                 </div>
-              )}
             </div>
 
             {/* Support from AIPAC and Affiliates */}
@@ -946,6 +957,16 @@ export default function MemberPage() {
         </div>
       </div>
     </div>
+
+    {/* Bill Modal */}
+    {selectedBill && (
+      <BillModal
+        meta={selectedBill.meta}
+        column={selectedBill.column}
+        rows={allRows}
+        onClose={() => setSelectedBill(null)}
+      />
+    )}
     </>
   );
 }

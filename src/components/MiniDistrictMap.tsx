@@ -9,6 +9,8 @@ import { stateCodeOf } from '@/lib/utils';
 interface MiniDistrictMapProps {
   member: Row;
   onExpand?: () => void;
+  initialExpanded?: boolean;
+  onClose?: () => void;
 }
 
 // State centers for centering Senate maps - zoom levels very low to show almost entire country
@@ -48,12 +50,12 @@ const stateToFips: Record<string, string> = {
   'VI': '78'
 };
 
-export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
+export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onClose }: MiniDistrictMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
 
   useEffect(() => {
     if (!mapContainer.current) {
@@ -489,8 +491,8 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
       {/* Fullscreen map modal */}
       {isExpanded && (
         <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => setIsExpanded(false)}
+          className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => { setIsExpanded(false); onClose?.(); }}
         >
           <div
             className="relative w-full h-full max-w-6xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-lg overflow-hidden shadow-2xl"
@@ -498,7 +500,7 @@ export function MiniDistrictMap({ member, onExpand }: MiniDistrictMapProps) {
           >
             {/* Close button */}
             <button
-              onClick={() => setIsExpanded(false)}
+              onClick={() => { setIsExpanded(false); onClose?.(); }}
               className="absolute top-4 right-4 z-10 p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
               title="Close"
             >

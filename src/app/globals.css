@@ -70,38 +70,38 @@ html {
 
 /* GradeChip responsive sizing */
 /* Ratios: border 12%, text 55%, modifier 21% */
-/* Mobile: 48px */
+/* Mobile: 52px (matches vote-icon-chip) */
 .grade-chip {
-  width: 48px !important;
-  height: 48px !important;
+  width: 52px !important;
+  height: 52px !important;
   border-width: 6px !important;
-  font-size: 26px !important;
+  font-size: 28px !important;
 }
 .grade-chip-modifier {
-  font-size: 10px !important;
+  font-size: 11px !important;
 }
-/* Tablet: 56px */
+/* Tablet: 60px (matches vote-icon-chip) */
 @media (min-width: 768px) {
   .grade-chip {
-    width: 56px !important;
-    height: 56px !important;
+    width: 60px !important;
+    height: 60px !important;
     border-width: 7px !important;
-    font-size: 31px !important;
+    font-size: 33px !important;
   }
   .grade-chip-modifier {
-    font-size: 12px !important;
+    font-size: 13px !important;
   }
 }
-/* Desktop: 80px */
+/* Desktop: 84px (matches vote-icon-chip) */
 @media (min-width: 1280px) {
   .grade-chip {
-    width: 80px !important;
-    height: 80px !important;
+    width: 84px !important;
+    height: 84px !important;
     border-width: 10px !important;
-    font-size: 44px !important;
+    font-size: 46px !important;
   }
   .grade-chip-modifier {
-    font-size: 17px !important;
+    font-size: 18px !important;
   }
 }
 
@@ -120,6 +120,72 @@ html {
   .vote-icon-chip {
     width: 84px;
     height: 84px;
+  }
+}
+
+/* Small GradeChip for member page buttons (slightly larger to account for border, matches VoteIcon visually) */
+.grade-chip-sm {
+  width: 50px !important;
+  height: 50px !important;
+  border-width: 6px !important;
+  font-size: 27px !important;
+}
+.grade-chip-sm .grade-chip-modifier {
+  font-size: 10px !important;
+}
+@media (min-width: 1280px) {
+  .grade-chip-sm {
+    width: 58px !important;
+    height: 58px !important;
+    border-width: 7px !important;
+    font-size: 32px !important;
+  }
+  .grade-chip-sm .grade-chip-modifier {
+    font-size: 12px !important;
+  }
+}
+
+/* Large GradeChip for member page issue section headers */
+.grade-chip-large {
+  width: 64px !important;
+  height: 64px !important;
+  border-width: 7px !important;
+  font-size: 35px !important;
+}
+.grade-chip-large .grade-chip-modifier {
+  font-size: 13px !important;
+}
+@media (min-width: 1280px) {
+  .grade-chip-large {
+    width: 80px !important;
+    height: 80px !important;
+    border-width: 9px !important;
+    font-size: 44px !important;
+  }
+  .grade-chip-large .grade-chip-modifier {
+    font-size: 17px !important;
+  }
+}
+
+/* Extra large GradeChip for member page header next to photo */
+.grade-chip-xl {
+  width: 100px !important;
+  height: 100px !important;
+  border-width: 11px !important;
+  font-size: 55px !important;
+}
+.grade-chip-xl .grade-chip-modifier {
+  font-size: 21px !important;
+}
+@media (min-width: 1280px) {
+  .grade-chip-xl {
+    width: 120px !important;
+    height: 120px !important;
+    border-width: 13px !important;
+    font-size: 66px !important;
+  }
+  .grade-chip-xl .grade-chip-modifier {
+    font-size: 25px !important;
   }
 }
 

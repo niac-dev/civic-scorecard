@@ -6,6 +6,7 @@ interface GradeChipProps {
   grade: string;
   isOverall?: boolean;
   scale?: number; // Multiplier for size (1 = default, 1.25 = 25% bigger, etc.)
+  size?: "sm" | "default" | "large" | "xl"; // CSS class-based sizing
 }
 
 // Responsive diameters - change these to resize at each breakpoint
@@ -44,11 +45,11 @@ const SIZES = {
 
 // Responsive styles are in globals.css (.grade-chip class)
 // SIZES is kept for scaled chips that use inline styles
-export function GradeChip({ grade, scale = 1 }: GradeChipProps) {
+export function GradeChip({ grade, scale = 1, size = "default" }: GradeChipProps) {
   // Handle "Inc" (Incomplete) grade specially
   const isIncomplete = grade === 'Inc';
-  // Show full "Incomplete" text on larger chips (scale > 1)
-  const showFullIncomplete = isIncomplete && scale > 1;
+  // Show full "Incomplete" text on larger chips (scale > 1 or size !== "default")
+  const showFullIncomplete = isIncomplete && (scale > 1 || size !== "default");
 
   const color = isIncomplete ? GRADE_COLORS.default
     : grade.startsWith("A") ? GRADE_COLORS.A
@@ -61,7 +62,7 @@ export function GradeChip({ grade, scale = 1 }: GradeChipProps) {
   const letter = showFullIncomplete ? 'Incomplete' : isIncomplete ? 'Inc' : grade.charAt(0);
   const modifier = isIncomplete ? '' : grade.slice(1);
 
-  // For scale !== 1 or incomplete grade, use inline styles (proportions still locked)
+  // Use CSS classes for size prop, inline styles for scale prop or incomplete grade
   const useInlineStyles = scale !== 1 || isIncomplete;
   const scaledSize = Math.round(SIZES.mobile.diameter * scale);
   const scaledBorder = Math.round(SIZES.mobile.border * scale);
@@ -69,9 +70,15 @@ export function GradeChip({ grade, scale = 1 }: GradeChipProps) {
   const scaledText = Math.round(SIZES.mobile.text * scale * (showFullIncomplete ? 0.28 : isIncomplete ? 0.55 : 1));
   const scaledModifier = Math.round(SIZES.mobile.modifier * scale);
 
+  // Determine CSS class based on size prop
+  const sizeClass = size === "xl" ? "grade-chip-xl"
+    : size === "large" ? "grade-chip-large"
+    : size === "sm" ? "grade-chip-sm"
+    : "grade-chip";
+
   return (
     <span
-      className={`${useInlineStyles ? '' : 'grade-chip'} inline-flex items-center justify-center rounded-full font-extrabold bg-white dark:bg-white flex-shrink-0 border-solid`}
+      className={`${useInlineStyles ? '' : sizeClass} inline-flex items-center justify-center rounded-full font-extrabold bg-white dark:bg-white flex-shrink-0 border-solid`}
       style={useInlineStyles ? {
         width: scaledSize,
         height: scaledSize,
