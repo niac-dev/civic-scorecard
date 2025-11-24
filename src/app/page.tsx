@@ -999,12 +999,19 @@ export default function Page() {
     let out = cols;
 
     // Chamber filter: keep only bills for the selected chamber
-    // Bills with empty chamber (multi-chamber bills) should appear in both filters
+    // Bills with empty chamber or voted in both chambers should appear in both filters
     if (f.chamber) {
       out = out.filter((c) => {
         const meta = metaByCol.get(c);
         const ch = inferChamber(meta, c);
-        return ch === "" || ch === f.chamber;
+
+        // Check if voted in both chambers
+        const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+        const hasHouseVote = voteTallies.includes("house");
+        const hasSenateVote = voteTallies.includes("senate");
+        const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+        return ch === "" || ch === f.chamber || votedInBothChambers;
       });
     }
 
@@ -3536,8 +3543,19 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
         <div
           className="flex items-center gap-1.5"
         >
-          {/* Mobile: Chamber buttons (no All option) */}
+          {/* Mobile: Chamber buttons (with All option) */}
           <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
+            <button
+              onClick={() => f.set({ chamber: "" })}
+              className={clsx(
+                "px-1.5 h-6 rounded-md text-[10px]",
+                !f.chamber
+                  ? "bg-[#4B8CFB] text-white"
+                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+              )}
+            >
+              All
+            </button>
             <button
               onClick={() => f.set({ chamber: "HOUSE" })}
               className={clsx(

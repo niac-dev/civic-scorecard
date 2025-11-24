@@ -137,10 +137,18 @@ export default function MemberPage() {
       setPacData(pacDataMap.get(id));
 
       // Filter columns by chamber (don't filter by category for member page)
+      // Include bills voted on in both chambers
       const filtered = columns.filter((c) => {
         const m = meta.get(c);
         const ch = inferChamber(m, c);
-        return !ch || ch === member.chamber;
+
+        // Check if voted in both chambers
+        const voteTallies = (m?.vote_tallies || "").toLowerCase();
+        const hasHouseVote = voteTallies.includes("house");
+        const hasSenateVote = voteTallies.includes("senate");
+        const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+        return !ch || ch === member.chamber || votedInBothChambers;
       });
 
       setBillCols(filtered);
