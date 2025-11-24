@@ -1427,7 +1427,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
+          <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[450px] max-h-[calc(100vh-14rem)] rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
             {/* Header wrapper - extends full width for shadow */}
             <div className="sticky top-0 z-30 min-w-max w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm">
             {/* Header */}

@@ -49,6 +49,15 @@ html {
   body { @apply bg-[#0B1220] text-[#E8EEF7]; }
 }
 
+/* Hide scrollbar but keep scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
 .th { @apply px-3 py-2 text-[13px] md:text-[16px] font-semibold tracking-wide text-slate-800 dark:text-white; }
 .td { @apply px-3 py-1.5 md:py-3 text-sm text-slate-800 dark:text-white; }
 .select { @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/15 px-3 text-sm text-slate-900 dark:text-white; }

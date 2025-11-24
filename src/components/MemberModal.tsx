@@ -319,18 +319,9 @@ export function MemberModal({
       <div className="fixed inset-2 min-[900px]:inset-10 z-[110] flex items-start justify-center overflow-hidden">
         <div className="relative w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
           {/* Floating navigation buttons - sticky at top */}
-          <div className="sticky top-0 z-50 flex justify-end p-2 pointer-events-none">
-            <div className="flex gap-2 pointer-events-auto">
-              {/* Generate Image button */}
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
-                onClick={handleDownloadImage}
-                title="Generate Shareable Image"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </button>
+          <div className="sticky top-0 z-50 flex justify-between p-2 pointer-events-none">
+            {/* Left side - Back button */}
+            <div className="pointer-events-auto">
               {onBack && (
                 <button
                   className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
@@ -342,6 +333,19 @@ export function MemberModal({
                   </svg>
                 </button>
               )}
+            </div>
+            {/* Right side - Other buttons */}
+            <div className="flex gap-2 pointer-events-auto">
+              {/* Generate Image button */}
+              <button
+                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                onClick={handleDownloadImage}
+                title="Generate Shareable Image"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
               <button
                 className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
                 onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
@@ -367,7 +371,7 @@ export function MemberModal({
             {/* Three column layout on wide screens */}
             <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
-              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0 mt-10 min-[900px]:mt-0">
+              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-4 min-[900px]:mb-0 mt-10">
                 {row.photo_url ? (
                   <img
                     src={String(row.photo_url)}
@@ -381,7 +385,7 @@ export function MemberModal({
               </div>
 
               {/* Column 2: Member info */}
-              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-4 min-[900px]:mb-0 min-[900px]:mr-4">
+              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-4 min-[900px]:mb-0 min-[900px]:mr-4 mt-10">
                 {/* Title (Representative/Senator/Delegate) */}
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
                   {(() => {
@@ -1196,20 +1200,24 @@ export function MemberModal({
                                           }
                                         }
 
-                                        if (supportedPreferred && !it.didCosponsor) {
+                                        // Check if member is the sponsor of this bill
+                                        const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
+
+                                        if (supportedPreferred && !it.didCosponsor && !isSponsor) {
                                           actionDescription = 'Supported preferred bill';
                                         } else if (it.didCosponsor) {
                                           actionDescription = 'Cosponsored';
-                                        } else if (it.val > 0) {
+                                        } else if (isSponsor) {
                                           actionDescription = 'Sponsored';
                                         } else {
                                           actionDescription = 'Has not cosponsored';
                                         }
                                       } else {
                                         // Preferred bill - check for sponsor
+                                        const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
                                         if (it.didCosponsor) {
                                           actionDescription = 'Cosponsored';
-                                        } else if (it.val > 0) {
+                                        } else if (isSponsor) {
                                           actionDescription = 'Sponsored';
                                         } else {
                                           actionDescription = 'Has not cosponsored';
@@ -1217,9 +1225,10 @@ export function MemberModal({
                                       }
                                     } else {
                                       // Not a paired bill - check for sponsor
+                                      const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
                                       if (it.didCosponsor) {
                                         actionDescription = 'Cosponsored';
-                                      } else if (it.val > 0) {
+                                      } else if (isSponsor) {
                                         actionDescription = 'Sponsored';
                                       } else {
                                         actionDescription = 'Has not cosponsored';

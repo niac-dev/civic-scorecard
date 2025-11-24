@@ -48,15 +48,41 @@ export default function SharePageClient() {
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
-      ]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+
+      // Try clipboard API first (works on desktop)
+      if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          return;
+        } catch (clipboardError) {
+          console.log("Clipboard API failed, trying Web Share API:", clipboardError);
+        }
+      }
+
+      // Fallback to Web Share API (works on mobile)
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], `${name || 'scorecard'}.png`, { type: 'image/png' });
+        const shareData = { files: [file] };
+
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          return;
+        }
+      }
+
+      // If both fail, show alert
+      alert("Unable to copy image on this device. Please use 'Download Image' instead, or long-press the image to save it.");
     } catch (error) {
       console.error("Copy failed:", error);
+      alert("Unable to copy image. Please use 'Download Image' instead.");
     }
-  }, [imageUrl]);
+  }, [imageUrl, name]);
 
   const handleCopyLink = useCallback(async () => {
     try {

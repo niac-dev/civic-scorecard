@@ -11,7 +11,7 @@ type Props = {
 // Load member data server-side for metadata
 async function getMemberData(id: string) {
   try {
-    const csvPath = path.join(process.cwd(), "public/data/House_Senate_Merged_2.csv");
+    const csvPath = path.join(process.cwd(), "public/data/scores_wide.csv");
     const csvContent = await fs.readFile(csvPath, "utf-8");
     const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true });
     const rows = parsed.data as Record<string, unknown>[];
