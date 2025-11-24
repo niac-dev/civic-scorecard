@@ -3,6 +3,7 @@ import MemberPageClient from "./MemberPageClient";
 import { promises as fs } from "fs";
 import path from "path";
 import Papa from "papaparse";
+import { getPhotoUrl } from "@/lib/utils";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -58,7 +59,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     chamber,
     party,
     location: String(location || ""),
-    photo: String(member.photo_url || ""),
+    photo: getPhotoUrl(String(member.bioguide_id || ""), 'original'),
+    photoFallback: String(member.photo_url || ""),
   });
   const ogImageUrl = `${baseUrl}/api/og/member/${memberId}?${ogParams.toString()}`;
 
@@ -71,8 +73,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: ogImageUrl,
-          width: 574,
-          height: 574,
+          width: 672,
+          height: 672,
           alt: `${displayName} Congressional Scorecard`,
         },
       ],

@@ -1,15 +1,39 @@
 import { ImageResponse } from 'next/og';
 
-// Fetch external image and convert to base64 data URL
-async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+// Fetch external image and convert to base64 data URL (with fallback)
+async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<string | null> {
   try {
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // Try fallback if primary fails
+      if (fallbackUrl) {
+        const fallbackResponse = await fetch(fallbackUrl);
+        if (!fallbackResponse.ok) return null;
+        const arrayBuffer = await fallbackResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
+        return `data:${contentType};base64,${base64}`;
+      }
+      return null;
+    }
     const arrayBuffer = await response.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     return `data:${contentType};base64,${base64}`;
   } catch {
+    // Try fallback on error
+    if (fallbackUrl) {
+      try {
+        const fallbackResponse = await fetch(fallbackUrl);
+        if (!fallbackResponse.ok) return null;
+        const arrayBuffer = await fallbackResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
+        return `data:${contentType};base64,${base64}`;
+      } catch {
+        return null;
+      }
+    }
     return null;
   }
 }
@@ -61,13 +85,13 @@ export async function GET(
     const party = url.searchParams.get('party') || 'I';
     const location = url.searchParams.get('location') || '';
     const photoUrl = url.searchParams.get('photo') || '';
+    const photoFallback = url.searchParams.get('photoFallback') || '';
 
     // Fetch all resources in parallel
-    const [, handwritingFont, interFont, photo] = await Promise.all([
-      params,
+    const [handwritingFont, interFont, photo] = await Promise.all([
       loadHandwritingFont(),
       loadInterFont(),
-      photoUrl ? fetchImageAsDataUrl(photoUrl) : Promise.resolve(null),
+      photoUrl ? fetchImageAsDataUrl(photoUrl, photoFallback || undefined) : Promise.resolve(null),
     ]);
 
     // Parse sentences from JSON param
@@ -83,20 +107,20 @@ export async function GET(
 
     const gradeColor = getGradeColor(grade);
 
-    // Calculate dynamic font size based on number of sentences
-    const sentenceFontSize = sentences.length > 5 ? 20 : sentences.length > 3 ? 22 : 24;
+    // Calculate dynamic font size based on number of sentences (30% larger)
+    const sentenceFontSize = sentences.length > 5 ? 23 : sentences.length > 3 ? 26 : 29;
     const lineHeight = sentences.length > 5 ? 1.25 : 1.35;
 
     return new ImageResponse(
       (
         <div style={{
-          width: '574px',
-          height: '574px',
+          width: '672px',
+          height: '672px',
           display: 'flex',
           flexDirection: 'column',
           background: 'linear-gradient(135deg, #0B1220 0%, #1a2744 50%, #0B1220 100%)',
           fontFamily: 'sans-serif',
-          padding: '16px 20px',
+          padding: '18px 23px',
           position: 'relative',
         }}>
           {/* Capitol background - behind entire card */}
@@ -108,20 +132,20 @@ export async function GET(
               position: 'absolute',
               top: '0',
               left: '0',
-              width: '574px',
-              height: '574px',
+              width: '672px',
+              height: '672px',
               objectFit: 'cover',
               objectPosition: 'center',
               opacity: 0.18,
             }}
           />
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '9px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', flex: '1' }}>
-              <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '40px', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.1', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '47px', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.1', justifyContent: 'center' }}>
                 {name}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: '#94a3b8', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <div style={{ fontFamily: 'Inter', fontSize: '14px', color: '#94a3b8', marginTop: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 <span style={{ display: 'flex' }}>{chamber === 'Senator' ? 'Senate' : 'House'}</span>
                 <span style={{ display: 'flex' }}>•</span>
                 <span style={{ display: 'flex' }}>{party}</span>
@@ -142,13 +166,13 @@ export async function GET(
 
             {/* Grade - right side */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ display: 'flex', fontFamily: 'Inter', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <span style={{ display: 'flex', fontFamily: 'Inter', fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Grade
               </span>
               <span style={{
                 display: 'flex',
                 fontFamily: 'Permanent Marker',
-                fontSize: '72px',
+                fontSize: '85px',
                 color: gradeColor,
                 lineHeight: '0.85',
               }}>
@@ -168,10 +192,10 @@ export async function GET(
               <div style={{
                 display: 'flex',
                 position: 'absolute',
-                left: '-44px',
+                left: '-52px',
                 top: '0',
                 bottom: '0',
-                width: '228px',
+                width: '267px',
                 overflow: 'hidden',
                 backgroundColor: '#0B1220',
                 zIndex: 10,
@@ -180,10 +204,10 @@ export async function GET(
                 <img
                   src={photo}
                   alt=""
-                  width={228}
-                  height={400}
+                  width={267}
+                  height={468}
                   style={{
-                    width: '228px',
+                    width: '267px',
                     height: '100%',
                     objectFit: 'cover',
                   }}
@@ -194,7 +218,7 @@ export async function GET(
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '120px',
+                  height: '140px',
                   background: 'linear-gradient(to bottom, rgba(11, 18, 32, 0.7) 0%, rgba(11, 18, 32, 0.3) 40%, transparent 100%)',
                   display: 'flex',
                 }} />
@@ -204,7 +228,7 @@ export async function GET(
                   top: 0,
                   left: 0,
                   bottom: 0,
-                  width: '80px',
+                  width: '94px',
                   background: 'linear-gradient(to right, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
                   display: 'flex',
                 }} />
@@ -214,7 +238,7 @@ export async function GET(
                   top: 0,
                   right: 0,
                   bottom: 0,
-                  width: '80px',
+                  width: '94px',
                   background: 'linear-gradient(to left, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
                   display: 'flex',
                 }} />
@@ -227,13 +251,13 @@ export async function GET(
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              gap: '8px',
+              gap: '9px',
               backgroundColor: 'rgba(11, 18, 32, 0.55)',
               borderRadius: '0',
-              padding: '12px 16px 12px 16px',
+              padding: '14px 18px 14px 18px',
               overflow: 'hidden',
-              marginLeft: photo ? '184px' : '0',
-              marginRight: '-20px',
+              marginLeft: photo ? '216px' : '0',
+              marginRight: '-23px',
               position: 'relative',
             }}>
               {sentences.length > 0 ? (
@@ -243,7 +267,7 @@ export async function GET(
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: '10px',
+                      gap: '12px',
                       fontSize: `${sentenceFontSize}px`,
                       lineHeight: lineHeight,
                       color: '#e2e8f0',
@@ -252,17 +276,17 @@ export async function GET(
                     <div style={{
                       display: 'flex',
                       flexShrink: '0',
-                      width: '28px',
-                      height: '28px',
+                      width: '33px',
+                      height: '33px',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
                       {s.isGood ? (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <svg width="29" height="29" viewBox="0 0 24 24" fill="none">
                           <path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       ) : (
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
                           <path d="M6 6l12 12M18 6L6 18" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
@@ -271,7 +295,7 @@ export async function GET(
                   </div>
                 ))
               ) : (
-                <div style={{ display: 'flex', fontSize: '20px', color: '#94a3b8', alignItems: 'center', justifyContent: 'center', flex: '1' }}>
+                <div style={{ display: 'flex', fontSize: '23px', color: '#94a3b8', alignItems: 'center', justifyContent: 'center', flex: '1' }}>
                   View full scorecard for detailed voting record
                 </div>
               )}
@@ -284,30 +308,30 @@ export async function GET(
             justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '0px',
-            padding: '10px 20px',
-            marginLeft: '-20px',
-            marginRight: '-20px',
-            marginBottom: '-16px',
+            padding: '12px 23px',
+            marginLeft: '-23px',
+            marginRight: '-23px',
+            marginBottom: '-18px',
             backgroundColor: 'rgba(11, 18, 32, 0.95)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`${baseUrl}/niac-action-100px.png`}
                 alt=""
-                width={50}
-                height={50}
-                style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+                width={59}
+                height={59}
+                style={{ width: '59px', height: '59px', objectFit: 'contain' }}
               />
-              <span style={{ display: 'flex', fontFamily: 'Inter', fontSize: '14px', color: '#94a3b8' }}>Congressional Scorecard</span>
+              <span style={{ display: 'flex', fontFamily: 'Inter', fontSize: '17px', color: '#94a3b8' }}>Congressional Scorecard</span>
             </div>
-            <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '14px', color: '#60a5fa' }}>scorecard.niacaction.org</div>
+            <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '17px', color: '#60a5fa' }}>scorecard.niacaction.org</div>
           </div>
         </div>
       ),
       {
-        width: 574,
-        height: 574,
+        width: 672,
+        height: 672,
         fonts: [
           {
             name: 'Permanent Marker',

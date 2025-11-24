@@ -43,6 +43,17 @@ export function isGradeIncomplete(bioguideId: string | unknown): boolean {
   return INCOMPLETE_GRADE_MEMBERS.has(String(bioguideId));
 }
 
+// Photo URL helper - uses unitedstates.github.io for higher resolution images
+export type PhotoSize = 'original' | '450x550' | '225x275';
+
+export function getPhotoUrl(
+  bioguideId: string | undefined,
+  size: PhotoSize = '225x275'
+): string {
+  if (!bioguideId) return '';
+  return `https://unitedstates.github.io/images/congress/${size}/${bioguideId}.jpg`;
+}
+
 const NAME_TO_CODE: Record<string, string> = {
   "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
   "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",

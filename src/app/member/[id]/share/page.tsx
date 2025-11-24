@@ -34,8 +34,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       images: [
         {
           url: ogImageUrl,
-          width: 574,
-          height: 574,
+          width: 672,
+          height: 672,
           alt: `${name} Congressional Scorecard`,
         },
       ],

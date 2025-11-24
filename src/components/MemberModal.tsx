@@ -9,7 +9,8 @@ import {
   chamberColor,
   inferChamber,
   isTrue,
-  isGradeIncomplete
+  isGradeIncomplete,
+  getPhotoUrl
 } from "@/lib/utils";
 import {
   PacData,
@@ -130,7 +131,8 @@ export function MemberModal({
       chamber,
       party,
       location: String(location || ''),
-      photo: String(row.photo_url || ''),
+      photo: getPhotoUrl(String(row.bioguide_id), 'original'),
+      photoFallback: String(row.photo_url || ''),
       sentences: encodeURIComponent(JSON.stringify(sentences)),
     });
 
@@ -188,7 +190,8 @@ export function MemberModal({
       chamber,
       party,
       location: String(location || ''),
-      photo: String(row.photo_url || ''),
+      photo: getPhotoUrl(String(row.bioguide_id), 'original'),
+      photoFallback: String(row.photo_url || ''),
       sentences: encodeURIComponent(JSON.stringify(sentences)),
     });
 
@@ -420,12 +423,19 @@ export function MemberModal({
             <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
               <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-2 min-[900px]:mb-0 mt-2 min-[900px]:mt-10">
-                {row.photo_url ? (
+                {row.bioguide_id ? (
                   <img
-                    src={String(row.photo_url)}
+                    src={getPhotoUrl(String(row.bioguide_id), '450x550')}
                     alt=""
                     loading="lazy"
                     className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.dataset.fallback && row.photo_url) {
+                        target.dataset.fallback = '1';
+                        target.src = String(row.photo_url);
+                      }
+                    }}
                   />
                 ) : (
                   <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10" />
@@ -1296,6 +1306,12 @@ export function MemberModal({
                                   return `${actionDescription}${pointsDisplay}`;
                                 })()}
                               </span>
+                              {/* Category chip */}
+                              {it.meta?.categories && (
+                                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                  {it.meta.categories.split(';')[0]?.trim()}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

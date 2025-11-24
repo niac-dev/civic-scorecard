@@ -124,8 +124,8 @@ export default function SharePageClient() {
             <img
               src={imageUrl}
               alt={`${name} Scorecard`}
-              width={574}
-              height={459}
+              width={672}
+              height={672}
               className="rounded-xl shadow-lg"
             />
           )}

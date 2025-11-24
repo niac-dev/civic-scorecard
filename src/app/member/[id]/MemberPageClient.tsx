@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete } from "@/lib/utils";
+import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl } from "@/lib/utils";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
 import { BillModal } from "@/components/BillModal";
 import clsx from "clsx";
@@ -254,11 +254,18 @@ export default function MemberPage() {
             {/* Header */}
           <div className="p-6 border-b border-[#E7ECF2] bg-white">
             <div className="flex items-start gap-4 mb-4">
-              {row.photo_url ? (
+              {row.bioguide_id ? (
                 <img
-                  src={String(row.photo_url)}
+                  src={getPhotoUrl(String(row.bioguide_id), '450x550')}
                   alt=""
                   className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.dataset.fallback && row.photo_url) {
+                      target.dataset.fallback = '1';
+                      target.src = String(row.photo_url);
+                    }
+                  }}
                 />
               ) : (
                 <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300" />

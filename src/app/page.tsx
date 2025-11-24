@@ -10,7 +10,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
@@ -389,7 +389,8 @@ export default function Page() {
       chamber,
       party,
       location: String(location || ''),
-      photo: String(row.photo_url || ''),
+      photo: getPhotoUrl(String(row.bioguide_id), 'original'),
+      photoFallback: String(row.photo_url || ''),
       sentences: encodeURIComponent(JSON.stringify(sentences)),
     });
 

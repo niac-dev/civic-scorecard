@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl } from "@/lib/utils";
 import clsx from "clsx";
 import { BillMiniMap } from "@/components/BillMiniMap";
 import { VoteIcon, GradeChip } from "@/components/GradeChip";
@@ -514,12 +514,19 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       }}
                     >
                       {/* Photo */}
-                      {sponsorMember.photo_url ? (
+                      {sponsorMember.bioguide_id ? (
                         <img
-                          src={String(sponsorMember.photo_url)}
+                          src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275')}
                           alt=""
                           loading="lazy"
                           className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.dataset.fallback && sponsorMember.photo_url) {
+                              target.dataset.fallback = '1';
+                              target.src = String(sponsorMember.photo_url);
+                            }
+                          }}
                         />
                       ) : (
                         <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
@@ -757,12 +764,19 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             }}
                           >
                             {/* Photo */}
-                            {member.photo_url ? (
+                            {member.bioguide_id ? (
                               <img
-                                src={String(member.photo_url)}
+                                src={getPhotoUrl(String(member.bioguide_id), '225x275')}
                                 alt=""
                                 loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (!target.dataset.fallback && member.photo_url) {
+                                    target.dataset.fallback = '1';
+                                    target.src = String(member.photo_url);
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
@@ -854,12 +868,19 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           }}
                         >
                           {/* Photo */}
-                          {member.photo_url ? (
+                          {member.bioguide_id ? (
                             <img
-                              src={String(member.photo_url)}
+                              src={getPhotoUrl(String(member.bioguide_id), '225x275')}
                               alt=""
                               loading="lazy"
                               className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (!target.dataset.fallback && member.photo_url) {
+                                  target.dataset.fallback = '1';
+                                  target.src = String(member.photo_url);
+                                }
+                              }}
                             />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
@@ -945,12 +966,19 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             }}
                           >
                             {/* Photo */}
-                            {member.photo_url ? (
+                            {member.bioguide_id ? (
                               <img
-                                src={String(member.photo_url)}
+                                src={getPhotoUrl(String(member.bioguide_id), '225x275')}
                                 alt=""
                                 loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (!target.dataset.fallback && member.photo_url) {
+                                    target.dataset.fallback = '1';
+                                    target.src = String(member.photo_url);
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />

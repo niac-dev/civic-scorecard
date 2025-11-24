@@ -1,6 +1,6 @@
 // src/components/MemberCard.tsx
 import { Row } from "@/lib/types";
-import { partyBadgeStyle, partyLabel, stateCodeOf, gradeColor, isTruthy } from "@/lib/utils";
+import { partyBadgeStyle, partyLabel, stateCodeOf, gradeColor, isTruthy, getPhotoUrl } from "@/lib/utils";
 
 interface MemberCardProps {
   member: Row;
@@ -17,12 +17,19 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
       className="flex items-center gap-2 p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition"
       onClick={onClick}
     >
-      {member.photo_url ? (
+      {member.bioguide_id ? (
         <img
-          src={String(member.photo_url)}
+          src={getPhotoUrl(String(member.bioguide_id), '225x275')}
           alt=""
           loading="lazy"
           className="h-8 w-8 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.dataset.fallback && member.photo_url) {
+              target.dataset.fallback = '1';
+              target.src = String(member.photo_url);
+            }
+          }}
         />
       ) : (
         <div className="h-8 w-8 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10" />
