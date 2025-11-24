@@ -107,6 +107,13 @@ export async function GET(
 
     const gradeColor = getGradeColor(grade);
 
+    // Use more intense vignette for D and F grades
+    const isLowGrade = grade.toUpperCase().startsWith('D') || grade.toUpperCase().startsWith('F');
+    const vignetteSize = isLowGrade ? { topBottom: '240px', leftRight: '110px' } : { topBottom: '120px', leftRight: '80px' };
+    const vignetteOpacity = isLowGrade
+      ? { edge: 0.98, mid: 0.55, midPoint: '35%' }
+      : { edge: 0.95, mid: 0.4, midPoint: '50%' };
+
     // Calculate dynamic font size based on number of sentences (30% larger)
     const sentenceFontSize = sentences.length > 5 ? 23 : sentences.length > 3 ? 26 : 29;
     const lineHeight = sentences.length > 5 ? 1.25 : 1.35;
@@ -195,7 +202,7 @@ export async function GET(
                 left: '-52px',
                 top: '0',
                 bottom: '0',
-                width: '267px',
+                width: '275px',
                 overflow: 'hidden',
                 backgroundColor: '#0B1220',
                 zIndex: 10,
@@ -218,8 +225,8 @@ export async function GET(
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '140px',
-                  background: 'linear-gradient(to bottom, rgba(11, 18, 32, 0.7) 0%, rgba(11, 18, 32, 0.3) 40%, transparent 100%)',
+                  height: vignetteSize.topBottom,
+                  background: `linear-gradient(to bottom, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
                   display: 'flex',
                 }} />
                 {/* Vignette - left edge */}
@@ -228,8 +235,8 @@ export async function GET(
                   top: 0,
                   left: 0,
                   bottom: 0,
-                  width: '94px',
-                  background: 'linear-gradient(to right, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
+                  width: vignetteSize.leftRight,
+                  background: `linear-gradient(to right, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
                   display: 'flex',
                 }} />
                 {/* Vignette - right edge */}
@@ -238,8 +245,18 @@ export async function GET(
                   top: 0,
                   right: 0,
                   bottom: 0,
-                  width: '94px',
-                  background: 'linear-gradient(to left, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
+                  width: vignetteSize.leftRight,
+                  background: `linear-gradient(to left, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
+                  display: 'flex',
+                }} />
+                {/* Vignette - bottom edge */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: vignetteSize.topBottom,
+                  background: `linear-gradient(to top, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
                   display: 'flex',
                 }} />
               </div>
@@ -260,6 +277,19 @@ export async function GET(
               marginRight: '-23px',
               position: 'relative',
             }}>
+              {/* Gradient fade on left edge to blend with photo */}
+              {photo && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  width: '40px',
+                  background: 'linear-gradient(to right, rgba(11, 18, 32, 0.7) 0%, rgba(11, 18, 32, 0.3) 50%, transparent 100%)',
+                  display: 'flex',
+                  zIndex: 5,
+                }} />
+              )}
               {sentences.length > 0 ? (
                 sentences.map((s, i) => (
                   <div

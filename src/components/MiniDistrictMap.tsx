@@ -568,7 +568,7 @@ function FullscreenMap({ member }: { member: Row }) {
     const isSenate = member.chamber === 'SENATE';
 
     // Create fullscreen map with different zoom for House vs Senate
-    const fullscreenZoom = isSenate ? stateCenter[2] : stateCenter[2] + 2; // House districts more zoomed in
+    const fullscreenZoom = isSenate ? stateCenter[2] + 1.0 : stateCenter[2] + 4.0; // House districts more zoomed in
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -725,8 +725,6 @@ function FullscreenMap({ member }: { member: Row }) {
           });
         }
 
-        // Note: We don't fitBounds on the fullscreen map - we want to show the whole state
-
         // Add labels on fullscreen map
         if (isSenate) {
           // Add state label for Senate
@@ -797,6 +795,9 @@ function FullscreenMap({ member }: { member: Row }) {
 
               const centerLng = (bounds[0][0] + bounds[1][0]) / 2;
               const centerLat = (bounds[0][1] + bounds[1][1]) / 2;
+
+              // Center map on district for House members
+              map.current.setCenter([centerLng, centerLat]);
 
               map.current.addSource('district-label-fullscreen', {
                 type: 'geojson',

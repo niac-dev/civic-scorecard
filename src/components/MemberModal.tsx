@@ -215,6 +215,16 @@ export function MemberModal({
     }
   }, [initialCategory]);
 
+  // Scroll to actions section when initialCategory is provided
+  useEffect(() => {
+    if (initialCategory && actionsRef.current) {
+      // Small delay to ensure layout has settled
+      setTimeout(() => {
+        actionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, [initialCategory]);
+
   // Load PAC data when component mounts
   useEffect(() => {
     (async () => {
@@ -424,19 +434,36 @@ export function MemberModal({
               {/* Column 1: Photo */}
               <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-2 min-[900px]:mb-0 mt-2 min-[900px]:mt-10">
                 {row.bioguide_id ? (
-                  <img
-                    src={getPhotoUrl(String(row.bioguide_id), '450x550')}
-                    alt=""
-                    loading="lazy"
-                    className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.dataset.fallback && row.photo_url) {
-                        target.dataset.fallback = '1';
-                        target.src = String(row.photo_url);
-                      }
-                    }}
-                  />
+                  <div className="relative group/photo">
+                    <img
+                      src={getPhotoUrl(String(row.bioguide_id), '450x550')}
+                      alt=""
+                      loading="lazy"
+                      className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.fallback && row.photo_url) {
+                          target.dataset.fallback = '1';
+                          target.src = String(row.photo_url);
+                        }
+                      }}
+                    />
+                    {/* Hover overlay with Generate Image button */}
+                    {!isGradeIncomplete(row.bioguide_id) && (
+                      <button
+                        onClick={handleDownloadImage}
+                        className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer"
+                        title="Generate shareable image"
+                      >
+                        <div className="flex flex-col items-center gap-1 text-white">
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-xs font-medium">Generate</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10" />
                 )}

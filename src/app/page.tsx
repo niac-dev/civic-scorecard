@@ -2045,13 +2045,10 @@ export default function Page() {
                   <React.Fragment key={gradeCol.field}>
                     <div
                       className={clsx(
-                        "td flex items-center justify-center !py-0 h-full",
-                        shouldHaveBorder && "border-r border-[#E7ECF2] dark:border-slate-900",
-                        isSummaryMode && "cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                        "td flex items-center justify-center !py-0 h-full cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10",
+                        shouldHaveBorder && "border-r border-[#E7ECF2] dark:border-slate-900"
                       )}
                       onClick={() => {
-                        if (!isSummaryMode) return;
-
                         if (isOverall) {
                           // Overall grade opens member card
                           setSelectedCategory(null);
@@ -2062,7 +2059,7 @@ export default function Page() {
                           setSelected(r);
                         }
                       }}
-                      title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`) : undefined}
+                      title={isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`}
                     >
                       <GradeChip grade={isGradeIncomplete(r.bioguide_id) ? "Inc" : String(r[gradeCol.field] || "N/A")} />
                     </div>
@@ -2422,7 +2419,7 @@ export default function Page() {
               {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
                 <div
-                  className="td px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10"
+                  className="td px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 self-stretch"
                   onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
                   title="Click to view AIPAC details"
                 >
