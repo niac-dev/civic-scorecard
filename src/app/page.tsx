@@ -972,11 +972,7 @@ export default function Page() {
   }, [filtered, sortCol, sortDir, metaByCol, pacDataMap]);
 
   // Progressive loading - only render visible rows for performance
-  const visibleRows = useMemo(() => {
-    const sliced = sorted.slice(0, visibleRowCount);
-    console.log(`[Progressive Loading] sorted.length: ${sorted.length}, visibleRowCount: ${visibleRowCount}, visibleRows.length: ${sliced.length}`);
-    return sliced;
-  }, [sorted, visibleRowCount]);
+  const visibleRows = useMemo(() => sorted.slice(0, visibleRowCount), [sorted, visibleRowCount]);
   const hasMoreRows = visibleRowCount < sorted.length;
 
   // Reset visible row count when filters change
@@ -986,19 +982,13 @@ export default function Page() {
 
   // IntersectionObserver for progressive loading - more reliable than scroll events across browsers
   useEffect(() => {
-    console.log(`[IntersectionObserver] Setup - hasMoreRows: ${hasMoreRows}, loadingIndicator exists: ${!!loadingIndicatorRef.current}`);
     if (!loadingIndicatorRef.current || !hasMoreRows) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        console.log(`[IntersectionObserver] Triggered - isIntersecting: ${entries[0].isIntersecting}`);
         // When the loading indicator becomes visible, load more rows
         if (entries[0].isIntersecting) {
-          setVisibleRowCount(prev => {
-            const newCount = Math.min(prev + LOAD_MORE_ROWS, sorted.length);
-            console.log(`[IntersectionObserver] Loading more rows - prev: ${prev}, new: ${newCount}`);
-            return newCount;
-          });
+          setVisibleRowCount(prev => Math.min(prev + LOAD_MORE_ROWS, sorted.length));
         }
       },
       {
@@ -1008,11 +998,9 @@ export default function Page() {
       }
     );
 
-    console.log(`[IntersectionObserver] Observing loading indicator`);
     observer.observe(loadingIndicatorRef.current);
 
     return () => {
-      console.log(`[IntersectionObserver] Cleanup`);
       observer.disconnect();
     };
   }, [hasMoreRows, sorted.length]);

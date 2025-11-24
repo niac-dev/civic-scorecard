@@ -22,22 +22,15 @@ async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<s
   };
 
   try {
-    console.log('[OG Image] Fetching primary photo:', url);
     const response = await fetchWithTimeout(url);
     if (!response.ok) {
-      console.log('[OG Image] Primary photo failed:', response.status);
       // Try fallback if primary fails
       if (fallbackUrl) {
-        console.log('[OG Image] Trying fallback photo:', fallbackUrl);
         const fallbackResponse = await fetchWithTimeout(fallbackUrl);
-        if (!fallbackResponse.ok) {
-          console.log('[OG Image] Fallback photo failed:', fallbackResponse.status);
-          return null;
-        }
+        if (!fallbackResponse.ok) return null;
         const arrayBuffer = await fallbackResponse.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
-        console.log('[OG Image] Fallback photo loaded successfully');
         return `data:${contentType};base64,${base64}`;
       }
       return null;
@@ -45,29 +38,23 @@ async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<s
     const arrayBuffer = await response.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const contentType = response.headers.get('content-type') || 'image/jpeg';
-    console.log('[OG Image] Primary photo loaded successfully');
     return `data:${contentType};base64,${base64}`;
   } catch (error) {
-    console.error('[OG Image] Error fetching primary photo:', error);
     // Try fallback on error
     if (fallbackUrl) {
       try {
-        console.log('[OG Image] Trying fallback photo after error:', fallbackUrl);
         const fallbackResponse = await fetchWithTimeout(fallbackUrl);
-        if (!fallbackResponse.ok) {
-          console.log('[OG Image] Fallback photo failed:', fallbackResponse.status);
-          return null;
-        }
+        if (!fallbackResponse.ok) return null;
         const arrayBuffer = await fallbackResponse.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
-        console.log('[OG Image] Fallback photo loaded successfully after error');
         return `data:${contentType};base64,${base64}`;
       } catch (fallbackError) {
-        console.error('[OG Image] Error fetching fallback photo:', fallbackError);
+        console.error('[OG Image] Error fetching photos:', error, fallbackError);
         return null;
       }
     }
+    console.error('[OG Image] Error fetching photo:', error);
     return null;
   }
 }
@@ -121,13 +108,9 @@ export async function GET(
     const photoUrl = url.searchParams.get('photo') || '';
     const photoFallback = url.searchParams.get('photoFallback') || '';
 
-    console.log('[OG Image] Photo URLs - Primary:', photoUrl, 'Fallback:', photoFallback);
-
     // Determine which photo URLs to use (prefer photoFallback if both exist, as it's from congress.gov)
     const primaryPhotoUrl = photoFallback || photoUrl;
     const fallbackPhotoUrl = photoFallback && photoUrl && photoFallback !== photoUrl ? photoUrl : undefined;
-
-    console.log('[OG Image] Using primary:', primaryPhotoUrl, 'fallback:', fallbackPhotoUrl);
 
     // Fetch all resources in parallel
     const [handwritingFont, interFont, photo] = await Promise.all([
