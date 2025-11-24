@@ -80,7 +80,8 @@ export async function loadSentenceRules(): Promise<Rule[]> {
 }
 
 // Synchronous version using pre-loaded rules
-export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number, pacTotal2026?: number): Sentence[] {
+// pacDataLoaded: true if PAC data has been loaded (to distinguish from "no PAC data" vs "not loaded yet")
+export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean): Sentence[] {
   const sentences: Sentence[] = [];
   let blockTheBombsSentence: Sentence | null = null;
   const chamber = row.chamber?.toUpperCase();
@@ -118,14 +119,16 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
           const value = row[col];
           const isCosponsorCol = col.includes('_cosponsor');
           const absentCol = `${col}_absent`;
+          const notInOfficeCol = `${col}_not_in_office`;
           const wasAbsent = Number(row[absentCol] ?? 0) === 1;
+          const wasNotInOffice = Number(row[notInOfficeCol] ?? 0) === 1;
 
           if (isCosponsorCol && value !== undefined && value !== null && value !== '') {
             // Cosponsor column with a value (0 = didn't cosponsor)
             hadOpportunity = true;
             break;
-          } else if (!isCosponsorCol && !wasAbsent && value !== undefined && value !== null && value !== '') {
-            // Vote/score column with a value and not absent
+          } else if (!isCosponsorCol && !wasAbsent && !wasNotInOffice && value !== undefined && value !== null && value !== '') {
+            // Vote/score column with a value, not absent, and was in office
             hadOpportunity = true;
             break;
           }
@@ -154,38 +157,33 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
     }
   }
 
-  // AIPAC/DMFI support sentence
-  const rejectsAipac = row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim() !== '';
-
-  // Check if member has any AIPAC/DMFI support flags for any year
-  const hasLobbySupport = Boolean(
-    row.aipac_supported || row.dmfi_supported ||
-    (row as Record<string, unknown>).aipac_supported_2026 || (row as Record<string, unknown>).dmfi_supported_2026
-  );
-
-  if (chamber === 'SENATE') {
-    if (rejectsAipac) {
-      sentences.push({ text: 'Publicly rejects AIPAC and DMFI.', isGood: true });
-    } else if (hasLobbySupport && pacTotal2026 && pacTotal2026 > 0) {
-      sentences.push({ text: `Has already accepted $${pacTotal2026.toLocaleString()} in support from the Israel Lobby for their next election.`, isGood: false });
-    } else if (hasLobbySupport && pacTotal && pacTotal > 0) {
-      sentences.push({ text: `Received $${pacTotal.toLocaleString()} in support from the Israel Lobby last election.`, isGood: false });
-    }
-  } else {
-    if (rejectsAipac) {
-      sentences.push({ text: 'Publicly rejects support from AIPAC and DMFI.', isGood: true });
-    } else if (hasLobbySupport && pacTotal && pacTotal > 0) {
-      sentences.push({ text: `Received $${pacTotal.toLocaleString()} in support from the Israel Lobby last election.`, isGood: false });
-    }
-  }
-
-  // Only include Block the Bombs if total will be less than 5
+  // Only include Block the Bombs if total will be less than 4 (before AIPAC sentence)
   if (blockTheBombsSentence && sentences.length < 3) {
     sentences.push(blockTheBombsSentence);
   }
 
   // Sort: positive sentences first, then negative
   sentences.sort((a, b) => (b.isGood ? 1 : 0) - (a.isGood ? 1 : 0));
+
+  // AIPAC/DMFI support sentence - added LAST after sorting
+  const rejectsAipac = row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim() !== '';
+
+  // Check specific support flags
+  const aipacSupported = Boolean(aipacSupport);
+  const dmfiSupported = Boolean(dmfiSupport);
+
+  if (rejectsAipac) {
+    sentences.push({ text: 'Publicly rejects support from AIPAC and DMFI.', isGood: true });
+  } else if (aipacSupported && dmfiSupported) {
+    sentences.push({ text: 'Supported by AIPAC and Democratic Majority For Israel.', isGood: false });
+  } else if (aipacSupported) {
+    sentences.push({ text: 'Supported by AIPAC.', isGood: false });
+  } else if (dmfiSupported) {
+    sentences.push({ text: 'Supported by Democratic Majority For Israel.', isGood: false });
+  } else if (pacDataLoaded && !hasLobbySupport && !hasAnyPacMoney) {
+    // No support flags AND no PAC money at all - show positive message (only if PAC data has loaded)
+    sentences.push({ text: 'Not supported by AIPAC or DMFI.', isGood: true });
+  }
 
   return sentences;
 }
@@ -213,7 +211,7 @@ function hasAnyValue(value: unknown): boolean {
 
 // Backwards-compatible wrapper that uses hardcoded fallback rules
 // For best results, use loadSentenceRules() + generateSentencesSync()
-export function generateSentences(row: Row, pacTotal?: number, pacTotal2026?: number): Sentence[] {
+export function generateSentences(row: Row, pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean): Sentence[] {
   // Fallback hardcoded rules for when CSV isn't loaded
   const FALLBACK_RULES: Rule[] = [
     { chamber: 'HOUSE', columns: ['H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor', 'H.Con.Res.40 — Iran War Powers Resolution_cosponsor'], checkPositivePoints: true, goodText: 'Supports', badText: 'Has not sponsored', ending: 'war power resolution AGAINST war with Iran.' },
@@ -229,5 +227,5 @@ export function generateSentences(row: Row, pacTotal?: number, pacTotal2026?: nu
     { chamber: 'SENATE', columns: ['S.J.Res.41 — Blocking Weapons to Israel (JRD 4)'], checkPositivePoints: true, goodText: 'Supports', badText: 'Opposes', ending: 'restricting US weapons transfers to Israel.' },
   ];
 
-  return generateSentencesSync(row, cachedRules || FALLBACK_RULES, pacTotal, pacTotal2026);
+  return generateSentencesSync(row, cachedRules || FALLBACK_RULES, pacTotal, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
 }

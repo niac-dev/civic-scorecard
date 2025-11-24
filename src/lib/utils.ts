@@ -28,8 +28,20 @@ export const GRADE_COLOR_MAP: Record<string, string> = {
   'D': GRADE_COLORS.D,
   'D-': GRADE_COLORS.D,
   'F': GRADE_COLORS.F,
-  'N/A': GRADE_COLORS.default
+  'N/A': GRADE_COLORS.default,
+  'Inc': GRADE_COLORS.default
 };
+
+// Members with incomplete grades (recently entered office)
+// These members will show "Inc" instead of letter grades
+export const INCOMPLETE_GRADE_MEMBERS = new Set([
+  'G000606', // Adelita Grijalva
+  'W000831', // James Walkinshaw
+]);
+
+export function isGradeIncomplete(bioguideId: string | unknown): boolean {
+  return INCOMPLETE_GRADE_MEMBERS.has(String(bioguideId));
+}
 
 const NAME_TO_CODE: Record<string, string> = {
   "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",

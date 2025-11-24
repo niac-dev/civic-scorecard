@@ -84,14 +84,14 @@ export async function GET(
     const gradeColor = getGradeColor(grade);
 
     // Calculate dynamic font size based on number of sentences
-    const sentenceFontSize = sentences.length > 5 ? 16 : sentences.length > 3 ? 18 : 20;
+    const sentenceFontSize = sentences.length > 5 ? 20 : sentences.length > 3 ? 22 : 24;
     const lineHeight = sentences.length > 5 ? 1.25 : 1.35;
 
     return new ImageResponse(
       (
         <div style={{
           width: '574px',
-          height: '459px',
+          height: '574px',
           display: 'flex',
           flexDirection: 'column',
           background: 'linear-gradient(135deg, #0B1220 0%, #1a2744 50%, #0B1220 100%)',
@@ -109,7 +109,7 @@ export async function GET(
               top: '0',
               left: '0',
               width: '574px',
-              height: '459px',
+              height: '574px',
               objectFit: 'cover',
               objectPosition: 'center',
               opacity: 0.18,
@@ -118,15 +118,25 @@ export async function GET(
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', flex: '1' }}>
-              <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '40px', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.1' }}>
+              <div style={{ display: 'flex', fontFamily: 'Inter', fontSize: '40px', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.1', justifyContent: 'center' }}>
                 {name}
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: '16px', color: '#94a3b8', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ display: 'flex' }}>{chamber === 'Senator' ? 'U.S. Senator' : 'U.S. Representative'}</span>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: '#94a3b8', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <span style={{ display: 'flex' }}>{chamber === 'Senator' ? 'Senate' : 'House'}</span>
                 <span style={{ display: 'flex' }}>•</span>
                 <span style={{ display: 'flex' }}>{party}</span>
                 <span style={{ display: 'flex' }}>•</span>
-                <span style={{ display: 'flex' }}>{location}</span>
+                <span style={{ display: 'flex' }}>{(() => {
+                  // Format location: "New York-15" -> "New York 15th District", "New York" -> "New York"
+                  const parts = location.split('-');
+                  if (parts.length === 2) {
+                    const state = parts[0];
+                    const district = parseInt(parts[1], 10);
+                    const suffix = district === 1 ? 'st' : district === 2 ? 'nd' : district === 3 ? 'rd' : 'th';
+                    return `${state} ${district}${suffix} District`;
+                  }
+                  return location;
+                })()}</span>
               </div>
             </div>
 
@@ -153,16 +163,15 @@ export async function GET(
             display: 'flex',
             position: 'relative',
           }}>
-            {/* Member Photo - smaller for better resolution */}
+            {/* Member Photo - wider with more horizontal space */}
             {photo && (
               <div style={{
                 display: 'flex',
                 position: 'absolute',
-                left: '-20px',
+                left: '-44px',
                 top: '0',
                 bottom: '0',
-                width: '180px',
-                borderRadius: '0',
+                width: '228px',
                 overflow: 'hidden',
                 backgroundColor: '#0B1220',
                 zIndex: 10,
@@ -171,28 +180,59 @@ export async function GET(
                 <img
                   src={photo}
                   alt=""
-                  width={180}
+                  width={228}
                   height={400}
                   style={{
-                    width: '180px',
+                    width: '228px',
                     height: '100%',
                     objectFit: 'cover',
                   }}
                 />
+                {/* Vignette - top edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '120px',
+                  background: 'linear-gradient(to bottom, rgba(11, 18, 32, 0.7) 0%, rgba(11, 18, 32, 0.3) 40%, transparent 100%)',
+                  display: 'flex',
+                }} />
+                {/* Vignette - left edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  width: '80px',
+                  background: 'linear-gradient(to right, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
+                  display: 'flex',
+                }} />
+                {/* Vignette - right edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: '80px',
+                  background: 'linear-gradient(to left, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.2) 50%, transparent 100%)',
+                  display: 'flex',
+                }} />
               </div>
             )}
 
-            {/* Sentences list - overlays photo */}
+            {/* Sentences list - narrower to give photo more space */}
             <div style={{
               flex: '1',
               display: 'flex',
               flexDirection: 'column',
+              justifyContent: 'center',
               gap: '8px',
               backgroundColor: 'rgba(11, 18, 32, 0.55)',
               borderRadius: '0',
               padding: '12px 16px 12px 16px',
               overflow: 'hidden',
-              marginLeft: photo ? '160px' : '0',
+              marginLeft: photo ? '184px' : '0',
               marginRight: '-20px',
               position: 'relative',
             }}>
@@ -243,9 +283,12 @@ export async function GET(
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: '6px',
-            paddingTop: '6px',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
+            marginTop: '0px',
+            padding: '10px 20px',
+            marginLeft: '-20px',
+            marginRight: '-20px',
+            marginBottom: '-16px',
+            backgroundColor: 'rgba(11, 18, 32, 0.95)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -264,7 +307,7 @@ export async function GET(
       ),
       {
         width: 574,
-        height: 459,
+        height: 574,
         fonts: [
           {
             name: 'Permanent Marker',

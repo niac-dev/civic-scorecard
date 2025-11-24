@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, partyBadgeStyle, partyLabel } from "@/lib/utils";
+import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete } from "@/lib/utils";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
 import clsx from "clsx";
 
@@ -310,7 +310,7 @@ export default function MemberPage() {
               </div>
 
               <div className="flex items-center justify-center">
-                <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
               </div>
 
               <div className="flex items-center gap-2 print:hidden ml-12">
@@ -412,7 +412,7 @@ export default function MemberPage() {
                   <div className="text-xs tabular text-slate-700">
                     {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                   </div>
-                  <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                  <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
                 </div>
               </button>
 
@@ -439,7 +439,7 @@ export default function MemberPage() {
                       <div className="text-xs tabular text-slate-700">
                         {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
                       </div>
-                      <GradeChip grade={String(row[gradeField] || "N/A")} />
+                      <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} />
                     </div>
                   </button>
                 );
@@ -558,7 +558,7 @@ export default function MemberPage() {
                       const categoryItems = itemsByCategory.get(category) || [];
                       const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                       const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-                      const grade = String(row[gradeField] || "N/A");
+                      const grade = isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A");
 
                       return (
                         <div key={category} className="rounded-lg border border-[#E7ECF2] bg-slate-50 p-4">

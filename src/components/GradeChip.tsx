@@ -45,22 +45,28 @@ const SIZES = {
 // Responsive styles are in globals.css (.grade-chip class)
 // SIZES is kept for scaled chips that use inline styles
 export function GradeChip({ grade, scale = 1 }: GradeChipProps) {
+  // Handle "Inc" (Incomplete) grade specially
+  const isIncomplete = grade === 'Inc';
+  // Show full "Incomplete" text on larger chips (scale > 1)
+  const showFullIncomplete = isIncomplete && scale > 1;
 
-  const color = grade.startsWith("A") ? GRADE_COLORS.A
+  const color = isIncomplete ? GRADE_COLORS.default
+    : grade.startsWith("A") ? GRADE_COLORS.A
     : grade.startsWith("B") ? GRADE_COLORS.B
     : grade.startsWith("C") ? GRADE_COLORS.C
     : grade.startsWith("D") ? GRADE_COLORS.D
     : grade.startsWith("F") ? GRADE_COLORS.F
     : GRADE_COLORS.default;
 
-  const letter = grade.charAt(0);
-  const modifier = grade.slice(1);
+  const letter = showFullIncomplete ? 'Incomplete' : isIncomplete ? 'Inc' : grade.charAt(0);
+  const modifier = isIncomplete ? '' : grade.slice(1);
 
-  // For scale !== 1, use inline styles (proportions still locked)
-  const useInlineStyles = scale !== 1;
+  // For scale !== 1 or incomplete grade, use inline styles (proportions still locked)
+  const useInlineStyles = scale !== 1 || isIncomplete;
   const scaledSize = Math.round(SIZES.mobile.diameter * scale);
   const scaledBorder = Math.round(SIZES.mobile.border * scale);
-  const scaledText = Math.round(SIZES.mobile.text * scale);
+  // Smaller font for incomplete text: "Incomplete" (10 chars) needs ~0.28, "Inc" (3 chars) needs ~0.55
+  const scaledText = Math.round(SIZES.mobile.text * scale * (showFullIncomplete ? 0.28 : isIncomplete ? 0.55 : 1));
   const scaledModifier = Math.round(SIZES.mobile.modifier * scale);
 
   return (

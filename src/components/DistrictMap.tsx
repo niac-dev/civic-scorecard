@@ -128,6 +128,20 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
   const map = useRef<maplibregl.Map | null>(null);
   const popup = useRef<maplibregl.Popup | null>(null);
   const tooltipDiv = useRef<HTMLDivElement>(null);
+
+  // Detect mobile/touch devices to hide tooltip (use ref to avoid stale closure in map event handlers)
+  const isMobileRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.matchMedia('(max-width: 768px)').matches || 'ontouchstart' in window;
+      isMobileRef.current = mobile;
+      setIsMobile(mobile);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const hoveredFeatureId = useRef<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1899,8 +1913,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                     `;
                   }
 
-                  // Show tooltip in fixed position (upper right)
-                  if (tooltipDiv.current) {
+                  // Show tooltip in fixed position (upper right) - hide on mobile
+                  if (tooltipDiv.current && !isMobileRef.current) {
                     tooltipDiv.current.innerHTML = html;
                     tooltipDiv.current.style.display = 'block';
                   }
@@ -2115,8 +2129,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                   </div>
                 `;
 
-                // Show tooltip in fixed position (upper right)
-                if (tooltipDiv.current) {
+                // Show tooltip in fixed position (upper right) - hide on mobile
+                if (tooltipDiv.current && !isMobileRef.current) {
                   tooltipDiv.current.innerHTML = html;
                   tooltipDiv.current.style.display = 'block';
                 }

@@ -8,7 +8,8 @@ import {
   stateCodeOf,
   chamberColor,
   inferChamber,
-  isTrue
+  isTrue,
+  isGradeIncomplete
 } from "@/lib/utils";
 import {
   PacData,
@@ -69,6 +70,7 @@ export function MemberModal({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(initialCategory);
   const [showAipacSection, setShowAipacSection] = useState(initialCategory === "AIPAC");
   const [pacData, setPacData] = useState<PacData | undefined>(undefined);
+  const [pacDataLoaded, setPacDataLoaded] = useState(false);
   const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -100,8 +102,24 @@ export function MemberModal({
       (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
     ) : 0;
 
+    // Check if member has ANY PAC money at all (for "Not supported" message)
+    const hasAnyPacMoney = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0) +
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) > 0 : false;
+
+    // Check if member has any AIPAC/DMFI support flags
+    const aipacSupport = pacData ? Boolean(
+      pacData.aipac_supported_2022 || pacData.aipac_supported_2024 || pacData.aipac_supported_2026
+    ) : false;
+    const dmfiSupport = pacData ? Boolean(
+      pacData.dmfi_supported_2022 || pacData.dmfi_supported_2024 || pacData.dmfi_supported_2026
+    ) : false;
+    const hasLobbySupport = aipacSupport || dmfiSupport;
+
     // Generate sentences based on voting record using CSV rules
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
 
     const params = new URLSearchParams({
       name: displayName,
@@ -116,9 +134,14 @@ export function MemberModal({
     });
 
     return `/api/og/member/${row.bioguide_id}?${params.toString()}`;
-  }, [row, pacData, sentenceRules]);
+  }, [row, pacData, pacDataLoaded, sentenceRules]);
 
   const handleDownloadImage = useCallback(() => {
+    // Wait for PAC data to load before generating graphic
+    if (!pacDataLoaded) {
+      return;
+    }
+
     // Navigate to share page with the same params
     const fullName = String(row.full_name || '');
     const commaIdx = fullName.indexOf(',');
@@ -138,7 +161,23 @@ export function MemberModal({
       (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
     ) : 0;
 
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+    // Check if member has ANY PAC money at all (for "Not supported" message)
+    const hasAnyPacMoney = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0) +
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) > 0 : false;
+
+    // Check if member has any AIPAC/DMFI support flags
+    const aipacSupport = pacData ? Boolean(
+      pacData.aipac_supported_2022 || pacData.aipac_supported_2024 || pacData.aipac_supported_2026
+    ) : false;
+    const dmfiSupport = pacData ? Boolean(
+      pacData.dmfi_supported_2022 || pacData.dmfi_supported_2024 || pacData.dmfi_supported_2026
+    ) : false;
+    const hasLobbySupport = aipacSupport || dmfiSupport;
+
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
 
     const params = new URLSearchParams({
       name: displayName,
@@ -153,7 +192,7 @@ export function MemberModal({
     });
 
     window.open(`/member/${row.bioguide_id}/share?${params.toString()}`, '_blank');
-  }, [row, pacData, sentenceRules]);
+  }, [row, pacData, pacDataLoaded, sentenceRules]);
 
   // Scroll to actions section on mobile when category is clicked
   const scrollToActions = () => {
@@ -180,6 +219,7 @@ export function MemberModal({
       if (memberPacData) {
         setPacData(memberPacData);
       }
+      setPacDataLoaded(true);
     })();
   }, [row.bioguide_id]);
 
@@ -225,6 +265,10 @@ export function MemberModal({
         // Check if member was absent for this vote
         const absentCol = `${c}_absent`;
         const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+
+        // Check if member was not in office for this vote
+        const notInOfficeCol = `${c}_not_in_office`;
+        const wasNotInOffice = Number((row as Record<string, unknown>)[notInOfficeCol] ?? 0) === 1;
 
         // Check if member cosponsored (for cosponsor bills)
         const cosponsorCol = `${c}_cosponsor`;
@@ -277,6 +321,7 @@ export function MemberModal({
           notApplicable,
           waiver,
           wasAbsent,
+          wasNotInOffice,
           didCosponsor,
           ok,
         };
@@ -336,16 +381,18 @@ export function MemberModal({
             </div>
             {/* Right side - Other buttons */}
             <div className="flex gap-2 pointer-events-auto">
-              {/* Generate Image button */}
-              <button
-                className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
-                onClick={handleDownloadImage}
-                title="Generate Shareable Image"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </button>
+              {/* Generate Image button - hidden for incomplete members */}
+              {!isGradeIncomplete(row.bioguide_id) && (
+                <button
+                  className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
+                  onClick={handleDownloadImage}
+                  title="Generate Shareable Image"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              )}
               <button
                 className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
                 onClick={() => window.open(`/member/${row.bioguide_id}`, "_blank")}
@@ -524,7 +571,7 @@ export function MemberModal({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">All Issues</div>
-                    <GradeChip grade={String(row.Grade || "N/A")} isOverall={true} />
+                    <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
                   </div>
                 </button>
 
@@ -552,7 +599,7 @@ export function MemberModal({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{category}</div>
-                        <GradeChip grade={String(row[gradeField] || "N/A")} />
+                        <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} />
                       </div>
                     </button>
                   );
@@ -941,7 +988,7 @@ export function MemberModal({
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-slate-600 dark:text-slate-400">{total}/{maxPossible}</span>
-                              <GradeChip grade={String(grade || "N/A")} scale={2} />
+                              <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(grade || "N/A")} scale={2} />
                             </div>
                           </div>
                         </div>
@@ -1025,6 +1072,8 @@ export function MemberModal({
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.wasAbsent ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                                ) : it.wasNotInOffice ? (
+                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.waiver ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : (
@@ -1033,6 +1082,9 @@ export function MemberModal({
                               </div>
                               <span className="font-medium">
                                 {(() => {
+                                  if (it.wasNotInOffice) {
+                                    return "Not in office";
+                                  }
                                   if (it.wasAbsent) {
                                     return "Did not vote/voted present";
                                   }

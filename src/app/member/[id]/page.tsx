@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         {
           url: ogImageUrl,
           width: 574,
-          height: 459,
+          height: 574,
           alt: `${displayName} Congressional Scorecard`,
         },
       ],

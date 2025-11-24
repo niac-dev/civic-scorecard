@@ -10,7 +10,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
@@ -362,7 +362,24 @@ export default function Page() {
       (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
     ) : 0;
 
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026);
+    // Check if member has ANY PAC money at all (for "Not supported" message)
+    const hasAnyPacMoney = pacData ? (
+      (pacData.aipac_total_2022 || 0) + (pacData.dmfi_total_2022 || 0) +
+      (pacData.aipac_total_2024 || 0) + (pacData.dmfi_total_2024 || 0) +
+      (pacData.aipac_total_2026 || 0) + (pacData.dmfi_total_2026 || 0)
+    ) > 0 : false;
+
+    // Check if member has any AIPAC/DMFI support flags
+    const aipacSupport = pacData ? Boolean(
+      pacData.aipac_supported_2022 || pacData.aipac_supported_2024 || pacData.aipac_supported_2026
+    ) : false;
+    const dmfiSupport = pacData ? Boolean(
+      pacData.dmfi_supported_2022 || pacData.dmfi_supported_2024 || pacData.dmfi_supported_2026
+    ) : false;
+    const hasLobbySupport = aipacSupport || dmfiSupport;
+    const pacDataLoaded = pacDataMap.size > 0;
+
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
 
     const params = new URLSearchParams({
       name: displayName,
@@ -1800,18 +1817,20 @@ export default function Page() {
                     </svg>
                     View Profile
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openSharePage(r);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-[#30558C] hover:bg-[#254470] text-white rounded-lg font-medium text-sm transition-colors shadow-lg"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Generate Image
-                  </button>
+                  {!isGradeIncomplete(r.bioguide_id) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openSharePage(r);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-[#30558C] hover:bg-[#254470] text-white rounded-lg font-medium text-sm transition-colors shadow-lg"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Generate Image
+                    </button>
+                  )}
                 </div>
                 {/* Photo - shown second on mobile, first on desktop */}
                 {r.photo_url ? (
@@ -2037,7 +2056,7 @@ export default function Page() {
                       }}
                       title={isSummaryMode ? (isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`) : undefined}
                     >
-                      <GradeChip grade={String(r[gradeCol.field] || "N/A")} />
+                      <GradeChip grade={isGradeIncomplete(r.bioguide_id) ? "Inc" : String(r[gradeCol.field] || "N/A")} />
                     </div>
                   </React.Fragment>
                 );
