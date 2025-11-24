@@ -121,11 +121,19 @@ export async function GET(
     const photoUrl = url.searchParams.get('photo') || '';
     const photoFallback = url.searchParams.get('photoFallback') || '';
 
+    console.log('[OG Image] Photo URLs - Primary:', photoUrl, 'Fallback:', photoFallback);
+
+    // Determine which photo URLs to use (prefer photoFallback if both exist, as it's from congress.gov)
+    const primaryPhotoUrl = photoFallback || photoUrl;
+    const fallbackPhotoUrl = photoFallback && photoUrl && photoFallback !== photoUrl ? photoUrl : undefined;
+
+    console.log('[OG Image] Using primary:', primaryPhotoUrl, 'fallback:', fallbackPhotoUrl);
+
     // Fetch all resources in parallel
     const [handwritingFont, interFont, photo] = await Promise.all([
       loadHandwritingFont(),
       loadInterFont(),
-      photoUrl ? fetchImageAsDataUrl(photoUrl, photoFallback || undefined) : Promise.resolve(null),
+      primaryPhotoUrl ? fetchImageAsDataUrl(primaryPhotoUrl, fallbackPhotoUrl) : Promise.resolve(null),
     ]);
 
     // Parse sentences from JSON param
