@@ -451,12 +451,15 @@ export default function Page() {
   // Ref for the tracker container
   const trackerScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Ref for the loading indicator (used for IntersectionObserver)
+  const loadingIndicatorRef = useRef<HTMLDivElement | null>(null);
+
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Progressive row loading for performance
-  const INITIAL_ROWS = 30;
-  const LOAD_MORE_ROWS = 30;
+  const INITIAL_ROWS = 100;
+  const LOAD_MORE_ROWS = 50;
   const [visibleRowCount, setVisibleRowCount] = useState(INITIAL_ROWS);
 
   // Track mobile viewport for responsive column widths
@@ -977,14 +980,33 @@ export default function Page() {
     setVisibleRowCount(INITIAL_ROWS);
   }, [f.state, f.party, f.chamber, f.categories, f.billColumn, sortCol, sortDir]);
 
-  // Scroll handler - hide tooltips while scrolling + infinite scroll
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    // Infinite scroll: load more when near bottom
-    if (hasMoreRows && target.scrollHeight - target.scrollTop - target.clientHeight < 500) {
-      setVisibleRowCount(prev => Math.min(prev + LOAD_MORE_ROWS, sorted.length));
-    }
+  // IntersectionObserver for progressive loading - more reliable than scroll events across browsers
+  useEffect(() => {
+    if (!loadingIndicatorRef.current || !hasMoreRows) return;
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // When the loading indicator becomes visible, load more rows
+        if (entries[0].isIntersecting) {
+          setVisibleRowCount(prev => Math.min(prev + LOAD_MORE_ROWS, sorted.length));
+        }
+      },
+      {
+        root: tableScrollRef.current,
+        rootMargin: '200px', // Start loading 200px before the indicator is visible
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(loadingIndicatorRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMoreRows, sorted.length]);
+
+  // Scroll handler - hide tooltips while scrolling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     // Hide header tooltips while scrolling
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
@@ -993,7 +1015,7 @@ export default function Page() {
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
     }, 150);
-  }, [hasMoreRows, sorted.length]);
+  }, []);
 
   // All columns for the member card (chamber-filtered only, not category-filtered)
   const allBillCols = useMemo(() => {
@@ -2492,7 +2514,7 @@ export default function Page() {
           ))}
           {/* Loading indicator for progressive loading */}
           {hasMoreRows && (
-            <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400">
+            <div ref={loadingIndicatorRef} className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
