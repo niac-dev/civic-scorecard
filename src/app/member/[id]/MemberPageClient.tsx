@@ -158,7 +158,15 @@ export default function MemberPage() {
     .map((col) => {
       const meta = metaByCol.get(col);
       const inferred = inferChamber(meta, col);
-      let na = inferred && inferred !== row.chamber;
+
+      // Check if this bill was voted on in both chambers
+      const voteTallies = (meta?.vote_tallies || "").toLowerCase();
+      const hasHouseVote = voteTallies.includes("house");
+      const hasSenateVote = voteTallies.includes("senate");
+      const votedInBothChambers = hasHouseVote && hasSenateVote;
+
+      // Only filter by chamber if not voted in both chambers
+      let na = !votedInBothChambers && inferred && inferred !== row.chamber;
       const raw = (row as Record<string, unknown>)[col];
       const val = Number(raw ?? 0);
 
