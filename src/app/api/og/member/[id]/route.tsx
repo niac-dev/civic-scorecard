@@ -2,16 +2,42 @@ import { ImageResponse } from 'next/og';
 
 // Fetch external image and convert to base64 data URL (with fallback)
 async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<string | null> {
+  const fetchWithTimeout = async (fetchUrl: string, timeoutMs = 10000) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(fetchUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'NIAC-Scorecard/1.0'
+        }
+      });
+      clearTimeout(timeout);
+      return response;
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
+    }
+  };
+
   try {
-    const response = await fetch(url);
+    console.log('[OG Image] Fetching primary photo:', url);
+    const response = await fetchWithTimeout(url);
     if (!response.ok) {
+      console.log('[OG Image] Primary photo failed:', response.status);
       // Try fallback if primary fails
       if (fallbackUrl) {
-        const fallbackResponse = await fetch(fallbackUrl);
-        if (!fallbackResponse.ok) return null;
+        console.log('[OG Image] Trying fallback photo:', fallbackUrl);
+        const fallbackResponse = await fetchWithTimeout(fallbackUrl);
+        if (!fallbackResponse.ok) {
+          console.log('[OG Image] Fallback photo failed:', fallbackResponse.status);
+          return null;
+        }
         const arrayBuffer = await fallbackResponse.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
+        console.log('[OG Image] Fallback photo loaded successfully');
         return `data:${contentType};base64,${base64}`;
       }
       return null;
@@ -19,18 +45,26 @@ async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<s
     const arrayBuffer = await response.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString('base64');
     const contentType = response.headers.get('content-type') || 'image/jpeg';
+    console.log('[OG Image] Primary photo loaded successfully');
     return `data:${contentType};base64,${base64}`;
-  } catch {
+  } catch (error) {
+    console.error('[OG Image] Error fetching primary photo:', error);
     // Try fallback on error
     if (fallbackUrl) {
       try {
-        const fallbackResponse = await fetch(fallbackUrl);
-        if (!fallbackResponse.ok) return null;
+        console.log('[OG Image] Trying fallback photo after error:', fallbackUrl);
+        const fallbackResponse = await fetchWithTimeout(fallbackUrl);
+        if (!fallbackResponse.ok) {
+          console.log('[OG Image] Fallback photo failed:', fallbackResponse.status);
+          return null;
+        }
         const arrayBuffer = await fallbackResponse.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
+        console.log('[OG Image] Fallback photo loaded successfully after error');
         return `data:${contentType};base64,${base64}`;
-      } catch {
+      } catch (fallbackError) {
+        console.error('[OG Image] Error fetching fallback photo:', fallbackError);
         return null;
       }
     }
