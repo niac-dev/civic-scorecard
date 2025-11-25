@@ -46,11 +46,19 @@ export function isGradeIncomplete(bioguideId: string | unknown): boolean {
 // Photo URL helper - uses unitedstates.github.io for higher resolution images
 export type PhotoSize = 'original' | '450x550' | '225x275';
 
+// Bioguide IDs that have incorrect photos on unitedstates.github.io
+// These members will use their photo_url from congress.gov instead
+const PHOTO_SKIP_LIST = new Set([
+  'M001226', // Robert Menendez Jr. - unitedstates.github.io shows his father instead
+]);
+
 export function getPhotoUrl(
   bioguideId: string | undefined,
   size: PhotoSize = '225x275'
 ): string {
   if (!bioguideId) return '';
+  // Skip unitedstates.github.io for members with known incorrect photos
+  if (PHOTO_SKIP_LIST.has(bioguideId)) return '';
   return `https://unitedstates.github.io/images/congress/${size}/${bioguideId}.jpg`;
 }
 
