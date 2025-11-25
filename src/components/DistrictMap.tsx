@@ -745,15 +745,15 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         // Create new GeoJSON with unique IDs in properties for hover state tracking
         const processedGeoJson = {
           type: 'FeatureCollection' as const,
-          features: geoJsonData.features.map((feature: { properties?: { name?: string; STATEFP?: string; CD118FP?: string; NAMELSAD?: string }; geometry?: unknown }, index: number) => {
+          features: geoJsonData.features.map((feature: { properties?: { name?: string; STFIPS?: string; CDFIPS?: string; NAMELSAD?: string }; geometry?: unknown }, index: number) => {
             let customId;
             if (isSenate) {
               // For Senate, use state name as ID
               customId = feature.properties?.name || `state-${index}`;
             } else {
-              // For House, use STATEFP + CD118FP as ID
-              const statefp = feature.properties?.STATEFP || '';
-              const cd = feature.properties?.CD118FP || '';
+              // For House, use STFIPS + CDFIPS as ID
+              const statefp = feature.properties?.STFIPS || '';
+              const cd = feature.properties?.CDFIPS || '';
               customId = `${statefp}-${cd}`;
             }
 
@@ -1167,7 +1167,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 // Independent/Other purple (for neutral in partisan view)
                 color = '#9333ea';
               }
-              colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
+              colorParts.push(['==', ['concat', ['get', 'STFIPS'], ['get', 'CDFIPS']], key], color);
             });
 
             if (colorParts.length > 0) {
@@ -1189,7 +1189,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             'match',
             isSenate || aggregatingByState
               ? ['get', 'name']  // For states: use 'name' property from GeoJSON
-              : ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']] // For districts, concatenate STATEFP and CD118FP
+              : ['concat', ['get', 'STFIPS'], ['get', 'CDFIPS']] // For districts, concatenate STFIPS and CDFIPS
           ];
 
           // Track how many entries we added
@@ -1286,7 +1286,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // Add district number labels that appear when zoomed in
           // Create centroid points for each unique district to avoid duplicate labels
           if (map.current) {
-            // Calculate centroids for each district (deduplicated by STATEFP + CD118FP)
+            // Calculate centroids for each district (deduplicated by STFIPS + CDFIPS)
             const districtCentroids: { type: 'FeatureCollection'; features: Array<{ type: 'Feature'; properties: { district: string; statefp: string; cd: string }; geometry: { type: 'Point'; coordinates: [number, number] } }> } = {
               type: 'FeatureCollection',
               features: []
@@ -1294,9 +1294,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
             const seenDistricts = new Set<string>();
 
-            processedGeoJson.features.forEach((feature: { properties?: { STATEFP?: string; CD118FP?: string }; geometry?: { type?: string; coordinates?: unknown } }) => {
-              const statefp = feature.properties?.STATEFP || '';
-              const cd = feature.properties?.CD118FP || '';
+            processedGeoJson.features.forEach((feature: { properties?: { STFIPS?: string; CDFIPS?: string }; geometry?: { type?: string; coordinates?: unknown } }) => {
+              const statefp = feature.properties?.STFIPS || '';
+              const cd = feature.properties?.CDFIPS || '';
               const key = `${statefp}-${cd}`;
 
               if (!seenDistricts.has(key) && statefp && cd) {
@@ -1923,8 +1923,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             }
           } else {
             // House mode: show district and representative
-            const stateFips = feature.properties?.STATEFP;
-            const cd = feature.properties?.CD118FP;
+            const stateFips = feature.properties?.STFIPS;
+            const cd = feature.properties?.CDFIPS;
 
             if (stateFips && cd && popup.current) {
               const districtKey = `${stateFips}${cd}`;
@@ -2183,8 +2183,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
             }
           } else {
             // House mode: clicking on district opens that member's card
-            const stateFips = feature.properties?.STATEFP;
-            const cd = feature.properties?.CD118FP;
+            const stateFips = feature.properties?.STFIPS;
+            const cd = feature.properties?.CDFIPS;
 
             if (stateFips && cd) {
               const districtKey = `${stateFips}${cd}`;
@@ -2397,7 +2397,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
               // Independent/Other purple (neutral)
               color = '#9333ea';
             }
-            colorParts.push(['==', ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']], key], color);
+            colorParts.push(['==', ['concat', ['get', 'STFIPS'], ['get', 'CDFIPS']], key], color);
           });
 
           if (colorParts.length > 0) {
@@ -2455,7 +2455,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const matchExpression: any[] = [
             'match',
-            isSenate ? ['get', 'name'] : ['concat', ['get', 'STATEFP'], ['get', 'CD118FP']]
+            isSenate ? ['get', 'name'] : ['concat', ['get', 'STFIPS'], ['get', 'CDFIPS']]
           ];
 
           let entryCount = 0;

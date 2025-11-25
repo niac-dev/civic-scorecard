@@ -255,11 +255,11 @@ export function BillMiniMap({ meta, column, rows, firstSection, secondSection, f
           // Add custom ID to each feature for easier matching
           const processedGeoJson = {
             ...geoJsonData,
-            features: geoJsonData.features.map((feature: { properties?: { STATEFP?: string; CD118FP?: string } }) => ({
+            features: geoJsonData.features.map((feature: { properties?: { STFIPS?: string; CDFIPS?: string } }) => ({
               ...feature,
               properties: {
                 ...feature.properties,
-                customId: `${feature.properties?.STATEFP || ''}-${feature.properties?.CD118FP || ''}`
+                customId: `${feature.properties?.STFIPS || ''}-${feature.properties?.CDFIPS || ''}`
               }
             }))
           };

@@ -230,7 +230,7 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
               'fill-color': color,
               'fill-opacity': 0.8
             },
-            filter: ['all', ['==', ['get', 'STATEFP'], fips], ['==', ['get', 'CD118FP'], districtNum]]
+            filter: ['all', ['==', ['get', 'STFIPS'], fips], ['==', ['get', 'CDFIPS'], districtNum]]
           });
         }
 
@@ -328,7 +328,7 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
               'line-color': '#000000',
               'line-width': 1.5
             },
-            filter: ['all', ['==', ['get', 'STATEFP'], fips], ['==', ['get', 'CD118FP'], districtNum]]
+            filter: ['all', ['==', ['get', 'STFIPS'], fips], ['==', ['get', 'CDFIPS'], districtNum]]
           });
         }
 
@@ -340,8 +340,8 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
 
           // Find the district feature in the GeoJSON
           const features = geoJsonData.features || [];
-          const districtFeature = features.find((f: { properties?: { STATEFP?: string; CD118FP?: string } }) =>
-            f.properties?.STATEFP === fips && f.properties?.CD118FP === districtNum
+          const districtFeature = features.find((f: { properties?: { STFIPS?: string; CDFIPS?: string } }) =>
+            f.properties?.STFIPS === fips && f.properties?.CDFIPS === districtNum
           );
 
           if (districtFeature && districtFeature.geometry) {
@@ -670,7 +670,7 @@ function FullscreenMap({ member }: { member: Row }) {
               'fill-color': color,
               'fill-opacity': 0.8
             },
-            filter: ['all', ['==', ['get', 'STATEFP'], fips], ['==', ['get', 'CD118FP'], districtNum]]
+            filter: ['all', ['==', ['get', 'STFIPS'], fips], ['==', ['get', 'CDFIPS'], districtNum]]
           });
         }
 
@@ -721,7 +721,7 @@ function FullscreenMap({ member }: { member: Row }) {
               'line-color': '#000000',
               'line-width': 1.5
             },
-            filter: ['all', ['==', ['get', 'STATEFP'], fips], ['==', ['get', 'CD118FP'], districtNum]]
+            filter: ['all', ['==', ['get', 'STFIPS'], fips], ['==', ['get', 'CDFIPS'], districtNum]]
           });
         }
 
@@ -773,8 +773,8 @@ function FullscreenMap({ member }: { member: Row }) {
 
           // Find the district feature to calculate center
           const features = geoJsonData.features || [];
-          const districtFeature = features.find((f: { properties?: { STATEFP?: string; CD118FP?: string } }) =>
-            f.properties?.STATEFP === fips && f.properties?.CD118FP === districtNum
+          const districtFeature = features.find((f: { properties?: { STFIPS?: string; CDFIPS?: string } }) =>
+            f.properties?.STFIPS === fips && f.properties?.CDFIPS === districtNum
           );
 
           if (districtFeature && districtFeature.geometry && map.current) {
