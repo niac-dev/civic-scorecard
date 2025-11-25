@@ -24,13 +24,19 @@ async function fetchImageAsDataUrl(url: string, fallbackUrl?: string): Promise<s
   try {
     const response = await fetchWithTimeout(url);
     if (!response.ok) {
+      console.error(`[OG Image] Primary photo failed: ${url} - Status: ${response.status}`);
       // Try fallback if primary fails
       if (fallbackUrl) {
+        console.log(`[OG Image] Trying fallback photo: ${fallbackUrl}`);
         const fallbackResponse = await fetchWithTimeout(fallbackUrl);
-        if (!fallbackResponse.ok) return null;
+        if (!fallbackResponse.ok) {
+          console.error(`[OG Image] Fallback photo failed: ${fallbackUrl} - Status: ${fallbackResponse.status}`);
+          return null;
+        }
         const arrayBuffer = await fallbackResponse.arrayBuffer();
         const base64 = Buffer.from(arrayBuffer).toString('base64');
         const contentType = fallbackResponse.headers.get('content-type') || 'image/jpeg';
+        console.log(`[OG Image] Fallback photo succeeded`);
         return `data:${contentType};base64,${base64}`;
       }
       return null;
@@ -134,10 +140,12 @@ export async function GET(
 
     // Use more intense vignette for D and F grades
     const isLowGrade = grade.toUpperCase().startsWith('D') || grade.toUpperCase().startsWith('F');
-    const vignetteSize = isLowGrade ? { topBottom: '240px', leftRight: '110px' } : { topBottom: '120px', leftRight: '80px' };
+    const vignetteSize = isLowGrade ? { topBottom: '140px', leftRight: '120px' } : { topBottom: '100px', leftRight: '60px' };
     const vignetteOpacity = isLowGrade
-      ? { edge: 0.98, mid: 0.55, midPoint: '35%' }
-      : { edge: 0.95, mid: 0.4, midPoint: '50%' };
+      ? { edge: 0.98, mid: 0.4, midPoint: '50%' }
+      : { edge: 0.90, mid: 0.4, midPoint: '50%' };
+    // Use same dark blue vignette color for all grades
+    const vignetteColor = '11, 18, 32';
 
     // Calculate dynamic font size based on number of sentences (30% larger)
     const sentenceFontSize = sentences.length > 5 ? 23 : sentences.length > 3 ? 26 : 29;
@@ -251,7 +259,7 @@ export async function GET(
                   left: 0,
                   right: 0,
                   height: vignetteSize.topBottom,
-                  background: `linear-gradient(to bottom, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
+                  background: `linear-gradient(to bottom, rgba(${vignetteColor}, ${vignetteOpacity.edge}) 0%, rgba(${vignetteColor}, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
                   display: 'flex',
                 }} />
                 {/* Vignette - left edge */}
@@ -261,7 +269,7 @@ export async function GET(
                   left: 0,
                   bottom: 0,
                   width: vignetteSize.leftRight,
-                  background: `linear-gradient(to right, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
+                  background: `linear-gradient(to right, rgba(${vignetteColor}, ${vignetteOpacity.edge}) 0%, rgba(${vignetteColor}, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
                   display: 'flex',
                 }} />
                 {/* Vignette - right edge */}
@@ -271,7 +279,7 @@ export async function GET(
                   right: 0,
                   bottom: 0,
                   width: vignetteSize.leftRight,
-                  background: `linear-gradient(to left, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
+                  background: `linear-gradient(to left, rgba(${vignetteColor}, ${vignetteOpacity.edge}) 0%, rgba(${vignetteColor}, ${vignetteOpacity.mid - 0.1}) 60%, transparent 100%)`,
                   display: 'flex',
                 }} />
                 {/* Vignette - bottom edge */}
@@ -281,7 +289,7 @@ export async function GET(
                   left: 0,
                   right: 0,
                   height: vignetteSize.topBottom,
-                  background: `linear-gradient(to top, rgba(11, 18, 32, ${vignetteOpacity.edge}) 0%, rgba(11, 18, 32, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
+                  background: `linear-gradient(to top, rgba(${vignetteColor}, ${vignetteOpacity.edge}) 0%, rgba(${vignetteColor}, ${vignetteOpacity.mid}) ${vignetteOpacity.midPoint}, transparent 100%)`,
                   display: 'flex',
                 }} />
               </div>

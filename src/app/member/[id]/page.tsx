@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     chamber,
     party,
     location: String(location || ""),
-    photo: getPhotoUrl(String(member.bioguide_id || ""), 'original'),
+    photo: getPhotoUrl(String(member.bioguide_id || ""), '450x550'),
     photoFallback: String(member.photo_url || ""),
   });
   const ogImageUrl = `${baseUrl}/api/og/member/${memberId}?${ogParams.toString()}`;
