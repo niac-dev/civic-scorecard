@@ -108,9 +108,9 @@ export async function GET(
     const photoUrl = url.searchParams.get('photo') || '';
     const photoFallback = url.searchParams.get('photoFallback') || '';
 
-    // Determine which photo URLs to use (prefer photoFallback if both exist, as it's from congress.gov)
-    const primaryPhotoUrl = photoFallback || photoUrl;
-    const fallbackPhotoUrl = photoFallback && photoUrl && photoFallback !== photoUrl ? photoUrl : undefined;
+    // Prefer high-quality unitedstates.github.io photos, fallback to congress.gov
+    const primaryPhotoUrl = photoUrl || photoFallback;
+    const fallbackPhotoUrl = photoUrl && photoFallback && photoUrl !== photoFallback ? photoFallback : undefined;
 
     // Fetch all resources in parallel
     const [handwritingFont, interFont, photo] = await Promise.all([
