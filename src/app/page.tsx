@@ -389,7 +389,7 @@ export default function Page() {
       chamber,
       party,
       location: String(location || ''),
-      photo: getPhotoUrl(String(row.bioguide_id), 'original'),
+      photo: getPhotoUrl(String(row.bioguide_id), '450x550'),
       photoFallback: String(row.photo_url || ''),
       sentences: encodeURIComponent(JSON.stringify(sentences)),
     });
