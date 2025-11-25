@@ -256,7 +256,7 @@ export default function MemberPage() {
             <div className="flex items-start gap-4 mb-4">
               {row.bioguide_id ? (
                 <img
-                  src={getPhotoUrl(String(row.bioguide_id), '450x550')}
+                  src={getPhotoUrl(String(row.bioguide_id), '450x550') || String(row.photo_url || '')}
                   alt=""
                   className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200"
                   onError={(e) => {

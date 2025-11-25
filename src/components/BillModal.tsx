@@ -671,7 +671,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         {/* Photo */}
                         {sponsorMember.bioguide_id ? (
                           <img
-                            src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275')}
+                            src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275') || String(sponsorMember.photo_url || '')}
                             alt=""
                             loading="lazy"
                             className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
@@ -766,7 +766,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             {/* Photo */}
                             {member.bioguide_id ? (
                               <img
-                                src={getPhotoUrl(String(member.bioguide_id), '225x275')}
+                                src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
                                 alt=""
                                 loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
@@ -870,7 +870,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           {/* Photo */}
                           {member.bioguide_id ? (
                             <img
-                              src={getPhotoUrl(String(member.bioguide_id), '225x275')}
+                              src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
                               alt=""
                               loading="lazy"
                               className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
@@ -968,7 +968,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             {/* Photo */}
                             {member.bioguide_id ? (
                               <img
-                                src={getPhotoUrl(String(member.bioguide_id), '225x275')}
+                                src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
                                 alt=""
                                 loading="lazy"
                                 className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"

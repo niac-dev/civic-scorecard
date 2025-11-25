@@ -19,7 +19,7 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
     >
       {member.bioguide_id ? (
         <img
-          src={getPhotoUrl(String(member.bioguide_id), '225x275')}
+          src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
           alt=""
           loading="lazy"
           className="h-8 w-8 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"

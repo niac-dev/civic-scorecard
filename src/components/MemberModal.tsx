@@ -436,7 +436,7 @@ export function MemberModal({
                 {row.bioguide_id ? (
                   <div className="relative group/photo">
                     <img
-                      src={getPhotoUrl(String(row.bioguide_id), '450x550')}
+                      src={getPhotoUrl(String(row.bioguide_id), '450x550') || String(row.photo_url || '')}
                       alt=""
                       loading="lazy"
                       className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
