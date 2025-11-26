@@ -148,8 +148,8 @@ export async function GET(
     const vignetteColor = '11, 18, 32';
 
     // Calculate dynamic font size based on number of sentences (30% larger)
-    const sentenceFontSize = sentences.length > 5 ? 23 : sentences.length > 3 ? 26 : 29;
-    const lineHeight = sentences.length > 5 ? 1.25 : 1.35;
+    const sentenceFontSize = sentences.length >= 5 ? 23 : sentences.length > 3 ? 26 : 29;
+    const lineHeight = sentences.length >= 5 ? 1.25 : 1.35;
 
     return new ImageResponse(
       (
