@@ -3290,11 +3290,17 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           <div className="md:hidden flex items-center gap-1">
             <select
               className={clsx(
-                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer appearance-none",
+                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
+                "!appearance-none !bg-none",
                 f.state
                   ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
                   : ""
               )}
+              style={{
+                backgroundImage: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+              } as React.CSSProperties}
               value={f.state || ""}
               onChange={(e) => {
                 const selectedState = e.target.value;
