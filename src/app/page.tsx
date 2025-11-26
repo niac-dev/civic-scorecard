@@ -228,7 +228,7 @@ function ZipcodeSearch() {
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex gap-2 max-w-full md:max-w-3xl">
         <input
           type="text"
           placeholder="Enter your address or zipcode"
