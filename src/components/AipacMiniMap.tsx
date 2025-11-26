@@ -237,8 +237,8 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
         <div
           className="relative w-full h-[200px] rounded-lg overflow-hidden border border-[#E7ECF2] dark:border-slate-700 bg-slate-50 dark:bg-white/5 cursor-pointer hover:border-[#4B8CFB] transition-colors"
           onClick={() => {
-            // Open AIPAC page in a new tab
-            window.open('/aipac', '_blank');
+            // Open main map view in a new tab (like bill modals do)
+            window.open('/?view=map', '_blank');
           }}
         >
           {loading && (
@@ -253,7 +253,7 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Click to view AIPAC page
+            Click to expand map
           </div>
         </div>
 
