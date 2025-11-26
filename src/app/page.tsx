@@ -1870,10 +1870,18 @@ export default function Page() {
                     loading="lazy"
                     className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                     style={{ height: 'auto' }}
+                    onError={(e) => {
+                      // Hide broken image and show placeholder
+                      e.currentTarget.style.display = 'none';
+                      const placeholder = e.currentTarget.nextElementSibling;
+                      if (placeholder) placeholder.classList.remove('hidden');
+                    }}
                   />
-                ) : (
-                  <div className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0" style={{ height: 'auto' }} />
-                )}
+                ) : null}
+                <div className={clsx(
+                  "w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0",
+                  r.photo_url && "hidden"
+                )} style={{ height: 'auto' }} />
 
                 {/* Desktop: Text section with name and badges */}
                 <div className="hidden md:flex md:flex-col min-w-0 md:order-2">
