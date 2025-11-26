@@ -3282,7 +3282,7 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
           <div className="md:hidden flex items-center gap-1">
             <select
               className={clsx(
-                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
+                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer appearance-none",
                 f.state
                   ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
                   : ""
