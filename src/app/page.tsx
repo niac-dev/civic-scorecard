@@ -1134,6 +1134,18 @@ export default function Page() {
     return out;
   }, [allBillCols, metaByCol, f.categories, f.viewMode]);
 
+  // Map pair_key -> preferred column name (for efficient lookup)
+  const preferredColByPairKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const col of cols) {
+      const meta = metaByCol.get(col);
+      if (meta?.pair_key && isTrue((meta as any).preferred)) {
+        map.set(meta.pair_key, col);
+      }
+    }
+    return map;
+  }, [cols, metaByCol]);
+
   // Determine which grade columns to show based on selected category
   const gradeColumns = useMemo(() => {
     // In summary mode, show all category grades (except AIPAC which doesn't have grade data)
@@ -2211,8 +2223,16 @@ export default function Page() {
                 const fullPoints = Number(meta?.points ?? 0);
                 const votedPresent = !wasAbsent && actionType.includes('vote') && val > 0 && val < fullPoints;
 
-                // LIGHTWEIGHT: Only check if we need dash (simplified - no expensive loops)
-                const showDashForPreferredPair = meta?.pair_key && !isTrue((meta as any).preferred) && val === 0 && !notApplicable;
+                // Check if we need dash for preferred pair (member supported the preferred bill)
+                let showDashForPreferredPair = false;
+                if (meta?.pair_key && !isTrue((meta as any).preferred) && val === 0 && !notApplicable) {
+                  const preferredCol = preferredColByPairKey.get(meta.pair_key);
+                  if (preferredCol) {
+                    const preferredVal = Number((r as Record<string, unknown>)[preferredCol] ?? 0);
+                    const preferredCosponsor = Number((r as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1;
+                    showDashForPreferredPair = preferredVal > 0 || preferredCosponsor;
+                  }
+                }
 
                 const bioguideId = String(r.bioguide_id || "");
                 const isTooltipOpen = selectedCell?.rowId === bioguideId && selectedCell?.col === c;
