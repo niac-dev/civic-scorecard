@@ -1409,16 +1409,22 @@ export function MemberModal({
                                       }
                                     }
                                   } else if (isVote) {
-                                    // Check for "Voted Present" (partial points, between 0 and full points)
-                                    const votedPresent = it.val > 0 && it.val < maxPoints;
-                                    if (votedPresent) {
-                                      actionDescription = 'Voted Present';
-                                    } else if (isSupport) {
-                                      // NIAC supports: getting points = voted YES, no points = voted NO
-                                      actionDescription = it.ok ? 'Voted in favor' : 'Voted against';
+                                    // Check if member is the sponsor of this bill
+                                    const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
+                                    if (isSponsor) {
+                                      actionDescription = 'Sponsor';
                                     } else {
-                                      // NIAC opposes: getting points = voted NO, no points = voted YES
-                                      actionDescription = it.ok ? 'Voted against' : 'Voted in favor';
+                                      // Check for "Voted Present" (partial points, between 0 and full points)
+                                      const votedPresent = it.val > 0 && it.val < maxPoints;
+                                      if (votedPresent) {
+                                        actionDescription = 'Voted Present';
+                                      } else if (isSupport) {
+                                        // NIAC supports: getting points = voted YES, no points = voted NO
+                                        actionDescription = it.ok ? 'Voted in favor' : 'Voted against';
+                                      } else {
+                                        // NIAC opposes: getting points = voted NO, no points = voted YES
+                                        actionDescription = it.ok ? 'Voted against' : 'Voted in favor';
+                                      }
                                     }
                                   } else {
                                     actionDescription = it.ok ? 'Support' : 'Oppose';
