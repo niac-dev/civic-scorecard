@@ -2865,12 +2865,25 @@ export default function Page() {
                                   className="py-3 text-[10px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-1"
                                 >
                                   {(() => {
-                                    const voteResult = bill.meta.vote_result;
+                                    const voteTallies = bill.meta.vote_tallies || '';
                                     const isCosponsor = bill.actionType.includes('cosponsor');
-                                    if (voteResult) {
-                                      return voteResult;
+                                    const isVote = bill.actionType.includes('vote');
+
+                                    if (voteTallies) {
+                                      // Extract status from vote_tallies (e.g., "Failed House (6-422)" or "Passed Senate (64-35)")
+                                      // For multiple votes, show the final outcome
+                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                      const lastPart = parts[parts.length - 1];
+                                      if (lastPart.toLowerCase().includes('passed')) {
+                                        return "Passed";
+                                      } else if (lastPart.toLowerCase().includes('failed')) {
+                                        return "Failed";
+                                      }
+                                      return lastPart.split('(')[0].trim(); // Fallback to first part before parentheses
                                     } else if (isCosponsor) {
                                       return "Active";
+                                    } else if (isVote) {
+                                      return "Pending";
                                     }
                                     return "—";
                                   })()}
