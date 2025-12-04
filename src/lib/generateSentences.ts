@@ -175,16 +175,25 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
         }
       }
     } else {
-      // checkPositivePoints = false: bad action if they have positive points
+      // checkPositivePoints = false: bad action if they cosponsored (or are sponsor)
+      // Only check _cosponsor columns for positive points (1.0 = cosponsored)
+      // Main column has 1.0 for non-cosponsors (reward) which we should ignore
+      let didCosponsor = false;
       for (const col of rule.columns) {
-        const value = row[col];
-        if (hasPositivePoints(value)) {
-          // For bad bills, sponsors still get sponsorText (e.g., "Introduced" bad bill)
-          const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.badText;
-          if (textToUse) {
-            sentences.push({ text: `${textToUse} ${rule.ending}`, isGood: false });
+        if (col.endsWith('_cosponsor')) {
+          const value = row[col];
+          if (hasPositivePoints(value)) {
+            didCosponsor = true;
+            break;
           }
-          break;
+        }
+      }
+
+      if (didCosponsor || isSponsor) {
+        // They cosponsored or sponsored the bad bill
+        const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.badText;
+        if (textToUse) {
+          sentences.push({ text: `${textToUse} ${rule.ending}`, isGood: false });
         }
       }
     }
