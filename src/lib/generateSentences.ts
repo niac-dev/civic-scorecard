@@ -2,7 +2,7 @@
 // Generates shareable summary sentences based on member voting record
 // Rules are loaded from public/data/graphic_sentences.csv for easy editing
 
-import { Row } from './types';
+import { Row, Meta } from './types';
 
 export type Sentence = {
   text: string;
@@ -15,6 +15,7 @@ type Rule = {
   checkPositivePoints: boolean;
   goodText: string | null;
   badText: string | null;
+  sponsorText: string | null;
   ending: string;
 };
 
@@ -48,13 +49,25 @@ function parseRulesCSV(csvContent: string): Rule[] {
     }
     fields.push(current.trim());
 
-    if (fields.length >= 6) {
+    if (fields.length >= 7) {
       rules.push({
         chamber: fields[0].toUpperCase(),
         columns: fields[1].split(';').map(c => c.trim()),
         checkPositivePoints: fields[2].toLowerCase() === 'true',
         goodText: fields[3] || null,
         badText: fields[4] || null,
+        sponsorText: fields[5] || null,
+        ending: fields[6],
+      });
+    } else if (fields.length >= 6) {
+      // Backwards compatibility for old format without sponsorText
+      rules.push({
+        chamber: fields[0].toUpperCase(),
+        columns: fields[1].split(';').map(c => c.trim()),
+        checkPositivePoints: fields[2].toLowerCase() === 'true',
+        goodText: fields[3] || null,
+        badText: fields[4] || null,
+        sponsorText: null,
         ending: fields[5],
       });
     }
@@ -81,15 +94,32 @@ export async function loadSentenceRules(): Promise<Rule[]> {
 
 // Synchronous version using pre-loaded rules
 // pacDataLoaded: true if PAC data has been loaded (to distinguish from "no PAC data" vs "not loaded yet")
-export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean): Sentence[] {
+// metaByCol: optional map of column metadata to detect sponsors
+export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean, metaByCol?: Map<string, Meta>): Sentence[] {
   const sentences: Sentence[] = [];
   let blockTheBombsSentence: Sentence | null = null;
   const chamber = row.chamber?.toUpperCase();
+  const memberBioguide = row.bioguide_id;
 
   const chamberRules = rules.filter(r => r.chamber === chamber);
 
+  // Helper to check if member is sponsor of any column in the rule
+  const isSponsorOfRule = (rule: Rule): boolean => {
+    if (!metaByCol || !memberBioguide) return false;
+    for (const col of rule.columns) {
+      // Remove _cosponsor suffix to get base column name
+      const baseCol = col.replace(/_cosponsor$/, '');
+      const meta = metaByCol.get(baseCol);
+      if (meta?.sponsor_bioguide_id === memberBioguide) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   for (const rule of chamberRules) {
     const isBlockTheBombs = rule.columns.some(col => col.includes('Block the Bombs'));
+    const isSponsor = isSponsorOfRule(rule);
 
     if (rule.checkPositivePoints) {
       // First pass: check ALL columns for any positive points
@@ -103,9 +133,10 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
       }
 
       if (foundPositive) {
-        // Show good text
-        if (rule.goodText) {
-          const sentence = { text: `${rule.goodText} ${rule.ending}`, isGood: true };
+        // Show good text (or sponsor text if applicable)
+        const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.goodText;
+        if (textToUse) {
+          const sentence = { text: `${textToUse} ${rule.ending}`, isGood: true };
           if (isBlockTheBombs) {
             blockTheBombsSentence = sentence;
           } else {
@@ -148,8 +179,10 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
       for (const col of rule.columns) {
         const value = row[col];
         if (hasPositivePoints(value)) {
-          if (rule.badText) {
-            sentences.push({ text: `${rule.badText} ${rule.ending}`, isGood: false });
+          // For bad bills, sponsors still get sponsorText (e.g., "Introduced" bad bill)
+          const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.badText;
+          if (textToUse) {
+            sentences.push({ text: `${textToUse} ${rule.ending}`, isGood: false });
           }
           break;
         }
@@ -211,21 +244,21 @@ function hasAnyValue(value: unknown): boolean {
 
 // Backwards-compatible wrapper that uses hardcoded fallback rules
 // For best results, use loadSentenceRules() + generateSentencesSync()
-export function generateSentences(row: Row, pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean): Sentence[] {
+export function generateSentences(row: Row, pacTotal?: number, pacTotal2026?: number, hasAnyPacMoney?: boolean, hasLobbySupport?: boolean, pacDataLoaded?: boolean, aipacSupport?: boolean, dmfiSupport?: boolean, metaByCol?: Map<string, Meta>): Sentence[] {
   // Fallback hardcoded rules for when CSV isn't loaded
   const FALLBACK_RULES: Rule[] = [
-    { chamber: 'HOUSE', columns: ['H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor', 'H.Con.Res.40 — Iran War Powers Resolution_cosponsor'], checkPositivePoints: true, goodText: 'Supports', badText: 'Has not sponsored', ending: 'war power resolution AGAINST war with Iran.' },
-    { chamber: 'HOUSE', columns: ['H.R.1422 — Enhanced Iran Sanctions Act_cosponsor'], checkPositivePoints: false, goodText: null, badText: 'Supports', ending: "AIPAC's bill to impose more broad sanctions on Iranians." },
-    { chamber: 'HOUSE', columns: ['H.Res.166 — MEK Bill_cosponsor'], checkPositivePoints: false, goodText: null, badText: 'Sponsored', ending: 'the MEK bill.' },
-    { chamber: 'HOUSE', columns: ['H_R_2619_Travel_to_Iran_Amendment'], checkPositivePoints: true, goodText: 'Voted to prevent a ban on', badText: 'Voted in committee to ban', ending: 'U.S. travel to Iran.' },
-    { chamber: 'HOUSE', columns: ['H.R.2619 — Travel to Iran Ban_cosponsor'], checkPositivePoints: false, goodText: null, badText: 'Sponsored legislation to ban', ending: 'U.S. travel to Iran.' },
-    { chamber: 'HOUSE', columns: ['H.R.23 — Sanctions Against ICC'], checkPositivePoints: true, goodText: null, badText: 'Voted for', ending: 'sanctions on the International Criminal Court over its prosecution of Netanyahu.' },
-    { chamber: 'HOUSE', columns: ['H.R.3565 — Block the Bombs Act', 'H.R.3565 — Block the Bombs Act_cosponsor'], checkPositivePoints: true, goodText: 'Sponsored', badText: 'Has not sponsored', ending: 'the Block the Bombs Act to prevent US weapons going to Israel to commit human right violations.' },
-    { chamber: 'SENATE', columns: ['S.J.Res.59 — Iran War Powers Resolution'], checkPositivePoints: true, goodText: 'Voted in favor of', badText: 'Voted against', ending: 'Iran war powers resolution to make clear there is no authorization for U.S. war on Iran.' },
-    { chamber: 'SENATE', columns: ['S.556 — Enhanced Iran Sanctions Act_cosponsor'], checkPositivePoints: false, goodText: null, badText: 'Supports', ending: "AIPAC's bill to impose more broad sanctions on Iranians." },
-    { chamber: 'SENATE', columns: ['H.R.23 — Sanctions Against ICC'], checkPositivePoints: true, goodText: null, badText: 'Voted for', ending: 'sanctions on the International Criminal Court over its prosecution of Netanyahu.' },
-    { chamber: 'SENATE', columns: ['S.J.Res.41 — Blocking Weapons to Israel (JRD 4)'], checkPositivePoints: true, goodText: 'Supports', badText: 'Opposes', ending: 'restricting US weapons transfers to Israel.' },
+    { chamber: 'HOUSE', columns: ['H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor', 'H.Con.Res.40 — Iran War Powers Resolution_cosponsor'], checkPositivePoints: true, goodText: 'Supports', badText: 'Has not sponsored', sponsorText: 'Introduced', ending: 'war power resolution AGAINST war with Iran.' },
+    { chamber: 'HOUSE', columns: ['H.R.1422 — Enhanced Iran Sanctions Act_cosponsor', 'H.R.1422 — Enhanced Iran Sanctions Act'], checkPositivePoints: false, goodText: null, badText: 'Supports', sponsorText: 'Introduced', ending: "AIPAC's bill to impose more broad sanctions on Iranians." },
+    { chamber: 'HOUSE', columns: ['H.Res.166 — MEK Bill_cosponsor', 'H.Res.166 — MEK Bill'], checkPositivePoints: false, goodText: null, badText: 'Sponsored', sponsorText: 'Introduced', ending: 'the MEK bill.' },
+    { chamber: 'HOUSE', columns: ['H_R_2619_Travel_to_Iran_Amendment'], checkPositivePoints: true, goodText: 'Voted to prevent a ban on', badText: 'Voted in committee to ban', sponsorText: null, ending: 'U.S. travel to Iran.' },
+    { chamber: 'HOUSE', columns: ['H.R.2619 — Travel to Iran Ban_cosponsor', 'H.R.2619 — Travel to Iran Ban'], checkPositivePoints: false, goodText: null, badText: 'Sponsored legislation to ban', sponsorText: 'Introduced bill to ban', ending: 'U.S. travel to Iran.' },
+    { chamber: 'HOUSE', columns: ['H.R.23 — Sanctions Against ICC'], checkPositivePoints: true, goodText: null, badText: 'Voted for', sponsorText: null, ending: 'sanctions on the International Criminal Court over its prosecution of Netanyahu.' },
+    { chamber: 'HOUSE', columns: ['H.R.3565 — Block the Bombs Act', 'H.R.3565 — Block the Bombs Act_cosponsor'], checkPositivePoints: true, goodText: 'Supports', badText: 'Has not sponsored', sponsorText: 'Introduced', ending: 'the Block the Bombs Act to prevent US weapons going to Israel to commit human right violations.' },
+    { chamber: 'SENATE', columns: ['S.J.Res.59 — Iran War Powers Resolution'], checkPositivePoints: true, goodText: 'Voted in favor of', badText: 'Voted against', sponsorText: null, ending: 'Iran war powers resolution to make clear there is no authorization for U.S. war on Iran.' },
+    { chamber: 'SENATE', columns: ['S.556 — Enhanced Iran Sanctions Act_cosponsor', 'S.556 — Enhanced Iran Sanctions Act'], checkPositivePoints: false, goodText: null, badText: 'Supports', sponsorText: 'Introduced', ending: "AIPAC's bill to impose more broad sanctions on Iranians." },
+    { chamber: 'SENATE', columns: ['H.R.23 — Sanctions Against ICC'], checkPositivePoints: true, goodText: null, badText: 'Voted for', sponsorText: null, ending: 'sanctions on the International Criminal Court over its prosecution of Netanyahu.' },
+    { chamber: 'SENATE', columns: ['S.J.Res.41 — Blocking Weapons to Israel (JRD 4)'], checkPositivePoints: true, goodText: 'Supports', badText: 'Opposes', sponsorText: null, ending: 'restricting US weapons transfers to Israel.' },
   ];
 
-  return generateSentencesSync(row, cachedRules || FALLBACK_RULES, pacTotal, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
+  return generateSentencesSync(row, cachedRules || FALLBACK_RULES, pacTotal, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport, metaByCol);
 }

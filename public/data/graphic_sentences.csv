@@ -1,15 +1,15 @@
-chamber,columns,checkPositivePoints,goodText,badText,ending
-HOUSE,"H.Con.Res.38 — Iran War Powers Resolution (Preferred);H.Con.Res.40 — Iran War Powers Resolution;H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor;H.Con.Res.40 — Iran War Powers Resolution_cosponsor",true,Supported,Has not sponsored,War Powers Resolution against war on Iran.
-HOUSE,"H.R.1422 — Enhanced Iran Sanctions Act_cosponsor",false,,Supports,AIPAC's collective punishment sanctions on Iranians bill.
-HOUSE,"H.Res.166 — MEK Bill_cosponsor",false,,Supports,the MEK bill.
-HOUSE,"H_R_2619_Travel_to_Iran_Amendment",true,Voted to prevent a ban on,Voted to ban,U.S. travel to Iran.
-HOUSE,"H.R.2619 — Travel to Iran Ban_cosponsor",false,,Supports ban on,U.S. travel to Iran.
-HOUSE,H.R.924 — NO BAN Act_cosponsor,true,Opposes,,the Travel Ban.
+chamber,columns,checkPositivePoints,goodText,badText,sponsorText,ending
+HOUSE,"H.Con.Res.38 — Iran War Powers Resolution (Preferred);H.Con.Res.40 — Iran War Powers Resolution;H.Con.Res.38 — Iran War Powers Resolution (Preferred)_cosponsor;H.Con.Res.40 — Iran War Powers Resolution_cosponsor",true,Supported,Has not sponsored,Introduced,War Powers Resolution against war on Iran.
+HOUSE,"H.R.1422 — Enhanced Iran Sanctions Act_cosponsor;H.R.1422 — Enhanced Iran Sanctions Act",false,,Supports,Introduced,AIPAC's collective punishment sanctions on Iranians bill.
+HOUSE,"H.Res.166 — MEK Bill_cosponsor;H.Res.166 — MEK Bill",false,,Supports,Introduced,the MEK bill.
+HOUSE,"H_R_2619_Travel_to_Iran_Amendment",true,Voted to prevent a ban on,Voted to ban,,U.S. travel to Iran.
+HOUSE,"H.R.2619 — Travel to Iran Ban_cosponsor;H.R.2619 — Travel to Iran Ban",false,,Supports ban on,Introduced bill to ban,U.S. travel to Iran.
+HOUSE,"H.R.924 — NO BAN Act_cosponsor;H.R.924 — NO BAN Act",true,Opposes,,Introduced,the Travel Ban.
 HOUSE,"H.R.23 — Sanctions Against ICC",true,,Voted to,sanction the International Criminal Court to protect Netanyahu.
-HOUSE,119.H.Amdt.55 — Blocking weapons to Israel Amendment,true,Voted to stop,,sending U.S. taxpayer-funded weapons to Israel.
-HOUSE,"H.R.3565 — Block the Bombs Act;H.R.3565 — Block the Bombs Act_cosponsor",true,Supports,Has not sponsored,the Block the Bombs Act.
-SENATE,"S.J.Res.59 — Iran War Powers Resolution",true,Voted to prevent,Voted to allow,U.S. war on Iran.
-SENATE,"S.556 — Enhanced Iran Sanctions Act_cosponsor",false,,Supports,"AIPAC's broad ""enhanced"" sanctions on Iranians."
-SENATE,"H.R.23 — Sanctions Against ICC",true,,Voted to,sanction the International Criminal Court to protect Netanyahu.
-SENATE,"S.J.Res.41 — Blocking Weapons to Israel (JRD 4)",true,Voted against,Supports,more U.S. taxpayer-funded weapons for Israel.
-SENATE,S.398 — NO BAN Act_cosponsor,true,Opposes,,the Travel Ban.
+HOUSE,119.H.Amdt.55 — Blocking weapons to Israel Amendment,true,Voted to stop,,Introduced amendment to stop,sending U.S. taxpayer-funded weapons to Israel.
+HOUSE,"H.R.3565 — Block the Bombs Act;H.R.3565 — Block the Bombs Act_cosponsor",true,Supports,Has not sponsored,Introduced,the Block the Bombs Act.
+SENATE,"S.J.Res.59 — Iran War Powers Resolution",true,Voted to prevent,Voted to allow,,U.S. war on Iran.
+SENATE,"S.556 — Enhanced Iran Sanctions Act_cosponsor;S.556 — Enhanced Iran Sanctions Act",false,,Supports,Introduced,AIPAC's broad "enhanced" sanctions on Iranians.
+SENATE,"H.R.23 — Sanctions Against ICC",true,,Voted to,,sanction the International Criminal Court to protect Netanyahu.
+SENATE,"S.J.Res.41 — Blocking Weapons to Israel (JRD 4)",true,Voted against,Supports,,more U.S. taxpayer-funded weapons for Israel.
+SENATE,"S.398 — NO BAN Act_cosponsor;S.398 — NO BAN Act",true,Opposes,,Introduced,the Travel Ban.

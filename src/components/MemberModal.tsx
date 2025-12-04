@@ -124,7 +124,7 @@ export function MemberModal({
     const hasLobbySupport = aipacSupport || dmfiSupport;
 
     // Generate sentences based on voting record using CSV rules
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport, metaByCol);
 
     const params = new URLSearchParams({
       name: displayName,
@@ -183,7 +183,7 @@ export function MemberModal({
     ) : false;
     const hasLobbySupport = aipacSupport || dmfiSupport;
 
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport, metaByCol);
 
     const params = new URLSearchParams({
       name: displayName,

@@ -379,7 +379,7 @@ export default function Page() {
     const hasLobbySupport = aipacSupport || dmfiSupport;
     const pacDataLoaded = pacDataMap.size > 0;
 
-    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport);
+    const sentences = generateSentencesSync(row, sentenceRules, pacTotalLastElection, pacTotal2026, hasAnyPacMoney, hasLobbySupport, pacDataLoaded, aipacSupport, dmfiSupport, metaByCol);
 
     const params = new URLSearchParams({
       name: displayName,
@@ -395,7 +395,7 @@ export default function Page() {
     });
 
     window.open(`/member/${row.bioguide_id}/share?${params.toString()}`, '_blank');
-  }, [pacDataMap, sentenceRules]);
+  }, [pacDataMap, sentenceRules, metaByCol]);
 
   useEffect(() => { (async () => {
     const [data, pacData, manualMeta, rules] = await Promise.all([loadData(), loadPacData(), loadManualScoringMeta(), loadSentenceRules()]);
