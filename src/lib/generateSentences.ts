@@ -7,6 +7,7 @@ import { Row, Meta } from './types';
 export type Sentence = {
   text: string;
   isGood: boolean;
+  isSponsor?: boolean;
 };
 
 type Rule = {
@@ -136,7 +137,7 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
         // Show good text (or sponsor text if applicable)
         const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.goodText;
         if (textToUse) {
-          const sentence = { text: `${textToUse} ${rule.ending}`, isGood: true };
+          const sentence = { text: `${textToUse} ${rule.ending}`, isGood: true, isSponsor };
           if (isBlockTheBombs) {
             blockTheBombsSentence = sentence;
           } else {
@@ -193,7 +194,7 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
         // They cosponsored or sponsored the bad bill
         const textToUse = (isSponsor && rule.sponsorText) ? rule.sponsorText : rule.badText;
         if (textToUse) {
-          sentences.push({ text: `${textToUse} ${rule.ending}`, isGood: false });
+          sentences.push({ text: `${textToUse} ${rule.ending}`, isGood: false, isSponsor });
         }
       }
     }
@@ -204,8 +205,14 @@ export function generateSentencesSync(row: Row, rules: Rule[], pacTotal?: number
     sentences.push(blockTheBombsSentence);
   }
 
-  // Sort: positive sentences first, then negative
-  sentences.sort((a, b) => (b.isGood ? 1 : 0) - (a.isGood ? 1 : 0));
+  // Sort: sponsors first, then positive, then negative
+  sentences.sort((a, b) => {
+    // Sponsors always come first
+    if (a.isSponsor && !b.isSponsor) return -1;
+    if (!a.isSponsor && b.isSponsor) return 1;
+    // Then sort by good/bad
+    return (b.isGood ? 1 : 0) - (a.isGood ? 1 : 0);
+  });
 
   // AIPAC/DMFI support sentence - added LAST after sorting
   const rejectsAipac = row.reject_aipac_commitment && String(row.reject_aipac_commitment).trim() !== '';
