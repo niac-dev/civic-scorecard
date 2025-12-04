@@ -1427,9 +1427,9 @@ export function MemberModal({
                                   return `${actionDescription}${pointsDisplay}`;
                                 })()}
                               </span>
-                              {/* Category chip */}
+                              {/* Category chip - hide on mobile when category is selected */}
                               {it.meta?.categories && (
-                                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hidden min-[900px]:inline">
                                   {it.meta.categories.split(';')[0]?.trim()}
                                 </span>
                               )}
