@@ -1346,7 +1346,11 @@ export function MemberModal({
                                   }
                                   // General 3-tier manual action handling (for all manual actions)
                                   else if (isManual && maxPoints >= 4 && !isCosponsor && !isVote) {
-                                    if (customDescription) {
+                                    // Check if member is the sponsor
+                                    const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
+                                    if (isSponsor) {
+                                      actionDescription = 'Sponsor';
+                                    } else if (customDescription) {
                                       // Use custom description if available
                                       actionDescription = customDescription;
                                       // Points already set above
