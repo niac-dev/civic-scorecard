@@ -1265,7 +1265,9 @@ export function MemberModal({
                                     if (isPreferred) {
                                       // This is the preferred bill (H.Con.Res.38)
                                       if (cosponsoredPreferred) {
-                                        pointsDisplay = ` (+${preferredPoints} pts)`;
+                                        // Use actual earned points (may include sponsor bonus)
+                                        const earnedPoints = it.val > 0 ? it.val : preferredPoints;
+                                        pointsDisplay = ` (+${earnedPoints} pts)`;
                                       } else {
                                         // Didn't cosponsor preferred - show penalty
                                         pointsDisplay = ` (-${preferredPoints} pts)`;
@@ -1274,14 +1276,14 @@ export function MemberModal({
                                       // This is the non-preferred bill (H.Con.Res.40)
                                       if (cosponsoredPreferred) {
                                         // They cosponsored the preferred bill, so they get credit here too
-                                        if (cosponsoredNonPreferred) {
-                                          pointsDisplay = ` (+${nonPreferredPoints} pts)`;
-                                        } else {
-                                          pointsDisplay = ` (+${nonPreferredPoints} pts)`; // Same points either way
-                                        }
+                                        // Use actual earned points (may include sponsor bonus)
+                                        const earnedPoints = it.val > 0 ? it.val : nonPreferredPoints;
+                                        pointsDisplay = ` (+${earnedPoints} pts)`;
                                       } else if (cosponsoredNonPreferred) {
                                         // Only cosponsored this bill, not the preferred one
-                                        pointsDisplay = ` (+${nonPreferredPoints} pts)`;
+                                        // Use actual earned points (may include sponsor bonus)
+                                        const earnedPoints = it.val > 0 ? it.val : nonPreferredPoints;
+                                        pointsDisplay = ` (+${earnedPoints} pts)`;
                                       } else {
                                         // Cosponsored neither
                                         pointsDisplay = ` (-${nonPreferredPoints} pts)`;
