@@ -2761,11 +2761,12 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "1fr 80px 160px" : "40px calc(100% - 380px) 100px 240px",
+                      gridTemplateColumns: isMobile ? "1fr 70px 80px 110px" : "40px calc(100% - 480px) 100px 100px 240px",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
                     <div className="th pl-4">Bill Information</div>
+                    <div className="th text-center">Status</div>
                     <div className="th text-center">Our Position</div>
                     <div className="th text-center">Sponsor</div>
                   </div>
@@ -2793,7 +2794,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "1fr 80px 160px" : "40px calc(100% - 380px) 100px 240px",
+                                  gridTemplateColumns: isMobile ? "1fr 70px 80px 110px" : "40px calc(100% - 480px) 100px 100px 240px",
                                   alignItems: "center",
                                 }}
                                 onClick={() => {
@@ -2857,6 +2858,22 @@ export default function Page() {
                                       {bill.meta.description}
                                     </div>
                                   )}
+                                </div>
+
+                                {/* Status */}
+                                <div
+                                  className="py-3 text-[10px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-1"
+                                >
+                                  {(() => {
+                                    const voteResult = bill.meta.vote_result;
+                                    const isCosponsor = bill.actionType.includes('cosponsor');
+                                    if (voteResult) {
+                                      return voteResult;
+                                    } else if (isCosponsor) {
+                                      return "Active";
+                                    }
+                                    return "—";
+                                  })()}
                                 </div>
 
                                 {/* NIAC Action Position */}
