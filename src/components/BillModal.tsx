@@ -529,11 +529,29 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 <span className="font-bold">NIAC Action Position:</span> {formatPositionLegislation(meta)}
               </div>
               {/* Scoring */}
-              {meta.points && (
-                <div className="text-sm text-slate-600 dark:text-slate-300">
-                  <span className="font-bold">Scoring:</span> +{Number(meta.points)}/−{Number(meta.points)} points
-                </div>
-              )}
+              {meta.points && (() => {
+                const points = Number(meta.points);
+                const actionType = (meta as { action_types?: string })?.action_types || '';
+                const isCosponsor = actionType.includes('cosponsor');
+                const noCosponsorBenefit = meta.no_cosponsor_benefit === true ||
+                                           meta.no_cosponsor_benefit === 1 ||
+                                           meta.no_cosponsor_benefit === '1';
+
+                let scoringText: string;
+                if (isCosponsor && noCosponsorBenefit) {
+                  // Bills we oppose - cosponsors lose points, non-cosponsors get 0
+                  scoringText = `0/−${points} points`;
+                } else {
+                  // Regular scoring: +X for good, -X for bad
+                  scoringText = `+${points}/−${points} points`;
+                }
+
+                return (
+                  <div className="text-sm text-slate-600 dark:text-slate-300">
+                    <span className="font-bold">Scoring:</span> {scoringText}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Description */}
