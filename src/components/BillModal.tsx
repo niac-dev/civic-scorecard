@@ -528,6 +528,12 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               <div className="text-sm text-slate-600 dark:text-slate-300">
                 <span className="font-bold">NIAC Action Position:</span> {formatPositionLegislation(meta)}
               </div>
+              {/* Scoring */}
+              {meta.points && (
+                <div className="text-sm text-slate-600 dark:text-slate-300">
+                  <span className="font-bold">Scoring:</span> +{Number(meta.points)}/−{Number(meta.points)} points
+                </div>
+              )}
             </div>
 
             {/* Description */}
