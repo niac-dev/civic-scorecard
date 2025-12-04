@@ -215,8 +215,8 @@ export function MemberModal({
         const modalRect = modal.getBoundingClientRect();
         const relativeTop = elementRect.top - modalRect.top;
 
-        // Account for sticky headers: navigation (60px) + category header (60px) + padding (20px)
-        const offset = 140;
+        // Account for sticky headers: navigation (60px) + category header (~70px) + padding (20px)
+        const offset = 150;
 
         // Scroll modal to show element below sticky headers
         modal.scrollTo({
