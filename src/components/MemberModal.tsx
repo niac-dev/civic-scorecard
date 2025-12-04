@@ -356,17 +356,18 @@ export function MemberModal({
                                    meta?.no_cosponsor_benefit === 1 ||
                                    meta?.no_cosponsor_benefit === '1';
         const actionType = (meta as { action_types?: string })?.action_types || '';
-        const isCosponsor = actionType.includes('cosponsor');
+        const isCosponsorBill = actionType.includes('cosponsor');
         const position = (meta?.position_to_score || '').toUpperCase();
         const isSupport = position === 'SUPPORT';
+        const isSponsor = meta?.sponsor_bioguide_id === row.bioguide_id;
 
         let ok = !notApplicable && val > 0;
 
         // Special handling for no_cosponsor_benefit bills
-        if (!notApplicable && isCosponsor && noCosponsorBenefit && !isSupport) {
+        if (!notApplicable && isCosponsorBill && noCosponsorBenefit && !isSupport) {
           // For bills we oppose with no_cosponsor_benefit:
-          // "ok" means they did NOT cosponsor
-          ok = !didCosponsor;
+          // "ok" means they did NOT cosponsor AND are not the sponsor
+          ok = !didCosponsor && !isSponsor;
         }
 
         return {
@@ -1297,8 +1298,13 @@ export function MemberModal({
                                     } else {
                                       // When they get 0 points, check if this is a no_cosponsor_benefit scenario
                                       // For bills we oppose with no_cosponsor_benefit, not cosponsoring gives 0 points (neutral, not a penalty)
-                                      if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor) {
+                                      // But sponsors of bills we oppose should show a penalty
+                                      const isSponsorOfBill = it.meta?.sponsor_bioguide_id === row.bioguide_id;
+                                      if (isCosponsor && noCosponsorBenefit && !isSupport && !it.didCosponsor && !isSponsorOfBill) {
                                         pointsDisplay = ''; // Don't show (0 pts)
+                                      } else if (isSponsorOfBill && !isSupport) {
+                                        // Sponsor of a bill we oppose - show penalty (sponsor gets +1 more than base, so penalty is base+1)
+                                        pointsDisplay = ` (-${maxPoints + 1} pts)`;
                                       } else {
                                         // Otherwise, 0 points means they missed getting points (show negative impact)
                                         pointsDisplay = maxPoints > 0 ? ` (-${maxPoints} pts)` : '';
