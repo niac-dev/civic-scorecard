@@ -533,17 +533,43 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 const points = Number(meta.points);
                 const actionType = (meta as { action_types?: string })?.action_types || '';
                 const isCosponsor = actionType.includes('cosponsor');
+                const isVote = actionType.includes('vote');
+                const position = (meta.position_to_score || '').toUpperCase();
+                const isSupport = position === 'SUPPORT';
                 const noCosponsorBenefit = meta.no_cosponsor_benefit === true ||
                                            meta.no_cosponsor_benefit === 1 ||
                                            meta.no_cosponsor_benefit === '1';
+                const isPreferred = meta.preferred === true || meta.preferred === 1 || meta.preferred === '1' || meta.preferred === 'true';
+                const hasPairKey = !!meta.pair_key;
 
                 let scoringText: string;
-                if (isCosponsor && noCosponsorBenefit) {
-                  // Bills we oppose - cosponsors lose points, non-cosponsors get 0
-                  scoringText = `0/−${points} points`;
+                if (isCosponsor) {
+                  if (hasPairKey && !isPreferred) {
+                    // Non-preferred bill in a pair - find preferred bill name from pair_key
+                    const pairKeyParts = (meta.pair_key || '').split('|');
+                    const preferredBillNumber = pairKeyParts.find(p => p !== meta.bill_number) || '';
+                    // Extract just the bill number (e.g., "H.Con.Res.38" from "pair_1:H.Con.Res.38")
+                    const cleanPreferredBill = preferredBillNumber.replace(/^pair_\d+:/, '');
+                    scoringText = `Cosponsor: +${points} pts | Cosponsored preferred bill (${cleanPreferredBill}): +${points} pts | Not a cosponsor: −${points} pts`;
+                  } else if (noCosponsorBenefit) {
+                    // Bills we oppose - not cosponsoring gives small reward, cosponsoring is penalized
+                    scoringText = `Not a cosponsor: +1 pt | Cosponsor: −${points} pts`;
+                  } else if (isSupport) {
+                    // Bills we support - cosponsoring is rewarded
+                    scoringText = `Cosponsor: +${points} pts | Not a cosponsor: −${points} pts`;
+                  } else {
+                    // Bills we oppose without no_cosponsor_benefit flag
+                    scoringText = `Not a cosponsor: +${points} pts | Cosponsor: −${points} pts`;
+                  }
+                } else if (isVote) {
+                  if (isSupport) {
+                    scoringText = `Voted in favor: +${points} pts | Voted against: −${points} pts`;
+                  } else {
+                    scoringText = `Voted against: +${points} pts | Voted in favor: −${points} pts`;
+                  }
                 } else {
-                  // Regular scoring: +X for good, -X for bad
-                  scoringText = `+${points}/−${points} points`;
+                  // Generic/manual actions
+                  scoringText = `+${points}/−${points} pts`;
                 }
 
                 return (
