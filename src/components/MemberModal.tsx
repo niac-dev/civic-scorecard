@@ -10,7 +10,8 @@ import {
   inferChamber,
   isTrue,
   isGradeIncomplete,
-  getPhotoUrl
+  getPhotoUrl,
+  gradeColor
 } from "@/lib/utils";
 import {
   PacData,
@@ -74,7 +75,9 @@ export function MemberModal({
   const [pacDataLoaded, setPacDataLoaded] = useState(false);
   const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
   const [showExpandedMap, setShowExpandedMap] = useState(false);
+  const [showStickyHeader, setShowStickyHeader] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Load sentence rules from CSV
   useEffect(() => {
@@ -200,10 +203,26 @@ export function MemberModal({
 
   // Scroll to actions section on mobile when category is clicked
   const scrollToActions = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 900 && actionsRef.current) {
+    if (typeof window !== 'undefined' && window.innerWidth < 900 && actionsRef.current && modalRef.current) {
       // Small delay to ensure layout has settled
       setTimeout(() => {
-        actionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const element = actionsRef.current;
+        const modal = modalRef.current;
+        if (!element || !modal) return;
+
+        // Get element position relative to modal
+        const elementRect = element.getBoundingClientRect();
+        const modalRect = modal.getBoundingClientRect();
+        const relativeTop = elementRect.top - modalRect.top;
+
+        // Account for sticky headers: navigation (60px) + category header (60px) + padding (20px)
+        const offset = 140;
+
+        // Scroll modal to show element below sticky headers
+        modal.scrollTo({
+          top: modal.scrollTop + relativeTop - offset,
+          behavior: 'smooth'
+        });
       }, 100);
     }
   };
@@ -246,6 +265,29 @@ export function MemberModal({
     // Re-enable scrolling on unmount
     return () => {
       document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  // Track scroll position to show/hide sticky header on mobile
+  useEffect(() => {
+    const modalEl = modalRef.current;
+    if (!modalEl) return;
+
+    const handleScroll = () => {
+      // Only show sticky header on mobile (below 900px) and when scrolled past 200px
+      if (window.innerWidth < 900) {
+        setShowStickyHeader(modalEl.scrollTop > 200);
+      } else {
+        setShowStickyHeader(false);
+      }
+    };
+
+    modalEl.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      modalEl.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
     };
   }, []);
 
@@ -376,11 +418,11 @@ export function MemberModal({
       />
       {/* Modal */}
       <div className="fixed inset-2 min-[900px]:inset-10 z-[110] flex items-start justify-center overflow-hidden">
-        <div className="relative w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full">
+        <div ref={modalRef} className="relative w-full max-w-5xl rounded-2xl border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 shadow-xl overflow-auto max-h-full min-[900px]:flex min-[900px]:flex-col min-[900px]:h-[90vh] min-[900px]:overflow-hidden">
           {/* Floating navigation buttons - sticky at top */}
-          <div className="sticky top-0 z-50 flex justify-between p-2 pointer-events-none">
-            {/* Left side - Back button */}
-            <div className="pointer-events-auto">
+          <div className="sticky top-0 z-50 flex justify-between items-center p-2 pointer-events-none bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm">
+            {/* Left side - Back button or mobile header */}
+            <div className="pointer-events-auto flex items-center gap-2">
               {onBack && (
                 <button
                   className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
@@ -391,6 +433,50 @@ export function MemberModal({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                 </button>
+              )}
+              {/* Mobile sticky header content - only shows when scrolled */}
+              {showStickyHeader && (
+                <div className="min-[900px]:hidden ml-2">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                    {(() => {
+                      const fullName = String(row.full_name || "");
+                      const commaIndex = fullName.indexOf(",");
+                      if (commaIndex > -1) {
+                        const first = fullName.slice(commaIndex + 1).trim();
+                        const last = fullName.slice(0, commaIndex).trim();
+                        return `${first} ${last}`;
+                      }
+                      return fullName;
+                    })()}
+                  </div>
+                  <div className="text-[10px] text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className="px-1 py-0.5 rounded text-[9px] font-semibold"
+                      style={{
+                        color: '#64748b',
+                        backgroundColor: `${chamberColor(row.chamber)}20`,
+                      }}
+                    >
+                      {row.chamber === "HOUSE" ? "House" : row.chamber === "SENATE" ? "Senate" : (row.chamber || "")}
+                    </span>
+                    <span className="text-slate-400 dark:text-slate-500">•</span>
+                    <span
+                      className="px-1 py-0.5 rounded text-[9px] font-medium border"
+                      style={partyBadgeStyle(row.party)}
+                    >
+                      {partyLabel(row.party)}
+                    </span>
+                    <span className="text-slate-400 dark:text-slate-500">•</span>
+                    <span className="text-[10px]">
+                      {row.chamber === "SENATE"
+                        ? stateCodeOf(row.state)
+                        : row.district
+                          ? `${stateCodeOf(row.state)}-${row.district}`
+                          : `${stateCodeOf(row.state)}-At Large`
+                      }
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
             {/* Right side - Other buttons */}
@@ -427,19 +513,21 @@ export function MemberModal({
               </button>
             </div>
           </div>
+
           {/* Header */}
-          <div className="flex flex-col p-6 pt-10 min-[900px]:pt-0 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative -mt-12">
+          <div className="flex flex-col p-6 pt-10 min-[900px]:pt-6 border-b border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-slate-800 relative -mt-12 min-[900px]:flex-shrink-0">
             {/* Three column layout on wide screens */}
             <div className={clsx("flex flex-col min-[900px]:flex-row min-[900px]:gap-4", onBack ? "min-[900px]:pr-44" : "min-[900px]:pr-36")}>
               {/* Column 1: Photo */}
-              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-2 min-[900px]:mb-0 mt-2 min-[900px]:mt-10">
+              <div className="flex flex-col gap-3 items-center min-[900px]:items-start mb-2 min-[900px]:mb-0 mt-2 min-[900px]:mt-6">
                 {row.bioguide_id ? (
                   <div className="relative group/photo">
                     <img
                       src={getPhotoUrl(String(row.bioguide_id), '450x550') || String(row.photo_url || '')}
                       alt=""
                       loading="lazy"
-                      className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                      className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10 border-[7px] border-solid"
+                      style={row.Grade ? { borderColor: gradeColor(String(row.Grade)) } : undefined}
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (!target.dataset.fallback && row.photo_url) {
@@ -465,12 +553,15 @@ export function MemberModal({
                     )}
                   </div>
                 ) : (
-                  <div className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10" />
+                  <div
+                    className="h-32 w-32 flex-shrink-0 rounded-full bg-slate-300 dark:bg-white/10 border-[7px] border-solid"
+                    style={row.Grade ? { borderColor: gradeColor(String(row.Grade)) } : undefined}
+                  />
                 )}
               </div>
 
               {/* Column 2: Member info */}
-              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-2 min-[900px]:mb-0 min-[900px]:mr-4 mt-0 min-[900px]:mt-10">
+              <div className="flex-1 flex flex-col items-center min-[900px]:items-start min-w-0 mb-2 min-[900px]:mb-0 min-[900px]:mr-4 mt-0 min-[900px]:mt-6">
                 {/* Title (Representative/Senator/Delegate) */}
                 <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
                   {(() => {
@@ -576,10 +667,10 @@ export function MemberModal({
           </div>
 
           {/* Content - 2 Column Layout */}
-          <div className="p-4 min-[900px]:p-6">
-            <div className="flex flex-col min-[900px]:flex-row gap-6 items-start">
+          <div className="p-4 min-[900px]:p-6 min-[900px]:flex-1 min-[900px]:overflow-hidden">
+            <div className="flex flex-col min-[900px]:flex-row gap-6 items-start min-[900px]:h-full min-[900px]:overflow-hidden">
               {/* Left Column: Issue Grade Filters (1/3 width on desktop, full width on mobile) */}
-              <div className="w-full min-[900px]:w-1/3 min-[900px]:flex-shrink-0 space-y-3">
+              <div className="w-full min-[900px]:w-1/3 min-[900px]:flex-shrink-0 flex flex-col gap-2 min-[900px]:overflow-y-auto min-[900px]:h-full" style={{ gap: 'clamp(0.25rem, 1vh, 0.375rem)' }}>
                 {/* Overall Grade card */}
                 <button
                   onClick={() => {
@@ -590,14 +681,15 @@ export function MemberModal({
                     }
                   }}
                   className={clsx(
-                    "rounded-lg border p-3 text-left transition w-full",
+                    "rounded-lg border p-3 text-left transition w-full min-[900px]:flex-shrink flex items-center",
                     hasVotesActions ? "cursor-pointer" : "cursor-default",
                     selectedCategory === null && !showAipacSection && hasVotesActions
                       ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
                       : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                   )}
+                  style={{ padding: 'clamp(0.5rem, 1.5vh, 0.75rem)', minHeight: '5rem' }}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 w-full">
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">All Issues</div>
                     <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
                   </div>
@@ -618,14 +710,15 @@ export function MemberModal({
                         }
                       }}
                       className={clsx(
-                        "rounded-lg border p-3 text-left transition w-full",
+                        "rounded-lg border p-3 text-left transition w-full min-[900px]:flex-shrink flex items-center",
                         hasVotesActions ? "cursor-pointer" : "cursor-default",
                         selectedCategory === category && hasVotesActions
                           ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20"
                           : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10"
                       )}
+                      style={{ padding: 'clamp(0.5rem, 1.5vh, 0.75rem)', minHeight: '5rem' }}
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2 w-full">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{category}</div>
                         <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} />
                       </div>
@@ -654,13 +747,14 @@ export function MemberModal({
                         scrollToActions();
                       }}
                       className={clsx(
-                        "rounded-lg border p-3 text-left transition w-full",
+                        "rounded-lg border p-3 text-left transition w-full min-[900px]:flex-shrink flex items-center",
                         showAipacSection
                           ? "border-[#4B8CFB] bg-[#4B8CFB]/10 dark:bg-[#4B8CFB]/20 cursor-pointer"
                           : "border-[#E7ECF2] dark:border-slate-900 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
                       )}
+                      style={{ padding: 'clamp(0.5rem, 1.5vh, 0.75rem)', minHeight: '5rem' }}
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2 w-full">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
                           {isGood ? "Not supported by AIPAC or DMFI" :
                            aipac && dmfi ? "Supported by AIPAC & DMFI" :
@@ -675,12 +769,12 @@ export function MemberModal({
               </div>
 
               {/* Right Column: Votes & Actions + AIPAC Support (2/3 width on desktop, full width on mobile) */}
-              <div ref={actionsRef} className="w-full min-[900px]:flex-1 space-y-6">
+              <div ref={actionsRef} className="w-full min-[900px]:flex-1 space-y-6 min-[900px]:overflow-y-auto min-[900px]:pr-2 min-[900px]:h-full">
                 {/* Show AIPAC Support when AIPAC/DMFI button is clicked */}
                 {showAipacSection ? (
                   <div>
                     {/* AIPAC/DMFI Header */}
-                    <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
+                    <div className="sticky top-[60px] min-[900px]:static z-30 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm mb-4 pb-3 pt-2 border-b border-[#E7ECF2] dark:border-slate-900 -mx-2 px-2 min-[900px]:mx-0 min-[900px]:px-0">
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">AIPAC/DMFI Support</h3>
                     </div>
 
@@ -1011,7 +1105,7 @@ export function MemberModal({
                       }
 
                       return (
-                        <div className="mb-4 pb-3 border-b border-[#E7ECF2] dark:border-slate-900">
+                        <div className="sticky top-[60px] min-[900px]:static z-30 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm mb-4 pb-3 pt-2 border-b border-[#E7ECF2] dark:border-slate-900 -mx-2 px-2 min-[900px]:mx-0 min-[900px]:px-0">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
                             <div className="flex items-center gap-2">

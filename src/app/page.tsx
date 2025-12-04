@@ -10,7 +10,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl, gradeColor } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
