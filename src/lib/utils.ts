@@ -156,6 +156,12 @@ export function isTrue(val: unknown): boolean {
   return isTruthy(val);
 }
 
+/** Check if a bill is tracker-only (should not appear in scorecard/map/member modal) */
+export function isTrackerOnly(meta: { tracker_only?: boolean | number | string } | undefined): boolean {
+  if (!meta) return false;
+  return isTruthy(meta.tracker_only);
+}
+
 export function chamberColor(ch?: string): string {
   switch (ch) {
     case "HOUSE":

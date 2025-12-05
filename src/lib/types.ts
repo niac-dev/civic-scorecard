@@ -31,6 +31,7 @@ export type Meta = {
   vote_tallies?: string; // e.g., "Failed Senate: Nay: 83, Not Voting: 1, Present: 1, Yea: 15"
   vote_date?: string; // e.g., "Senate: April 3, 2025,  03:24 PM" or "House: 9-Jan-2025 | Senate: 9-Jan-2025"
   cosponsors?: string | number; // number of cosponsors
+  tracker_only?: boolean | number | string; // 1 = only show in Tracker, not in Scorecard/Map/Modal
 };
 
 /** One member row from scores_wide.csv */

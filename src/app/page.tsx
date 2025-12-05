@@ -10,7 +10,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl, gradeColor } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl, gradeColor, isTrackerOnly } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
@@ -1018,8 +1018,13 @@ export default function Page() {
   }, []);
 
   // All columns for the member card (chamber-filtered only, not category-filtered)
+  // Excludes tracker_only bills (those only appear in Tracker view)
   const allBillCols = useMemo(() => {
-    let out = cols;
+    // Filter out tracker_only bills from scorecard and member modal
+    let out = cols.filter((c) => {
+      const meta = metaByCol.get(c);
+      return !isTrackerOnly(meta);
+    });
 
     // Chamber filter: keep only bills for the selected chamber
     // Bills with empty chamber or voted in both chambers should appear in both filters
