@@ -1,11 +1,10 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl, isGradeIncomplete, isTrackerOnly } from "@/lib/utils";
 import clsx from "clsx";
 import { BillMiniMap } from "@/components/BillMiniMap";
 import { VoteIcon, GradeChip } from "@/components/GradeChip";
-import { isGradeIncomplete } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -529,7 +528,18 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 <span className="font-bold">NIAC Action Position:</span> {formatPositionLegislation(meta)}
               </div>
               {/* Scoring */}
-              {meta.points && (() => {
+              {(() => {
+                // Tracker-only bills are not scored
+                if (isTrackerOnly(meta)) {
+                  return (
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      <span className="font-bold">Scoring:</span> Not scored
+                    </div>
+                  );
+                }
+
+                if (!meta.points) return null;
+
                 const points = Number(meta.points);
                 const actionType = (meta as { action_types?: string })?.action_types || '';
                 const isCosponsor = actionType.includes('cosponsor');
