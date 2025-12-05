@@ -1399,7 +1399,7 @@ export default function Page() {
       </div>
 
       <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
-        <Filters categories={categories} filteredCount={sorted.length} metaByCol={metaByCol} cols={cols} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} rows={rows} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} />
+        <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} />
       {selected && (
         <MemberModal
           row={selected}
@@ -3028,109 +3028,26 @@ export default function Page() {
   );
 }
 
-function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, setSelectedMapBill, rows, setSortCol, setSortDir, tableScrollRef }: { categories: string[]; filteredCount: number; metaByCol: Map<string, Meta>; cols: string[]; selectedMapBill: string; setSelectedMapBill: (value: string) => void; rows: Row[]; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null> }) {
+function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null> }) {
   const f = useFilters();
   // Default to collapsed/inactive state
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
-  // Filter bills to only show those with actual data (at least some members have numeric values)
-  const billsWithData = useMemo(() => {
-    const filtered = cols.filter(col => {
-      // Skip manual actions
-      const meta = metaByCol.get(col);
-      if (meta?.type === 'MANUAL') return false;
-
-      // Count how many members have data for this bill
-      let count = 0;
-      for (const row of rows) {
-        const value = row[col];
-        // Skip empty values
-        if (value === undefined || value === null || value === '' || value === -1) continue;
-        const numVal = Number(value);
-        // Accept any numeric value (including point scores like 7.0)
-        if (!isNaN(numVal)) {
-          count++;
-          // Require at least 5 members to have data for the bill to be meaningful
-          if (count >= 5) return true;
-        }
-      }
-      return false;
-    });
-
-    // Sort bills: letters before numbers, then by bill number
-    return filtered.sort((a, b) => {
-      const metaA = metaByCol.get(a);
-      const metaB = metaByCol.get(b);
-      // Use bill_number field for proper numeric sorting
-      const nameA = metaA?.bill_number || metaA?.display_name || metaA?.short_title || a;
-      const nameB = metaB?.bill_number || metaB?.display_name || metaB?.short_title || b;
-
-      // Check if bill starts with a number vs letter
-      // Bills starting with letters (H.R., S., etc.) come before bills starting with numbers (119.H.Amdt., etc.)
-      const startsWithNumberA = /^\d/.test(nameA);
-      const startsWithNumberB = /^\d/.test(nameB);
-
-      if (startsWithNumberA !== startsWithNumberB) {
-        return startsWithNumberA ? 1 : -1; // Bills starting with numbers come after
-      }
-
-      // Match bill number pattern: "H.R.123", "S.456", "H.Con.Res.78", etc.
-      const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
-      const matchA = nameA.match(billRegex);
-      const matchB = nameB.match(billRegex);
-
-      // If both have bill numbers, compare bill type first, then number numerically
-      if (matchA && matchB) {
-        const typeA = matchA[1];
-        const typeB = matchB[1];
-        const numA = parseInt(matchA[2], 10);
-        const numB = parseInt(matchB[2], 10);
-
-        // Compare bill type (H.R. vs S. vs H.Con.Res., etc.)
-        const typeCompare = typeA.localeCompare(typeB);
-        if (typeCompare !== 0) return typeCompare;
-
-        // Compare bill number numerically
-        if (numA !== numB) return numA - numB;
-      }
-
-      // Fall back to full alphanumeric comparison for the rest
-      return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
-    });
-  }, [cols, rows, metaByCol]);
-
   // Territories without senators
   const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
 
-  // Handler for bill selection that auto-switches chamber filter
-  const handleBillSelect = (billColumn: string) => {
-    setSelectedMapBill(billColumn);
+  // Handler for map view selection that auto-switches chamber filter
+  const handleBillSelect = (selection: string) => {
+    setSelectedMapBill(selection);
 
-    if (!billColumn) {
-      // Reset to no chamber filter when clearing bill selection
+    if (!selection) {
+      // Reset to no chamber filter when clearing selection
       return;
     }
 
-    // AIPAC/Partisan selections can work with any chamber - no need to auto-switch
-    if (billColumn === "__AIPAC__" || billColumn === "__PARTISAN__") {
-      // If currently on "All", switch to House by default for AIPAC/Partisan
-      if (!f.chamber) {
-        f.set({ chamber: 'HOUSE' });
-      }
-      return;
-    }
-
-    // For regular bills, use inferChamber to determine eligibility
-    const meta = metaByCol.get(billColumn);
-    const billChamber = inferChamber(meta, billColumn);
-
-    // Auto-switch chamber if bill is single-chamber and we're not already on the right chamber
-    if (billChamber === 'HOUSE' && f.chamber !== 'HOUSE') {
-      f.set({ chamber: 'HOUSE' });
-    } else if (billChamber === 'SENATE' && f.chamber !== 'SENATE') {
-      f.set({ chamber: 'SENATE' });
-    } else if (billChamber === '' && !f.chamber) {
-      // Multi-chamber bill but "All" is selected - switch to House by default
+    // Category grades, AIPAC, and Partisan selections work with any chamber
+    // Just switch to House by default if currently on "All"
+    if (!f.chamber) {
       f.set({ chamber: 'HOUSE' });
     }
   };
@@ -3554,33 +3471,12 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             }}
             disabledOptions={(() => {
               const disabled: string[] = [];
-              // If a bill or AIPAC is selected, disable "All"
+              // If a special view is selected, disable "All"
               if (selectedMapBill) {
                 disabled.push("All");
 
-                // For regular bills (not AIPAC), check chamber eligibility
-                if (selectedMapBill !== "__AIPAC__") {
-                  const meta = metaByCol.get(selectedMapBill);
-                  const billChamber = inferChamber(meta, selectedMapBill);
-
-                  // Check if this bill was voted on in both chambers
-                  const voteTallies = (meta?.vote_tallies || "").toLowerCase();
-                  const hasHouseVote = voteTallies.includes("house");
-                  const hasSenateVote = voteTallies.includes("senate");
-                  const votedInBothChambers = hasHouseVote && hasSenateVote;
-
-                  // Only disable chambers if bill was NOT voted in both chambers
-                  if (!votedInBothChambers) {
-                    // If bill is House-only, disable Senate
-                    if (billChamber === "HOUSE") {
-                      disabled.push("Senate");
-                    }
-                    // If bill is Senate-only, disable House
-                    else if (billChamber === "SENATE") {
-                      disabled.push("House");
-                    }
-                  }
-                }
+                // Category grades, AIPAC, and Partisan work for both chambers - no additional restrictions
+                // Only check chamber eligibility for regular bills (which we no longer have)
               }
               return disabled;
             })()}
@@ -3595,28 +3491,11 @@ function Filters({ categories, filteredCount, metaByCol, cols, selectedMapBill, 
             <option value="">Overall Grade</option>
             <option value="__PARTISAN__">Partisan</option>
             <option value="__AIPAC__">AIPAC & DMFI Support</option>
-            {categories.filter(cat => cat !== "AIPAC").map(cat => {
-              const billsInCategory = billsWithData.filter(col => {
-                const meta = metaByCol.get(col);
-                return meta?.categories?.includes(cat);
-              });
-
-              if (billsInCategory.length === 0) return null;
-
-              return (
-                <optgroup key={cat} label={cat}>
-                  {billsInCategory.map(col => {
-                    const meta = metaByCol.get(col);
-                    const displayName = meta?.display_name || meta?.short_title || meta?.bill_number || col;
-                    return (
-                      <option key={col} value={col}>
-                        {displayName}
-                      </option>
-                    );
-                  })}
-                </optgroup>
-              );
-            })}
+            <optgroup label="Category Grades">
+              <option value="Grade_Iran">Iran</option>
+              <option value="Grade_Israel_Gaza">Israel-Gaza</option>
+              <option value="Grade_Civil_Rights_Immigration">Civil Rights & Immigration</option>
+            </optgroup>
           </select>
         </div>
       )}
