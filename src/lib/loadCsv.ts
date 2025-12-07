@@ -1,6 +1,8 @@
 // src/lib/loadCsv.ts
 import Papa from "papaparse";
-import type { Row, Meta, ManualScoringMeta } from "./types";
+import type { Row, Meta } from "./types";
+import { cacheScorecard, loadCachedScorecard } from "./offlineStorage";
+import type { PacData } from "./pacData";
 
 async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
   // Cache busting: use build time in production, current time in development
@@ -137,4 +139,70 @@ export async function loadManualScoringMeta(): Promise<Map<string, string>> {
   });
 
   return map;
+}
+
+/**
+ * Load data with offline caching support
+ * Tries network first, falls back to cached data if offline
+ */
+export async function loadDataWithCache(): Promise<{
+  rows: Row[];
+  columns: string[];
+  metaByCol: Map<string, Meta>;
+  categories: string[];
+  isOffline: boolean;
+}> {
+  // Check if online
+  const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+
+  if (isOnline) {
+    try {
+      // Try to load from network
+      const data = await loadData();
+
+      // Load PAC data for caching
+      let pacData: PacData[] = [];
+      try {
+        const pacResponse = await fetch("/data/pac_data.csv");
+        const pacText = await pacResponse.text();
+        const parsed = Papa.parse<PacData>(pacText, { header: true, skipEmptyLines: true });
+        pacData = parsed.data || [];
+      } catch {
+        // PAC data loading failed, continue without it
+      }
+
+      // Cache the data for offline use
+      try {
+        await cacheScorecard({
+          rows: data.rows,
+          cols: data.columns,
+          metaByCol: data.metaByCol,
+          categories: data.categories,
+          pacData,
+        });
+      } catch (cacheError) {
+        console.warn("Failed to cache scorecard data:", cacheError);
+      }
+
+      return { ...data, isOffline: false };
+    } catch (networkError) {
+      console.warn("Network error, trying cache:", networkError);
+      // Fall through to cache
+    }
+  }
+
+  // Try to load from cache
+  const cached = await loadCachedScorecard();
+  if (cached) {
+    return {
+      rows: cached.rows,
+      columns: cached.cols,
+      metaByCol: cached.metaByCol,
+      categories: cached.categories,
+      isOffline: true,
+    };
+  }
+
+  // No cache available, throw error
+  throw new Error("No data available. Please connect to the internet to load scorecard data.");
 }

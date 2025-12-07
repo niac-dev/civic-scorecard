@@ -13,11 +13,12 @@ type FiltersState = {
   billColumn: string;      // column name for bill search
 
   set: (
-    patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories">>
+    patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories" | "setMyLawmakers">>
   ) => void;
 
   toggleCategory: (c: string) => void;
   clearCategories: () => void;
+  setMyLawmakers: (names: string[]) => void;
 };
 
 // Helper to get initial viewMode based on URL query params or localStorage
@@ -60,4 +61,9 @@ export const useFilters = create<FiltersState>((set) => ({
     }),
 
   clearCategories: () => set((prev) => ({ ...prev, categories: new Set() })),
+
+  setMyLawmakers: (names) => set((prev) => ({ ...prev, myLawmakers: names })),
 }));
+
+// Re-export for convenience
+export const useFiltersStore = useFilters;

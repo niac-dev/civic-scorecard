@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import Footer from "./Footer";
+import BottomNav from "@/components/BottomNav";
+import SyncStatus from "@/components/SyncStatus";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -10,8 +12,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "NIAC Action Scorecard",
-  description: "Congressional scorecard tracking votes on civil rights, Iran, Israel-Gaza, and immigration issues",
+  title: "NIAC Action",
+  description: "Congressional scorecard, news, and advocacy tools from NIAC Action",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
@@ -27,8 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <main className="mx-auto max-w-7xl px-0 py-0">{children}</main>
+        <SyncStatus />
+        <main className="mx-auto max-w-7xl px-0 py-0 pb-20">{children}</main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   );

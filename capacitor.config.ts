@@ -1,24 +1,26 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.niacaction.scorecard',
-  appName: 'NIAC Scorecard',
+  appId: 'com.niacaction.app',
+  appName: 'NIAC Action',
   webDir: 'out',
+  // Use remote URL with offline caching via IndexedDB
   server: {
-    // For development: use your deployed URL
-    // Change this to your actual Vercel URL
     url: 'https://scorecard.niacaction.org',
-    cleartext: true
+    cleartext: true,
   },
   ios: {
     contentInset: 'automatic',
     allowsLinkPreview: true,
-    scrollEnabled: true
+    scrollEnabled: true,
+    // Enable background modes for push notifications
+    backgroundColor: '#30558C',
   },
   android: {
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: false, // Disable in production
+    backgroundColor: '#30558C',
   },
   plugins: {
     SplashScreen: {
@@ -27,9 +29,12 @@ const config: CapacitorConfig = {
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
       splashFullScreen: true,
-      splashImmersive: true
-    }
-  }
+      splashImmersive: true,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+  },
 };
 
 export default config;
