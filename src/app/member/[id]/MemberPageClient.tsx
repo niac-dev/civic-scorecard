@@ -617,7 +617,28 @@ export default function MemberPage() {
                                   </div>
                                   {meta?.points && (
                                     <div className="text-[11px] text-slate-600 mb-1">
-                                      <span className="font-medium">Points:</span> {Number(val).toFixed(0)}/{Number(meta.points).toFixed(0)}
+                                      <span className="font-medium">Points:</span> {(() => {
+                                        const earnedPoints = Number(val);
+                                        const basePoints = Number(meta.points);
+                                        const actionTypes = (meta as { action_types?: string }).action_types || "";
+                                        const isCosponsor = actionTypes.includes("cosponsor");
+                                        const position = (stance || "").toUpperCase();
+                                        const isSupport = position === "SUPPORT";
+                                        const noCosponsorBenefit = meta.no_cosponsor_benefit === true ||
+                                          meta.no_cosponsor_benefit === 1 ||
+                                          meta.no_cosponsor_benefit === "1";
+
+                                        // For cosponsor actions on bills NIAC opposes with no_cosponsor_benefit,
+                                        // the positive max is 1 (not cosponsoring), negative max is basePoints (cosponsoring)
+                                        let displayMax = basePoints;
+                                        if (isCosponsor && !isSupport && noCosponsorBenefit) {
+                                          // If they got positive points (didn't cosponsor), max is 1
+                                          // If they got negative points (cosponsored), max is basePoints
+                                          displayMax = earnedPoints > 0 ? earnedPoints : basePoints;
+                                        }
+
+                                        return `${earnedPoints.toFixed(0)}/${displayMax.toFixed(0)}`;
+                                      })()}
                                     </div>
                                   )}
                                   {meta && (meta as { action_types?: string }).action_types && (
