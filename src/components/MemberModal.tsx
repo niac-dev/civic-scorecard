@@ -1430,6 +1430,8 @@ export function MemberModal({
                                       const votedPresent = it.val > 0 && it.val < maxPoints;
                                       if (votedPresent) {
                                         actionDescription = 'Voted Present';
+                                        // Override points display to show "out of X" for partial scores
+                                        pointsDisplay = ` (+${it.val.toFixed(0)} pts out of ${maxPoints})`;
                                       } else if (isSupport) {
                                         // NIAC supports: getting points = voted YES, no points = voted NO
                                         actionDescription = it.ok ? 'Voted in favor' : 'Voted against';
