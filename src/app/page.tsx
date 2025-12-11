@@ -1494,7 +1494,7 @@ export default function Page() {
               : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
           )}
         >
-          <div ref={tableScrollRef} className={clsx("overflow-y-auto flex-1 rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
+          <div ref={tableScrollRef} className={clsx("overflow-y-auto h-0 flex-1 min-h-[300px] rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
             {/* Header wrapper - extends full width for shadow */}
             <div className="sticky top-0 z-30 min-w-max w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm">
             {/* Header */}
@@ -2587,7 +2587,7 @@ export default function Page() {
               </button>
             </div>
           )}
-          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto flex-1 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
+          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto h-0 flex-1 min-h-[300px] rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
             {(() => {
               // Process bills data
               let bills = cols.map((col) => {
