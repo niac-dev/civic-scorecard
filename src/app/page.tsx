@@ -2711,7 +2711,7 @@ export default function Page() {
               }
 
               // Apply custom sort if active
-              let sortedBills = [...bills];
+              const sortedBills = [...bills];
               if (trackerSort.col) {
                 sortedBills.sort((a: any, b: any) => {
                   let cmp = 0;
