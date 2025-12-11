@@ -1491,7 +1491,9 @@ export default function Page() {
             "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out w-fit max-w-full",
             f.viewMode !== "map" && f.viewMode !== "tracker"
               ? "translate-x-0 opacity-100"
-              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+              : f.viewMode === "tracker"
+                ? "-translate-x-full opacity-0 absolute inset-0 pointer-events-none" // Scorecard is LEFT of Tracker
+                : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"  // Scorecard is RIGHT of Map
           )}
         >
           <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
