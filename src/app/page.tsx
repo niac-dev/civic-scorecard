@@ -3605,29 +3605,32 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
                 </svg>
               )}
             </button>
-            <button
-              onClick={() => {
-                // Toggle: if already selected, go back to summary view
-                if (f.categories.has("AIPAC") && f.viewMode === "category") {
-                  f.set({ viewMode: "summary", categories: new Set() });
-                } else {
-                  f.set({ viewMode: "category", categories: new Set(["AIPAC"]) });
-                }
-              }}
-              className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
-                f.categories.has("AIPAC") && f.viewMode === "category"
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
-              )}
-            >
-              <span>AIPAC</span>
-              {f.categories.has("AIPAC") && f.viewMode === "category" && (
-                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              )}
-            </button>
+            {/* Hide AIPAC filter on tracker view */}
+            {f.viewMode !== "tracker" && (
+              <button
+                onClick={() => {
+                  // Toggle: if already selected, go back to summary view
+                  if (f.categories.has("AIPAC") && f.viewMode === "category") {
+                    f.set({ viewMode: "summary", categories: new Set() });
+                  } else {
+                    f.set({ viewMode: "category", categories: new Set(["AIPAC"]) });
+                  }
+                }}
+                className={clsx(
+                  "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
+                  f.categories.has("AIPAC") && f.viewMode === "category"
+                    ? "bg-[#4B8CFB] text-white"
+                    : "hover:bg-slate-50 dark:hover:bg-white/10"
+                )}
+              >
+                <span>AIPAC</span>
+                {f.categories.has("AIPAC") && f.viewMode === "category" && (
+                  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                  </svg>
+                )}
+              </button>
+            )}
             </div>
           </div>
         </div>
