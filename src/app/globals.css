@@ -10,7 +10,7 @@
 }
 
 body {
-  @apply bg-[#F7F8FA] text-[#0B1220] antialiased;
+  @apply bg-[#F7F8FA] text-[#0B1220] antialiased min-h-full;
   overscroll-behavior-x: none;
 }
 

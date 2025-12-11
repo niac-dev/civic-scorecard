@@ -445,6 +445,9 @@ export default function Page() {
   // Track expanded bills in tracker accordion
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
 
+  // Tracker sort state: column and direction
+  const [trackerSort, setTrackerSort] = useState<{ col: 'position' | 'bill' | 'title' | null; dir: 'asc' | 'desc' }>({ col: null, dir: 'asc' });
+
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -1386,7 +1389,7 @@ export default function Page() {
   }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
 
   return (
-    <div className="space-y-0">
+    <div className="flex flex-col min-h-full">
       {/* Header Band */}
       <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
@@ -1403,7 +1406,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="space-y-2 px-0 pt-2 pb-2 md:p-3">
+      <div className="flex-1 flex flex-col space-y-2 px-0 pt-2 pb-2 md:p-3">
         <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} />
       {selected && (
         <MemberModal
@@ -1445,7 +1448,7 @@ export default function Page() {
       )}
 
       {/* Views Container with Sliding Animation */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden flex-1 flex flex-col">
         {/* Map View */}
         <div
           className={clsx(
@@ -2707,55 +2710,78 @@ export default function Page() {
                 });
               }
 
-              // Group bills by category
+              // Apply custom sort if active
+              let sortedBills = [...bills];
+              if (trackerSort.col) {
+                sortedBills.sort((a: any, b: any) => {
+                  let cmp = 0;
+                  if (trackerSort.col === 'position') {
+                    // Support first, then Oppose
+                    cmp = (a.position === 'SUPPORT' ? 0 : 1) - (b.position === 'SUPPORT' ? 0 : 1);
+                  } else if (trackerSort.col === 'bill') {
+                    const billA = a.meta?.bill_number || a.col;
+                    const billB = b.meta?.bill_number || b.col;
+                    cmp = billA.localeCompare(billB, undefined, { numeric: true, sensitivity: 'base' });
+                  } else if (trackerSort.col === 'title') {
+                    const titleA = a.meta?.short_title || a.meta?.display_name || a.col;
+                    const titleB = b.meta?.short_title || b.meta?.display_name || b.col;
+                    cmp = titleA.localeCompare(titleB, undefined, { sensitivity: 'base' });
+                  }
+                  return trackerSort.dir === 'desc' ? -cmp : cmp;
+                });
+              }
+
+              // Group bills by category (only when not custom sorting)
               const billsByCategory = new Map<string, any[]>();
-              bills.forEach((bill: any) => {
-                bill.categories.forEach((cat: string) => {
-                  if (!billsByCategory.has(cat)) {
-                    billsByCategory.set(cat, []);
-                  }
-                  billsByCategory.get(cat)!.push(bill);
+              if (!trackerSort.col) {
+                bills.forEach((bill: any) => {
+                  bill.categories.forEach((cat: string) => {
+                    if (!billsByCategory.has(cat)) {
+                      billsByCategory.set(cat, []);
+                    }
+                    billsByCategory.get(cat)!.push(bill);
+                  });
                 });
-              });
 
-              // Remove duplicates (bills that appear in multiple categories)
-              billsByCategory.forEach((categoryBills, category) => {
-                billsByCategory.set(category, Array.from(new Set(categoryBills)));
-              });
-
-              // Sort bills within each category by chamber, then by bill number
-              billsByCategory.forEach((categoryBills, category) => {
-                const sorted = categoryBills.sort((a: any, b: any) => {
-                  // Sort by chamber first (HOUSE, SENATE, empty)
-                  const chamberOrder: Record<string, number> = { "HOUSE": 1, "SENATE": 2, "": 3 };
-                  const chamberCompare = (chamberOrder[a.inferredChamber as string] || 3) - (chamberOrder[b.inferredChamber as string] || 3);
-                  if (chamberCompare !== 0) return chamberCompare;
-
-                  // Then sort by bill number and title
-                  // Use bill_number field for proper numeric sorting
-                  const nameA = a.meta?.bill_number || a.meta?.display_name || a.meta?.short_title || a.col;
-                  const nameB = b.meta?.bill_number || b.meta?.display_name || b.meta?.short_title || b.col;
-
-                  const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
-                  const matchA = nameA.match(billRegex);
-                  const matchB = nameB.match(billRegex);
-
-                  if (matchA && matchB) {
-                    const typeA = matchA[1];
-                    const typeB = matchB[1];
-                    const numA = parseInt(matchA[2], 10);
-                    const numB = parseInt(matchB[2], 10);
-
-                    const typeCompare = typeA.localeCompare(typeB);
-                    if (typeCompare !== 0) return typeCompare;
-
-                    if (numA !== numB) return numA - numB;
-                  }
-
-                  return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+                // Remove duplicates (bills that appear in multiple categories)
+                billsByCategory.forEach((categoryBills, category) => {
+                  billsByCategory.set(category, Array.from(new Set(categoryBills)));
                 });
-                billsByCategory.set(category, sorted);
-              });
+
+                // Sort bills within each category by chamber, then by bill number
+                billsByCategory.forEach((categoryBills, category) => {
+                  const sorted = categoryBills.sort((a: any, b: any) => {
+                    // Sort by chamber first (HOUSE, SENATE, empty)
+                    const chamberOrder: Record<string, number> = { "HOUSE": 1, "SENATE": 2, "": 3 };
+                    const chamberCompare = (chamberOrder[a.inferredChamber as string] || 3) - (chamberOrder[b.inferredChamber as string] || 3);
+                    if (chamberCompare !== 0) return chamberCompare;
+
+                    // Then sort by bill number and title
+                    // Use bill_number field for proper numeric sorting
+                    const nameA = a.meta?.bill_number || a.meta?.display_name || a.meta?.short_title || a.col;
+                    const nameB = b.meta?.bill_number || b.meta?.display_name || b.meta?.short_title || b.col;
+
+                    const billRegex = /^([A-Z]+(?:\.[A-Z]+)*)\s*(\d+)/i;
+                    const matchA = nameA.match(billRegex);
+                    const matchB = nameB.match(billRegex);
+
+                    if (matchA && matchB) {
+                      const typeA = matchA[1];
+                      const typeB = matchB[1];
+                      const numA = parseInt(matchA[2], 10);
+                      const numB = parseInt(matchB[2], 10);
+
+                      const typeCompare = typeA.localeCompare(typeB);
+                      if (typeCompare !== 0) return typeCompare;
+
+                      if (numA !== numB) return numA - numB;
+                    }
+
+                    return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+                  });
+                  billsByCategory.set(category, sorted);
+                });
+              }
 
               // Sort categories
               const sortedCategories = Array.from(billsByCategory.keys()).sort();
@@ -2766,29 +2792,273 @@ export default function Page() {
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "1fr 70px 80px 110px" : "40px calc(100% - 480px) 100px 100px 240px",
+                      gridTemplateColumns: isMobile ? "70px 120px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
                     }}
                   >
                     <div className="th px-2 hidden md:block"></div>
-                    <div className="th pl-4">Bill Information</div>
-                    <div className="th text-center">Status</div>
-                    <div className="th text-center">Our Position</div>
+                    <button
+                      className="th text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1"
+                      onClick={() => setTrackerSort(prev => ({ col: 'position', dir: prev.col === 'position' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
+                    >
+                      Position
+                      {trackerSort.col === 'position' && (
+                        <span className="text-[10px]">{trackerSort.dir === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </button>
+                    <button
+                      className="th cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1"
+                      onClick={() => setTrackerSort(prev => ({ col: 'bill', dir: prev.col === 'bill' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
+                    >
+                      Bill
+                      {trackerSort.col === 'bill' && (
+                        <span className="text-[10px]">{trackerSort.dir === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </button>
+                    <button
+                      className="th pl-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center gap-1"
+                      onClick={() => setTrackerSort(prev => ({ col: 'title', dir: prev.col === 'title' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
+                    >
+                      Title
+                      {trackerSort.col === 'title' && (
+                        <span className="text-[10px]">{trackerSort.dir === 'asc' ? '▲' : '▼'}</span>
+                      )}
+                    </button>
                     <div className="th text-center">Sponsor</div>
+                    <div className="th text-center hidden md:block">Status</div>
                   </div>
 
-                  {/* Bill Rows - Grouped by Category */}
+                  {/* Bill Rows */}
                   <div className="w-full max-w-full pb-8 md:pb-4">
-                    {sortedCategories.map((category) => (
-                      <div key={category}>
-                        {/* Category Header */}
-                        <div className="bg-slate-100 dark:bg-slate-800 border-b border-[#E7ECF2] dark:border-slate-900 px-4 py-3 text-center">
-                          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            {category}
-                          </h3>
-                        </div>
+                    {trackerSort.col ? (
+                      /* Flat sorted list when column sort is active */
+                      sortedBills.map((bill: any) => {
+                        const isExpanded = expandedBills.has(bill.col);
+                        return (
+                          <div
+                            key={bill.col}
+                            className="border-b border-[#E7ECF2] dark:border-slate-900"
+                          >
+                            {/* Collapsed view - always visible */}
+                            <div
+                              className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
+                              style={{
+                                gridTemplateColumns: isMobile ? "70px 120px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
+                                alignItems: "center",
+                              }}
+                              onClick={() => {
+                                setExpandedBills(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(bill.col)) {
+                                    next.delete(bill.col);
+                                  } else {
+                                    next.add(bill.col);
+                                  }
+                                  return next;
+                                });
+                              }}
+                            >
+                              {/* Expand/Collapse Button */}
+                              <div
+                                className="px-2 py-3 items-center justify-center hidden md:flex"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedBills(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(bill.col)) {
+                                      next.delete(bill.col);
+                                    } else {
+                                      next.add(bill.col);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                              >
+                                <svg
+                                  className={clsx(
+                                    "w-3 h-3 transition-transform text-slate-500 dark:text-slate-400",
+                                    isExpanded && "rotate-90"
+                                  )}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
 
-                        {/* Bills in this category */}
-                        {billsByCategory.get(category)!.map((bill: any) => {
+                              {/* NIAC Position - First Column */}
+                              <div
+                                className="py-3 text-sm text-slate-800 dark:text-white flex flex-col items-center justify-center gap-1"
+                              >
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                                  style={{
+                                    backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63"
+                                  }}
+                                >
+                                  {bill.position === "SUPPORT" ? "Support" : "Oppose"}
+                                </span>
+                              </div>
+
+                              {/* Bill Number */}
+                              <div
+                                className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center md:self-start md:pt-[17px] min-w-0 overflow-hidden truncate text-center"
+                              >
+                                {bill.meta.bill_number || bill.col}
+                              </div>
+
+                              {/* Bill Title + Description */}
+                              <div
+                                className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0"
+                              >
+                                <button
+                                  className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedBill({ meta: bill.meta, column: bill.col });
+                                  }}
+                                >
+                                  {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
+                                </button>
+                                {bill.meta.description && (
+                                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 hidden md:block">
+                                    {bill.meta.description}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Sponsor */}
+                              <div
+                                className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0 overflow-hidden"
+                              >
+                                {bill.sponsor ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelected(bill.sponsor);
+                                    }}
+                                    className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden"
+                                  >
+                                    {bill.sponsor.photo_url ? (
+                                      <img
+                                        src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
+                                        alt=""
+                                        loading="lazy"
+                                        className="h-8 w-8 md:h-11 md:w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="h-8 w-8 md:h-11 md:w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                                    )}
+                                    <div className="flex-1 min-w-0 hidden md:block">
+                                      <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
+                                        {formatNameFirstLast(bill.sponsor.full_name)}
+                                      </div>
+                                      <div className="flex items-center gap-1 text-xs mt-0.5">
+                                        <span
+                                          className="px-1 py-0.5 rounded text-[10px] font-medium"
+                                          style={partyBadgeStyle(bill.sponsor.party)}
+                                        >
+                                          {partyLabel(bill.sponsor.party)}
+                                        </span>
+                                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">
+                                          {stateCodeOf(bill.sponsor.state)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0 md:hidden overflow-hidden">
+                                      <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight truncate">
+                                        {formatNameFirstLast(bill.sponsor.full_name)}
+                                      </div>
+                                      <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
+                                        {stateCodeOf(bill.sponsor.state)}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ) : (
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
+                                )}
+                              </div>
+
+                              {/* Status */}
+                              <div
+                                className="py-3 text-[10px] text-slate-600 dark:text-slate-400 items-center justify-center text-center px-1 hidden md:flex"
+                              >
+                                {(() => {
+                                  const voteTallies = bill.meta.vote_tallies || '';
+                                  const isCosponsor = bill.actionType.includes('cosponsor');
+                                  const isVote = bill.actionType.includes('vote');
+
+                                  if (voteTallies) {
+                                    const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                    const lastPart = parts[parts.length - 1];
+                                    if (lastPart.toLowerCase().includes('passed')) {
+                                      return "Passed";
+                                    } else if (lastPart.toLowerCase().includes('failed')) {
+                                      return "Failed";
+                                    }
+                                    return lastPart.split('(')[0].trim();
+                                  } else if (isCosponsor) {
+                                    return "Active";
+                                  } else if (isVote) {
+                                    return "Pending";
+                                  }
+                                  return "—";
+                                })()}
+                              </div>
+                            </div>
+
+                            {/* Expanded view */}
+                            {isExpanded && (
+                              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 border-t border-[#E7ECF2] dark:border-slate-900">
+                                <div className="space-y-3">
+                                  <div>
+                                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mr-2">Status:</span>
+                                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                                      {(() => {
+                                        const { voteResult, dateIntroduced } = extractVoteInfo(bill.meta);
+                                        if (voteResult) {
+                                          return voteResult;
+                                        } else if (dateIntroduced) {
+                                          return `Introduced ${dateIntroduced}`;
+                                        }
+                                        return "Pending";
+                                      })()}
+                                    </span>
+                                    {!extractVoteInfo(bill.meta).voteResult && bill.meta.cosponsors && (
+                                      <>
+                                        <span className="text-xs text-slate-400 dark:text-slate-500 mx-2">•</span>
+                                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 mr-1">Cosponsors:</span>
+                                        <span className="text-xs text-slate-600 dark:text-slate-400">{bill.meta.cosponsors}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                  {bill.meta.analysis && (
+                                    <div>
+                                      <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Analysis:</div>
+                                      <div className="text-xs text-slate-600 dark:text-slate-300">
+                                        {bill.meta.analysis}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      /* Grouped by category when no sort is active */
+                      sortedCategories.map((category) => (
+                        <div key={category}>
+                          {/* Category Header */}
+                          <div className="bg-slate-100 dark:bg-slate-800 border-b border-[#E7ECF2] dark:border-slate-900 px-4 py-3 text-center">
+                            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              {category}
+                            </h3>
+                          </div>
+
+                          {/* Bills in this category */}
+                          {billsByCategory.get(category)!.map((bill: any) => {
                           const isExpanded = expandedBills.has(bill.col);
                           return (
                             <div
@@ -2799,7 +3069,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "1fr 70px 80px 110px" : "40px calc(100% - 480px) 100px 100px 240px",
+                                  gridTemplateColumns: isMobile ? "70px 120px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
                                   alignItems: "center",
                                 }}
                                 onClick={() => {
@@ -2843,9 +3113,30 @@ export default function Page() {
                                   </svg>
                                 </div>
 
-                                {/* Bill Info - Chamber, Category, Title */}
+                                {/* NIAC Position - First Column */}
                                 <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 min-w-0"
+                                  className="py-3 text-sm text-slate-800 dark:text-white flex flex-col items-center justify-center gap-1"
+                                >
+                                  <span
+                                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
+                                    style={{
+                                      backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63"
+                                    }}
+                                  >
+                                    {bill.position === "SUPPORT" ? "Support" : "Oppose"}
+                                  </span>
+                                </div>
+
+                                {/* Bill Number */}
+                                <div
+                                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center md:self-start md:pt-[17px] min-w-0 overflow-hidden truncate text-center"
+                                >
+                                  {bill.meta.bill_number || bill.col}
+                                </div>
+
+                                {/* Bill Title + Description */}
+                                <div
+                                  className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0"
                                 >
                                   {/* Title */}
                                   <button
@@ -2855,7 +3146,7 @@ export default function Page() {
                                       setSelectedBill({ meta: bill.meta, column: bill.col });
                                     }}
                                   >
-                                    {bill.meta.display_name || bill.meta.short_title || bill.meta.bill_number || bill.col}
+                                    {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
                                   </button>
                                   {/* Description */}
                                   {bill.meta.description && (
@@ -2865,52 +3156,9 @@ export default function Page() {
                                   )}
                                 </div>
 
-                                {/* Status */}
-                                <div
-                                  className="py-3 text-[10px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-1"
-                                >
-                                  {(() => {
-                                    const voteTallies = bill.meta.vote_tallies || '';
-                                    const isCosponsor = bill.actionType.includes('cosponsor');
-                                    const isVote = bill.actionType.includes('vote');
-
-                                    if (voteTallies) {
-                                      // Extract status from vote_tallies (e.g., "Failed House (6-422)" or "Passed Senate (64-35)")
-                                      // For multiple votes, show the final outcome
-                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
-                                      const lastPart = parts[parts.length - 1];
-                                      if (lastPart.toLowerCase().includes('passed')) {
-                                        return "Passed";
-                                      } else if (lastPart.toLowerCase().includes('failed')) {
-                                        return "Failed";
-                                      }
-                                      return lastPart.split('(')[0].trim(); // Fallback to first part before parentheses
-                                    } else if (isCosponsor) {
-                                      return "Active";
-                                    } else if (isVote) {
-                                      return "Pending";
-                                    }
-                                    return "—";
-                                  })()}
-                                </div>
-
-                                {/* NIAC Action Position */}
-                                <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white flex items-center justify-center"
-                                >
-                                  <span className={clsx(
-                                    "px-1 rounded text-[10px] font-medium border",
-                                    bill.position === "SUPPORT"
-                                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700"
-                                      : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700"
-                                  )}>
-                                    {bill.position === "SUPPORT" ? "Support" : "Oppose"}
-                                  </span>
-                                </div>
-
                                 {/* Sponsor */}
                                 <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0"
+                                  className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0 overflow-hidden"
                                 >
                                   {bill.sponsor ? (
                                     <button
@@ -2918,7 +3166,7 @@ export default function Page() {
                                         e.stopPropagation();
                                         setSelected(bill.sponsor);
                                       }}
-                                      className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full"
+                                      className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden"
                                     >
                                       {bill.sponsor.photo_url ? (
                                         <img
@@ -2946,11 +3194,11 @@ export default function Page() {
                                           </span>
                                         </div>
                                       </div>
-                                      <div className="flex-1 min-w-0 md:hidden">
-                                        <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight">
+                                      <div className="flex-1 min-w-0 md:hidden overflow-hidden">
+                                        <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight truncate">
                                           {formatNameFirstLast(bill.sponsor.full_name)}
                                         </div>
-                                        <div className="text-[9px] text-slate-500 dark:text-slate-400">
+                                        <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
                                           {stateCodeOf(bill.sponsor.state)}
                                         </div>
                                       </div>
@@ -2958,6 +3206,33 @@ export default function Page() {
                                   ) : (
                                     <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
                                   )}
+                                </div>
+
+                                {/* Status */}
+                                <div
+                                  className="py-3 text-[10px] text-slate-600 dark:text-slate-400 items-center justify-center text-center px-1 hidden md:flex"
+                                >
+                                  {(() => {
+                                    const voteTallies = bill.meta.vote_tallies || '';
+                                    const isCosponsor = bill.actionType.includes('cosponsor');
+                                    const isVote = bill.actionType.includes('vote');
+
+                                    if (voteTallies) {
+                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                      const lastPart = parts[parts.length - 1];
+                                      if (lastPart.toLowerCase().includes('passed')) {
+                                        return "Passed";
+                                      } else if (lastPart.toLowerCase().includes('failed')) {
+                                        return "Failed";
+                                      }
+                                      return lastPart.split('(')[0].trim();
+                                    } else if (isCosponsor) {
+                                      return "Active";
+                                    } else if (isVote) {
+                                      return "Pending";
+                                    }
+                                    return "—";
+                                  })()}
                                 </div>
                               </div>
 
@@ -3020,7 +3295,8 @@ export default function Page() {
                           );
                         })}
                       </div>
-                    ))}
+                    ))
+                    )}
                   </div>
                 </>
               );
@@ -3059,59 +3335,8 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
 
   return (
     <div className="mb-1 space-y-2">
-      {/* First row: Map/Scorecard/Tracker buttons + Search */}
+      {/* First row: Filter + State selector + Search */}
       <div className="flex flex-wrap items-center gap-2 px-2 md:px-0">
-        {/* Desktop: Show both text buttons (≥768px) */}
-        <div className="md:inline-flex hidden rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
-          <button
-            onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
-            className={clsx(
-              "px-3 h-9 rounded-md text-sm",
-              f.viewMode === "map"
-                ? "bg-[#4B8CFB] text-white"
-                : "hover:bg-slate-50 dark:hover:bg-white/10"
-            )}
-          >
-            Map
-          </button>
-          <button
-            onClick={() => {
-              // When switching from map to scorecard, clear chamber filter
-              const newState: { viewMode: "summary"; categories: Set<string>; chamber?: "" } = {
-                viewMode: "summary",
-                categories: new Set()
-              };
-              if (f.viewMode === "map") {
-                newState.chamber = "";
-              }
-              f.set(newState);
-            }}
-            className={clsx(
-              "px-3 h-9 rounded-md text-sm",
-              f.viewMode === "summary"
-                ? "bg-[#4B8CFB] text-white"
-                : (f.viewMode === "all" || f.viewMode === "category")
-                ? "bg-[#93c5fd] text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-white/10"
-            )}
-          >
-            Scorecard
-          </button>
-          <button
-            onClick={() => f.set({ viewMode: "tracker", categories: new Set() })}
-            className={clsx(
-              "px-3 h-9 rounded-md text-sm",
-              f.viewMode === "tracker" && f.categories.size === 0
-                ? "bg-[#4B8CFB] text-white"
-                : f.viewMode === "tracker" && f.categories.size > 0
-                ? "bg-[#93c5fd] text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-white/10"
-            )}
-          >
-            Tracker
-          </button>
-        </div>
-
         {/* Filter button - Desktop, all modes */}
         {(() => {
           // Categories don't affect filter button in scorecard/tracker view
@@ -3136,192 +3361,6 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
             </button>
           );
         })()}
-
-        {/* State selector - Desktop (for Map and Scorecard views) */}
-        {f.viewMode !== "tracker" && (
-          <div className="hidden md:flex items-center gap-1">
-            <select
-              className={clsx(
-                "select !text-sm !h-9 !px-2 !max-w-[140px] !cursor-pointer",
-                f.state
-                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
-                  : ""
-              )}
-              value={f.state || ""}
-              onChange={(e) => {
-                const selectedState = e.target.value;
-                // If in map view and selecting a state, go to scorecard with that state filter
-                if (f.viewMode === "map" && selectedState) {
-                  // If selecting a territory without senate, automatically switch to House
-                  if (territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
-                  } else {
-                    f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
-                  }
-                  setSortCol("__district");
-                  setSortDir("GOOD_FIRST");
-                } else {
-                  // Otherwise just set the state filter
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }
-                // Scroll table to top when state is selected (with delay to let React re-render)
-                if (selectedState && tableScrollRef.current) {
-                  setTimeout(() => {
-                    tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                  }, 50);
-                }
-              }}
-            >
-              <option value="">State</option>
-              {STATES.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {f.state && (
-              <button
-                onClick={() => f.set({ state: "" })}
-                className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
-                title="Clear state filter"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Mobile: Show icon buttons (<768px) */}
-        <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-1">
-          <button
-            onClick={() => f.set({ viewMode: "map", categories: new Set(), state: "" })}
-            className={clsx(
-              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
-              f.viewMode === "map"
-                ? "bg-[#4B8CFB] text-white"
-                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
-            )}
-            title="Map view"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => {
-              // When switching from map to scorecard, clear chamber filter
-              const newState: { viewMode: "summary"; categories: Set<string>; chamber?: "" } = {
-                viewMode: "summary",
-                categories: new Set()
-              };
-              if (f.viewMode === "map") {
-                newState.chamber = "";
-              }
-              f.set(newState);
-            }}
-            className={clsx(
-              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
-              (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") && f.categories.size === 0
-                ? "bg-[#4B8CFB] text-white"
-                : (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") && f.categories.size > 0
-                ? "bg-[#93c5fd] text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
-            )}
-            title="Scorecard view"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => f.set({ viewMode: "tracker", categories: new Set() })}
-            className={clsx(
-              "p-2 h-9 w-9 rounded-md flex items-center justify-center",
-              f.viewMode === "tracker" && f.categories.size === 0
-                ? "bg-[#4B8CFB] text-white"
-                : f.viewMode === "tracker" && f.categories.size > 0
-                ? "bg-[#93c5fd] text-slate-900"
-                : "hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400"
-            )}
-            title="Legislation tracker"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* State selector - Mobile (for Map and Scorecard views) */}
-        {f.viewMode !== "tracker" && (
-          <div className="md:hidden flex items-center gap-1">
-            <select
-              className={clsx(
-                "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
-                "!appearance-none !bg-none",
-                f.state
-                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
-                  : ""
-              )}
-              style={{
-                backgroundImage: 'none',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-              } as React.CSSProperties}
-              value={f.state || ""}
-              onChange={(e) => {
-                const selectedState = e.target.value;
-                // If in map view and selecting a state, go to scorecard with that state filter
-                if (f.viewMode === "map" && selectedState) {
-                  // If selecting a territory without senate, automatically switch to House
-                  if (territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
-                  } else {
-                    f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
-                  }
-                  setSortCol("__district");
-                  setSortDir("GOOD_FIRST");
-                } else {
-                  // Otherwise just set the state filter
-                  if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                    f.set({ state: selectedState, chamber: "HOUSE" });
-                  } else {
-                    f.set({ state: selectedState });
-                  }
-                }
-                // Scroll table to top when state is selected (with delay to let React re-render)
-                if (selectedState && tableScrollRef.current) {
-                  setTimeout(() => {
-                    tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                  }, 50);
-                }
-              }}
-            >
-              <option value="">State</option>
-              {STATES.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.code}
-                </option>
-              ))}
-            </select>
-            {f.state && (
-              <button
-                onClick={() => f.set({ state: "" })}
-                className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
-                title="Clear state filter"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Filter button - mobile only, all modes */}
         {(() => {
@@ -3348,22 +3387,152 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
           );
         })()}
 
-        {/* Search - right-aligned for both map and scorecard */}
-        <div className="ml-auto">
-          <UnifiedSearch
-            filteredCount={filteredCount}
-            metaByCol={metaByCol}
-            isMapView={f.viewMode === "map"}
-            isTrackerView={f.viewMode === "tracker"}
-          />
+        {/* Search + State selector - centered together */}
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-2">
+            <UnifiedSearch
+              filteredCount={filteredCount}
+              metaByCol={metaByCol}
+              isMapView={f.viewMode === "map"}
+              isTrackerView={f.viewMode === "tracker"}
+            />
+
+            {/* State selector - Desktop (for Map and Scorecard views) */}
+            {f.viewMode !== "tracker" && (
+              <div className="hidden md:flex items-center gap-1">
+                <select
+                  className={clsx(
+                    "select !text-sm !h-9 !px-2 !max-w-[140px] !cursor-pointer",
+                    f.state
+                      ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                      : ""
+                  )}
+                  value={f.state || ""}
+                  onChange={(e) => {
+                    const selectedState = e.target.value;
+                    // If in map view and selecting a state, go to scorecard with that state filter
+                    if (f.viewMode === "map" && selectedState) {
+                      // If selecting a territory without senate, automatically switch to House
+                      if (territoriesWithoutSenate.includes(selectedState)) {
+                        f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                      } else {
+                        f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                      }
+                      setSortCol("__district");
+                      setSortDir("GOOD_FIRST");
+                    } else {
+                      // Otherwise just set the state filter
+                      if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                        f.set({ state: selectedState, chamber: "HOUSE" });
+                      } else {
+                        f.set({ state: selectedState });
+                      }
+                    }
+                    // Scroll table to top when state is selected (with delay to let React re-render)
+                    if (selectedState && tableScrollRef.current) {
+                      setTimeout(() => {
+                        tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 50);
+                    }
+                  }}
+                >
+                  <option value="">State</option>
+                  {STATES.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                {f.state && (
+                  <button
+                    onClick={() => f.set({ state: "" })}
+                    className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
+                    title="Clear state filter"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* State selector - Mobile (for Map and Scorecard views) */}
+            {f.viewMode !== "tracker" && (
+              <div className="md:hidden flex items-center gap-1">
+                <select
+                  className={clsx(
+                    "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
+                    "!appearance-none !bg-none",
+                    f.state
+                      ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                      : ""
+                  )}
+                  style={{
+                    backgroundImage: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                  } as React.CSSProperties}
+                  value={f.state || ""}
+                  onChange={(e) => {
+                    const selectedState = e.target.value;
+                    // If in map view and selecting a state, go to scorecard with that state filter
+                    if (f.viewMode === "map" && selectedState) {
+                      // If selecting a territory without senate, automatically switch to House
+                      if (territoriesWithoutSenate.includes(selectedState)) {
+                        f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
+                      } else {
+                        f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
+                      }
+                      setSortCol("__district");
+                      setSortDir("GOOD_FIRST");
+                    } else {
+                      // Otherwise just set the state filter
+                      if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                        f.set({ state: selectedState, chamber: "HOUSE" });
+                      } else {
+                        f.set({ state: selectedState });
+                      }
+                    }
+                    // Scroll table to top when state is selected (with delay to let React re-render)
+                    if (selectedState && tableScrollRef.current) {
+                      setTimeout(() => {
+                        tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 50);
+                    }
+                  }}
+                >
+                  <option value="">State</option>
+                  {STATES.map((s) => (
+                    <option key={s.code} value={s.code}>
+                      {s.code}
+                    </option>
+                  ))}
+                </select>
+                {f.state && (
+                  <button
+                    onClick={() => f.set({ state: "" })}
+                    className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
+                    title="Clear state filter"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Second row: Category filter buttons - Always visible on mobile, hide in map mode */}
-      {f.viewMode !== "map" && (
+      {/* Second row: Category filter buttons - Only visible when filters expanded, hide in map mode */}
+      {f.viewMode !== "map" && filtersExpanded && (
         <div className="flex items-center gap-2 px-2 md:px-0">
-          {/* Border around issue buttons */}
-          <div className="flex items-center flex-wrap gap-1 md:gap-1 px-1.5 md:px-2 py-1 md:py-1 rounded-lg border border-slate-200 dark:border-slate-900 bg-white dark:bg-white/5">
+          {/* Issues filter with label */}
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
+            <div className="flex items-center flex-wrap gap-1 md:gap-1 px-1.5 md:px-2 py-1 md:py-1 rounded-lg border border-slate-200 dark:border-slate-900 bg-white dark:bg-white/5">
             {/* Individual issue buttons - bright blue when active */}
             <button
               onClick={() => {
@@ -3457,6 +3626,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
                 </svg>
               )}
             </button>
+            </div>
           </div>
         </div>
       )}
@@ -3508,11 +3678,12 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
       {/* Third row: Scorecard view - Filters */}
       {f.viewMode !== "map" && filtersExpanded && (
       <div className="relative flex items-center gap-2 px-2 md:px-0">
-        <div
-          className="flex items-center gap-1.5"
-        >
-          {/* Mobile: Chamber buttons (with All option) */}
-          <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
+        {/* Chamber filter with label */}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+          <div className="flex items-center gap-1.5">
+            {/* Mobile: Chamber buttons (with All option) */}
+            <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
             <button
               onClick={() => f.set({ chamber: "" })}
               className={clsx(
@@ -3562,53 +3733,55 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               }}
             />
           </div>
-          {f.viewMode !== "tracker" && (
-            <>
-              {/* Party buttons with uniform colors */}
-              <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
-                <button
-                  onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
-                  className={clsx(
-                    "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
-                    f.party === "Democratic"
-                      ? "text-white"
-                      : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                  )}
-                  style={f.party === "Democratic" ? { backgroundColor: "#2563EB" } : undefined}
-                  title="Democratic (includes Independents)"
-                >
-                  D
-                </button>
-                <button
-                  onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
-                  className={clsx(
-                    "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
-                    f.party === "Republican"
-                      ? "text-white"
-                      : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
-                  )}
-                  style={f.party === "Republican" ? { backgroundColor: "#DC2626" } : undefined}
-                  title="Republican"
-                >
-                  R
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* Single X button to clear all active filters */}
-          {(f.chamber || (f.viewMode !== "tracker" && f.party)) && (
-            <button
-              onClick={() => f.set({ chamber: "", party: "" })}
-              className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
-              title="Clear filters"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
+          </div>
         </div>
+        {f.viewMode !== "tracker" && (
+          /* Party filter with label */
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Party</span>
+            <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
+              <button
+                onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
+                className={clsx(
+                  "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
+                  f.party === "Democratic"
+                    ? "text-white"
+                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                )}
+                style={f.party === "Democratic" ? { backgroundColor: "#2563EB" } : undefined}
+                title="Democratic (includes Independents)"
+              >
+                D
+              </button>
+              <button
+                onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
+                className={clsx(
+                  "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
+                  f.party === "Republican"
+                    ? "text-white"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
+                )}
+                style={f.party === "Republican" ? { backgroundColor: "#DC2626" } : undefined}
+                title="Republican"
+              >
+                R
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Single X button to clear all active filters */}
+        {(f.chamber || (f.viewMode !== "tracker" && f.party)) && (
+          <button
+            onClick={() => f.set({ chamber: "", party: "" })}
+            className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
+            title="Clear filters"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
       </div>
       )}
     </div>
@@ -3773,13 +3946,13 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
         </button>
       ) : (
         <button
-          className="chip-outline flex items-center gap-1"
+          className="h-9 px-3 rounded-full border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 text-sm hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-1"
           onClick={() => setIsOpen(!isOpen)}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden min-[600px]:inline">Find your lawmakers</span>
+          <span>{isTrackerView ? "Find a bill" : "Find your lawmakers"}</span>
         </button>
       )}
 
