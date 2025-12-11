@@ -249,7 +249,7 @@ export default function LegislationPage() {
                       {/* NIAC Position */}
                       <div className="flex items-center gap-1.5">
                         <span className="font-medium text-slate-600 dark:text-slate-400">
-                          NIAC Position:
+                          Our Position:
                         </span>
                         <span className={clsx(
                           "px-2 py-1 rounded font-semibold",
@@ -261,14 +261,22 @@ export default function LegislationPage() {
                         </span>
                       </div>
 
-                      {/* Action Type */}
+                      {/* Action Pill */}
                       {bill.actionType && (
                         <div className="flex items-center gap-1.5">
                           <span className="font-medium text-slate-600 dark:text-slate-400">
                             Action:
                           </span>
-                          <span className="text-slate-700 dark:text-slate-200 capitalize">
-                            {bill.actionType}
+                          <span className={clsx(
+                            "px-2 py-1 rounded-full font-semibold",
+                            bill.position === "SUPPORT"
+                              ? "bg-green-500 dark:bg-green-600 text-white"
+                              : "bg-red-500 dark:bg-red-600 text-white"
+                          )}>
+                            {bill.actionType.includes("cosponsor")
+                              ? (bill.position === "SUPPORT" ? "Cosponsor" : "Do Not Cosponsor")
+                              : (bill.position === "SUPPORT" ? "Vote in Favor" : "Vote Against")
+                            }
                           </span>
                         </div>
                       )}
