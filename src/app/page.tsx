@@ -3951,7 +3951,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
         </button>
       ) : (
         <button
-          className="h-9 px-3 rounded-full border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 text-sm hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-1"
+          className="h-9 px-3 min-w-[180px] rounded-full border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 text-sm hover:bg-slate-50 dark:hover:bg-white/10 flex items-center justify-center gap-1"
           onClick={() => setIsOpen(!isOpen)}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
