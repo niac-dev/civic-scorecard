@@ -2257,25 +2257,28 @@ export default function Page() {
                   )}
                 </div>
                 {/* Photo - shown second on mobile, first on desktop */}
-                {r.photo_url ? (
+                {(r.bioguide_id || r.photo_url) ? (
                   <img
-                    src={getProxiedImageUrl(String(r.photo_url))}
+                    src={getPhotoUrl(String(r.bioguide_id || ''), '225x275') || getProxiedImageUrl(String(r.photo_url)) || ''}
                     alt=""
                     loading="lazy"
                     className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
                     style={{ height: 'auto' }}
                     onError={(e) => {
-                      // Hide broken image and show placeholder
-                      e.currentTarget.style.display = 'none';
-                      const placeholder = e.currentTarget.nextElementSibling;
-                      if (placeholder) placeholder.classList.remove('hidden');
+                      // Try fallback to photo_url if bioguide CDN fails
+                      const target = e.currentTarget;
+                      if (!target.dataset.fallback && r.photo_url) {
+                        target.dataset.fallback = '1';
+                        target.src = getProxiedImageUrl(String(r.photo_url)) || '';
+                      }
                     }}
                   />
-                ) : null}
-                <div className={clsx(
-                  "w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0",
-                  r.photo_url && "hidden"
-                )} style={{ height: 'auto' }} />
+                ) : (
+                  <div
+                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
+                    style={{ height: 'auto' }}
+                  />
+                )}
 
                 {/* Desktop: Text section with name and badges */}
                 <div className="hidden md:flex md:flex-col min-w-0 flex-1 md:order-2">
