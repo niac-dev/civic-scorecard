@@ -19,6 +19,16 @@ const STATE_FIPS_TO_ABBREV: Record<string, string> = {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
+  return handleFindLawmakers(address);
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const address = body.address;
+  return handleFindLawmakers(address);
+}
+
+async function handleFindLawmakers(address: string | null) {
 
   console.log('Find lawmakers API called with address:', address);
 
