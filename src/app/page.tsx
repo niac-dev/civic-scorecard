@@ -1585,9 +1585,6 @@ export default function Page() {
                               onClick={() => {
                                 setFindQuery(String(member.full_name || ""));
                                 setShowFindDropdown(false);
-                                setTimeout(() => {
-                                  document.getElementById("find-search-btn")?.click();
-                                }, 50);
                               }}
                               className="w-full px-4 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2 border-b border-slate-100 last:border-0"
                             >
@@ -1645,9 +1642,6 @@ export default function Page() {
                               onClick={() => {
                                 setFindQuery(meta?.display_name || col);
                                 setShowFindDropdown(false);
-                                setTimeout(() => {
-                                  document.getElementById("find-search-btn")?.click();
-                                }, 50);
                               }}
                               className="w-full px-4 py-2.5 text-left hover:bg-slate-100 border-b border-slate-100 last:border-0"
                             >
@@ -1664,39 +1658,39 @@ export default function Page() {
                 </div>
               ) : (
                 /* Issues Tab - Category Filter */
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-1.5 w-full">
                   <button
                     onClick={() => {
-                      f.set({ categories: new Set(), viewMode: "summary" });
+                      f.set({ categories: new Set() });
                     }}
                     className={clsx(
-                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      "flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap",
                       f.categories.size === 0
                         ? "bg-[#4B8CFB] text-white"
                         : "bg-white text-slate-700 hover:bg-slate-100"
                     )}
                   >
-                    All Issues
+                    All
                   </button>
                   <button
                     onClick={() => {
-                      f.set({ categories: new Set(["Civil Rights & Immigration"]), viewMode: "summary" });
+                      f.set({ categories: new Set(["Civil Rights & Immigration"]) });
                     }}
                     className={clsx(
-                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      "flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap",
                       f.categories.has("Civil Rights & Immigration")
                         ? "bg-[#4B8CFB] text-white"
                         : "bg-white text-slate-700 hover:bg-slate-100"
                     )}
                   >
-                    Civil Rights & Immigration
+                    Civil Rights
                   </button>
                   <button
                     onClick={() => {
-                      f.set({ categories: new Set(["Iran"]), viewMode: "summary" });
+                      f.set({ categories: new Set(["Iran"]) });
                     }}
                     className={clsx(
-                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      "flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap",
                       f.categories.has("Iran")
                         ? "bg-[#4B8CFB] text-white"
                         : "bg-white text-slate-700 hover:bg-slate-100"
@@ -1706,10 +1700,10 @@ export default function Page() {
                   </button>
                   <button
                     onClick={() => {
-                      f.set({ categories: new Set(["Israel-Gaza"]), viewMode: "summary" });
+                      f.set({ categories: new Set(["Israel-Gaza"]) });
                     }}
                     className={clsx(
-                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      "flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap",
                       f.categories.has("Israel-Gaza")
                         ? "bg-[#4B8CFB] text-white"
                         : "bg-white text-slate-700 hover:bg-slate-100"
@@ -1719,10 +1713,10 @@ export default function Page() {
                   </button>
                   <button
                     onClick={() => {
-                      f.set({ categories: new Set(["AIPAC"]), viewMode: "summary" });
+                      f.set({ categories: new Set(["AIPAC"]) });
                     }}
                     className={clsx(
-                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      "flex-1 py-2.5 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap",
                       f.categories.has("AIPAC")
                         ? "bg-[#4B8CFB] text-white"
                         : "bg-white text-slate-700 hover:bg-slate-100"
@@ -1741,15 +1735,20 @@ export default function Page() {
               </div>
             )}
 
-            {/* Search Button - hidden for Issues tab */}
-            {findTab !== "issues" && (
+            {/* Search Button */}
             <button
               id="find-search-btn"
-              disabled={findLoading || (!findQuery.trim() && !findState)}
+              disabled={findLoading || (findTab !== "issues" && !findQuery.trim() && !findState)}
               onClick={async () => {
                 const query = findQuery.trim();
                 const hasCategory = f.categories.size > 0;
                 const hasState = !!findState;
+
+                // For issues tab, always allow (just go to scorecard with category filter)
+                if (findTab === "issues") {
+                  f.set({ viewMode: hasCategory ? "category" : "summary" });
+                  return;
+                }
 
                 // If no query and no filters, do nothing
                 if (!query && !hasCategory && !hasState) return;
@@ -1803,14 +1802,13 @@ export default function Page() {
               }}
               className={clsx(
                 "w-full py-3 rounded-lg font-semibold transition-colors shadow-lg",
-                findLoading || (!findQuery.trim() && f.categories.size === 0 && !findState)
+                findLoading || (findTab !== "issues" && !findQuery.trim() && !findState)
                   ? "bg-white/30 text-white/60 cursor-not-allowed"
                   : "bg-white text-[#30558C] hover:bg-white/90"
               )}
             >
               {findLoading ? "Searching..." : "Search"}
             </button>
-            )}
           </div>
         </div>
         )}
@@ -4422,7 +4420,6 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
                           onClick={() => {
                             setSearchValue(String(member.full_name || ""));
                             setShowDropdown(false);
-                            handleSearch();
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
                         >
@@ -4460,7 +4457,6 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
                           onClick={() => {
                             setSearchValue(meta?.display_name || col);
                             setShowDropdown(false);
-                            handleSearch();
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
                         >
