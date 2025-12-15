@@ -443,7 +443,7 @@ export default function Page() {
   const [trackerSort, setTrackerSort] = useState<{ col: 'position' | 'bill' | 'title' | null; dir: 'asc' | 'desc' }>({ col: null, dir: 'asc' });
 
   // Find view state
-  const [findTab, setFindTab] = useState<"name" | "location" | "bill">("location");
+  const [findTab, setFindTab] = useState<"name" | "location" | "bill" | "issues">("location");
   const [findQuery, setFindQuery] = useState("");
   const [findState, setFindState] = useState("");
   const [findLoading, setFindLoading] = useState(false);
@@ -1506,6 +1506,17 @@ export default function Page() {
               >
                 Bill
               </button>
+              <button
+                onClick={() => { setFindTab("issues"); setFindError(""); }}
+                className={clsx(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors",
+                  findTab === "issues"
+                    ? "bg-[#4B8CFB] text-white shadow-sm"
+                    : "text-white hover:bg-white/20"
+                )}
+              >
+                Issues
+              </button>
             </div>
 
             {/* Search Input */}
@@ -1591,7 +1602,7 @@ export default function Page() {
                     );
                   })()}
                 </div>
-              ) : (
+              ) : findTab === "bill" ? (
                 <div className="relative">
                   <input
                     type="text"
@@ -1651,71 +1662,76 @@ export default function Page() {
                     );
                   })()}
                 </div>
+              ) : (
+                /* Issues Tab - Category Filter */
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      f.set({ categories: new Set(), viewMode: "summary" });
+                    }}
+                    className={clsx(
+                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      f.categories.size === 0
+                        ? "bg-[#4B8CFB] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    All Issues
+                  </button>
+                  <button
+                    onClick={() => {
+                      f.set({ categories: new Set(["Civil Rights & Immigration"]), viewMode: "summary" });
+                    }}
+                    className={clsx(
+                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      f.categories.has("Civil Rights & Immigration")
+                        ? "bg-[#4B8CFB] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    Civil Rights & Immigration
+                  </button>
+                  <button
+                    onClick={() => {
+                      f.set({ categories: new Set(["Iran"]), viewMode: "summary" });
+                    }}
+                    className={clsx(
+                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      f.categories.has("Iran")
+                        ? "bg-[#4B8CFB] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    Iran
+                  </button>
+                  <button
+                    onClick={() => {
+                      f.set({ categories: new Set(["Israel-Gaza"]), viewMode: "summary" });
+                    }}
+                    className={clsx(
+                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      f.categories.has("Israel-Gaza")
+                        ? "bg-[#4B8CFB] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    Israel-Gaza
+                  </button>
+                  <button
+                    onClick={() => {
+                      f.set({ categories: new Set(["AIPAC"]), viewMode: "summary" });
+                    }}
+                    className={clsx(
+                      "px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm",
+                      f.categories.has("AIPAC")
+                        ? "bg-[#4B8CFB] text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    AIPAC
+                  </button>
+                </div>
               )}
-            </div>
-
-            {/* Category Filter */}
-            <div className="mb-4">
-              <span className="text-sm font-medium text-white/80 mb-2 block">Filter by Issue:</span>
-              <div className="flex flex-nowrap gap-1 md:gap-2">
-                <button
-                  onClick={() => f.set({ categories: new Set() })}
-                  className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
-                    f.categories.size === 0
-                      ? "bg-[#4B8CFB] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => f.set({ categories: new Set(["Civil Rights & Immigration"]) })}
-                  className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm md:whitespace-nowrap text-center leading-tight",
-                    f.categories.has("Civil Rights & Immigration")
-                      ? "bg-[#4B8CFB] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  <span className="hidden md:inline">Civil Rights & Immigration</span>
-                  <span className="md:hidden">Civil Rights &<br />Immigration</span>
-                </button>
-                <button
-                  onClick={() => f.set({ categories: new Set(["Iran"]) })}
-                  className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
-                    f.categories.has("Iran")
-                      ? "bg-[#4B8CFB] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  Iran
-                </button>
-                <button
-                  onClick={() => f.set({ categories: new Set(["Israel-Gaza"]) })}
-                  className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm md:whitespace-nowrap text-center leading-tight",
-                    f.categories.has("Israel-Gaza")
-                      ? "bg-[#4B8CFB] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  <span className="hidden md:inline">Israel-Gaza</span>
-                  <span className="md:hidden">Israel<br />-Gaza</span>
-                </button>
-                <button
-                  onClick={() => f.set({ categories: new Set(["AIPAC"]) })}
-                  className={clsx(
-                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
-                    f.categories.has("AIPAC")
-                      ? "bg-[#4B8CFB] text-white"
-                      : "bg-white text-slate-700 hover:bg-slate-100"
-                  )}
-                >
-                  AIPAC
-                </button>
-              </div>
             </div>
 
             {/* Error message */}
@@ -1725,10 +1741,11 @@ export default function Page() {
               </div>
             )}
 
-            {/* Search Button */}
+            {/* Search Button - hidden for Issues tab */}
+            {findTab !== "issues" && (
             <button
               id="find-search-btn"
-              disabled={findLoading || (!findQuery.trim() && f.categories.size === 0 && !findState)}
+              disabled={findLoading || (!findQuery.trim() && !findState)}
               onClick={async () => {
                 const query = findQuery.trim();
                 const hasCategory = f.categories.size > 0;
@@ -1793,6 +1810,7 @@ export default function Page() {
             >
               {findLoading ? "Searching..." : "Search"}
             </button>
+            )}
           </div>
         </div>
         )}
