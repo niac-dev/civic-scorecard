@@ -2278,7 +2278,7 @@ export default function Page() {
                 )} style={{ height: 'auto' }} />
 
                 {/* Desktop: Text section with name and badges */}
-                <div className="hidden md:flex md:flex-col min-w-0 md:order-2">
+                <div className="hidden md:flex md:flex-col min-w-0 flex-1 md:order-2">
                   {/* Name */}
                   <div className="font-bold text-[24px] xl:text-[28px] leading-6 xl:leading-7 text-slate-800 dark:text-white mb-1 text-center">
                     {(() => {
