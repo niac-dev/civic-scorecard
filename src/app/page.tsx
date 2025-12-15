@@ -1585,6 +1585,7 @@ export default function Page() {
                               onClick={() => {
                                 setFindQuery(String(member.full_name || ""));
                                 setShowFindDropdown(false);
+                                setTimeout(() => document.getElementById("find-search-btn")?.click(), 50);
                               }}
                               className="w-full px-4 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2 border-b border-slate-100 last:border-0"
                             >
@@ -1642,6 +1643,7 @@ export default function Page() {
                               onClick={() => {
                                 setFindQuery(meta?.display_name || col);
                                 setShowFindDropdown(false);
+                                setTimeout(() => document.getElementById("find-search-btn")?.click(), 50);
                               }}
                               className="w-full px-4 py-2.5 text-left hover:bg-slate-100 border-b border-slate-100 last:border-0"
                             >
@@ -4440,8 +4442,15 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
                           key={i}
                           type="button"
                           onClick={() => {
-                            setSearchValue(String(member.full_name || ""));
                             setShowDropdown(false);
+                            setIsOpen(false);
+                            // Directly open member modal or search
+                            if (onSelectMember) {
+                              onSelectMember(member);
+                            } else {
+                              f.set({ search: String(member.full_name || ""), viewMode: f.viewMode === "map" || f.viewMode === "tracker" ? "summary" : f.viewMode });
+                            }
+                            setSearchValue("");
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
                         >
@@ -4477,8 +4486,11 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
                           key={i}
                           type="button"
                           onClick={() => {
-                            setSearchValue(meta?.display_name || col);
                             setShowDropdown(false);
+                            setIsOpen(false);
+                            // Directly go to bill in tracker
+                            f.set({ billColumn: meta?.display_name || col, viewMode: "tracker" });
+                            setSearchValue("");
                           }}
                           className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
                         >
