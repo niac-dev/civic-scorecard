@@ -8,7 +8,7 @@ type FiltersState = {
   state: string;           // e.g. "WA"
   search: string;          // free-text member search
   categories: Set<string>; // selected category names
-  viewMode: "summary" | "all" | "category" | "map" | "tracker"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view, "tracker" = legislation tracker
+  viewMode: "summary" | "all" | "category" | "map" | "tracker" | "find"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view, "tracker" = legislation tracker, "find" = find lawmaker view
   myLawmakers: string[];   // array of full names from address search
   billColumn: string;      // column name for bill search
 
@@ -23,10 +23,10 @@ type FiltersState = {
 
 // Helper to get initial viewMode based on URL query params or localStorage
 // Returns consistent value for SSR to avoid hydration mismatch
-function getInitialViewMode(): "summary" | "all" | "category" | "map" | "tracker" {
-  // Always return "summary" initially to match server render
+function getInitialViewMode(): "summary" | "all" | "category" | "map" | "tracker" | "find" {
+  // Always return "find" initially to match server render
   // The actual logic will be applied via useEffect in the component
-  return "summary";
+  return "find";
 }
 
 export const useFilters = create<FiltersState>((set) => ({

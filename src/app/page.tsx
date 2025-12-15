@@ -415,17 +415,11 @@ export default function Page() {
     const viewParam = urlParams.get('view');
     const billParam = urlParams.get('bill');
 
-    if (viewParam === 'tracker' || viewParam === 'map' || viewParam === 'summary' || viewParam === 'all' || viewParam === 'category') {
+    if (viewParam === 'tracker' || viewParam === 'map' || viewParam === 'summary' || viewParam === 'all' || viewParam === 'category' || viewParam === 'find') {
       f.set({ viewMode: viewParam });
     } else {
-      // Check if user has visited before
-      const hasVisited = localStorage.getItem("hasVisitedScorecard");
-      if (!hasVisited) {
-        // First visit - default to scorecard view for all browsers
-        localStorage.setItem("hasVisitedScorecard", "true");
-        f.set({ viewMode: "summary" });
-      }
-      // Returning user stays on "summary" (already the default)
+      // Default to Find view
+      f.set({ viewMode: "find" });
     }
 
     // If bill parameter is present, select it on the map
@@ -447,6 +441,14 @@ export default function Page() {
 
   // Tracker sort state: column and direction
   const [trackerSort, setTrackerSort] = useState<{ col: 'position' | 'bill' | 'title' | null; dir: 'asc' | 'desc' }>({ col: null, dir: 'asc' });
+
+  // Find view state
+  const [findTab, setFindTab] = useState<"name" | "location" | "bill">("location");
+  const [findQuery, setFindQuery] = useState("");
+  const [findState, setFindState] = useState("");
+  const [findLoading, setFindLoading] = useState(false);
+  const [findError, setFindError] = useState("");
+  const [showFindDropdown, setShowFindDropdown] = useState(true);
 
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -1390,8 +1392,8 @@ export default function Page() {
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Header Band */}
-      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900">
+      {/* Header Band - breaks out of max-w-7xl container */}
+      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img
@@ -1407,7 +1409,9 @@ export default function Page() {
       </div>
 
       <div className="flex-1 flex flex-col space-y-2 px-0 pt-2 pb-2 md:p-3">
-        <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} />
+        {f.viewMode !== "find" ? (
+          <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} rows={rows} cols={cols} />
+        ) : null}
       {selected && (
         <MemberModal
           row={selected}
@@ -1447,13 +1451,357 @@ export default function Page() {
         />
       )}
 
-      {/* Views Container with Sliding Animation */}
-      <div className="relative overflow-hidden flex-1 flex flex-col">
+      {/* Views Container */}
+      <div className="relative flex-1 flex flex-col">
+        {/* Find View */}
+        {f.viewMode === "find" && (
+        <div
+          className="rounded-lg md:rounded-2xl overflow-visible relative"
+        >
+          {/* Capitol Background */}
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: "url('/capitol-bg.jpg')" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+
+          <div className="relative p-4 md:p-6 max-w-xl mx-auto w-full min-h-[70vh] flex flex-col justify-center">
+            {/* Big Heading */}
+            <h1 className="text-2xl md:text-3xl font-bold text-center text-white mb-6 drop-shadow-lg">
+              Find Your Lawmakers
+            </h1>
+
+            {/* Tabbed Selector */}
+            <div className="flex rounded-lg bg-white/20 backdrop-blur-sm p-1 mb-4">
+              <button
+                onClick={() => { setFindTab("name"); setFindError(""); }}
+                className={clsx(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors",
+                  findTab === "name"
+                    ? "bg-[#4B8CFB] text-white shadow-sm"
+                    : "text-white hover:bg-white/20"
+                )}
+              >
+                Name
+              </button>
+              <button
+                onClick={() => { setFindTab("location"); setFindError(""); }}
+                className={clsx(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors",
+                  findTab === "location"
+                    ? "bg-[#4B8CFB] text-white shadow-sm"
+                    : "text-white hover:bg-white/20"
+                )}
+              >
+                Location
+              </button>
+              <button
+                onClick={() => { setFindTab("bill"); setFindError(""); }}
+                className={clsx(
+                  "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors",
+                  findTab === "bill"
+                    ? "bg-[#4B8CFB] text-white shadow-sm"
+                    : "text-white hover:bg-white/20"
+                )}
+              >
+                Bill
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="mb-4 relative">
+              {findTab === "location" ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={findQuery}
+                    onChange={(e) => setFindQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        document.getElementById("find-search-btn")?.click();
+                      }
+                    }}
+                    placeholder="Enter address or zip..."
+                    className="flex-1 px-4 py-3 rounded-lg border-0 bg-white/90 backdrop-blur-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
+                  />
+                  <select
+                    value={findState}
+                    onChange={(e) => setFindState(e.target.value)}
+                    className="w-28 px-2 py-3 rounded-lg border-0 bg-white/90 backdrop-blur-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
+                  >
+                    <option value="">State</option>
+                    {STATES.map((s) => (
+                      <option key={s.code} value={s.code}>
+                        {s.code}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : findTab === "name" ? (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={findQuery}
+                    onChange={(e) => { setFindQuery(e.target.value); setShowFindDropdown(true); }}
+                    onFocus={() => setShowFindDropdown(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setShowFindDropdown(false);
+                        document.getElementById("find-search-btn")?.click();
+                      }
+                    }}
+                    placeholder="Enter lawmaker's name..."
+                    className="w-full px-4 py-3 rounded-lg border-0 bg-white/90 backdrop-blur-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
+                  />
+                  {/* Name Autocomplete Dropdown */}
+                  {showFindDropdown && findQuery.trim().length >= 2 && (() => {
+                    const query = findQuery.toLowerCase();
+                    const matches = rows
+                      .filter(r => {
+                        const name = String(r.full_name || "").toLowerCase();
+                        return name.includes(query);
+                      })
+                      .slice(0, 6);
+                    if (matches.length === 0) return null;
+                    return (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowFindDropdown(false)} />
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                          {matches.map((member, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setFindQuery(String(member.full_name || ""));
+                                setShowFindDropdown(false);
+                                setTimeout(() => {
+                                  document.getElementById("find-search-btn")?.click();
+                                }, 50);
+                              }}
+                              className="w-full px-4 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2 border-b border-slate-100 last:border-0"
+                            >
+                              <span className="text-slate-800 font-medium">{String(member.full_name || "")}</span>
+                              <span className="text-slate-500 text-sm">
+                                ({member.party === "Democratic" ? "D" : member.party === "Republican" ? "R" : "I"}) {member.state}-{member.chamber === "SENATE" ? "Sen" : member.district}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={findQuery}
+                    onChange={(e) => { setFindQuery(e.target.value); setShowFindDropdown(true); }}
+                    onFocus={() => setShowFindDropdown(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setShowFindDropdown(false);
+                        document.getElementById("find-search-btn")?.click();
+                      }
+                    }}
+                    placeholder="Enter bill number or title..."
+                    className="w-full px-4 py-3 rounded-lg border-0 bg-white/90 backdrop-blur-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
+                  />
+                  {/* Bill Autocomplete Dropdown */}
+                  {showFindDropdown && findQuery.trim().length >= 2 && (() => {
+                    const query = findQuery.toLowerCase();
+                    const matches = cols
+                      .map(col => {
+                        const meta = metaByCol.get(col);
+                        return { col, meta };
+                      })
+                      .filter(({ col, meta }) => {
+                        if (!meta) return false;
+                        const displayName = (meta.display_name || "").toLowerCase();
+                        const colLower = col.toLowerCase();
+                        return displayName.includes(query) || colLower.includes(query);
+                      })
+                      .slice(0, 6);
+                    if (matches.length === 0) return null;
+                    return (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowFindDropdown(false)} />
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                          {matches.map(({ col, meta }, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setFindQuery(meta?.display_name || col);
+                                setShowFindDropdown(false);
+                                setTimeout(() => {
+                                  document.getElementById("find-search-btn")?.click();
+                                }, 50);
+                              }}
+                              className="w-full px-4 py-2.5 text-left hover:bg-slate-100 border-b border-slate-100 last:border-0"
+                            >
+                              <span className="text-slate-800 font-medium block">{meta?.display_name || col}</span>
+                              {meta?.categories && (
+                                <span className="text-slate-500 text-xs">{meta.categories}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Category Filter */}
+            <div className="mb-4">
+              <span className="text-sm font-medium text-white/80 mb-2 block">Filter by Issue:</span>
+              <div className="flex flex-nowrap gap-1 md:gap-2">
+                <button
+                  onClick={() => f.set({ categories: new Set() })}
+                  className={clsx(
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
+                    f.categories.size === 0
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => f.set({ categories: new Set(["Civil Rights & Immigration"]) })}
+                  className={clsx(
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm md:whitespace-nowrap text-center leading-tight",
+                    f.categories.has("Civil Rights & Immigration")
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  <span className="hidden md:inline">Civil Rights & Immigration</span>
+                  <span className="md:hidden">Civil Rights &<br />Immigration</span>
+                </button>
+                <button
+                  onClick={() => f.set({ categories: new Set(["Iran"]) })}
+                  className={clsx(
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
+                    f.categories.has("Iran")
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  Iran
+                </button>
+                <button
+                  onClick={() => f.set({ categories: new Set(["Israel-Gaza"]) })}
+                  className={clsx(
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm md:whitespace-nowrap text-center leading-tight",
+                    f.categories.has("Israel-Gaza")
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  <span className="hidden md:inline">Israel-Gaza</span>
+                  <span className="md:hidden">Israel<br />-Gaza</span>
+                </button>
+                <button
+                  onClick={() => f.set({ categories: new Set(["AIPAC"]) })}
+                  className={clsx(
+                    "px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[11px] md:text-sm font-medium transition-colors shadow-sm whitespace-nowrap",
+                    f.categories.has("AIPAC")
+                      ? "bg-[#4B8CFB] text-white"
+                      : "bg-white text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  AIPAC
+                </button>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {findError && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/90 text-white text-sm shadow-lg">
+                {findError}
+              </div>
+            )}
+
+            {/* Search Button */}
+            <button
+              id="find-search-btn"
+              disabled={findLoading || (!findQuery.trim() && f.categories.size === 0 && !findState)}
+              onClick={async () => {
+                const query = findQuery.trim();
+                const hasCategory = f.categories.size > 0;
+                const hasState = !!findState;
+
+                // If no query and no filters, do nothing
+                if (!query && !hasCategory && !hasState) return;
+
+                setFindError("");
+                setFindLoading(true);
+
+                try {
+                  if (findTab === "name") {
+                    // Name search - set search filter and go to scorecard
+                    f.set({ search: query, viewMode: hasCategory ? "category" : "summary" });
+                    setFindQuery("");
+                  } else if (findTab === "location") {
+                    if (query) {
+                      // Location search with address - call API
+                      const res = await fetch("/api/find-lawmakers", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ address: query }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        setFindError(data.error || "Could not find lawmakers for this location");
+                      } else if (data.lawmakers && data.lawmakers.length > 0) {
+                        const names = data.lawmakers.map((lm: { name: string }) => lm.name);
+                        f.setMyLawmakers(names);
+                        f.set({ viewMode: hasCategory ? "category" : "summary", state: findState || "" });
+                        setFindQuery("");
+                        setFindState("");
+                      } else {
+                        setFindError("No lawmakers found for this location");
+                      }
+                    } else if (hasState) {
+                      // Just state filter - go to scorecard with state
+                      f.set({ viewMode: hasCategory ? "category" : "summary", state: findState });
+                      setFindState("");
+                    } else {
+                      // Just category - go to scorecard
+                      f.set({ viewMode: "category" });
+                    }
+                  } else if (findTab === "bill") {
+                    // Bill search - set billColumn filter and go to tracker
+                    f.set({ billColumn: query, viewMode: "tracker" });
+                    setFindQuery("");
+                  }
+                } catch (err) {
+                  setFindError("Search failed. Please try again.");
+                } finally {
+                  setFindLoading(false);
+                }
+              }}
+              className={clsx(
+                "w-full py-3 rounded-lg font-semibold transition-colors shadow-lg",
+                findLoading || (!findQuery.trim() && f.categories.size === 0 && !findState)
+                  ? "bg-white/30 text-white/60 cursor-not-allowed"
+                  : "bg-white text-[#30558C] hover:bg-white/90"
+              )}
+            >
+              {findLoading ? "Searching..." : "Search"}
+            </button>
+          </div>
+        </div>
+        )}
+
         {/* Map View */}
         <div
           className={clsx(
             "card rounded-lg md:rounded-2xl p-0 md:p-4",
-            f.viewMode !== "map" && "invisible absolute pointer-events-none"
+            f.viewMode !== "map" && "hidden"
           )}
         >
           <USMap
@@ -1488,12 +1836,8 @@ export default function Page() {
         {/* Table View */}
         <div
           className={clsx(
-            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out w-fit max-w-full",
-            f.viewMode !== "map" && f.viewMode !== "tracker"
-              ? "translate-x-0 opacity-100"
-              : f.viewMode === "tracker"
-                ? "-translate-x-full opacity-0 absolute inset-0 pointer-events-none" // Scorecard is LEFT of Tracker
-                : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"  // Scorecard is RIGHT of Map
+            "card rounded-lg md:rounded-2xl overflow-visible w-fit max-w-full",
+            (f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "find") && "hidden"
           )}
         >
           <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
@@ -2569,10 +2913,8 @@ export default function Page() {
         {/* Tracker View */}
         <div
           className={clsx(
-            "card rounded-lg md:rounded-2xl overflow-visible transition-all duration-500 ease-in-out",
-            f.viewMode === "tracker"
-              ? "translate-x-0 opacity-100"
-              : "translate-x-full opacity-0 absolute inset-0 pointer-events-none"
+            "card rounded-lg md:rounded-2xl overflow-visible",
+            f.viewMode !== "tracker" && "hidden"
           )}
         >
           {/* Bill search indicator */}
@@ -3311,10 +3653,8 @@ export default function Page() {
   );
 }
 
-function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null> }) {
+function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef, rows, cols }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null>; rows: Row[]; cols: string[] }) {
   const f = useFilters();
-  // Default to collapsed/inactive state
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Territories without senators
   const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
@@ -3328,382 +3668,303 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
       return;
     }
 
-    // Category grades, AIPAC, and Partisan selections work with any chamber
-    // Just switch to House by default if currently on "All"
+    // Partisan with "Both" shows 2024 Presidential map - don't auto-switch
+    if (selection === '__PARTISAN__') {
+      // Allow "Both" to stay selected for presidential map
+      return;
+    }
+
+    // Category grades and AIPAC selections work with any chamber
+    // Just switch to House by default if currently on "Both"
     if (!f.chamber) {
       f.set({ chamber: 'HOUSE' });
     }
   };
 
-  return (
-    <div className="mb-1 space-y-2">
-      {/* First row: Filter + State selector + Search */}
-      <div className="flex flex-wrap items-center gap-2 px-2 md:px-0">
-        {/* Filter button - Desktop, all modes */}
-        {(() => {
-          // Categories don't affect filter button in scorecard/tracker view
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
-
-          return (
-            <button
+  // Map view filters
+  if (f.viewMode === "map") {
+    return (
+      <div className="mb-1 px-2 md:px-0">
+        <div className="flex items-end gap-2 overflow-x-auto pb-1">
+          {/* Chamber - Mobile dropdown */}
+          <div className="flex flex-col gap-0.5 flex-shrink-0 md:hidden">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+            <select
               className={clsx(
-                "hidden md:flex items-center justify-center p-2 h-9 w-9 rounded-md border transition-colors",
-                filtersExpanded
-                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
-                  : hasActiveFilters
-                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
-                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
+                "select !text-xs !h-8 !px-2 !cursor-pointer",
+                f.chamber
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
               )}
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              title="Toggle filters"
+              value={f.chamber}
+              onChange={(e) => f.set({ chamber: e.target.value as any })}
             >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
-              </svg>
-            </button>
-          );
-        })()}
+              <option value="" disabled={!!selectedMapBill && selectedMapBill !== '__PARTISAN__'}>
+                {selectedMapBill === '__PARTISAN__' ? 'President' : 'Both'}
+              </option>
+              <option value="HOUSE">House</option>
+              <option value="SENATE">Senate</option>
+            </select>
+          </div>
 
-        {/* Filter button - mobile only, all modes */}
-        {(() => {
-          // Categories don't affect filter button in scorecard/tracker view
-          const hasActiveFilters = f.chamber || (f.viewMode !== "tracker" && f.party);
-
-          return (
-            <button
-              className={clsx(
-                "md:hidden p-2 h-9 w-9 rounded-md flex items-center justify-center border transition-colors",
-                filtersExpanded
-                  ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
-                  : hasActiveFilters
-                  ? "bg-[#93c5fd] text-slate-900 border-[#93c5fd] hover:bg-[#7db8f9]"
-                  : "bg-white dark:bg-white/5 border-[#E7ECF2] dark:border-slate-900 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300"
-              )}
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-              title="Filters"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path d="M3 3h14a1 1 0 011 1v1.5l-5.5 6v4l-3 1.5v-5.5l-5.5-6V4a1 1 0 011-1z" />
-              </svg>
-            </button>
-          );
-        })()}
-
-        {/* Search + State selector - centered together */}
-        <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2">
-            <UnifiedSearch
-              filteredCount={filteredCount}
-              metaByCol={metaByCol}
-              isMapView={f.viewMode === "map"}
-              isTrackerView={f.viewMode === "tracker"}
+          {/* Chamber - Desktop Segmented */}
+          <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+            <Segmented
+              options={selectedMapBill === '__PARTISAN__' ? ["President", "House","Senate"] : ["Both", "House","Senate"]}
+              value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : (selectedMapBill === '__PARTISAN__' ? "President" : "Both")}
+              onChange={(v)=>{
+                if (v === "Both" || v === "President") {
+                  f.set({ chamber: "" });
+                } else {
+                  f.set({ chamber: v.toUpperCase() as any });
+                }
+              }}
+              disabledOptions={(() => {
+                const disabled: string[] = [];
+                // Disable "Both" for all map selections except Partisan (which shows presidential map)
+                if (selectedMapBill && selectedMapBill !== '__PARTISAN__') {
+                  disabled.push("Both");
+                }
+                return disabled;
+              })()}
             />
+          </div>
 
-            {/* State selector - Desktop (for Map and Scorecard views) */}
-            {f.viewMode !== "tracker" && (
-              <div className="hidden md:flex items-center gap-1">
-                <select
-                  className={clsx(
-                    "select !text-sm !h-9 !px-2 !max-w-[140px] !cursor-pointer",
-                    f.state
-                      ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
-                      : ""
-                  )}
-                  value={f.state || ""}
-                  onChange={(e) => {
-                    const selectedState = e.target.value;
-                    // If in map view and selecting a state, go to scorecard with that state filter
-                    if (f.viewMode === "map" && selectedState) {
-                      // If selecting a territory without senate, automatically switch to House
-                      if (territoriesWithoutSenate.includes(selectedState)) {
-                        f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
-                      } else {
-                        f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
-                      }
-                      setSortCol("__district");
-                      setSortDir("GOOD_FIRST");
-                    } else {
-                      // Otherwise just set the state filter
-                      if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                        f.set({ state: selectedState, chamber: "HOUSE" });
-                      } else {
-                        f.set({ state: selectedState });
-                      }
-                    }
-                    // Scroll table to top when state is selected (with delay to let React re-render)
-                    if (selectedState && tableScrollRef.current) {
-                      setTimeout(() => {
-                        tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 50);
-                    }
-                  }}
-                >
-                  <option value="">State</option>
-                  {STATES.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                {f.state && (
-                  <button
-                    onClick={() => f.set({ state: "" })}
-                    className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
-                    title="Clear state filter"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* State selector - Mobile (for Map and Scorecard views) */}
-            {f.viewMode !== "tracker" && (
-              <div className="md:hidden flex items-center gap-1">
-                <select
-                  className={clsx(
-                    "select !text-xs !h-9 !px-2 !max-w-[100px] !cursor-pointer",
-                    "!appearance-none !bg-none",
-                    f.state
-                      ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
-                      : ""
-                  )}
-                  style={{
-                    backgroundImage: 'none',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                  } as React.CSSProperties}
-                  value={f.state || ""}
-                  onChange={(e) => {
-                    const selectedState = e.target.value;
-                    // If in map view and selecting a state, go to scorecard with that state filter
-                    if (f.viewMode === "map" && selectedState) {
-                      // If selecting a territory without senate, automatically switch to House
-                      if (territoriesWithoutSenate.includes(selectedState)) {
-                        f.set({ state: selectedState, chamber: "HOUSE", viewMode: "summary" });
-                      } else {
-                        f.set({ state: selectedState, viewMode: "summary", chamber: f.chamber === "SENATE" ? "SENATE" : "" });
-                      }
-                      setSortCol("__district");
-                      setSortDir("GOOD_FIRST");
-                    } else {
-                      // Otherwise just set the state filter
-                      if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
-                        f.set({ state: selectedState, chamber: "HOUSE" });
-                      } else {
-                        f.set({ state: selectedState });
-                      }
-                    }
-                    // Scroll table to top when state is selected (with delay to let React re-render)
-                    if (selectedState && tableScrollRef.current) {
-                      setTimeout(() => {
-                        tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                      }, 50);
-                    }
-                  }}
-                >
-                  <option value="">State</option>
-                  {STATES.map((s) => (
-                    <option key={s.code} value={s.code}>
-                      {s.code}
-                    </option>
-                  ))}
-                </select>
-                {f.state && (
-                  <button
-                    onClick={() => f.set({ state: "" })}
-                    className="p-1 h-9 w-9 rounded-md flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
-                    title="Clear state filter"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
+          {/* Map selector for map view */}
+          <div className="flex flex-col gap-0.5 flex-shrink-0">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Map</span>
+            <select
+              className="select !text-xs !h-8 !px-2 max-w-[200px]"
+              value={selectedMapBill}
+              onChange={(e) => handleBillSelect(e.target.value)}
+            >
+              <option value="">Overall Grade</option>
+              <option value="__PARTISAN__">Partisan</option>
+              <option value="__AIPAC__">AIPAC & DMFI Support</option>
+              <optgroup label="Category Grades">
+                <option value="Grade_Iran">Iran</option>
+                <option value="Grade_Israel_Gaza">Israel-Gaza</option>
+                <option value="Grade_Civil_Rights_Immigration">Civil Rights & Immigration</option>
+              </optgroup>
+            </select>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Second row: Category filter buttons - Only visible when filters expanded, hide in map mode */}
-      {f.viewMode !== "map" && filtersExpanded && (
-        <div className="flex items-center gap-2 px-2 md:px-0">
-          {/* Issues filter with label */}
-          <div className="flex flex-col gap-0.5">
+  // Tracker view filters
+  if (f.viewMode === "tracker") {
+    return (
+      <div className="mb-1 px-2 md:px-0 space-y-1">
+        {/* Row 1: Chamber + Search (mobile) / Issues + Chamber + Search (desktop) */}
+        <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1">
+          {/* Issues dropdown - Desktop only on first row */}
+          <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
-            <div className="flex items-center flex-wrap gap-1 md:gap-1 px-1.5 md:px-2 py-1 md:py-1 rounded-lg border border-slate-200 dark:border-slate-900 bg-white dark:bg-white/5">
-            {/* Individual issue buttons - bright blue when active */}
-            <button
-              onClick={() => {
-                // Toggle: if already selected, go back to summary/all view
-                if (f.categories.has("Civil Rights & Immigration")) {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
+            <select
+              className={clsx(
+                "select !text-xs !h-8 !px-2 !cursor-pointer",
+                f.categories.size > 0
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
+              )}
+              value={f.categories.size > 0 ? Array.from(f.categories)[0] : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  f.set({ categories: new Set([val]) });
                 } else {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Civil Rights & Immigration"]) });
+                  f.set({ categories: new Set() });
                 }
               }}
-              className={clsx(
-                "px-2.5 md:px-2 py-1.5 md:py-0 md:h-7 rounded-md text-xs md:text-sm leading-tight text-center flex items-center gap-1",
-                f.categories.has("Civil Rights & Immigration")
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
-              )}
             >
-              <span>Civil Rights &<br className="md:hidden" /> Immigration</span>
-              {f.categories.has("Civil Rights & Immigration") && (
-                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                // Toggle: if already selected, go back to summary/all view
-                if (f.categories.has("Iran")) {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
-                } else {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Iran"]) });
-                }
-              }}
+              <option value="">All Issues</option>
+              <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
+              <option value="Iran">Iran</option>
+              <option value="Israel-Gaza">Israel-Gaza</option>
+            </select>
+          </div>
+
+          {/* Chamber - Mobile dropdown */}
+          <div className="flex flex-col gap-0.5 flex-shrink-0 md:hidden">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+            <select
               className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
-                f.categories.has("Iran")
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
+                "select !text-xs !h-8 !px-2 !cursor-pointer",
+                f.chamber
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
               )}
+              value={f.chamber}
+              onChange={(e) => f.set({ chamber: e.target.value as any })}
             >
-              <span>Iran</span>
-              {f.categories.has("Iran") && (
-                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                // Toggle: if already selected, go back to summary/all view
-                if (f.categories.has("Israel-Gaza")) {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "summary", categories: new Set() });
-                } else {
-                  f.set({ viewMode: f.viewMode === "tracker" ? "tracker" : "category", categories: new Set(["Israel-Gaza"]) });
-                }
-              }}
-              className={clsx(
-                "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
-                f.categories.has("Israel-Gaza")
-                  ? "bg-[#4B8CFB] text-white"
-                  : "hover:bg-slate-50 dark:hover:bg-white/10"
-              )}
-            >
-              <span>Israel-Gaza</span>
-              {f.categories.has("Israel-Gaza") && (
-                <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              )}
-            </button>
-            {/* Hide AIPAC filter on tracker view */}
-            {f.viewMode !== "tracker" && (
+              <option value="">Both</option>
+              <option value="HOUSE">House</option>
+              <option value="SENATE">Senate</option>
+            </select>
+          </div>
+
+          {/* Chamber - Desktop buttons */}
+          <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+            <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
               <button
-                onClick={() => {
-                  // Toggle: if already selected, go back to summary view
-                  if (f.categories.has("AIPAC") && f.viewMode === "category") {
-                    f.set({ viewMode: "summary", categories: new Set() });
-                  } else {
-                    f.set({ viewMode: "category", categories: new Set(["AIPAC"]) });
-                  }
-                }}
+                onClick={() => f.set({ chamber: "" })}
                 className={clsx(
-                  "px-2 md:px-2 h-7 md:h-7 rounded-md text-xs md:text-sm whitespace-nowrap flex items-center gap-1",
-                  f.categories.has("AIPAC") && f.viewMode === "category"
+                  "px-2 h-6 rounded-md text-xs",
+                  !f.chamber
                     ? "bg-[#4B8CFB] text-white"
                     : "hover:bg-slate-50 dark:hover:bg-white/10"
                 )}
               >
-                <span>AIPAC</span>
-                {f.categories.has("AIPAC") && f.viewMode === "category" && (
-                  <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                  </svg>
-                )}
+                Both
               </button>
-            )}
+              <button
+                onClick={() => f.set({ chamber: "HOUSE" })}
+                className={clsx(
+                  "px-2 h-6 rounded-md text-xs",
+                  f.chamber === "HOUSE"
+                    ? "bg-[#4B8CFB] text-white"
+                    : "hover:bg-slate-50 dark:hover:bg-white/10"
+                )}
+              >
+                House
+              </button>
+              <button
+                onClick={() => f.set({ chamber: "SENATE" })}
+                className={clsx(
+                  "px-2 h-6 rounded-md text-xs",
+                  f.chamber === "SENATE"
+                    ? "bg-[#4B8CFB] text-white"
+                    : "hover:bg-slate-50 dark:hover:bg-white/10"
+                )}
+              >
+                Senate
+              </button>
+            </div>
+          </div>
+
+          {/* Search button - pushed to far right */}
+          <div className="flex-1 flex justify-end">
+            <div className="flex flex-col gap-0.5 flex-shrink-0">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Search</span>
+              <UnifiedSearch
+                filteredCount={filteredCount}
+                metaByCol={metaByCol}
+                isMapView={false}
+                isTrackerView={true}
+                rows={rows}
+                cols={cols}
+              />
             </div>
           </div>
         </div>
-      )}
 
-      {/* Third row: Map view - chamber filter and bill selector */}
-      {f.viewMode === "map" && filtersExpanded && (
-        <div className="flex items-center gap-3 px-2 md:px-0">
-          <Segmented
-            options={["All", "House","Senate"]}
-            value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
-            onChange={(v)=>{
-              if (v === "All") {
-                f.set({ chamber: "" });
+        {/* Row 2: Issues dropdown - Mobile only */}
+        <div className="flex md:hidden items-end gap-2">
+          <div className="flex flex-col gap-0.5 flex-1">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
+            <select
+              className={clsx(
+                "select !text-xs !h-8 !px-2 !cursor-pointer w-full",
+                f.categories.size > 0
+                  ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                  : ""
+              )}
+              value={f.categories.size > 0 ? Array.from(f.categories)[0] : ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  f.set({ categories: new Set([val]) });
+                } else {
+                  f.set({ categories: new Set() });
+                }
+              }}
+            >
+              <option value="">All Issues</option>
+              <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
+              <option value="Iran">Iran</option>
+              <option value="Israel-Gaza">Israel-Gaza</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Scorecard view filters - single line: Issues | Chamber | Party | State | Search
+  return (
+    <div className="mb-1 px-2 md:px-0 space-y-1">
+      {/* Row 1: Chamber + Party + State + Search (mobile) / All filters (desktop) */}
+      <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1">
+        {/* Issues dropdown - Desktop only on first row */}
+        <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer",
+              f.categories.size > 0
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.categories.size > 0 ? Array.from(f.categories)[0] : ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val) {
+                f.set({ viewMode: "category", categories: new Set([val]) });
               } else {
-                f.set({ chamber: v.toUpperCase() as any });
+                f.set({ viewMode: "summary", categories: new Set() });
               }
             }}
-            disabledOptions={(() => {
-              const disabled: string[] = [];
-              // If a special view is selected, disable "All"
-              if (selectedMapBill) {
-                disabled.push("All");
-
-                // Category grades, AIPAC, and Partisan work for both chambers - no additional restrictions
-                // Only check chamber eligibility for regular bills (which we no longer have)
-              }
-              return disabled;
-            })()}
-          />
-
-          {/* Bill selector for map view */}
-          <select
-            className="select !text-xs !h-9 !px-2 max-w-[200px]"
-            value={selectedMapBill}
-            onChange={(e) => handleBillSelect(e.target.value)}
           >
-            <option value="">Overall Grade</option>
-            <option value="__PARTISAN__">Partisan</option>
-            <option value="__AIPAC__">AIPAC & DMFI Support</option>
-            <optgroup label="Category Grades">
-              <option value="Grade_Iran">Iran</option>
-              <option value="Grade_Israel_Gaza">Israel-Gaza</option>
-              <option value="Grade_Civil_Rights_Immigration">Civil Rights & Immigration</option>
-            </optgroup>
+            <option value="">All Issues</option>
+            <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
+            <option value="Iran">Iran</option>
+            <option value="Israel-Gaza">Israel-Gaza</option>
+            <option value="AIPAC">AIPAC</option>
           </select>
         </div>
-      )}
 
-      {/* Third row: Scorecard view - Filters */}
-      {f.viewMode !== "map" && filtersExpanded && (
-      <div className="relative flex items-center gap-2 px-2 md:px-0">
-        {/* Chamber filter with label */}
-        <div className="flex flex-col gap-0.5">
+        {/* Chamber - Mobile dropdown */}
+        <div className="flex flex-col gap-0.5 flex-1 md:hidden">
           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
-          <div className="flex items-center gap-1.5">
-            {/* Mobile: Chamber buttons (with All option) */}
-            <div className="md:hidden inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer w-full",
+              f.chamber
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.chamber}
+            onChange={(e) => f.set({ chamber: e.target.value as any })}
+          >
+            <option value="">Both</option>
+            <option value="HOUSE">House</option>
+            <option value="SENATE">Senate</option>
+          </select>
+        </div>
+
+        {/* Chamber - Desktop buttons */}
+        <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
+          <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5">
             <button
               onClick={() => f.set({ chamber: "" })}
               className={clsx(
-                "px-1.5 h-6 rounded-md text-[10px]",
+                "px-2 h-6 rounded-md text-xs",
                 !f.chamber
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
               )}
             >
-              All
+              Both
             </button>
             <button
               onClick={() => f.set({ chamber: "HOUSE" })}
               className={clsx(
-                "px-1.5 h-6 rounded-md text-[10px]",
+                "px-2 h-6 rounded-md text-xs",
                 f.chamber === "HOUSE"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3714,7 +3975,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
             <button
               onClick={() => f.set({ chamber: "SENATE" })}
               className={clsx(
-                "px-1.5 h-6 rounded-md text-[10px]",
+                "px-2 h-6 rounded-md text-xs",
                 f.chamber === "SENATE"
                   ? "bg-[#4B8CFB] text-white"
                   : "hover:bg-slate-50 dark:hover:bg-white/10"
@@ -3723,77 +3984,178 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               Senate
             </button>
           </div>
+        </div>
 
-          {/* Desktop: Segmented with All option */}
-          <div className="hidden md:block">
-            <Segmented
-              options={["All", "House","Senate"]}
-              value={f.chamber ? (f.chamber.charAt(0) + f.chamber.slice(1).toLowerCase()) : "All"}
-              onChange={(v)=>{
-                if (v === "All") {
-                  f.set({ chamber: "" });
-                } else {
-                  f.set({ chamber: v.toUpperCase() as any });
-                }
-              }}
-            />
-          </div>
+        {/* Party - Mobile dropdown */}
+        <div className="flex flex-col gap-0.5 flex-1 md:hidden">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Party</span>
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer w-full",
+              f.party
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.party}
+            onChange={(e) => f.set({ party: e.target.value })}
+          >
+            <option value="">All</option>
+            <option value="Democratic">Dem</option>
+            <option value="Republican">Rep</option>
+          </select>
+        </div>
+
+        {/* Party - Desktop buttons */}
+        <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Party</span>
+          <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
+            <button
+              onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
+              className={clsx(
+                "w-6 h-6 rounded-md text-xs font-bold transition-colors",
+                f.party === "Democratic"
+                  ? "text-white"
+                  : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+              )}
+              style={f.party === "Democratic" ? { backgroundColor: "#2563EB" } : undefined}
+              title="Democratic (includes Independents)"
+            >
+              D
+            </button>
+            <button
+              onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
+              className={clsx(
+                "w-6 h-6 rounded-md text-xs font-bold transition-colors",
+                f.party === "Republican"
+                  ? "text-white"
+                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
+              )}
+              style={f.party === "Republican" ? { backgroundColor: "#DC2626" } : undefined}
+              title="Republican"
+            >
+              R
+            </button>
           </div>
         </div>
-        {f.viewMode !== "tracker" && (
-          /* Party filter with label */
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Party</span>
-            <div className="inline-flex rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 p-0.5 gap-0.5">
-              <button
-                onClick={() => f.set({ party: f.party === "Democratic" ? "" : "Democratic" })}
-                className={clsx(
-                  "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
-                  f.party === "Democratic"
-                    ? "text-white"
-                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                )}
-                style={f.party === "Democratic" ? { backgroundColor: "#2563EB" } : undefined}
-                title="Democratic (includes Independents)"
-              >
-                D
-              </button>
-              <button
-                onClick={() => f.set({ party: f.party === "Republican" ? "" : "Republican" })}
-                className={clsx(
-                  "w-6 h-6 rounded-md text-[10px] font-bold transition-colors",
-                  f.party === "Republican"
-                    ? "text-white"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50"
-                )}
-                style={f.party === "Republican" ? { backgroundColor: "#DC2626" } : undefined}
-                title="Republican"
-              >
-                R
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* Single X button to clear all active filters */}
-        {(f.chamber || (f.viewMode !== "tracker" && f.party)) && (
-          <button
-            onClick={() => f.set({ chamber: "", party: "" })}
-            className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-600 dark:bg-slate-500 text-white hover:bg-slate-700 dark:hover:bg-slate-600"
-            title="Clear filters"
+        {/* State - Mobile (abbreviations) */}
+        <div className="flex flex-col gap-0.5 flex-1 md:hidden">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">State</span>
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer w-full",
+              f.state
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+              if (selectedState && tableScrollRef.current) {
+                setTimeout(() => {
+                  tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 50);
+              }
+            }}
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        )}
+            <option value="">All</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.code}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* State - Desktop (full names) */}
+        <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">State</span>
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer",
+              f.state
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.state || ""}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              if (selectedState && territoriesWithoutSenate.includes(selectedState)) {
+                f.set({ state: selectedState, chamber: "HOUSE" });
+              } else {
+                f.set({ state: selectedState });
+              }
+              if (selectedState && tableScrollRef.current) {
+                setTimeout(() => {
+                  tableScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 50);
+              }
+            }}
+          >
+            <option value="">All</option>
+            {STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Search button - pushed to far right */}
+        <div className="flex-1 flex justify-end">
+          <div className="flex flex-col gap-0.5 flex-shrink-0">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Search</span>
+            <UnifiedSearch
+              filteredCount={filteredCount}
+              metaByCol={metaByCol}
+              isMapView={false}
+              isTrackerView={false}
+              rows={rows}
+              cols={cols}
+            />
+          </div>
+        </div>
       </div>
-      )}
+
+      {/* Row 2: Issues dropdown - Mobile only */}
+      <div className="flex md:hidden items-end gap-2">
+        <div className="flex flex-col gap-0.5 flex-1">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
+          <select
+            className={clsx(
+              "select !text-xs !h-8 !px-2 !cursor-pointer w-full",
+              f.categories.size > 0
+                ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
+                : ""
+            )}
+            value={f.categories.size > 0 ? Array.from(f.categories)[0] : ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val) {
+                f.set({ viewMode: "category", categories: new Set([val]) });
+              } else {
+                f.set({ viewMode: "summary", categories: new Set() });
+              }
+            }}
+          >
+            <option value="">All Issues</option>
+            <option value="Civil Rights & Immigration">Civil Rights & Immigration</option>
+            <option value="Iran">Iran</option>
+            <option value="Israel-Gaza">Israel-Gaza</option>
+            <option value="AIPAC">AIPAC</option>
+          </select>
+        </div>
+      </div>
     </div>
   );
 }
 
-function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = false }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean; isTrackerView?: boolean }) {
+function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = false, rows, cols }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean; isTrackerView?: boolean; rows: Row[]; cols: string[] }) {
   const f = useFilters();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -3803,6 +4165,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showDropdown, setShowDropdown] = useState(true);
 
   // Update search type when view mode changes
   useEffect(() => {
@@ -3951,18 +4314,21 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
         </button>
       ) : (
         <button
-          className="h-9 px-3 min-w-[180px] rounded-full border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 text-sm hover:bg-slate-50 dark:hover:bg-white/10 flex items-center justify-center gap-1"
+          className="h-8 w-8 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 flex items-center justify-center"
           onClick={() => setIsOpen(!isOpen)}
+          title={isTrackerView ? "Find a bill" : "Find your lawmakers"}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span>{isTrackerView ? "Find a bill ..." : "Find your lawmakers"}</span>
         </button>
       )}
 
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-slate-900 rounded-lg shadow-lg p-4 min-w-[300px]">
+        <>
+          {/* Backdrop to close on click outside */}
+          <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setIsOpen(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white dark:bg-slate-800 border border-[#E7ECF2] dark:border-slate-900 rounded-lg shadow-2xl p-4 w-[90vw] max-w-[340px]">
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium mb-1 text-slate-700 dark:text-slate-300">
@@ -4005,17 +4371,88 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
               </div>
             </div>
 
-            <div>
+            <div className="relative">
               <input
                 type="text"
                 placeholder={getPlaceholder()}
                 className="input !w-full"
                 value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onChange={(e) => { setSearchValue(e.target.value); setShowDropdown(true); }}
+                onFocus={() => setShowDropdown(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { setShowDropdown(false); handleSearch(); } }}
                 disabled={loading}
                 autoFocus
               />
+              {/* Name Autocomplete */}
+              {showDropdown && searchType === "name" && searchValue.trim().length >= 2 && (() => {
+                const query = searchValue.toLowerCase();
+                const matches = rows
+                  .filter(r => {
+                    const name = String(r.full_name || "").toLowerCase();
+                    return name.includes(query);
+                  })
+                  .slice(0, 5);
+                if (matches.length === 0) return null;
+                return (
+                  <>
+                    <div className="fixed inset-0 z-[45]" onClick={() => setShowDropdown(false)} />
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-600">
+                      {matches.map((member, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setSearchValue(String(member.full_name || ""));
+                            setShowDropdown(false);
+                            handleSearch();
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
+                        >
+                          <span className="text-slate-800 dark:text-slate-200 font-medium">{String(member.full_name || "")}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-xs ml-2">
+                            ({member.party === "Democratic" ? "D" : member.party === "Republican" ? "R" : "I"}) {member.state}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+              {/* Bill Autocomplete */}
+              {showDropdown && searchType === "legislation" && searchValue.trim().length >= 2 && (() => {
+                const query = searchValue.toLowerCase();
+                const matches = cols
+                  .map(col => ({ col, meta: metaByCol.get(col) }))
+                  .filter(({ col, meta }) => {
+                    if (!meta) return false;
+                    const displayName = (meta.display_name || "").toLowerCase();
+                    const colLower = col.toLowerCase();
+                    return displayName.includes(query) || colLower.includes(query);
+                  })
+                  .slice(0, 5);
+                if (matches.length === 0) return null;
+                return (
+                  <>
+                    <div className="fixed inset-0 z-[45]" onClick={() => setShowDropdown(false)} />
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-600">
+                      {matches.map(({ col, meta }, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setSearchValue(meta?.display_name || col);
+                            setShowDropdown(false);
+                            handleSearch();
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-0"
+                        >
+                          <span className="text-slate-800 dark:text-slate-200 font-medium block text-xs">{meta?.display_name || col}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {error && (
@@ -4045,6 +4482,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
             </div>
           </div>
         </div>
+        </>
       )}
     </div>
   );

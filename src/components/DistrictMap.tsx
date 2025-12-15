@@ -37,6 +37,22 @@ const stateNameMapping: Record<string, string> = {
   'DC': 'District of Columbia'
 };
 
+// 2024 Presidential Election Results by State
+// 'R' = Trump won, 'D' = Harris won
+const presidential2024Results: Record<string, 'R' | 'D'> = {
+  'AL': 'R', 'AK': 'R', 'AZ': 'R', 'AR': 'R', 'CA': 'D',
+  'CO': 'D', 'CT': 'D', 'DE': 'D', 'DC': 'D', 'FL': 'R',
+  'GA': 'R', 'HI': 'D', 'ID': 'R', 'IL': 'D', 'IN': 'R',
+  'IA': 'R', 'KS': 'R', 'KY': 'R', 'LA': 'R', 'ME': 'D',
+  'MD': 'D', 'MA': 'D', 'MI': 'R', 'MN': 'D', 'MS': 'R',
+  'MO': 'R', 'MT': 'R', 'NE': 'R', 'NV': 'R', 'NH': 'D',
+  'NJ': 'D', 'NM': 'D', 'NY': 'D', 'NC': 'R', 'ND': 'R',
+  'OH': 'R', 'OK': 'R', 'OR': 'D', 'PA': 'R', 'RI': 'D',
+  'SC': 'R', 'SD': 'R', 'TN': 'R', 'TX': 'R', 'UT': 'R',
+  'VT': 'D', 'VA': 'D', 'WA': 'D', 'WV': 'R', 'WI': 'R',
+  'WY': 'R'
+};
+
 // Centralized grade calculation - single source of truth
 function calculateStateAverageGrades(
   members: Row[],
@@ -326,6 +342,45 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
     // Handle Partisan special case
     if (selectedBillColumn === '__PARTISAN__') {
+      // If no chamber selected (Both), show 2024 Presidential Election map
+      if (!chamber) {
+        const stateActions: Record<string, { republican: number; democrat: number; other: number }> = {};
+        let trumpStates = 0;
+        let harrisStates = 0;
+
+        // Build state actions from presidential results
+        Object.entries(presidential2024Results).forEach(([state, winner]) => {
+          if (winner === 'R') {
+            stateActions[state] = { republican: 2, democrat: 0, other: 0 };
+            trumpStates++;
+          } else {
+            stateActions[state] = { republican: 0, democrat: 2, other: 0 };
+            harrisStates++;
+          }
+        });
+
+        return {
+          districtActions: {},
+          stateActions,
+          goodLabel: 'Harris',
+          badLabel: 'Trump',
+          neutralLabel: '',
+          goodValue: 1,
+          stats: {
+            houseGood: 0,
+            houseBad: 0,
+            houseNeutral: 0,
+            senateBothGood: harrisStates,
+            senateSplit: 0,
+            senateBothBad: trumpStates
+          },
+          meta: { display_name: '2024 Presidential Election' } as Meta,
+          effectiveChamber: 'SENATE' as 'HOUSE' | 'SENATE',
+          isPartisan: true,
+          isPresidential: true
+        };
+      }
+
       const districtActions: Record<string, 'good' | 'bad' | 'neutral'> = {};
       const stateActions: Record<string, { republican: number; democrat: number; other: number }> = {};
       let houseRepublican = 0;
@@ -1156,7 +1211,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
               if (isGradeView) {
                 // Grade view: action is a grade letter (A, B, C, D, F)
-                color = GRADE_COLOR_MAP[action] || '#9ca3af'; // gray for unknown grades
+                color = GRADE_COLOR_MAP[action as keyof typeof GRADE_COLOR_MAP] || '#9ca3af'; // gray for unknown grades
               } else if (action === 'good') {
                 // Democrat blue or "good" action green
                 color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
@@ -2388,7 +2443,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
             if (isGradeView) {
               // Grade view: action is a grade letter (A, B, C, D, F)
-              color = GRADE_COLOR_MAP[action] || '#9ca3af'; // gray for unknown grades
+              color = GRADE_COLOR_MAP[action as keyof typeof GRADE_COLOR_MAP] || '#9ca3af'; // gray for unknown grades
             } else if (action === 'good') {
               color = isPartisanView ? '#2563eb' : GRADE_COLORS.A;
             } else if (action === 'bad') {
@@ -2642,18 +2697,36 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 <>
                   {billActionData.effectiveChamber === 'SENATE' ? (
                     <>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
-                        <span>Both: {billActionData.goodLabel} ({billActionData.stats.senateBothGood})</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#9333ea' : GRADE_COLORS.C }} />
-                        <span>Split ({billActionData.stats.senateSplit})</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
-                        <span>Both: {billActionData.badLabel} ({billActionData.stats.senateBothBad})</span>
-                      </div>
+                      {/* Check if this is presidential map (no "Both:" prefix, no "Split" row) */}
+                      {'isPresidential' in billActionData && billActionData.isPresidential ? (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#2563eb' }} />
+                            <span>{billActionData.goodLabel} ({billActionData.stats.senateBothGood} states)</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#dc2626' }} />
+                            <span>{billActionData.badLabel} ({billActionData.stats.senateBothBad} states)</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
+                            <span>Both: {billActionData.goodLabel} ({billActionData.stats.senateBothGood})</span>
+                          </div>
+                          {(billActionData.stats.senateSplit ?? 0) > 0 && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#9333ea' : GRADE_COLORS.C }} />
+                              <span>Split ({billActionData.stats.senateSplit})</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
+                            <span>Both: {billActionData.badLabel} ({billActionData.stats.senateBothBad})</span>
+                          </div>
+                        </>
+                      )}
                     </>
                   ) : (
                     <>
@@ -2661,16 +2734,12 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                         <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#2563eb' : GRADE_COLORS.A }} />
                         <span>{billActionData.goodLabel} ({billActionData.stats.houseGood})</span>
                       </div>
-                      {(() => {
-                        const stats = billActionData.stats as { houseGood: number; houseBad: number; houseNeutral?: number };
-                        const neutralLabel = 'neutralLabel' in billActionData ? (billActionData as { neutralLabel: string }).neutralLabel : 'Independent/Other';
-                        return isPartisanView && stats.houseNeutral && stats.houseNeutral > 0 && (
-                          <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
-                            <span>{neutralLabel} ({stats.houseNeutral})</span>
-                          </div>
-                        );
-                      })()}
+                      {isPartisanView && (billActionData.stats as { houseNeutral?: number }).houseNeutral && (billActionData.stats as { houseNeutral?: number }).houseNeutral! > 0 && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9333ea' }} />
+                          <span>{'neutralLabel' in billActionData ? (billActionData as { neutralLabel: string }).neutralLabel : 'Independent/Other'} ({(billActionData.stats as { houseNeutral?: number }).houseNeutral})</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: isPartisanView ? '#dc2626' : GRADE_COLORS.F }} />
                         <span>{billActionData.badLabel} ({billActionData.stats.houseBad})</span>

@@ -4,6 +4,13 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useFilters } from "@/lib/store";
 
+// Find icon (magnifying glass)
+const FindIcon = ({ active }: { active: boolean }) => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2.5 : 2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+  </svg>
+);
+
 // Map icon
 const MapIcon = ({ active }: { active: boolean }) => (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2.5 : 2}>
@@ -39,9 +46,13 @@ export default function BottomNav() {
   const isHomePage = pathname === "/";
 
   // Determine active state for home page tabs
+  const isFindActive = isHomePage && f.viewMode === "find";
   const isMapActive = isHomePage && f.viewMode === "map";
   const isScorecardActive = isHomePage && (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category");
   const isTrackerActive = isHomePage && f.viewMode === "tracker";
+
+  // Bright blue for active tabs
+  const activeColor = "text-[#4B8CFB]";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-[#E7ECF2] dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
@@ -58,12 +69,32 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
             isMapActive
-              ? "text-[#30558C]"
+              ? activeColor
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           )}
         >
           <MapIcon active={isMapActive} />
           <span className={clsx("text-[10px]", isMapActive && "font-semibold")}>Map</span>
+        </button>
+
+        {/* Find Tab */}
+        <button
+          onClick={() => {
+            if (!isHomePage) {
+              window.location.href = "/?view=find";
+            } else {
+              f.set({ viewMode: "find" });
+            }
+          }}
+          className={clsx(
+            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+            isFindActive
+              ? activeColor
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+          )}
+        >
+          <FindIcon active={isFindActive} />
+          <span className={clsx("text-[10px]", isFindActive && "font-semibold")}>Find</span>
         </button>
 
         {/* Scorecard Tab */}
@@ -78,7 +109,7 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
             isScorecardActive
-              ? "text-[#30558C]"
+              ? activeColor
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           )}
         >
@@ -98,7 +129,7 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
             isTrackerActive
-              ? "text-[#30558C]"
+              ? activeColor
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           )}
         >
