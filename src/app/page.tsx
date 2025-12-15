@@ -1410,7 +1410,7 @@ export default function Page() {
 
       <div className="flex-1 flex flex-col space-y-2 px-0 pt-2 pb-2 md:p-3">
         {f.viewMode !== "find" ? (
-          <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} rows={rows} cols={cols} />
+          <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} rows={rows} cols={cols} onSelectMember={setSelected} />
         ) : null}
       {selected && (
         <MemberModal
@@ -1758,9 +1758,19 @@ export default function Page() {
 
                 try {
                   if (findTab === "name") {
-                    // Name search - set search filter and go to scorecard
-                    f.set({ search: query, viewMode: hasCategory ? "category" : "summary" });
-                    setFindQuery("");
+                    // Name search - check how many matches
+                    const matches = rows.filter(r =>
+                      String(r.full_name || "").toLowerCase().includes(query.toLowerCase())
+                    );
+                    if (matches.length === 1) {
+                      // Single match - open member modal directly
+                      setSelected(matches[0]);
+                      setFindQuery("");
+                    } else {
+                      // Multiple matches - go to scorecard with search filter
+                      f.set({ search: query, viewMode: hasCategory ? "category" : "summary" });
+                      setFindQuery("");
+                    }
                   } else if (findTab === "location") {
                     if (query) {
                       // Location search with address - call API
@@ -3669,7 +3679,7 @@ export default function Page() {
   );
 }
 
-function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef, rows, cols }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null>; rows: Row[]; cols: string[] }) {
+function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef, rows, cols, onSelectMember }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null>; rows: Row[]; cols: string[]; onSelectMember?: (member: Row) => void }) {
   const f = useFilters();
 
   // Territories without senators
@@ -3873,6 +3883,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
                 isTrackerView={true}
                 rows={rows}
                 cols={cols}
+                onSelectMember={onSelectMember}
               />
             </div>
           </div>
@@ -4133,6 +4144,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               isTrackerView={false}
               rows={rows}
               cols={cols}
+              onSelectMember={onSelectMember}
             />
           </div>
         </div>
@@ -4171,7 +4183,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
   );
 }
 
-function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = false, rows, cols }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean; isTrackerView?: boolean; rows: Row[]; cols: string[] }) {
+function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = false, rows, cols, onSelectMember }: { filteredCount: number; metaByCol: Map<string, Meta>; isMapView: boolean; isTrackerView?: boolean; rows: Row[]; cols: string[]; onSelectMember?: (member: Row) => void }) {
   const f = useFilters();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -4291,13 +4303,23 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
     if (searchType === "zip") {
       handleZipSearch();
     } else if (searchType === "name") {
-      // If in map or tracker mode, automatically switch to summary mode when searching
-      if (f.viewMode === "map" || f.viewMode === "tracker") {
-        f.set({ search: searchValue, viewMode: "summary" });
+      // Check for single match - open modal directly
+      const matches = rows.filter(r =>
+        String(r.full_name || "").toLowerCase().includes(searchValue.toLowerCase())
+      );
+      if (matches.length === 1 && onSelectMember) {
+        onSelectMember(matches[0]);
+        setSearchValue("");
+        setIsOpen(false);
       } else {
-        f.set({ search: searchValue });
+        // Multiple matches - go to scorecard
+        if (f.viewMode === "map" || f.viewMode === "tracker") {
+          f.set({ search: searchValue, viewMode: "summary" });
+        } else {
+          f.set({ search: searchValue });
+        }
+        setIsOpen(false);
       }
-      setIsOpen(false);
     } else if (searchType === "legislation") {
       handleBillSearch();
     }
