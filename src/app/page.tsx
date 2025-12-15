@@ -3719,7 +3719,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
             <select
               className={clsx(
-                "select !text-xs !h-8 !px-2 !cursor-pointer",
+                "select !text-xs !h-8 !pl-2 !pr-6 !cursor-pointer",
                 f.chamber
                   ? "!bg-[#4B8CFB] !text-white !border-[#4B8CFB]"
                   : ""
