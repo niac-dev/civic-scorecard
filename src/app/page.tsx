@@ -1468,14 +1468,14 @@ export default function Page() {
         {/* Find View */}
         {f.viewMode === "find" && (
         <div
-          className="rounded-lg md:rounded-2xl overflow-hidden relative flex-1 flex flex-col"
+          className="overflow-hidden relative flex-1 flex flex-col"
         >
           {/* Capitol Background */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat rounded-lg md:rounded-2xl"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: "url('/capitol-bg.jpg')" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 rounded-lg md:rounded-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
 
           <div className="relative p-4 md:p-6 max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
             {/* Big Heading */}
