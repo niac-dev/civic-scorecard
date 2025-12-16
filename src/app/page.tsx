@@ -450,6 +450,18 @@ export default function Page() {
   const [findError, setFindError] = useState("");
   const [showFindDropdown, setShowFindDropdown] = useState(true);
 
+  // Prevent body scroll when in Find view
+  useEffect(() => {
+    if (f.viewMode === "find") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [f.viewMode]);
+
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -1391,7 +1403,7 @@ export default function Page() {
   }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className={`flex flex-col h-[100dvh] ${f.viewMode === "find" ? "overflow-hidden" : ""}`}>
       {/* Header Band - breaks out of max-w-7xl container */}
       <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
