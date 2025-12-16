@@ -1391,7 +1391,7 @@ export default function Page() {
   }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col h-[100dvh]">
       {/* Header Band - breaks out of max-w-7xl container */}
       <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
@@ -1408,7 +1408,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col space-y-2 px-0 pt-2 pb-2 md:p-3">
+      <div className={`flex-1 flex flex-col min-h-0 ${f.viewMode === "find" ? "p-0" : "space-y-2 px-0 pt-2 pb-2 md:p-3"}`}>
         {f.viewMode !== "find" ? (
           <Filters filteredCount={sorted.length} metaByCol={metaByCol} selectedMapBill={selectedMapBill} setSelectedMapBill={setSelectedMapBill} setSortCol={setSortCol} setSortDir={setSortDir} tableScrollRef={tableScrollRef} rows={rows} cols={cols} onSelectMember={setSelected} />
         ) : null}
@@ -1452,11 +1452,11 @@ export default function Page() {
       )}
 
       {/* Views Container */}
-      <div className="relative flex-1 flex flex-col">
+      <div className="relative flex-1 flex flex-col min-h-0 pb-16">
         {/* Find View */}
         {f.viewMode === "find" && (
         <div
-          className="rounded-lg md:rounded-2xl overflow-hidden relative flex-1 flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100dvh-7.5rem)]"
+          className="rounded-lg md:rounded-2xl overflow-hidden relative flex-1 flex flex-col"
         >
           {/* Capitol Background */}
           <div
