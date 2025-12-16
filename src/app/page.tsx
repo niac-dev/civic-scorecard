@@ -1456,7 +1456,7 @@ export default function Page() {
         {/* Find View */}
         {f.viewMode === "find" && (
         <div
-          className="rounded-lg md:rounded-2xl overflow-hidden relative flex-1 flex flex-col h-[calc(100dvh-7.5rem)]"
+          className="rounded-lg md:rounded-2xl overflow-hidden relative flex-1 flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100dvh-7.5rem)]"
         >
           {/* Capitol Background */}
           <div
