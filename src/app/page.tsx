@@ -1464,7 +1464,7 @@ export default function Page() {
       )}
 
       {/* Views Container */}
-      <div className="relative flex-1 flex flex-col min-h-0 pb-16">
+      <div className="relative flex-1 flex flex-col min-h-0 pb-20">
         {/* Find View */}
         {f.viewMode === "find" && (
         <div

@@ -51,12 +51,13 @@ export default function BottomNav() {
   const isScorecardActive = isHomePage && (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category");
   const isTrackerActive = isHomePage && f.viewMode === "tracker";
 
-  // Bright blue for active tabs
-  const activeColor = "text-[#4B8CFB]";
+  // Active color - golden/amber like the reference
+  const activeColor = "text-amber-400";
+  const inactiveColor = "text-white/70";
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 border-t border-[#E7ECF2] dark:border-slate-800 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center gap-1 px-2 py-2 bg-black/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/10">
         {/* Map Tab */}
         <button
           onClick={() => {
@@ -67,14 +68,14 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+            "flex flex-col items-center justify-center px-5 py-2 rounded-full transition-all duration-200",
             isMapActive
-              ? activeColor
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white/15 " + activeColor
+              : inactiveColor + " hover:bg-white/10"
           )}
         >
           <MapIcon active={isMapActive} />
-          <span className={clsx("text-[10px]", isMapActive && "font-semibold")}>Map</span>
+          <span className={clsx("text-[10px] mt-0.5", isMapActive && "font-semibold")}>Map</span>
         </button>
 
         {/* Find Tab */}
@@ -87,14 +88,14 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+            "flex flex-col items-center justify-center px-5 py-2 rounded-full transition-all duration-200",
             isFindActive
-              ? activeColor
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white/15 " + activeColor
+              : inactiveColor + " hover:bg-white/10"
           )}
         >
           <FindIcon active={isFindActive} />
-          <span className={clsx("text-[10px]", isFindActive && "font-semibold")}>Find</span>
+          <span className={clsx("text-[10px] mt-0.5", isFindActive && "font-semibold")}>Find</span>
         </button>
 
         {/* Scorecard Tab */}
@@ -107,14 +108,14 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+            "flex flex-col items-center justify-center px-4 py-2 rounded-full transition-all duration-200",
             isScorecardActive
-              ? activeColor
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white/15 " + activeColor
+              : inactiveColor + " hover:bg-white/10"
           )}
         >
           <ScorecardIcon active={isScorecardActive} />
-          <span className={clsx("text-[10px]", isScorecardActive && "font-semibold")}>Scorecard</span>
+          <span className={clsx("text-[10px] mt-0.5", isScorecardActive && "font-semibold")}>Scorecard</span>
         </button>
 
         {/* Tracker Tab */}
@@ -127,16 +128,15 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+            "flex flex-col items-center justify-center px-4 py-2 rounded-full transition-all duration-200",
             isTrackerActive
-              ? activeColor
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              ? "bg-white/15 " + activeColor
+              : inactiveColor + " hover:bg-white/10"
           )}
         >
           <TrackerIcon active={isTrackerActive} />
-          <span className={clsx("text-[10px]", isTrackerActive && "font-semibold")}>Legislation</span>
+          <span className={clsx("text-[10px] mt-0.5", isTrackerActive && "font-semibold")}>Bills</span>
         </button>
-
       </div>
     </nav>
   );
