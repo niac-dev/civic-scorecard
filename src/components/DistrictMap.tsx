@@ -2586,7 +2586,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
 
   return (
-    <div className="relative w-full h-[400px] md:h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
+    <div className="relative w-full h-[calc(100dvh-13rem)] md:h-[600px] rounded-xl overflow-hidden border border-[#E7ECF2] dark:border-slate-900">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-[#0B1220] z-10">
           <div className="text-sm text-slate-500 dark:text-slate-400">Loading {chamber === 'SENATE' ? 'state map' : chamber === 'HOUSE' ? 'congressional districts' : 'state map'}...</div>

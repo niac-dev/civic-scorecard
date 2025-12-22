@@ -1019,8 +1019,7 @@ export default function Page() {
   }, [hasMoreRows, sorted.length]);
 
   // Scroll handler - hide tooltips while scrolling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    // Hide header tooltips while scrolling
+  const handleScroll = useCallback(() => {
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
@@ -1874,7 +1873,7 @@ export default function Page() {
         {/* Table View */}
         <div
           className={clsx(
-            "card rounded-lg md:rounded-2xl overflow-visible w-fit max-w-full",
+            "card rounded-lg md:rounded-2xl overflow-visible w-fit max-w-full relative",
             (f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "find") && "hidden"
           )}
         >
