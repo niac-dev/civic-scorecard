@@ -1460,7 +1460,7 @@ export default function Page() {
       )}
 
       {/* Views Container */}
-      <div className="relative flex-1 flex flex-col min-h-0 pb-20">
+      <div className="relative flex-1 flex flex-col min-h-0 pb-14">
         {/* Find View */}
         {f.viewMode === "find" && (
         <div
@@ -1745,7 +1745,8 @@ export default function Page() {
               </div>
             )}
 
-            {/* Search Button */}
+            {/* Search Button - styled to match tab buttons */}
+            <div className="flex rounded-lg bg-white/20 backdrop-blur-sm p-1 w-[20%] mx-auto">
             <button
               id="find-search-btn"
               disabled={findLoading || (findTab !== "issues" && !findQuery.trim() && !findState)}
@@ -1821,14 +1822,15 @@ export default function Page() {
                 }
               }}
               className={clsx(
-                "w-full py-3 rounded-lg font-semibold transition-colors shadow-lg",
+                "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors",
                 findLoading || (findTab !== "issues" && !findQuery.trim() && !findState)
                   ? "bg-white/30 text-white/60 cursor-not-allowed"
-                  : "bg-white text-[#30558C] hover:bg-white/90"
+                  : "bg-[#4B8CFB] text-white shadow-sm hover:bg-[#3b7ce8]"
               )}
             >
               {findLoading ? "Searching..." : "Search"}
             </button>
+            </div>
           </div>
         </div>
         )}
