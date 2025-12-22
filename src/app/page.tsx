@@ -561,6 +561,18 @@ export default function Page() {
     }
   }, [f.chamber, f.party, f.state, f.search, f.myLawmakers, f.viewMode]);
 
+  // Scroll to top when switching to scorecard view
+  useEffect(() => {
+    if (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") {
+      // Scroll table container to top
+      if (tableScrollRef.current) {
+        tableScrollRef.current.scrollTo({ top: 0, left: 0 });
+      }
+      // Also scroll window to top to fix positioning when coming from Find view
+      window.scrollTo({ top: 0 });
+    }
+  }, [f.viewMode]);
+
   // Prevent horizontal scroll from navigating browser history (important for iframe embeds)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
