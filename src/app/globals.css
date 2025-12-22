@@ -61,7 +61,7 @@ html {
 .th { @apply px-3 py-2 text-[13px] md:text-[16px] font-semibold tracking-wide text-slate-800 dark:text-white; }
 .td { @apply px-3 py-1.5 md:py-3 text-sm text-slate-800 dark:text-white; }
 .select {
-  @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/15 px-3 pr-8 text-sm text-slate-900 dark:text-white appearance-none;
+  @apply h-9 rounded-lg border border-[#E7ECF2] dark:border-slate-900 bg-white dark:bg-white/15 px-3 pr-8 text-sm text-slate-900 dark:text-white appearance-none relative z-10;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;

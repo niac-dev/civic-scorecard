@@ -450,17 +450,13 @@ export default function Page() {
   const [findError, setFindError] = useState("");
   const [showFindDropdown, setShowFindDropdown] = useState(true);
 
-  // Prevent body scroll when in Find view
+  // Prevent body scroll on all views
   useEffect(() => {
-    if (f.viewMode === "find") {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [f.viewMode]);
+  }, []);
 
   // Ref for the scrollable table container
   const tableScrollRef = useRef<HTMLDivElement | null>(null);
@@ -1403,9 +1399,9 @@ export default function Page() {
   }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
 
   return (
-    <div className={`flex flex-col h-[100dvh] ${f.viewMode === "find" ? "overflow-hidden" : ""}`}>
-      {/* Header Band - breaks out of max-w-7xl container */}
-      <div className="bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+    <div className="flex flex-col h-[100dvh] overflow-hidden pt-14 md:pt-16">
+      {/* Header Band - fixed to viewport for full width */}
+      <div className="fixed top-0 left-0 right-0 bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img
@@ -1472,12 +1468,12 @@ export default function Page() {
         >
           {/* Capitol Background */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0"
             style={{ backgroundImage: "url('/capitol-bg.jpg')" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+          <div className="fixed inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 z-0" />
 
-          <div className="relative p-4 md:p-6 max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
+          <div className="relative z-10 p-4 md:p-6 max-w-xl mx-auto w-full flex-1 flex flex-col justify-center">
             {/* Big Heading */}
             <h1 className="text-2xl md:text-3xl font-bold text-center text-white mb-6 drop-shadow-lg">
               Find Your Lawmakers
@@ -3698,6 +3694,13 @@ export default function Page() {
 
 function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill, setSortCol, setSortDir, tableScrollRef, rows, cols, onSelectMember }: { filteredCount: number; metaByCol: Map<string, Meta>; selectedMapBill: string; setSelectedMapBill: (value: string) => void; setSortCol: (col: string) => void; setSortDir: (dir: "GOOD_FIRST" | "BAD_FIRST") => void; tableScrollRef: React.RefObject<HTMLDivElement | null>; rows: Row[]; cols: string[]; onSelectMember?: (member: Row) => void }) {
   const f = useFilters();
+  // Default to collapsed on mobile (< 768px)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
 
   // Territories without senators
   const territoriesWithoutSenate = ["VI", "PR", "DC", "AS", "GU", "MP"];
@@ -3727,8 +3730,30 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
   // Map view filters
   if (f.viewMode === "map") {
     return (
-      <div className="mb-1 px-2 md:px-0">
-        <div className="flex items-end gap-2 overflow-x-auto pb-1">
+      <div className="mb-1 px-2 md:px-0 relative">
+        {/* Collapse/Expand caret - fixed position */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={clsx(
+            "absolute left-0 top-0 flex items-center justify-center w-4 h-4 rounded border transition-colors z-20",
+            isCollapsed
+              ? "border-[#E7ECF2] dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
+              : "border-[#4B8CFB] bg-[#4B8CFB] hover:bg-[#3b7ce8] text-white"
+          )}
+        >
+          <svg
+            className={clsx("w-2.5 h-2.5 transition-transform", isCollapsed ? "-rotate-90" : "rotate-0")}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div className="flex items-end gap-2 overflow-x-auto pb-1 pl-6">
+        {!isCollapsed && (
+        <>
           {/* Chamber - Mobile dropdown */}
           <div className="flex flex-col gap-0.5 flex-shrink-0 md:hidden">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Chamber</span>
@@ -3792,6 +3817,8 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               </optgroup>
             </select>
           </div>
+        </>
+        )}
         </div>
       </div>
     );
@@ -3800,9 +3827,31 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
   // Tracker view filters
   if (f.viewMode === "tracker") {
     return (
-      <div className="mb-1 px-2 md:px-0 space-y-1">
+      <div className="mb-1 px-2 md:px-0 space-y-1 relative">
+        {/* Collapse/Expand caret - fixed position */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={clsx(
+            "absolute left-0 top-0 flex items-center justify-center w-4 h-4 rounded border transition-colors z-20",
+            isCollapsed
+              ? "border-[#E7ECF2] dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
+              : "border-[#4B8CFB] bg-[#4B8CFB] hover:bg-[#3b7ce8] text-white"
+          )}
+        >
+          <svg
+            className={clsx("w-2.5 h-2.5 transition-transform", isCollapsed ? "-rotate-90" : "rotate-0")}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
         {/* Row 1: Chamber + Search (mobile) / Issues + Chamber + Search (desktop) */}
-        <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1">
+        <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1 pl-6">
+        {!isCollapsed && (
+        <>
           {/* Issues dropdown - Desktop only on first row */}
           <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
@@ -3904,9 +3953,12 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               />
             </div>
           </div>
+        </>
+        )}
         </div>
 
         {/* Row 2: Issues dropdown - Mobile only */}
+        {!isCollapsed && (
         <div className="flex md:hidden items-end gap-2">
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
@@ -3934,15 +3986,38 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
             </select>
           </div>
         </div>
+        )}
       </div>
     );
   }
 
   // Scorecard view filters - single line: Issues | Chamber | Party | State | Search
   return (
-    <div className="mb-1 px-2 md:px-0 space-y-1">
+    <div className="mb-1 px-2 md:px-0 space-y-1 relative">
+      {/* Collapse/Expand caret - fixed position */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={clsx(
+          "absolute left-0 top-0 flex items-center justify-center w-4 h-4 rounded border transition-colors z-20",
+          isCollapsed
+            ? "border-[#E7ECF2] dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
+            : "border-[#4B8CFB] bg-[#4B8CFB] hover:bg-[#3b7ce8] text-white"
+        )}
+      >
+        <svg
+          className={clsx("w-2.5 h-2.5 transition-transform", isCollapsed ? "-rotate-90" : "rotate-0")}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={3}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
       {/* Row 1: Chamber + Party + State + Search (mobile) / All filters (desktop) */}
-      <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1">
+      <div className="flex items-end gap-2 md:gap-3 overflow-x-auto pb-1 pl-6">
+      {!isCollapsed && (
+      <>
         {/* Issues dropdown - Desktop only on first row */}
         <div className="hidden md:flex flex-col gap-0.5 flex-shrink-0">
           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
@@ -4165,9 +4240,12 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
             />
           </div>
         </div>
+      </>
+      )}
       </div>
 
       {/* Row 2: Issues dropdown - Mobile only */}
+      {!isCollapsed && (
       <div className="flex md:hidden items-end gap-2">
         <div className="flex flex-col gap-0.5 flex-1">
           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1">Issues</span>
@@ -4196,6 +4274,7 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
           </select>
         </div>
       </div>
+      )}
     </div>
   );
 }

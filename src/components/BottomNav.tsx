@@ -52,12 +52,12 @@ export default function BottomNav() {
   const isTrackerActive = isHomePage && f.viewMode === "tracker";
 
   // Active color - golden/amber like the reference
-  const activeColor = "text-amber-400";
-  const inactiveColor = "text-white/70";
+  const activeColor = "text-[#30558C]";
+  const inactiveColor = "text-slate-500";
 
   return (
     <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center gap-1 px-2 py-2 bg-black/80 backdrop-blur-xl rounded-full shadow-2xl border border-white/10">
+      <div className="flex items-center gap-1 px-2 py-2 bg-white/70 backdrop-blur rounded-full shadow-lg border border-[#E7ECF2]">
         {/* Map Tab */}
         <button
           onClick={() => {
@@ -70,8 +70,8 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center px-5 py-2 rounded-full transition-all duration-200",
             isMapActive
-              ? "bg-white/15 " + activeColor
-              : inactiveColor + " hover:bg-white/10"
+              ? "bg-slate-100 " + activeColor
+              : inactiveColor + " hover:bg-slate-50"
           )}
         >
           <MapIcon active={isMapActive} />
@@ -90,8 +90,8 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center px-5 py-2 rounded-full transition-all duration-200",
             isFindActive
-              ? "bg-white/15 " + activeColor
-              : inactiveColor + " hover:bg-white/10"
+              ? "bg-slate-100 " + activeColor
+              : inactiveColor + " hover:bg-slate-50"
           )}
         >
           <FindIcon active={isFindActive} />
@@ -110,8 +110,8 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center px-4 py-2 rounded-full transition-all duration-200",
             isScorecardActive
-              ? "bg-white/15 " + activeColor
-              : inactiveColor + " hover:bg-white/10"
+              ? "bg-slate-100 " + activeColor
+              : inactiveColor + " hover:bg-slate-50"
           )}
         >
           <ScorecardIcon active={isScorecardActive} />
@@ -130,8 +130,8 @@ export default function BottomNav() {
           className={clsx(
             "flex flex-col items-center justify-center px-4 py-2 rounded-full transition-all duration-200",
             isTrackerActive
-              ? "bg-white/15 " + activeColor
-              : inactiveColor + " hover:bg-white/10"
+              ? "bg-slate-100 " + activeColor
+              : inactiveColor + " hover:bg-slate-50"
           )}
         >
           <TrackerIcon active={isTrackerActive} />
