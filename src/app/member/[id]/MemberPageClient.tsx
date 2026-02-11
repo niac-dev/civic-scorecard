@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl } from "@/lib/utils";
+import { GRADE_COLORS, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl, isTrackerOnly } from "@/lib/utils";
 import { GradeChip, VoteIcon } from "@/components/GradeChip";
 import { BillModal } from "@/components/BillModal";
 import clsx from "clsx";
@@ -138,8 +138,13 @@ export default function MemberPage() {
 
       // Filter columns by chamber (don't filter by category for member page)
       // Include bills voted on in both chambers
+      // Exclude tracker_only bills (those only appear in internal tracking)
       const filtered = columns.filter((c) => {
         const m = meta.get(c);
+
+        // Filter out tracker_only bills
+        if (isTrackerOnly(m)) return false;
+
         const ch = inferChamber(m, c);
 
         // Check if voted in both chambers

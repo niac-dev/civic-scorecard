@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
 import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl, isGradeIncomplete, isTrackerOnly } from "@/lib/utils";
 import clsx from "clsx";
-import { BillMiniMap } from "@/components/BillMiniMap";
 import { VoteIcon, GradeChip } from "@/components/GradeChip";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
@@ -1078,22 +1077,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Geographic Distribution Map */}
-            {(firstSection.length > 0 || secondSection.length > 0) && (
-              <BillMiniMap
-                meta={meta}
-                column={column}
-                rows={rows}
-                firstSection={firstSection}
-                secondSection={secondSection}
-                firstIsGood={firstIsGood}
-                secondIsGood={secondIsGood}
-                firstLabel={firstLabel}
-                secondLabel={secondLabel}
-                manualScoringMeta={manualScoringMeta}
-              />
             )}
 
             {/* Notes */}
