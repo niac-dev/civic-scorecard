@@ -328,27 +328,6 @@ export default function MemberPage() {
                   </div>
                 )}
 
-                {/* Committee Assignments */}
-                {(() => {
-                  const filteredCommittees = row.committees
-                    ? row.committees.split(";")
-                        .map(c => c.trim())
-                        .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
-                    : [];
-
-                  return filteredCommittees.length > 0 ? (
-                    <div className="mb-3">
-                      <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-1">
-                        Committee Assignments
-                      </div>
-                      <div className="text-xs text-slate-700 space-y-0.5">
-                        {filteredCommittees.map((committee, idx) => (
-                          <div key={idx}>{committee}</div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
               </div>
 
               <div className="flex flex-col items-center justify-center">
@@ -412,6 +391,28 @@ export default function MemberPage() {
                 ) : null;
               })()}
             </div>
+
+            {/* Committee Assignments */}
+            {(() => {
+              const filteredCommittees = row.committees
+                ? String(row.committees).split(";")
+                    .map(c => c.trim())
+                    .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                : [];
+
+              return filteredCommittees.length > 0 ? (
+                <div className="mt-4">
+                  <div className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-1">
+                    Committee Assignments
+                  </div>
+                  <div className="text-xs text-slate-700 space-y-0.5">
+                    {filteredCommittees.map((committee, idx) => (
+                      <div key={idx}>{committee}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Scrollable Content */}
