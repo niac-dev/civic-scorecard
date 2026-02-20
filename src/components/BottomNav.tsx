@@ -32,6 +32,14 @@ const TrackerIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
+// Iran icon (peace/no war symbol)
+const IranIcon = ({ active }: { active: boolean }) => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2.5 : 2}>
+    <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v9l-5.5 5.5M12 12l5.5 5.5" />
+  </svg>
+);
+
 export default function BottomNav() {
   const pathname = usePathname();
   const f = useFilters();
@@ -44,12 +52,14 @@ export default function BottomNav() {
 
   // Check if we're on the home page
   const isHomePage = pathname === "/";
+  const isIranPage = pathname === "/iran-war-powers";
 
   // Determine active state for home page tabs
   const isFindActive = isHomePage && f.viewMode === "find";
   const isMapActive = isHomePage && f.viewMode === "map";
   const isScorecardActive = isHomePage && (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category");
   const isTrackerActive = isHomePage && f.viewMode === "tracker";
+  const isIranActive = isIranPage;
 
   // Active color - golden/amber like the reference
   const activeColor = "text-[#30558C]";
@@ -136,6 +146,22 @@ export default function BottomNav() {
         >
           <TrackerIcon active={isTrackerActive} />
           <span className={clsx("text-[10px] mt-0.5", isTrackerActive && "font-semibold")}>Bills</span>
+        </button>
+
+        {/* War Powers Tab */}
+        <button
+          onClick={() => {
+            window.location.href = "/iran-war-powers";
+          }}
+          className={clsx(
+            "flex flex-col items-center justify-center px-3 py-2 rounded-full transition-all duration-200",
+            isIranActive
+              ? "bg-slate-100 " + activeColor
+              : inactiveColor + " hover:bg-slate-50"
+          )}
+        >
+          <IranIcon active={isIranActive} />
+          <span className={clsx("text-[10px] mt-0.5 whitespace-nowrap", isIranActive && "font-semibold")}>War Powers</span>
         </button>
       </div>
     </nav>
