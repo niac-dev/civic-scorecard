@@ -54,7 +54,7 @@ let memberDataCache: MemberRow[] | null = null;
 let memberDataCacheTime = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function loadMemberData(): Promise<MemberRow[]> {
+async function loadMemberData(requestUrl?: string): Promise<MemberRow[]> {
   const now = Date.now();
   if (memberDataCache && (now - memberDataCacheTime) < CACHE_TTL) {
     return memberDataCache;
@@ -73,11 +73,17 @@ async function loadMemberData(): Promise<MemberRow[]> {
   } catch (fsError) {
     console.log('Filesystem read failed, trying HTTP fetch:', fsError);
 
-    // Fallback to HTTP fetch
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-      || process.env.NEXT_PUBLIC_BASE_URL
-      || 'http://localhost:3000';
+    // Build base URL from request URL if available, or fall back to env vars
+    let baseUrl: string;
+    if (requestUrl) {
+      const url = new URL(requestUrl);
+      baseUrl = `${url.protocol}//${url.host}`;
+    } else {
+      baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+        || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+        || process.env.NEXT_PUBLIC_BASE_URL
+        || 'http://localhost:3000';
+    }
 
     console.log('Loading member data from:', `${baseUrl}/data/scores_wide.csv`);
 
@@ -102,16 +108,16 @@ async function loadMemberData(): Promise<MemberRow[]> {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
-  return handleFindLawmakers(address);
+  return handleFindLawmakers(address, request.url);
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const address = body.address;
-  return handleFindLawmakers(address);
+  return handleFindLawmakers(address, request.url);
 }
 
-async function handleFindLawmakers(address: string | null) {
+async function handleFindLawmakers(address: string | null, requestUrl: string) {
 
   console.log('Find lawmakers API called with address:', address);
 
@@ -215,7 +221,7 @@ async function handleFindLawmakers(address: string | null) {
     console.log('District info:', { stateAbbrev, stateFips, districtNumber });
 
     // Step 3: Look up representatives AND senators from our CSV data
-    const memberData = await loadMemberData();
+    const memberData = await loadMemberData(requestUrl);
 
     // Extract lawmakers - filter House reps to exact district, include all Senators
     const lawmakers: Array<{ name: string; office: string; chamber: string }> = [];
