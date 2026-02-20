@@ -127,7 +127,7 @@ function formatMemberName(member: Row): string {
   const nameParts = (member.full_name || "").split(",");
   const lastName = nameParts[0]?.trim() || "";
   const firstName = nameParts[1]?.trim().split(" ")[0] || "";
-  const title = member.chamber === "SENATE" ? "Sen." : "Rep.";
+  const title = member.chamber === "SENATE" ? "Senator" : "Representative";
   return `${title} ${firstName} ${lastName}`;
 }
 
