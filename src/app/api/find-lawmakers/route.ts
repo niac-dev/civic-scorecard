@@ -60,22 +60,37 @@ async function loadMemberData(): Promise<MemberRow[]> {
     return memberDataCache;
   }
 
-  // Get the base URL for fetching - use multiple fallbacks for reliability
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL  // Custom env var for production URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-    || process.env.NEXT_PUBLIC_BASE_URL
-    || 'http://localhost:3000';
+  let text: string;
 
-  console.log('Loading member data from:', `${baseUrl}/data/scores_wide.csv`);
+  // Try reading from filesystem first (works in Node.js runtime)
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'public', 'data', 'scores_wide.csv');
+    console.log('Attempting to read from filesystem:', filePath);
+    text = fs.readFileSync(filePath, 'utf-8');
+    console.log('Successfully read from filesystem');
+  } catch (fsError) {
+    console.log('Filesystem read failed, trying HTTP fetch:', fsError);
 
-  const res = await fetch(`${baseUrl}/data/scores_wide.csv`, { cache: 'no-store' });
+    // Fallback to HTTP fetch
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+      || process.env.NEXT_PUBLIC_BASE_URL
+      || 'http://localhost:3000';
 
-  if (!res.ok) {
-    console.error('Failed to fetch member data:', res.status, res.statusText);
-    throw new Error(`Failed to fetch member data: ${res.status}`);
+    console.log('Loading member data from:', `${baseUrl}/data/scores_wide.csv`);
+
+    const res = await fetch(`${baseUrl}/data/scores_wide.csv`, { cache: 'no-store' });
+
+    if (!res.ok) {
+      console.error('Failed to fetch member data:', res.status, res.statusText);
+      throw new Error(`Failed to fetch member data: ${res.status}`);
+    }
+
+    text = await res.text();
   }
 
-  const text = await res.text();
   const parsed = Papa.parse<MemberRow>(text, { header: true, skipEmptyLines: true });
 
   memberDataCache = (parsed.data || []).filter(r => r.full_name && r.chamber && r.state);
