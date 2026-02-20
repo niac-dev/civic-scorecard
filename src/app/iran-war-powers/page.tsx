@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
@@ -148,6 +148,9 @@ export default function IranWarPowersPage() {
   const [chamberFilter, setChamberFilter] = useState<"" | "HOUSE" | "SENATE">("");
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Ref for scrolling to results
+  const resultsRef = useRef<HTMLDivElement>(null);
+
   // Modal state
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
 
@@ -228,6 +231,10 @@ export default function IranWarPowersPage() {
         setMyLawmakers(names);
         localStorage.setItem("niac-address", searchQuery);
         localStorage.setItem("niac-lawmakers", JSON.stringify(names));
+        // Scroll to results after a brief delay for DOM update
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
       } catch (err) {
         setSearchError(err instanceof Error ? err.message : "Failed to look up address");
       } finally {
@@ -349,6 +356,10 @@ export default function IranWarPowersPage() {
                             onClick={() => {
                               setSearchQuery(String(member.full_name || ""));
                               setShowDropdown(false);
+                              // Scroll to results
+                              setTimeout(() => {
+                                resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }, 100);
                             }}
                             className="w-full px-4 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2 border-b border-slate-100 last:border-0"
                           >
@@ -400,7 +411,7 @@ export default function IranWarPowersPage() {
       </div>
 
       {/* Results Section */}
-      <div className="p-4 space-y-4 max-w-2xl mx-auto">
+      <div ref={resultsRef} className="p-4 space-y-4 max-w-2xl mx-auto">
         {/* Chamber Filter */}
         {hasResults && (
           <div className="flex gap-2 justify-center">
