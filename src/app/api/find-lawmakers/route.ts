@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Papa from 'papaparse';
 
 // STATE FIPS code to abbreviation mapping
 const STATE_FIPS_TO_ABBREV: Record<string, string> = {
@@ -15,6 +16,63 @@ const STATE_FIPS_TO_ABBREV: Record<string, string> = {
   '56': 'WY', '60': 'AS', '66': 'GU', '69': 'MP', '72': 'PR',
   '78': 'VI'
 };
+
+// State name to abbreviation mapping
+const STATE_NAME_TO_ABBREV: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'district of columbia': 'DC', 'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI',
+  'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME',
+  'maryland': 'MD', 'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN',
+  'mississippi': 'MS', 'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE',
+  'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM',
+  'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI',
+  'south carolina': 'SC', 'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX',
+  'utah': 'UT', 'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA',
+  'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY'
+};
+
+function normalizeState(state: string): string {
+  const trimmed = state.trim();
+  // If already 2-letter code, return uppercase
+  if (trimmed.length === 2) return trimmed.toUpperCase();
+  // Try to match full name
+  return STATE_NAME_TO_ABBREV[trimmed.toLowerCase()] || trimmed.toUpperCase();
+}
+
+interface MemberRow {
+  full_name: string;
+  chamber: string;
+  state: string;
+  district?: string;
+}
+
+// Cache for member data
+let memberDataCache: MemberRow[] | null = null;
+let memberDataCacheTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function loadMemberData(): Promise<MemberRow[]> {
+  const now = Date.now();
+  if (memberDataCache && (now - memberDataCacheTime) < CACHE_TTL) {
+    return memberDataCache;
+  }
+
+  // Get the base URL for fetching
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+  const res = await fetch(`${baseUrl}/data/scores_wide.csv`, { cache: 'no-store' });
+  const text = await res.text();
+  const parsed = Papa.parse<MemberRow>(text, { header: true, skipEmptyLines: true });
+
+  memberDataCache = (parsed.data || []).filter(r => r.full_name && r.chamber && r.state);
+  memberDataCacheTime = now;
+  return memberDataCache;
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -131,94 +189,43 @@ async function handleFindLawmakers(address: string | null) {
 
     console.log('District info:', { stateAbbrev, stateFips, districtNumber });
 
-    // Step 3: Look up representatives AND senators for this specific district/state
-    // Fetch both in parallel
-    const [repResponse, senResponse] = await Promise.all([
-      fetch(`https://whoismyrepresentative.com/getall_reps_bystate.php?state=${stateAbbrev}&output=json`),
-      fetch(`https://whoismyrepresentative.com/getall_sens_bystate.php?state=${stateAbbrev}&output=json`)
-    ]);
-
-    if (!repResponse.ok) {
-      console.error('Representatives API error:', repResponse.status, await repResponse.text());
-      return NextResponse.json({ error: 'Failed to fetch representatives' }, { status: 500 });
-    }
-
-    const repText = await repResponse.text();
-    const senText = senResponse.ok ? await senResponse.text() : '{"results":[]}';
-
-    let repData;
-    let senData;
-    try {
-      repData = JSON.parse(repText);
-      senData = JSON.parse(senText);
-    } catch (e) {
-      console.error('JSON parse error:', e);
-      return NextResponse.json({ error: 'Invalid response from representatives API' }, { status: 500 });
-    }
+    // Step 3: Look up representatives AND senators from our CSV data
+    const memberData = await loadMemberData();
 
     // Extract lawmakers - filter House reps to exact district, include all Senators
     const lawmakers: Array<{ name: string; office: string; chamber: string }> = [];
 
-    // Process House Representatives - filter to exact district
-    if (repData && repData.results && Array.isArray(repData.results)) {
-      repData.results.forEach((official: { name: string; district?: string; state: string }) => {
-        const apiName = official.name;
-        const officialDistrict = official.district;
+    // Find the representative for this specific district
+    const targetDistrictNum = parseInt(String(districtNumber), 10);
 
-        // Convert both to integers for comparison (TIGERweb returns "08", API returns "8")
-        const targetDistrictNum = parseInt(String(districtNumber), 10);
-        const officialDistrictNum = officialDistrict ? parseInt(officialDistrict, 10) : 0;
-        const isCorrectDistrict = officialDistrictNum === targetDistrictNum;
+    memberData.forEach((member) => {
+      const memberState = normalizeState(member.state);
 
-        if (!isCorrectDistrict) {
-          return; // Skip this rep
+      if (memberState !== stateAbbrev) {
+        return; // Skip members from other states
+      }
+
+      if (member.chamber === 'HOUSE') {
+        // Check if this rep is in the correct district
+        const memberDistrictNum = member.district ? parseInt(member.district, 10) : 0;
+        if (memberDistrictNum !== targetDistrictNum) {
+          return; // Skip reps from other districts
         }
 
-        let name = apiName;
-        if (apiName) {
-          const parts = apiName.trim().split(' ');
-          if (parts.length >= 2) {
-            const lastName = parts[parts.length - 1];
-            const firstName = parts.slice(0, -1).join(' ');
-            name = `${lastName}, ${firstName}`;
-          }
-        }
-
-        if (name) {
-          lawmakers.push({
-            name,
-            office: `U.S. Representative - District ${officialDistrict}`,
-            chamber: 'HOUSE'
-          });
-        }
-      });
-    }
-
-    // Process Senators - include all from the state
-    if (senData && senData.results && Array.isArray(senData.results)) {
-      senData.results.forEach((official: { name: string; state: string }) => {
-        const apiName = official.name;
-        const officialState = official.state;
-
-        let name = apiName;
-        if (apiName) {
-          const parts = apiName.trim().split(' ');
-          if (parts.length >= 2) {
-            const lastName = parts[parts.length - 1];
-            const firstName = parts.slice(0, -1).join(' ');
-            name = `${lastName}, ${firstName}`;
-          }
-        }
-
-        if (name) {
-          lawmakers.push({
-            name,
-            office: `U.S. Senator from ${officialState}`,
-            chamber: 'SENATE'
-          });
-        }
-      });
-    }
+        lawmakers.push({
+          name: member.full_name,
+          office: `U.S. Representative - District ${member.district}`,
+          chamber: 'HOUSE'
+        });
+      } else if (member.chamber === 'SENATE') {
+        // Include all senators from this state
+        lawmakers.push({
+          name: member.full_name,
+          office: `U.S. Senator from ${stateAbbrev}`,
+          chamber: 'SENATE'
+        });
+      }
+    });
 
     if (lawmakers.length === 0) {
       return NextResponse.json({
