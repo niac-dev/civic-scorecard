@@ -131,7 +131,7 @@ export default function IranWarPowersPage() {
   const [loading, setLoading] = useState(true);
 
   // Search state
-  const [searchTab, setSearchTab] = useState<"name" | "location">("name");
+  const [searchTab, setSearchTab] = useState<"name" | "location">("location");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);

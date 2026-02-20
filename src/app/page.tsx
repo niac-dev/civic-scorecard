@@ -449,6 +449,10 @@ export default function Page() {
   const [findLoading, setFindLoading] = useState(false);
   const [findError, setFindError] = useState("");
   const [showFindDropdown, setShowFindDropdown] = useState(true);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<Map<string, "yes" | "no">>(new Map());
+  const [partyFilter, setPartyFilter] = useState<Set<string>>(new Set());
+  const [selectedAdvancedCategory, setSelectedAdvancedCategory] = useState<string>("Party");
 
   // Prevent body scroll on all views
   useEffect(() => {
@@ -699,8 +703,49 @@ export default function Page() {
     //     });
     //   out = out.filter(hasColInCats);
     // }
+
+    // Apply advanced filters (AND logic - all must match)
+    // "Support" = supported the action/bill itself (voted yes, cosponsored)
+    // "Oppose" = opposed the action/bill itself (voted no, didn't cosponsor)
+    // This is independent of whether we score that position favorably or not
+    if (advancedFilters.size > 0) {
+      out = out.filter(member => {
+        for (const [column, filterValue] of advancedFilters) {
+          const memberValue = member[column];
+          const meta = metaByCol.get(column);
+          const positionToScore = (meta?.position_to_score || "").toUpperCase();
+          const score = Number(memberValue) || 0;
+
+          // Positive score = did the favorable thing from our scoring perspective
+          // Non-positive (0 or negative) = did the unfavorable thing or didn't act
+          const hasPositiveScore = score > 0;
+
+          // Determine if member supported or opposed the actual action
+          // If position_to_score is OPPOSE: positive score = opposed bill, non-positive = supported/abstained
+          // If position_to_score is SUPPORT: positive score = supported bill, non-positive = opposed/abstained
+          const supportedAction = positionToScore === "OPPOSE" ? !hasPositiveScore : hasPositiveScore;
+          const opposedAction = positionToScore === "OPPOSE" ? hasPositiveScore : !hasPositiveScore;
+
+          if (filterValue === "yes" && !supportedAction) return false;
+          if (filterValue === "no" && !opposedAction) return false;
+        }
+        return true;
+      });
+    }
+
+    // Apply party filter (OR logic within party - match any selected party)
+    if (partyFilter.size > 0) {
+      out = out.filter(member => {
+        const memberParty = partyLabel(member.party).toLowerCase();
+        for (const party of partyFilter) {
+          if (memberParty.startsWith(party.toLowerCase())) return true;
+        }
+        return false;
+      });
+    }
+
     return out;
-  }, [rows, cols, f, metaByCol]);
+  }, [rows, cols, f, metaByCol, advancedFilters, partyFilter]);
 
   // Calculate max possible points for each column based on actual data
   const maxPointsByCol = useMemo(() => {
@@ -1162,6 +1207,37 @@ export default function Page() {
 
     return out;
   }, [allBillCols, metaByCol, f.categories, f.viewMode]);
+
+  // Group bills by category for Advanced Search
+  const billsByCategory = useMemo(() => {
+    const grouped: Map<string, Array<{col: string, meta: Meta}>> = new Map();
+    const categoryOrder = ["Iran", "Israel-Gaza", "Civil Rights & Immigration"];
+
+    for (const [col, meta] of metaByCol) {
+      if (!meta || isTrackerOnly(meta)) continue;
+      const cats = (meta.categories || "").split(";").map(c => c.trim()).filter(Boolean);
+
+      for (const cat of cats) {
+        if (!grouped.has(cat)) grouped.set(cat, []);
+        grouped.get(cat)!.push({ col, meta });
+      }
+    }
+
+    // Sort by category order
+    const sorted = new Map<string, Array<{col: string, meta: Meta}>>();
+    for (const cat of categoryOrder) {
+      if (grouped.has(cat)) {
+        sorted.set(cat, grouped.get(cat)!);
+      }
+    }
+    // Add any remaining categories
+    for (const [cat, bills] of grouped) {
+      if (!sorted.has(cat)) {
+        sorted.set(cat, bills);
+      }
+    }
+    return sorted;
+  }, [metaByCol]);
 
   // Map pair_key -> preferred column name (for efficient lookup)
   const preferredColByPairKey = useMemo(() => {
@@ -1842,6 +1918,194 @@ export default function Page() {
               {findLoading ? "Searching..." : "Search"}
             </button>
             </div>
+
+            {/* Advanced Search Toggle */}
+            <button
+              onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+              className="text-[#4B8CFB] text-[10px] hover:text-[#6BA3FC] mt-3 flex items-center justify-center gap-0.5"
+            >
+              Advanced
+              {(advancedFilters.size > 0 || partyFilter.size > 0) && (
+                <span className="bg-[#4B8CFB] text-white text-[9px] px-1 py-0.5 rounded-full ml-0.5">
+                  {advancedFilters.size + partyFilter.size}
+                </span>
+              )}
+              <svg
+                className={clsx("w-2.5 h-2.5 transition-transform", showAdvancedSearch && "rotate-180")}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Advanced Search Panel */}
+            {showAdvancedSearch && (
+              <div className="mt-4 bg-black/40 backdrop-blur-md rounded-lg shadow-xl max-h-[60vh] border border-white/10 flex flex-col">
+                {/* Two-column layout: categories left, filters right (stacked on mobile) */}
+                <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
+                  {/* Category buttons - horizontal on mobile, vertical on desktop */}
+                  <div className="flex-shrink-0 flex sm:flex-col gap-1 p-2 sm:border-r border-b sm:border-b-0 border-white/10 overflow-x-auto sm:overflow-x-visible sm:w-32">
+                    {["Party", ...Array.from(billsByCategory.keys())].map((category) => {
+                      const isSelected = selectedAdvancedCategory === category;
+                      const filterCount = category === "Party"
+                        ? partyFilter.size
+                        : (billsByCategory.get(category) || []).filter(({ col }) => advancedFilters.has(col)).length;
+
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => setSelectedAdvancedCategory(category)}
+                          className={clsx(
+                            "flex items-center justify-between gap-2 px-2 py-1.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors",
+                            isSelected
+                              ? "bg-[#4B8CFB] text-white"
+                              : "text-white/70 hover:bg-white/10"
+                          )}
+                        >
+                          <span className="truncate">{category}</span>
+                          {filterCount > 0 && (
+                            <span className={clsx(
+                              "text-[9px] px-1.5 py-0.5 rounded-full",
+                              isSelected ? "bg-white/20" : "bg-[#4B8CFB] text-white"
+                            )}>
+                              {filterCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Filter content area */}
+                  <div className="flex-1 overflow-y-auto p-2">
+                    {/* Party filters */}
+                    {selectedAdvancedCategory === "Party" && (
+                      <div className="flex flex-wrap gap-2">
+                        {["Democrat", "Republican", "Independent"].map((party) => {
+                          const isSelected = partyFilter.has(party);
+                          return (
+                            <button
+                              key={party}
+                              onClick={() => {
+                                const newFilter = new Set(partyFilter);
+                                if (isSelected) {
+                                  newFilter.delete(party);
+                                } else {
+                                  newFilter.add(party);
+                                }
+                                setPartyFilter(newFilter);
+                              }}
+                              className={clsx(
+                                "px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors",
+                                isSelected
+                                  ? party === "Democrat"
+                                    ? "bg-blue-600 text-white"
+                                    : party === "Republican"
+                                    ? "bg-red-600 text-white"
+                                    : "bg-emerald-600 text-white"
+                                  : "bg-white/10 text-white/80 hover:bg-white/20"
+                              )}
+                            >
+                              {party}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Bill category filters */}
+                    {selectedAdvancedCategory !== "Party" && billsByCategory.get(selectedAdvancedCategory) && (
+                      <div>
+                        {/* Table Header */}
+                        <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 py-1 border-b border-white/10">
+                          <span className="text-[10px] font-medium text-white/50 uppercase">Action</span>
+                          <span className="text-[10px] font-medium text-white/50 uppercase w-14 text-center">Support</span>
+                          <span className="text-[10px] font-medium text-white/50 uppercase w-14 text-center">Oppose</span>
+                        </div>
+                        {/* Table Rows */}
+                        {billsByCategory.get(selectedAdvancedCategory)!.map(({ col, meta }) => {
+                          const currentFilter = advancedFilters.get(col);
+                          return (
+                            <div
+                              key={col}
+                              className={clsx(
+                                "grid grid-cols-[1fr_auto_auto] gap-2 px-2 py-1.5 border-b border-white/5 items-center",
+                                currentFilter && "bg-white/5"
+                              )}
+                            >
+                              <span className="text-[11px] text-white/90 leading-tight">
+                                {meta.short_title || meta.display_name || col}
+                              </span>
+                              <label className="w-14 flex justify-center cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`filter-${col}`}
+                                  checked={currentFilter === "yes"}
+                                  onChange={() => {
+                                    const newFilters = new Map(advancedFilters);
+                                    if (currentFilter === "yes") {
+                                      newFilters.delete(col);
+                                    } else {
+                                      newFilters.set(col, "yes");
+                                    }
+                                    setAdvancedFilters(newFilters);
+                                  }}
+                                  className="w-3.5 h-3.5 accent-emerald-500"
+                                />
+                              </label>
+                              <label className="w-14 flex justify-center cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`filter-${col}`}
+                                  checked={currentFilter === "no"}
+                                  onChange={() => {
+                                    const newFilters = new Map(advancedFilters);
+                                    if (currentFilter === "no") {
+                                      newFilters.delete(col);
+                                    } else {
+                                      newFilters.set(col, "no");
+                                    }
+                                    setAdvancedFilters(newFilters);
+                                  }}
+                                  className="w-3.5 h-3.5 accent-red-500"
+                                />
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action buttons - sticky at bottom */}
+                <div className="flex-shrink-0 flex gap-2 p-2 border-t border-white/10 bg-black/20">
+                  <button
+                    onClick={() => {
+                      setAdvancedFilters(new Map());
+                      setPartyFilter(new Set());
+                    }}
+                    disabled={advancedFilters.size === 0 && partyFilter.size === 0}
+                    className="flex-1 py-1.5 px-3 rounded-lg text-[11px] font-medium bg-white/10 text-white/80 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (advancedFilters.size === 0 && partyFilter.size === 0) return;
+                      f.set({ viewMode: "summary" });
+                      setShowAdvancedSearch(false);
+                    }}
+                    disabled={advancedFilters.size === 0 && partyFilter.size === 0}
+                    className="flex-1 py-1.5 px-3 rounded-lg text-[11px] font-medium bg-[#4B8CFB] text-white hover:bg-[#3b7ce8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Apply ({advancedFilters.size + partyFilter.size})
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         )}
