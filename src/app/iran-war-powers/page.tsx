@@ -35,14 +35,14 @@ function getPosition(member: Row): Position {
     if (leadSponsorsPreferred.includes(lastName)) {
       return {
         status: "positive",
-        text: `Rep. ${firstName} is the lead sponsor of the Iran War Powers Resolution!`,
+        text: `Rep. ${lastName} is the lead sponsor of the Iran War Powers Resolution!`,
       };
     }
     // Check if lead sponsor of alternative bill (Smith-Meeks)
     if (leadSponsorsAlternative.includes(lastName)) {
       return {
         status: "alternative",
-        text: `Rep. ${firstName} is the lead sponsor of the Smith-Meeks War Powers Resolution, which is positive but includes an exemption for U.S. military action in defense of Israel.`,
+        text: `Rep. ${lastName} is the lead sponsor of the Smith-Meeks War Powers Resolution, which is positive but includes an exemption for U.S. military action in defense of Israel.`,
       };
     }
 
@@ -55,18 +55,18 @@ function getPosition(member: Row): Position {
     if (preferredValue != null && Number(preferredValue) > 0) {
       return {
         status: "positive",
-        text: IRAN_WAR_POWERS_CONFIG.house.preferred.positive.replace("{name}", firstName),
+        text: IRAN_WAR_POWERS_CONFIG.house.preferred.positive.replace("{name}", lastName),
       };
     }
     if (altValue != null && Number(altValue) > 0) {
       return {
         status: "alternative",
-        text: IRAN_WAR_POWERS_CONFIG.house.alternative.positive.replace("{name}", firstName),
+        text: IRAN_WAR_POWERS_CONFIG.house.alternative.positive.replace("{name}", lastName),
       };
     }
     return {
       status: "negative",
-      text: IRAN_WAR_POWERS_CONFIG.house.negative.replace("{name}", firstName),
+      text: IRAN_WAR_POWERS_CONFIG.house.negative.replace("{name}", lastName),
     };
   } else {
     // Senate
@@ -74,7 +74,7 @@ function getPosition(member: Row): Position {
     if (leadSponsorSenate.includes(lastName)) {
       return {
         status: "positive",
-        text: `Sen. ${firstName} is the lead sponsor of the Iran War Powers Resolution!`,
+        text: `Sen. ${lastName} is the lead sponsor of the Iran War Powers Resolution!`,
       };
     }
 
@@ -84,12 +84,12 @@ function getPosition(member: Row): Position {
     if (voteValue != null && Number(voteValue) > 0) {
       return {
         status: "positive",
-        text: IRAN_WAR_POWERS_CONFIG.senate.positive.replace("{name}", firstName),
+        text: IRAN_WAR_POWERS_CONFIG.senate.positive.replace("{name}", lastName),
       };
     }
     return {
       status: "negative",
-      text: IRAN_WAR_POWERS_CONFIG.senate.negative.replace("{name}", firstName),
+      text: IRAN_WAR_POWERS_CONFIG.senate.negative.replace("{name}", lastName),
     };
   }
 }
