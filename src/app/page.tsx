@@ -118,6 +118,36 @@ function formatNameFirstLast(name: string | unknown): string {
   return nameStr;
 }
 
+// Flexible name matching - handles "First Last", "Last, First", partial matches
+function matchesName(fullName: string, query: string): boolean {
+  const q = query.toLowerCase().trim();
+  const name = (fullName || "").toLowerCase();
+
+  // Direct match
+  if (name.includes(q)) return true;
+
+  // Parse "Last, First" format
+  const nameParts = name.split(",");
+  const lastName = nameParts[0]?.trim() || "";
+  const firstName = nameParts[1]?.trim() || "";
+
+  // Check if query matches "First Last" format
+  const queryParts = q.split(/\s+/);
+  if (queryParts.length >= 2) {
+    const queryFirst = queryParts[0];
+    const queryLast = queryParts.slice(1).join(" ");
+    // "First Last" -> check if firstName starts with queryFirst and lastName starts with queryLast
+    if (firstName.startsWith(queryFirst) && lastName.startsWith(queryLast)) return true;
+    // Also try "Last First" order
+    if (lastName.startsWith(queryFirst) && firstName.startsWith(queryLast)) return true;
+  }
+
+  // Check individual parts
+  if (firstName.includes(q) || lastName.includes(q)) return true;
+
+  return false;
+}
+
 function gradeRank(g?: string): number {
   const s = String(g || "").toUpperCase().trim();
   const order = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
@@ -1661,12 +1691,9 @@ export default function Page() {
                   />
                   {/* Name Autocomplete Dropdown */}
                   {showFindDropdown && findQuery.trim().length >= 2 && (() => {
-                    const query = findQuery.toLowerCase();
+                    const query = findQuery.trim();
                     const matches = rows
-                      .filter(r => {
-                        const name = String(r.full_name || "").toLowerCase();
-                        return name.includes(query);
-                      })
+                      .filter(r => matchesName(String(r.full_name || ""), query))
                       .slice(0, 6);
                     if (matches.length === 0) return null;
                     return (
@@ -1858,7 +1885,7 @@ export default function Page() {
                   if (findTab === "name") {
                     // Name search - check how many matches
                     const matches = rows.filter(r =>
-                      String(r.full_name || "").toLowerCase().includes(query.toLowerCase())
+                      matchesName(String(r.full_name || ""), query)
                     );
                     if (matches.length === 1) {
                       // Single match - open member modal directly
@@ -4678,7 +4705,7 @@ function UnifiedSearch({ filteredCount, metaByCol, isMapView, isTrackerView = fa
     } else if (searchType === "name") {
       // Check for single match - open modal directly
       const matches = rows.filter(r =>
-        String(r.full_name || "").toLowerCase().includes(searchValue.toLowerCase())
+        matchesName(String(r.full_name || ""), searchValue)
       );
       if (matches.length === 1 && onSelectMember) {
         onSelectMember(matches[0]);
