@@ -122,6 +122,15 @@ function PositionIcon({ status }: { status: PositionStatus }) {
   );
 }
 
+// Format member name as "Title First Last"
+function formatMemberName(member: Row): string {
+  const nameParts = (member.full_name || "").split(",");
+  const lastName = nameParts[0]?.trim() || "";
+  const firstName = nameParts[1]?.trim().split(" ")[0] || "";
+  const title = member.chamber === "SENATE" ? "Sen." : "Rep.";
+  return `${title} ${firstName} ${lastName}`;
+}
+
 export default function IranWarPowersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [cols, setCols] = useState<string[]>([]);
@@ -343,7 +352,7 @@ export default function IranWarPowersPage() {
                             }}
                             className="w-full px-4 py-2.5 text-left hover:bg-slate-100 flex items-center gap-2 border-b border-slate-100 last:border-0"
                           >
-                            <span className="text-slate-800 font-medium">{String(member.full_name || "")}</span>
+                            <span className="text-slate-800 font-medium">{formatMemberName(member)}</span>
                             <span className="text-slate-500 text-sm">
                               ({member.party === "Democratic" ? "D" : member.party === "Republican" ? "R" : "I"}) {stateCodeOf(member.state)}{member.chamber === "HOUSE" ? `-${member.district}` : ""}
                             </span>
@@ -472,7 +481,7 @@ export default function IranWarPowersPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-bold text-slate-900 dark:text-white">
-                          {member.full_name}
+                          {formatMemberName(member)}
                         </h3>
                         <span
                           className="px-1.5 py-0.5 rounded text-xs font-medium"
