@@ -578,7 +578,7 @@ export default function IranWarPowersPage() {
 
         {/* Take Action Section */}
         <div className="pt-6 pb-4">
-          <h2 className="text-xl font-bold text-center text-white mb-4">🚨 ACT NOW: Urge Your Lawmakers to Support the Iran War Powers Resolution</h2>
+          <h2 className="text-xl font-bold text-center text-slate-900 dark:text-white mb-4">🚨 ACT NOW: Urge Your Lawmakers to Support the Iran War Powers Resolution</h2>
           <div className="flex flex-col sm:flex-row gap-3">
             <a
               href="https://niacouncil.org/campaign/demand-congress-oppose-war-with-iran/"
