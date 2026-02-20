@@ -463,7 +463,7 @@ export default function IranWarPowersPage() {
                           src={getPhotoUrl(String(member.bioguide_id), "225x275")}
                           alt=""
                           loading="lazy"
-                          className="w-14 h-14 rounded-full object-cover bg-slate-200 dark:bg-white/10"
+                          className="w-14 h-14 sm:w-28 sm:h-28 rounded-full object-cover bg-slate-200 dark:bg-white/10"
                           onError={(e) => {
                             const target = e.currentTarget;
                             if (!target.dataset.fallback && member.photo_url) {
@@ -473,7 +473,7 @@ export default function IranWarPowersPage() {
                           }}
                         />
                       ) : (
-                        <div className="w-14 h-14 rounded-full bg-slate-300 dark:bg-white/10" />
+                        <div className="w-14 h-14 sm:w-28 sm:h-28 rounded-full bg-slate-300 dark:bg-white/10" />
                       )}
                     </div>
 
