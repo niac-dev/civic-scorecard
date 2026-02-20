@@ -60,17 +60,27 @@ async function loadMemberData(): Promise<MemberRow[]> {
     return memberDataCache;
   }
 
-  // Get the base URL for fetching
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // Get the base URL for fetching - use multiple fallbacks for reliability
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL  // Custom env var for production URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || process.env.NEXT_PUBLIC_BASE_URL
+    || 'http://localhost:3000';
+
+  console.log('Loading member data from:', `${baseUrl}/data/scores_wide.csv`);
 
   const res = await fetch(`${baseUrl}/data/scores_wide.csv`, { cache: 'no-store' });
+
+  if (!res.ok) {
+    console.error('Failed to fetch member data:', res.status, res.statusText);
+    throw new Error(`Failed to fetch member data: ${res.status}`);
+  }
+
   const text = await res.text();
   const parsed = Papa.parse<MemberRow>(text, { header: true, skipEmptyLines: true });
 
   memberDataCache = (parsed.data || []).filter(r => r.full_name && r.chamber && r.state);
   memberDataCacheTime = now;
+  console.log('Loaded', memberDataCache.length, 'members');
   return memberDataCache;
 }
 
@@ -198,6 +208,9 @@ async function handleFindLawmakers(address: string | null) {
     // Find the representative for this specific district
     const targetDistrictNum = parseInt(String(districtNumber), 10);
 
+    console.log('Searching for state:', stateAbbrev, 'district:', targetDistrictNum);
+    console.log('Total members in data:', memberData.length);
+
     memberData.forEach((member) => {
       const memberState = normalizeState(member.state);
 
@@ -208,6 +221,7 @@ async function handleFindLawmakers(address: string | null) {
       if (member.chamber === 'HOUSE') {
         // Check if this rep is in the correct district
         const memberDistrictNum = member.district ? parseInt(member.district, 10) : 0;
+        console.log(`House member ${member.full_name}: district ${memberDistrictNum} vs target ${targetDistrictNum}`);
         if (memberDistrictNum !== targetDistrictNum) {
           return; // Skip reps from other districts
         }
@@ -219,6 +233,7 @@ async function handleFindLawmakers(address: string | null) {
         });
       } else if (member.chamber === 'SENATE') {
         // Include all senators from this state
+        console.log(`Senate member ${member.full_name} from ${memberState}`);
         lawmakers.push({
           name: member.full_name,
           office: `U.S. Senator from ${stateAbbrev}`,
@@ -226,6 +241,8 @@ async function handleFindLawmakers(address: string | null) {
         });
       }
     });
+
+    console.log('Found lawmakers:', lawmakers.length);
 
     if (lawmakers.length === 0) {
       return NextResponse.json({
