@@ -1128,8 +1128,11 @@ export default function Page() {
     };
   }, [hasMoreRows, sorted.length]);
 
-  // Scroll handler - hide tooltips while scrolling
-  const handleScroll = useCallback(() => {
+  // Track last scroll position for nav visibility
+  const lastContainerScrollY = useRef(0);
+
+  // Scroll handler - hide tooltips while scrolling and control nav visibility
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setIsScrolling(true);
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
@@ -1137,7 +1140,20 @@ export default function Page() {
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
     }, 150);
-  }, []);
+
+    // Update nav visibility based on scroll direction
+    const currentScrollY = e.currentTarget.scrollTop;
+    const scrollingDown = currentScrollY > lastContainerScrollY.current;
+    const scrolledPastThreshold = currentScrollY > 100;
+
+    if (scrollingDown && scrolledPastThreshold) {
+      f.setNavVisible(false);
+    } else {
+      f.setNavVisible(true);
+    }
+
+    lastContainerScrollY.current = currentScrollY;
+  }, [f]);
 
   // All columns for the member card (chamber-filtered only, not category-filtered)
   // Excludes tracker_only bills (those only appear in Tracker view)
@@ -3297,7 +3313,19 @@ export default function Page() {
               </button>
             </div>
           )}
-          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => { e.currentTarget.scrollLeft = 0; }}>
+          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
+            e.currentTarget.scrollLeft = 0;
+            // Update nav visibility based on scroll direction
+            const currentScrollY = e.currentTarget.scrollTop;
+            const scrollingDown = currentScrollY > lastContainerScrollY.current;
+            const scrolledPastThreshold = currentScrollY > 100;
+            if (scrollingDown && scrolledPastThreshold) {
+              f.setNavVisible(false);
+            } else {
+              f.setNavVisible(true);
+            }
+            lastContainerScrollY.current = currentScrollY;
+          }}>
             {(() => {
               // Process bills data
               let bills = cols.map((col) => {

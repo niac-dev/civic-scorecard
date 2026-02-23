@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useFilters } from "@/lib/store";
 
@@ -44,11 +44,10 @@ const IranIcon = ({ active }: { active: boolean }) => (
 export default function BottomNav() {
   const pathname = usePathname();
   const f = useFilters();
-
-  // Hide/show on scroll
-  const [visible, setVisible] = useState(true);
+  const visible = f.navVisible;
   const lastScrollY = useRef(0);
 
+  // Listen for window scroll (for pages like iran-war-powers)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -56,9 +55,9 @@ export default function BottomNav() {
       const scrolledPastThreshold = currentScrollY > 100;
 
       if (scrollingDown && scrolledPastThreshold) {
-        setVisible(false);
+        f.setNavVisible(false);
       } else {
-        setVisible(true);
+        f.setNavVisible(true);
       }
 
       lastScrollY.current = currentScrollY;
@@ -66,7 +65,7 @@ export default function BottomNav() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [f]);
 
   // Don't show on member detail pages or bill pages
   const hiddenPaths = ["/member/", "/bill/"];

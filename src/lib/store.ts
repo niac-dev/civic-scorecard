@@ -11,14 +11,16 @@ type FiltersState = {
   viewMode: "summary" | "all" | "category" | "map" | "tracker" | "find"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view, "tracker" = legislation tracker, "find" = find lawmaker view
   myLawmakers: string[];   // array of full names from address search
   billColumn: string;      // column name for bill search
+  navVisible: boolean;     // whether bottom nav should be visible
 
   set: (
-    patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories" | "setMyLawmakers">>
+    patch: Partial<Omit<FiltersState, "set" | "toggleCategory" | "clearCategories" | "setMyLawmakers" | "setNavVisible">>
   ) => void;
 
   toggleCategory: (c: string) => void;
   clearCategories: () => void;
   setMyLawmakers: (names: string[]) => void;
+  setNavVisible: (visible: boolean) => void;
 };
 
 // Helper to get initial viewMode based on URL query params or localStorage
@@ -38,6 +40,7 @@ export const useFilters = create<FiltersState>((set) => ({
   viewMode: getInitialViewMode(),
   myLawmakers: [],
   billColumn: "",
+  navVisible: true,
 
   set: (patch) =>
     set((prev) => ({
@@ -63,6 +66,8 @@ export const useFilters = create<FiltersState>((set) => ({
   clearCategories: () => set((prev) => ({ ...prev, categories: new Set() })),
 
   setMyLawmakers: (names) => set((prev) => ({ ...prev, myLawmakers: names })),
+
+  setNavVisible: (visible) => set((prev) => ({ ...prev, navVisible: visible })),
 }));
 
 // Re-export for convenience
