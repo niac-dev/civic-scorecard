@@ -206,3 +206,53 @@ export async function loadDataWithCache(): Promise<{
   // No cache available, throw error
   throw new Error("No data available. Please connect to the internet to load scorecard data.");
 }
+
+/**
+ * Load lawmaker statements on Iran war
+ * Returns a Map from last name to { statement, link }
+ */
+export interface WarStatement {
+  name: string;
+  statement: string;
+  link: string;
+  date: string;
+}
+
+export async function loadWarStatements(): Promise<Map<string, WarStatement>> {
+  const data = await fetchCSV<{ "Lawmaker Name": string; Statement: string; Link: string; Date: string }>(
+    "/data/lawmaker_statements_opposing_iran_war_FULL.csv"
+  );
+
+  const map = new Map<string, WarStatement>();
+  data.forEach((row) => {
+    const fullName = row["Lawmaker Name"]?.trim();
+    let statement = row.Statement?.trim();
+    const link = row.Link?.trim();
+    const date = row.Date?.trim() || "";
+
+    if (fullName && statement) {
+      // Remove surrounding quotes if present (e.g., ""quote"" -> quote)
+      statement = statement.replace(/^[""\u201C\u201D]+|[""\u201C\u201D]+$/g, '').trim();
+
+      // Parse name like "Sen. Ruben Gallego (D-AZ)" or "Rep. Ami Bera (D-CA)"
+      // Extract the name part between title and state
+      const nameMatch = fullName.match(/^(?:Sen\.|Rep\.)\s+(.+?)\s+\(.*\)$/);
+      if (nameMatch) {
+        const namePart = nameMatch[1]; // e.g., "Ruben Gallego" or "Debbie Wasserman Schultz"
+        const nameParts = namePart.split(/\s+/);
+        // Last name is everything after first name (handles "Wasserman Schultz")
+        const lastName = nameParts.slice(1).join(" ");
+
+        // Store by last name for matching
+        map.set(lastName.toLowerCase(), {
+          name: fullName,
+          statement,
+          link: link || "",
+          date,
+        });
+      }
+    }
+  });
+
+  return map;
+}

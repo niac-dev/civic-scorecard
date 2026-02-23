@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
+import { loadData, loadManualScoringMeta, loadWarStatements, type WarStatement } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
 import {
@@ -94,11 +94,18 @@ function getPosition(member: Row): Position {
   }
 }
 
-function PositionIcon({ status }: { status: PositionStatus }) {
+function PositionIcon({ status, size = "large" }: { status: PositionStatus; size?: "large" | "small" }) {
+  const sizeClasses = size === "large"
+    ? "w-8 h-8"
+    : "w-5 h-5";
+  const iconClasses = size === "large"
+    ? "w-5 h-5"
+    : "w-3 h-3";
+
   if (status === "positive") {
     return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-        <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center`}>
+        <svg className={`${iconClasses} text-emerald-600 dark:text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
@@ -106,16 +113,16 @@ function PositionIcon({ status }: { status: PositionStatus }) {
   }
   if (status === "alternative") {
     return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-        <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center`}>
+        <svg className={`${iconClasses} text-amber-600 dark:text-amber-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
     );
   }
   return (
-    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-      <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center`}>
+      <svg className={`${iconClasses} text-red-600 dark:text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </div>
@@ -167,6 +174,7 @@ export default function IranWarPowersPage() {
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
+  const [warStatements, setWarStatements] = useState<Map<string, WarStatement>>(new Map());
   const [loading, setLoading] = useState(true);
 
   // Search state
@@ -187,15 +195,17 @@ export default function IranWarPowersPage() {
   // Load data
   useEffect(() => {
     (async () => {
-      const [data, manualMeta] = await Promise.all([
+      const [data, manualMeta, statements] = await Promise.all([
         loadData(),
         loadManualScoringMeta(),
+        loadWarStatements(),
       ]);
       setRows(data.rows);
       setCols(data.columns);
       setMetaByCol(data.metaByCol);
       setCategories(data.categories);
       setManualScoringMeta(manualMeta);
+      setWarStatements(statements);
       setLoading(false);
     })();
   }, []);
@@ -490,6 +500,23 @@ export default function IranWarPowersPage() {
           <div className="space-y-3">
             {filtered.map((member) => {
               const position = getPosition(member);
+
+              // Check if member has a statement
+              const nameParts = (member.full_name || "").split(",");
+              const lastName = nameParts[0]?.trim().toLowerCase() || "";
+              const hasStatement = warStatements.has(lastName);
+
+              // Determine overall status based on statement and legislation
+              // - Green check if they have statement + positive or alternative legislation
+              // - Yellow check if they have statement but negative legislation
+              // - Otherwise, use legislation status
+              const overallStatus: PositionStatus =
+                hasStatement && position.status === "negative"
+                  ? "alternative"
+                  : hasStatement && position.status === "alternative"
+                  ? "positive"
+                  : position.status;
+
               return (
                 <div
                   key={member.bioguide_id || member.full_name}
@@ -518,12 +545,20 @@ export default function IranWarPowersPage() {
                       )}
                     </div>
 
+                    {/* Position Icon */}
+                    <div className="flex-shrink-0 pt-1">
+                      <PositionIcon status={overallStatus} size="large" />
+                    </div>
+
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-bold text-slate-900 dark:text-white">
-                          {formatMemberName(member)}
-                        </h3>
+                      {/* Name */}
+                      <h3 className="font-bold text-slate-900 dark:text-white">
+                        {formatMemberName(member)}
+                      </h3>
+
+                      {/* Party and State-District */}
+                      <div className="flex items-center gap-2 mt-1">
                         <span
                           className="px-1.5 py-0.5 rounded text-xs font-medium"
                           style={partyBadgeStyle(member.party)}
@@ -536,18 +571,48 @@ export default function IranWarPowersPage() {
                         </span>
                       </div>
 
-                      {/* Position */}
+                      {/* Statement quote if available */}
+                      {(() => {
+                        const statement = warStatements.get(lastName);
+                        if (!statement) return null;
+                        return (
+                          <div className="mt-3 flex items-start gap-2">
+                            <PositionIcon status="positive" size="small" />
+                            <div className="flex-1 min-w-0">
+                              {statement.link ? (
+                                <a
+                                  href={statement.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-sm italic text-slate-700 dark:text-slate-200"
+                                >
+                                  &ldquo;{statement.statement}&rdquo;
+                                  {statement.date && (
+                                    <span className="text-xs not-italic ml-1">
+                                      {statement.date}
+                                    </span>
+                                  )}
+                                </a>
+                              ) : (
+                                <p className="text-sm italic text-slate-700 dark:text-slate-200">
+                                  &ldquo;{statement.statement}&rdquo;
+                                  {statement.date && (
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 not-italic ml-1">
+                                      {statement.date}
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Legislation */}
                       <div className="mt-2 flex items-start gap-2">
-                        <PositionIcon status={position.status} />
-                        <p
-                          className={`text-sm ${
-                            position.status === "positive"
-                              ? "text-emerald-700 dark:text-emerald-400"
-                              : position.status === "alternative"
-                              ? "text-amber-700 dark:text-amber-400"
-                              : "text-red-700 dark:text-red-400"
-                          }`}
-                        >
+                        <PositionIcon status={position.status} size="small" />
+                        <p className="text-sm text-slate-700 dark:text-slate-200">
                           {position.text}
                         </p>
                       </div>
