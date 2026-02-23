@@ -366,7 +366,7 @@ export default function IranWarPowersPage() {
       </div>
 
       {/* Hero Section with Background */}
-      <div className="relative bg-black pt-14 md:pt-16">
+      <div className="relative bg-black pt-20 md:pt-24">
         {/* Background pattern */}
         <div className="absolute inset-0 opacity-10 overflow-hidden">
           <div className="absolute inset-0" style={{
