@@ -300,6 +300,29 @@ export default function Page() {
   const [sentenceRules, setSentenceRules] = useState<Awaited<ReturnType<typeof loadSentenceRules>>>([]);
   const [showAipacModal, setShowAipacModal] = useState<boolean>(false);
 
+  // Header hide/show on scroll
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollingDown = currentScrollY > lastScrollY.current;
+      const scrolledPastThreshold = currentScrollY > 100;
+
+      if (scrollingDown && scrolledPastThreshold) {
+        setHeaderVisible(false);
+      } else {
+        setHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Modal history stack for back navigation
   type ModalHistoryItem =
     | { type: 'member'; data: Row }
@@ -1518,7 +1541,7 @@ export default function Page() {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden pt-14 md:pt-16">
       {/* Header Band - fixed to viewport for full width */}
-      <div className="fixed top-0 left-0 right-0 bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 z-50">
+      <div className={`fixed top-0 left-0 right-0 bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 z-50 transition-transform duration-300 ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <a href="https://www.niacaction.org" target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
             <img

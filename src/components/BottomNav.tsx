@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { useFilters } from "@/lib/store";
 
@@ -44,6 +45,29 @@ export default function BottomNav() {
   const pathname = usePathname();
   const f = useFilters();
 
+  // Hide/show on scroll
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollingDown = currentScrollY > lastScrollY.current;
+      const scrolledPastThreshold = currentScrollY > 100;
+
+      if (scrollingDown && scrolledPastThreshold) {
+        setVisible(false);
+      } else {
+        setVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Don't show on member detail pages or bill pages
   const hiddenPaths = ["/member/", "/bill/"];
   if (hiddenPaths.some((p) => pathname.startsWith(p))) {
@@ -66,7 +90,10 @@ export default function BottomNav() {
   const inactiveColor = "text-slate-500";
 
   return (
-    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)] max-w-[95vw]">
+    <nav className={clsx(
+      "fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)] max-w-[95vw] transition-transform duration-300",
+      visible ? "translate-y-0" : "translate-y-[calc(100%+2rem)]"
+    )}>
       <div className="flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-2 bg-white/70 backdrop-blur rounded-full shadow-lg border border-[#E7ECF2]">
         {/* Map Tab */}
         <button
