@@ -95,17 +95,35 @@ function getPosition(member: Row): Position {
 }
 
 function PositionIcon({ status, size = "large" }: { status: PositionStatus; size?: "large" | "small" }) {
-  const sizeClasses = size === "large"
-    ? "w-8 h-8"
-    : "w-5 h-5";
-  const iconClasses = size === "large"
-    ? "w-5 h-5"
-    : "w-3 h-3";
+  // Small size: just the icon, no circle
+  if (size === "small") {
+    const iconClasses = "w-4 h-4 flex-shrink-0";
+    if (status === "positive") {
+      return (
+        <svg className={`${iconClasses} text-emerald-600 dark:text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    }
+    if (status === "alternative") {
+      return (
+        <svg className={`${iconClasses} text-amber-600 dark:text-amber-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    }
+    return (
+      <svg className={`${iconClasses} text-red-600 dark:text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+  }
 
+  // Large size: icon with circle background
   if (status === "positive") {
     return (
-      <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center`}>
-        <svg className={`${iconClasses} text-emerald-600 dark:text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+        <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
@@ -113,16 +131,16 @@ function PositionIcon({ status, size = "large" }: { status: PositionStatus; size
   }
   if (status === "alternative") {
     return (
-      <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center`}>
-        <svg className={`${iconClasses} text-amber-600 dark:text-amber-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+        <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
     );
   }
   return (
-    <div className={`flex-shrink-0 ${sizeClasses} rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center`}>
-      <svg className={`${iconClasses} text-red-600 dark:text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+      <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </div>
