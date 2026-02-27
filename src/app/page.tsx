@@ -618,7 +618,7 @@ export default function Page() {
     }
   }, [f.chamber, f.party, f.state, f.search, f.myLawmakers, f.viewMode]);
 
-  // Scroll to top when switching to scorecard view
+  // Scroll to top when switching to scorecard view; reset scroll ref when switching to tracker
   useEffect(() => {
     if (f.viewMode === "summary" || f.viewMode === "all" || f.viewMode === "category") {
       // Scroll table container to top
@@ -628,7 +628,10 @@ export default function Page() {
       // Also scroll window to top to fix positioning when coming from Find view
       window.scrollTo({ top: 0 });
     }
-  }, [f.viewMode]);
+    // Reset scroll position tracking so hide-on-scroll starts fresh in each view
+    lastContainerScrollY.current = 0;
+    f.setNavVisible(true);
+  }, [f.viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prevent horizontal scroll from navigating browser history (important for iframe embeds)
   useEffect(() => {
@@ -3313,7 +3316,7 @@ export default function Page() {
               </button>
             </div>
           )}
-          <div ref={trackerScrollRef} className="overflow-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
+          <div ref={trackerScrollRef} className="overflow-x-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
             e.currentTarget.scrollLeft = 0;
             // Update nav visibility based on scroll direction
             const currentScrollY = e.currentTarget.scrollTop;

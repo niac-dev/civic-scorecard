@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { loadData, loadManualScoringMeta, loadWarStatements, type WarStatement } from "@/lib/loadCsv";
+import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
 import {
@@ -12,137 +12,88 @@ import {
 } from "@/lib/utils";
 import { MemberModal } from "@/components/MemberModal";
 
-type PositionStatus = "positive" | "alternative" | "negative";
+type PositionStatus = "support" | "likely_support" | "likely_oppose" | "oppose";
 
-interface Position {
-  status: PositionStatus;
-  text: string;
+// Read position directly from the CSV column computed by backend
+function getOverallPosition(member: Row): PositionStatus {
+  const pos = String(member.iran_war_powers_position || "").trim();
+  if (pos === "support" || pos === "likely_support" || pos === "likely_oppose" || pos === "oppose") {
+    return pos;
+  }
+  return member.party === "Democratic" ? "likely_support" : "likely_oppose";
 }
 
-function getPosition(member: Row): Position {
-  // Extract first name and last name from "Last, First" format
-  const nameParts = member.full_name?.split(",") || [];
+// Generate legislative action text for card display
+function getLegislationText(member: Row): React.ReactNode {
+  const nameParts = (member.full_name || "").split(",");
   const lastName = nameParts[0]?.trim() || "";
-  const firstName = nameParts[1]?.trim().split(" ")[0] || "";
-
-  // Custom text for lead sponsors
-  const leadSponsorsPreferred = ["Massie", "Khanna"];
-  const leadSponsorsAlternative = ["Smith", "Meeks"];
-  const leadSponsorSenate = ["Kaine"];
+  const title = member.chamber === "SENATE" ? "Sen." : "Rep.";
+  const name = `${title} ${lastName}`;
 
   if (member.chamber === "HOUSE") {
-    // Check if lead sponsor of preferred bill (Massie-Khanna)
-    if (leadSponsorsPreferred.includes(lastName)) {
-      return {
-        status: "positive",
-        text: `Rep. ${lastName} is the lead sponsor of the Iran War Powers Resolution!`,
-      };
-    }
-    // Check if lead sponsor of alternative bill (Smith-Meeks)
-    if (leadSponsorsAlternative.includes(lastName)) {
-      return {
-        status: "alternative",
-        text: `Rep. ${lastName} is the lead sponsor of the Smith-Meeks War Powers Resolution, which is positive but includes an exemption for U.S. military action in defense of Israel.`,
-      };
-    }
-
     const preferredCol = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
-    const altCol = IRAN_WAR_POWERS_CONFIG.house.alternative.column;
-
-    const preferredValue = member[preferredCol];
-    const altValue = member[altCol];
-
-    if (preferredValue != null && Number(preferredValue) > 0) {
-      return {
-        status: "positive",
-        text: IRAN_WAR_POWERS_CONFIG.house.preferred.positive.replace("{name}", lastName),
-      };
+    const val = member[preferredCol];
+    if (val != null && Number(val) > 0) {
+      return `${name} has cosponsored the Massie-Khanna Iran War Powers Resolution!`;
     }
-    if (altValue != null && Number(altValue) > 0) {
-      return {
-        status: "alternative",
-        text: IRAN_WAR_POWERS_CONFIG.house.alternative.positive.replace("{name}", lastName),
-      };
-    }
-    return {
-      status: "negative",
-      text: IRAN_WAR_POWERS_CONFIG.house.negative.replace("{name}", lastName),
-    };
+    return `${name} has not cosponsored the war powers resolution.`;
   } else {
-    // Senate
-    // Check if lead sponsor (Kaine)
-    if (leadSponsorSenate.includes(lastName)) {
-      return {
-        status: "positive",
-        text: `Sen. ${lastName} is the lead sponsor of the Iran War Powers Resolution!`,
-      };
+    const cosponsorCol = "S.J.Res.104 — Iran War Powers Resolution 2025";
+    const cosponsorVal = member[cosponsorCol];
+    if (cosponsorVal != null && Number(cosponsorVal) > 0) {
+      return `${name} has cosponsored the Iran War Powers Resolution!`;
     }
-
     const voteCol = IRAN_WAR_POWERS_CONFIG.senate.column;
-    const voteValue = member[voteCol];
-
-    if (voteValue != null && Number(voteValue) > 0) {
-      return {
-        status: "positive",
-        text: IRAN_WAR_POWERS_CONFIG.senate.positive.replace("{name}", lastName),
-      };
+    const voteVal = member[voteCol];
+    if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
+      const n = Number(voteVal);
+      if (n > 0) return <>{name} voted <strong>in favor</strong> of the previous Iran War Powers Resolution in 2025.</>;
+      if (n === 0) return <>{name} voted <strong>against</strong> the previous Iran War Powers Resolution in 2025.</>;
     }
-    return {
-      status: "negative",
-      text: IRAN_WAR_POWERS_CONFIG.senate.negative.replace("{name}", lastName),
-    };
+    return `${name} has not yet taken a public position through legislation.`;
   }
+}
+
+// Determine the icon status for the legislation line (based on legislative action only)
+// Party default is NOT used here — "no action" always shows the orange dash
+function getLegislationStatus(member: Row): PositionStatus {
+  if (member.chamber === "HOUSE") {
+    const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
+    if (val != null && Number(val) > 0) return "support";
+  } else {
+    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2025"];
+    if (cosponsorVal != null && Number(cosponsorVal) > 0) return "support";
+    const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
+    if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
+      const n = Number(voteVal);
+      if (n > 0) return "support";
+      if (n === 0) return "oppose";
+    }
+  }
+  return "likely_oppose"; // no legislative action taken → orange dash regardless of party
 }
 
 function PositionIcon({ status, size = "large" }: { status: PositionStatus; size?: "large" | "small" }) {
-  // Small size: just the icon, no circle
-  if (size === "small") {
-    const iconClasses = "w-4 h-4 flex-shrink-0";
-    if (status === "positive") {
-      return (
-        <svg className={`${iconClasses} text-emerald-600 dark:text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      );
-    }
-    if (status === "alternative") {
-      return (
-        <svg className={`${iconClasses} text-amber-600 dark:text-amber-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      );
-    }
-    return (
-      <svg className={`${iconClasses} text-red-600 dark:text-red-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    );
-  }
+  const cfg = {
+    support:       { color: "#0A6F7A", bgColor: "#D1F0F2", path: "check" },
+    likely_support:{ color: "#6BBEC4", bgColor: "#E8F7F8", path: "check" },
+    likely_oppose: { color: "#f97316", bgColor: "#FFEDD5", path: "minus" },
+    oppose:        { color: "#ef4444", bgColor: "#FEE2E2", path: "x"     },
+  }[status];
 
-  // Large size: icon with circle background
-  if (status === "positive") {
-    return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-        <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-    );
-  }
-  if (status === "alternative") {
-    return (
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-        <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-    );
-  }
+  const svgSize = size === "small" ? "w-4 h-4 flex-shrink-0" : "w-5 h-5";
+  const iconEl = (
+    <svg className={svgSize} style={{ color: cfg.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      {cfg.path === "check" && <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />}
+      {cfg.path === "minus" && <path strokeLinecap="round" strokeLinejoin="round" d="M6 12h12" />}
+      {cfg.path === "x"     && <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />}
+    </svg>
+  );
+
+  if (size === "small") return iconEl;
   return (
-    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-      <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: cfg.bgColor }}>
+      {iconEl}
     </div>
   );
 }
@@ -154,6 +105,14 @@ function formatMemberName(member: Row): string {
   const firstName = nameParts[1]?.trim().split(" ")[0] || "";
   const title = member.chamber === "SENATE" ? "Senator" : "Representative";
   return `${title} ${firstName} ${lastName}`;
+}
+
+// Build the "first last" key used to look up war statements (matches loadWarStatements key format)
+function memberStatementKey(fullName: string): string {
+  const parts = (fullName || "").split(",");
+  const last = parts[0]?.trim() || "";
+  const first = parts[1]?.trim().split(" ")[0] || "";
+  return `${first} ${last}`.toLowerCase();
 }
 
 // Flexible name matching - handles "First Last", "Last, First", partial matches
@@ -186,13 +145,180 @@ function matchesName(fullName: string, query: string): boolean {
   return false;
 }
 
+// ── Hemicycle (parliament-style) helpers ─────────────────────────────────────
+
+function generateHemicycleSeats(
+  total: number,
+  numRows: number,
+  innerRadius: number,
+  rowSpacing: number,
+  cx: number,
+  cy: number
+): Array<{ x: number; y: number }> {
+  if (total === 0) return [];
+
+  const radii = Array.from({ length: numRows }, (_, i) => innerRadius + i * rowSpacing);
+  const radiusSum = radii.reduce((a, b) => a + b, 0);
+
+  // Distribute seats proportional to arc length (radius)
+  const seatsPerRow = radii.map((r) => Math.round((total * r) / radiusSum));
+
+  // Fix rounding so total matches exactly
+  let diff = total - seatsPerRow.reduce((a, b) => a + b, 0);
+  let row = numRows - 1;
+  while (diff > 0) { seatsPerRow[row]++; diff--; row = (row - 1 + numRows) % numRows; }
+  while (diff < 0) { seatsPerRow[row]--; diff++; row = (row - 1 + numRows) % numRows; }
+
+  const seats: Array<{ x: number; y: number }> = [];
+
+  for (let r = 0; r < numRows; r++) {
+    const radius = radii[r];
+    const n = seatsPerRow[r];
+    for (let i = 0; i < n; i++) {
+      // Sweep from π (left edge) → 0 (right edge)
+      const angle = n === 1 ? Math.PI / 2 : Math.PI * (1 - i / (n - 1));
+      seats.push({
+        x: cx + radius * Math.cos(angle),
+        y: cy - radius * Math.sin(angle),
+      });
+    }
+  }
+
+  return seats;
+}
+
+function HemicycleChart({
+  support,
+  likelySupport,
+  likelyOppose,
+  oppose,
+  label,
+  numRows,
+  innerRadius,
+  rowSpacing,
+  dotRadius,
+}: {
+  support: number;
+  likelySupport: number;
+  likelyOppose: number;
+  oppose: number;
+  label: string;
+  numRows: number;
+  innerRadius: number;
+  rowSpacing: number;
+  dotRadius: number;
+}) {
+  const total = support + likelySupport + likelyOppose + oppose;
+  const W = 220, cx = 110, cy = 118;
+  const H = cy + dotRadius + 2;
+  const outerRadius = innerRadius + (numRows - 1) * rowSpacing;
+  const topClip = Math.max(0, cy - outerRadius - dotRadius - 4);
+
+  const seats = useMemo(
+    () => generateHemicycleSeats(total, numRows, innerRadius, rowSpacing, cx, cy),
+    [total, numRows, innerRadius, rowSpacing]
+  );
+
+  // Left → right: support (A-grade teal), likely_support (light teal), likely_oppose (light red), oppose (dark red)
+  const colorBySeatIdx = useMemo(() => {
+    const order = seats.map((s, i) => ({ i, x: s.x })).sort((a, b) => a.x - b.x);
+    const colors = new Array(seats.length).fill("#ef4444");
+    let cursor = 0;
+    order.slice(cursor, cursor + support).forEach(({ i }) => { colors[i] = "#0A6F7A"; });
+    cursor += support;
+    order.slice(cursor, cursor + likelySupport).forEach(({ i }) => { colors[i] = "#6BBEC4"; });
+    cursor += likelySupport;
+    order.slice(cursor, cursor + likelyOppose).forEach(({ i }) => { colors[i] = "#fca5a5"; });
+    return colors;
+  }, [seats, support, likelySupport, likelyOppose]);
+
+  if (total === 0) return null;
+
+  return (
+    <div>
+      {label && (
+        <p className="text-center text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5 uppercase tracking-wide">
+          {label}
+        </p>
+      )}
+      <svg viewBox={`0 ${topClip} ${W} ${H - topClip}`} className="w-full block">
+        {seats.map((seat, i) => (
+          <circle key={i} cx={seat.x} cy={seat.y} r={dotRadius} fill={colorBySeatIdx[i]} />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function ScoreFlap({
+  count,
+  color,
+  label,
+  small = false,
+  active = false,
+  onClick,
+}: {
+  count: number;
+  color: "green" | "amber" | "orange" | "red";
+  label: string;
+  small?: boolean;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const textColor =
+    color === "green" ? "#6BBEC4" : color === "amber" ? "#fbbf24" : color === "orange" ? "#fb923c" : "#f87171";
+  const ringColor =
+    color === "green" ? "#0A6F7A" : color === "amber" ? "#f59e0b" : color === "orange" ? "#f97316" : "#ef4444";
+  const w = small ? 40 : 44;
+  const h = small ? 48 : 52;
+  const fs = small ? (count >= 100 ? 15 : 20) : (count >= 100 ? 17 : 22);
+  const labelFs = small ? 8 : 9;
+  return (
+    <div
+      className={`flex flex-col items-center gap-0.5 ${onClick ? "cursor-pointer" : ""}`}
+      onClick={onClick}
+    >
+      <div
+        className="relative rounded overflow-hidden flex items-center justify-center transition-all"
+        style={{
+          width: w,
+          height: h,
+          background: "linear-gradient(to bottom, #0c1220 50%, #161f32 50%)",
+          boxShadow: active
+            ? `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 2px ${ringColor}`
+            : "inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 6px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Midline split */}
+        <div
+          className="absolute inset-x-0 z-10"
+          style={{ top: "calc(50% - 1px)", height: 2, background: "#000" }}
+        />
+        <span
+          className="relative z-20 font-bold tabular-nums leading-none"
+          style={{ color: textColor, fontSize: fs }}
+        >
+          {count}
+        </span>
+      </div>
+      <span
+        className="text-center leading-tight text-slate-500 dark:text-slate-400"
+        style={{ fontSize: labelFs, maxWidth: w + 6 }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function IranWarPowersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [cols, setCols] = useState<string[]>([]);
   const [metaByCol, setMetaByCol] = useState<Map<string, Meta>>(new Map());
   const [categories, setCategories] = useState<string[]>([]);
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
-  const [warStatements, setWarStatements] = useState<Map<string, WarStatement>>(new Map());
   const [loading, setLoading] = useState(true);
 
   // Search state
@@ -202,10 +328,15 @@ export default function IranWarPowersPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [myLawmakers, setMyLawmakers] = useState<string[]>([]);
   const [chamberFilter, setChamberFilter] = useState<"" | "HOUSE" | "SENATE">("");
+  const [partyFilter, setPartyFilter] = useState<"" | "Democratic" | "Republican" | "Independent">("");
+  const [statusFilter, setStatusFilter] = useState<"support" | "oppose" | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Ref for scrolling to results
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Filter expand state
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Modal state
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
@@ -236,17 +367,15 @@ export default function IranWarPowersPage() {
   // Load data
   useEffect(() => {
     (async () => {
-      const [data, manualMeta, statements] = await Promise.all([
+      const [data, manualMeta] = await Promise.all([
         loadData(),
         loadManualScoringMeta(),
-        loadWarStatements(),
       ]);
       setRows(data.rows);
       setCols(data.columns);
       setMetaByCol(data.metaByCol);
       setCategories(data.categories);
       setManualScoringMeta(manualMeta);
-      setWarStatements(statements);
       setLoading(false);
     })();
   }, []);
@@ -258,6 +387,11 @@ export default function IranWarPowersPage() {
     // Chamber filter
     if (chamberFilter) {
       result = result.filter((r) => r.chamber === chamberFilter);
+    }
+
+    // Party filter
+    if (partyFilter) {
+      result = result.filter((r) => r.party === partyFilter);
     }
 
     // Name search (when tab is name and there's a query)
@@ -284,6 +418,19 @@ export default function IranWarPowersPage() {
       });
     }
 
+    // Status filter (from whip count flap clicks) — "support" group includes likely_support
+    if (statusFilter === "support") {
+      result = result.filter((r) => {
+        const p = getOverallPosition(r);
+        return p === "support" || p === "likely_support";
+      });
+    } else if (statusFilter === "oppose") {
+      result = result.filter((r) => {
+        const p = getOverallPosition(r);
+        return p === "likely_oppose" || p === "oppose";
+      });
+    }
+
     // Sort by chamber (Senate first), then name
     return result.sort((a, b) => {
       if (a.chamber !== b.chamber) {
@@ -291,11 +438,31 @@ export default function IranWarPowersPage() {
       }
       return (a.full_name || "").localeCompare(b.full_name || "");
     });
-  }, [rows, chamberFilter, searchTab, searchQuery, myLawmakers]);
+  }, [rows, chamberFilter, partyFilter, searchTab, searchQuery, myLawmakers, statusFilter]);
+
+  // Compute position stats for hemicycle / flap display
+  const chamberStats = useMemo(() => {
+    const stats = {
+      SENATE: { support: 0, likely_support: 0, likely_oppose: 0, oppose: 0, total: 0 },
+      HOUSE:  { support: 0, likely_support: 0, likely_oppose: 0, oppose: 0, total: 0 },
+    };
+
+    rows.forEach((member) => {
+      const chamber = member.chamber as "SENATE" | "HOUSE";
+      if (!stats[chamber]) return;
+      const pos = getOverallPosition(member);
+      stats[chamber][pos]++;
+      stats[chamber].total++;
+    });
+
+    return stats;
+  }, [rows]);
 
   // Handle search
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+    setStatusFilter(null);
+    setChamberFilter("");
 
     if (searchTab === "location") {
       setSearchLoading(true);
@@ -332,7 +499,41 @@ export default function IranWarPowersPage() {
     localStorage.removeItem("niac-lawmakers");
   };
 
-  const hasResults = searchTab === "name" ? searchQuery.trim().length > 0 : myLawmakers.length > 0;
+  const hasResults =
+    (searchTab === "name" ? searchQuery.trim().length > 0 : myLawmakers.length > 0) ||
+    statusFilter !== null ||
+    chamberFilter !== "";
+
+  const handleChamberClick = (chamber: "SENATE" | "HOUSE") => {
+    setChamberFilter(chamber);
+    setStatusFilter(null);
+    setSearchQuery("");
+    setMyLawmakers([]);
+    localStorage.removeItem("niac-address");
+    localStorage.removeItem("niac-lawmakers");
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const handleFlapClick = (chamber: "SENATE" | "HOUSE", status: "support" | "oppose") => {
+    if (chamberFilter === chamber && statusFilter === status) {
+      // Toggle off
+      setStatusFilter(null);
+      setChamberFilter("");
+    } else {
+      setChamberFilter(chamber);
+      setStatusFilter(status);
+      // Clear any active search
+      setSearchQuery("");
+      setMyLawmakers([]);
+      localStorage.removeItem("niac-address");
+      localStorage.removeItem("niac-lawmakers");
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  };
 
   if (loading) {
     return (
@@ -414,7 +615,7 @@ export default function IranWarPowersPage() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); }}
+                  onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); setStatusFilter(null); setChamberFilter(""); }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Enter lawmaker's name..."
                   className="w-full px-4 py-3.5 rounded-lg border-0 bg-white/95 backdrop-blur-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg text-base"
@@ -437,6 +638,8 @@ export default function IranWarPowersPage() {
                             onClick={() => {
                               setSearchQuery(String(member.full_name || ""));
                               setShowDropdown(false);
+                              setStatusFilter(null);
+                              setChamberFilter("");
                               // Scroll to results
                               setTimeout(() => {
                                 resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -491,72 +694,78 @@ export default function IranWarPowersPage() {
         </div>
       </div>
 
+      {/* Whip Count Bar */}
+      <div className="border-y border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-3 py-2">
+        <div className="flex items-start gap-2 max-w-2xl mx-auto">
+
+          {/* Senate */}
+          <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("SENATE")}>Senate</h3>
+            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("SENATE")}>
+            <HemicycleChart
+              support={chamberStats.SENATE.support}
+              likelySupport={chamberStats.SENATE.likely_support}
+              likelyOppose={chamberStats.SENATE.likely_oppose}
+              oppose={chamberStats.SENATE.oppose}
+              label=""
+              numRows={4}
+              innerRadius={32}
+              rowSpacing={16}
+              dotRadius={3.5}
+            />
+            </div>
+            <div className="flex gap-1.5 justify-center">
+              <ScoreFlap count={chamberStats.SENATE.support + chamberStats.SENATE.likely_support} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
+              <ScoreFlap count={chamberStats.SENATE.likely_oppose + chamberStats.SENATE.oppose} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="flex justify-center flex-shrink-0 pt-1">
+            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-center leading-tight">
+              <span className="whitespace-nowrap">Iran War Powers Resolution:</span><br/>Current Vote Estimate
+            </p>
+          </div>
+
+          {/* House */}
+          <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
+            <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("HOUSE")}>House</h3>
+            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("HOUSE")}>
+            <HemicycleChart
+              support={chamberStats.HOUSE.support}
+              likelySupport={chamberStats.HOUSE.likely_support}
+              likelyOppose={chamberStats.HOUSE.likely_oppose}
+              oppose={chamberStats.HOUSE.oppose}
+              label=""
+              numRows={9}
+              innerRadius={16}
+              rowSpacing={10}
+              dotRadius={2}
+            />
+            </div>
+            <div className="flex gap-1.5 justify-center">
+              <ScoreFlap count={chamberStats.HOUSE.support + chamberStats.HOUSE.likely_support} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
+              <ScoreFlap count={chamberStats.HOUSE.likely_oppose + chamberStats.HOUSE.oppose} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       {/* Results Section */}
       <div ref={resultsRef} className="p-4 space-y-4 max-w-2xl mx-auto">
-        {/* Chamber Filter */}
-        {hasResults && (
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={() => setChamberFilter("")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                chamberFilter === ""
-                  ? "bg-[#30558C] text-white"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setChamberFilter("SENATE")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                chamberFilter === "SENATE"
-                  ? "bg-[#30558C] text-white"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-              }`}
-            >
-              Senate
-            </button>
-            <button
-              onClick={() => setChamberFilter("HOUSE")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                chamberFilter === "HOUSE"
-                  ? "bg-[#30558C] text-white"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-              }`}
-            >
-              House
-            </button>
-          </div>
-        )}
+        {/* Filters toggle + expandable panel */}
 
-        {/* Results Count */}
-        {hasResults && (
-          <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
-            {filtered.length} {filtered.length === 1 ? "lawmaker" : "lawmakers"} found
-          </p>
-        )}
 
         {/* Results Grid */}
         {hasResults && (
           <div className="space-y-3">
             {filtered.map((member) => {
-              const position = getPosition(member);
-
-              // Check if member has a statement
-              const nameParts = (member.full_name || "").split(",");
-              const lastName = nameParts[0]?.trim().toLowerCase() || "";
-              const hasStatement = warStatements.has(lastName);
-
-              // Determine overall status based on statement and legislation
-              // - Green check if they have statement + positive or alternative legislation
-              // - Yellow check if they have statement but negative legislation
-              // - Otherwise, use legislation status
-              const overallStatus: PositionStatus =
-                hasStatement && position.status === "negative"
-                  ? "alternative"
-                  : hasStatement && position.status === "alternative"
-                  ? "positive"
-                  : position.status;
+              const overallStatus = getOverallPosition(member);
+              const legStatus = getLegislationStatus(member);
+              const legText = getLegislationText(member);
+              const quote = String(member.iran_war_powers_quote || "").trim();
+              const quoteLink = String(member.iran_war_powers_quote_link || "").trim();
 
               return (
                 <div
@@ -586,9 +795,20 @@ export default function IranWarPowersPage() {
                       )}
                     </div>
 
-                    {/* Position Icon */}
-                    <div className="flex-shrink-0 pt-1">
+                    {/* Position Icon + label */}
+                    <div className="flex-shrink-0 pt-1 flex flex-col items-center gap-0.5">
                       <PositionIcon status={overallStatus} size="large" />
+                      <span className="text-[9px] font-semibold leading-tight text-center whitespace-nowrap" style={{ color:
+                        overallStatus === "support"        ? "#0A6F7A" :
+                        overallStatus === "likely_support" ? "#6BBEC4" :
+                        overallStatus === "likely_oppose"  ? "#f97316" :
+                                                             "#ef4444"
+                      }}>
+                        {overallStatus === "support"        ? "Support" :
+                         overallStatus === "likely_support" ? "Likely Support" :
+                         overallStatus === "likely_oppose"  ? "Likely Oppose" :
+                                                              "Oppose"}
+                      </span>
                     </div>
 
                     {/* Info */}
@@ -613,48 +833,34 @@ export default function IranWarPowersPage() {
                       </div>
 
                       {/* Statement quote if available */}
-                      {(() => {
-                        const statement = warStatements.get(lastName);
-                        if (!statement) return null;
-                        return (
-                          <div className="mt-3 flex items-start gap-2">
-                            <PositionIcon status="positive" size="small" />
-                            <div className="flex-1 min-w-0">
-                              {statement.link ? (
-                                <a
-                                  href={statement.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-sm italic text-slate-700 dark:text-slate-200"
-                                >
-                                  &ldquo;{statement.statement}&rdquo;
-                                  {statement.date && (
-                                    <span className="text-xs not-italic ml-1">
-                                      {statement.date}
-                                    </span>
-                                  )}
-                                </a>
-                              ) : (
-                                <p className="text-sm italic text-slate-700 dark:text-slate-200">
-                                  &ldquo;{statement.statement}&rdquo;
-                                  {statement.date && (
-                                    <span className="text-xs text-slate-500 dark:text-slate-400 not-italic ml-1">
-                                      {statement.date}
-                                    </span>
-                                  )}
-                                </p>
-                              )}
-                            </div>
+                      {quote && (
+                        <div className="mt-3 flex items-start gap-2">
+                          <PositionIcon status={overallStatus === "likely_oppose" ? "oppose" : overallStatus} size="small" />
+                          <div className="flex-1 min-w-0">
+                            {quoteLink ? (
+                              <a
+                                href={quoteLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-sm italic text-slate-700 dark:text-slate-200"
+                              >
+                                {quote}
+                              </a>
+                            ) : (
+                              <p className="text-sm italic text-slate-700 dark:text-slate-200">
+                                {quote}
+                              </p>
+                            )}
                           </div>
-                        );
-                      })()}
+                        </div>
+                      )}
 
                       {/* Legislation */}
                       <div className="mt-2 flex items-start gap-2">
-                        <PositionIcon status={position.status} size="small" />
+                        <PositionIcon status={legStatus} size="small" />
                         <p className="text-sm text-slate-700 dark:text-slate-200">
-                          {position.text}
+                          {legText}
                         </p>
                       </div>
                     </div>
@@ -662,23 +868,6 @@ export default function IranWarPowersPage() {
                 </div>
               );
             })}
-          </div>
-        )}
-
-        {/* Empty state - only show when no results and no search active */}
-        {!hasResults && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
-              Search for Your Lawmakers
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Enter a name or address above to see where your lawmakers stand on preventing unauthorized war with Iran.
-            </p>
           </div>
         )}
 
@@ -711,6 +900,65 @@ export default function IranWarPowersPage() {
           </div>
         </div>
       </div>
+
+      {/* Fixed left-side filter button + popup */}
+      {hasResults && (
+        <div className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex items-start">
+          {/* Popup panel */}
+          {filtersOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setFiltersOpen(false)} />
+              <div className="relative z-40 ml-0 bg-white dark:bg-slate-800 shadow-xl rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-700 p-4 w-48 space-y-4">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Chamber</p>
+                <div className="flex flex-col gap-1.5">
+                  {(["", "SENATE", "HOUSE"] as const).map((c) => (
+                    <button
+                      key={c || "all"}
+                      onClick={() => setChamberFilter(c)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
+                        chamberFilter === c
+                          ? "bg-[#30558C] text-white"
+                          : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                      }`}
+                    >
+                      {c === "" ? "All" : c === "SENATE" ? "Senate" : "House"}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Party</p>
+                <div className="flex flex-col gap-1.5">
+                  {(["", "Democratic", "Republican", "Independent"] as const).map((p) => (
+                    <button
+                      key={p || "all"}
+                      onClick={() => setPartyFilter(p)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
+                        partyFilter === p
+                          ? "bg-[#30558C] text-white"
+                          : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                      }`}
+                    >
+                      {p === "" ? "All" : p === "Democratic" ? "Democrat" : p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          {/* Toggle tab */}
+          <button
+            onClick={() => setFiltersOpen((o) => !o)}
+            className="relative z-40 flex flex-col items-center justify-center gap-1 bg-white dark:bg-slate-800 border border-l-0 border-slate-200 dark:border-slate-700 shadow-md rounded-r-lg px-1.5 py-3 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
+            </svg>
+            <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>Filter</span>
+            {(chamberFilter || partyFilter) && (
+              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#30558C]" />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Member Modal */}
       {selectedMember && (

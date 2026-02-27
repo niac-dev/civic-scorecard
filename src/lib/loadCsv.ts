@@ -216,10 +216,11 @@ export interface WarStatement {
   statement: string;
   link: string;
   date: string;
+  position: "Support" | "Oppose";
 }
 
 export async function loadWarStatements(): Promise<Map<string, WarStatement>> {
-  const data = await fetchCSV<{ "Lawmaker Name": string; Statement: string; Link: string; Date: string }>(
+  const data = await fetchCSV<{ "Lawmaker Name": string; Statement: string; Link: string; Date: string; Position: string }>(
     "/data/lawmaker_statements_opposing_iran_war_FULL.csv"
   );
 
@@ -240,15 +241,20 @@ export async function loadWarStatements(): Promise<Map<string, WarStatement>> {
       if (nameMatch) {
         const namePart = nameMatch[1]; // e.g., "Ruben Gallego" or "Debbie Wasserman Schultz"
         const nameParts = namePart.split(/\s+/);
-        // Last name is everything after first name (handles "Wasserman Schultz")
-        const lastName = nameParts.slice(1).join(" ");
 
-        // Store by last name for matching
-        map.set(lastName.toLowerCase(), {
+        // Filter out middle initials (single letters or letters with periods like "E." or "C.")
+        const nonInitials = nameParts.filter(part => !/^[A-Z]\.?$/i.test(part));
+        // Last name is everything after first name, excluding middle initials
+        const lastName = nonInitials.length > 1 ? nonInitials.slice(1).join(" ") : nameParts[nameParts.length - 1];
+        const firstName = nonInitials[0] || nameParts[0];
+
+        // Store by "first last" to disambiguate members sharing a last name (e.g. Hank vs Ron Johnson)
+        map.set(`${firstName} ${lastName}`.toLowerCase(), {
           name: fullName,
           statement,
           link: link || "",
           date,
+          position: (row.Position?.trim() === "Oppose" ? "Oppose" : "Support") as "Support" | "Oppose",
         });
       }
     }
