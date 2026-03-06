@@ -103,7 +103,7 @@ export function GradeChip({ grade, scale = 1, size = "default" }: GradeChipProps
   );
 }
 
-export function VoteIcon({ ok, small = false, size = "large" }: { ok: boolean; small?: boolean; size?: "large" | "chip" | "medium-large" | "medium" | "small" | "tiny" }) {
+export function VoteIcon({ ok, partialOk = false, small = false, size = "large" }: { ok: boolean; partialOk?: boolean; small?: boolean; size?: "large" | "chip" | "medium-large" | "medium" | "small" | "tiny" }) {
   // Support legacy 'small' prop for backwards compatibility
   const effectiveSize = small ? "small" : size;
 
@@ -115,10 +115,12 @@ export function VoteIcon({ ok, small = false, size = "large" }: { ok: boolean; s
     : "h-10 w-10 xl:h-12 xl:w-12 flex-shrink-0";
 
   if (ok) {
+    // partialOk = voted yes but did not cosponsor (light green, C-grade color)
+    const checkColor = partialOk ? GRADE_COLORS.C : GRADE_COLORS.A;
     return (
       <svg viewBox="0 0 20 20" className={sizeClass} aria-hidden="true" role="img">
-        <circle cx="10" cy="10" r="8" fill="#FFFFFF" stroke={GRADE_COLORS.A} strokeWidth="2.5" />
-        <path d="M8.5 13.5l-3-3 -1.5 1.5 4.5 4.5 7-7 -1.5-1.5z" fill={GRADE_COLORS.A} transform="translate(0, -1.5)" />
+        <circle cx="10" cy="10" r="8" fill="#FFFFFF" stroke={checkColor} strokeWidth="2.5" />
+        <path d="M8.5 13.5l-3-3 -1.5 1.5 4.5 4.5 7-7 -1.5-1.5z" fill={checkColor} transform="translate(0, -1.5)" />
       </svg>
     );
   }

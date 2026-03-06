@@ -1199,9 +1199,13 @@ export function MemberModal({
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.waiver ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
-                                ) : (
-                                  <VoteIcon ok={it.ok} small />
-                                )}
+                                ) : (() => {
+                                  // For combined cosponsor+vote bills, vote-only members (val=5) get a light green check
+                                  const billActionType = (it.meta as { action_types?: string })?.action_types || '';
+                                  const isCombinedBill = billActionType.includes('cosponsor') && billActionType.includes('vote');
+                                  const isVoteOnly = isCombinedBill && it.ok && it.val === 5;
+                                  return <VoteIcon ok={it.ok} partialOk={isVoteOnly} small />;
+                                })()}
                               </div>
                               <span className="font-medium">
                                 {(() => {
@@ -1251,26 +1255,38 @@ export function MemberModal({
                                     }
 
                                     // Check if they cosponsored (or sponsored) each bill
-                                    // Sponsors have positive points on main column but _cosponsor = 0
+                                    // For combined (cosponsor+vote) bills, only actual cosponsors or lead sponsors
+                                    // count — a vote-only member (val=5) does NOT count as supporting the pair.
+                                    const preferredMeta = preferredCol ? metaByCol.get(preferredCol) : undefined;
+                                    const preferredActionType = ((preferredMeta as { action_types?: string })?.action_types || '');
+                                    const preferredIsCombined = preferredActionType.includes('cosponsor') && preferredActionType.includes('vote');
                                     const preferredMainPoints = preferredCol ? Number((row as Record<string, unknown>)[preferredCol] ?? 0) : 0;
+                                    const didCosponsorPreferred = preferredCol ? Number((row as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1 : false;
+                                    const isLeadSponsorOfPreferred = preferredMeta?.sponsor_bioguide_id === String(row.bioguide_id);
                                     const cosponsoredPreferred = preferredCol ? (
-                                      (Number((row as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1) ||
-                                      preferredMainPoints > 0  // Sponsors have positive points
+                                      didCosponsorPreferred ||
+                                      (preferredIsCombined ? isLeadSponsorOfPreferred : preferredMainPoints > 0)
                                     ) : false;
+
+                                    const nonPreferredMeta = nonPreferredCol ? metaByCol.get(nonPreferredCol) : undefined;
+                                    const nonPreferredActionType = ((nonPreferredMeta as { action_types?: string })?.action_types || '');
+                                    const nonPreferredIsCombined = nonPreferredActionType.includes('cosponsor') && nonPreferredActionType.includes('vote');
                                     const nonPreferredMainPoints = nonPreferredCol ? Number((row as Record<string, unknown>)[nonPreferredCol] ?? 0) : 0;
+                                    const didCosponsorNonPreferred = nonPreferredCol ? Number((row as Record<string, unknown>)[`${nonPreferredCol}_cosponsor`] ?? 0) === 1 : false;
+                                    const isLeadSponsorOfNonPreferred = nonPreferredMeta?.sponsor_bioguide_id === String(row.bioguide_id);
                                     const cosponsoredNonPreferred = nonPreferredCol ? (
-                                      (Number((row as Record<string, unknown>)[`${nonPreferredCol}_cosponsor`] ?? 0) === 1) ||
-                                      nonPreferredMainPoints > 0  // Sponsors have positive points
+                                      didCosponsorNonPreferred ||
+                                      (nonPreferredIsCombined ? isLeadSponsorOfNonPreferred : nonPreferredMainPoints > 0)
                                     ) : false;
 
                                     if (isPreferred) {
                                       // This is the preferred bill (H.Con.Res.38)
-                                      if (cosponsoredPreferred) {
-                                        // Use actual earned points (may include sponsor bonus)
-                                        const earnedPoints = it.val > 0 ? it.val : preferredPoints;
-                                        pointsDisplay = ` (+${earnedPoints} pts)`;
+                                      // Show actual earned points regardless of cosponsor status
+                                      // (vote-only members earn +5, cosponsors earn +10, no action = -pts)
+                                      if (it.val > 0) {
+                                        pointsDisplay = ` (+${it.val} pts)`;
                                       } else {
-                                        // Didn't cosponsor preferred - show penalty
+                                        // Got 0 points — show as missed opportunity
                                         pointsDisplay = ` (-${preferredPoints} pts)`;
                                       }
                                     } else {
@@ -1365,7 +1381,21 @@ export function MemberModal({
                                       }
                                     }
                                   }
-                                  else if (isCosponsor) {
+                                  else if (isCosponsor && isVote) {
+                                    // Combined cosponsor + vote bill (both tracked in one score column)
+                                    const isSponsor = it.meta?.sponsor_bioguide_id === row.bioguide_id;
+                                    if (isSponsor) {
+                                      actionDescription = 'Sponsored + Voted in favor';
+                                    } else if (it.val > 5) {
+                                      actionDescription = 'Cosponsored + Voted in favor';
+                                    } else if (it.val === 5) {
+                                      actionDescription = 'Voted in favor';
+                                    } else if (it.val === 0) {
+                                      actionDescription = 'Voted against';
+                                    } else {
+                                      actionDescription = 'Has not cosponsored';
+                                    }
+                                  } else if (isCosponsor) {
                                     // Check if this is part of a preferred pair
                                     if (it.meta?.pair_key) {
                                       const pairKey = it.meta.pair_key;
@@ -1374,14 +1404,22 @@ export function MemberModal({
                                       if (!isPreferred) {
                                         // This is the non-preferred bill
                                         // Check if they cosponsored (or sponsored) the preferred bill
+                                        // For combined (cosponsor+vote) bills, only actual cosponsors or lead
+                                        // sponsors count — a vote-only member does NOT support the preferred pair.
                                         let supportedPreferred = false;
                                         for (const col of billCols) {
                                           const pairMeta = metaByCol.get(col);
                                           if (pairMeta?.pair_key === pairKey && isTrue((pairMeta as Record<string, unknown>).preferred)) {
-                                            // Check both cosponsor status AND main column points (for sponsors)
-                                            const didCosponsorPreferred = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
-                                            const hasPreferredPoints = Number((row as Record<string, unknown>)[col] ?? 0) > 0;
-                                            supportedPreferred = didCosponsorPreferred || hasPreferredPoints;
+                                            const didCosponsorPref = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
+                                            const isLeadSponsorPref = pairMeta?.sponsor_bioguide_id === String(row.bioguide_id);
+                                            const pairActionType = ((pairMeta as { action_types?: string })?.action_types || '');
+                                            const pairIsCombined = pairActionType.includes('cosponsor') && pairActionType.includes('vote');
+                                            // Combined bills: only cosponsor/lead-sponsor counts; pure cosponsor: any positive points
+                                            if (pairIsCombined) {
+                                              supportedPreferred = didCosponsorPref || isLeadSponsorPref;
+                                            } else {
+                                              supportedPreferred = didCosponsorPref || Number((row as Record<string, unknown>)[col] ?? 0) > 0;
+                                            }
                                             break;
                                           }
                                         }

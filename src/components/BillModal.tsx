@@ -1,24 +1,13 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl, isGradeIncomplete, isTrackerOnly } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl, isGradeIncomplete, isTrackerOnly, isNonVotingDelegate } from "@/lib/utils";
 import clsx from "clsx";
 import { VoteIcon, GradeChip } from "@/components/GradeChip";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
-  const actionType = (meta as { action_types?: string })?.action_types || '';
-  const isCosponsor = actionType.includes('cosponsor');
-  const isVote = actionType.includes('vote');
-  const isSupport = position === 'SUPPORT';
-
-  if (isCosponsor) {
-    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
-  } else if (isVote) {
-    return isSupport ? 'Vote in Favor' : 'Vote Against';
-  } else {
-    return isSupport ? 'Support' : 'Oppose';
-  }
+  return position === 'SUPPORT' ? 'Support' : 'Oppose';
 }
 
 // Convert "Last, First" to "First Last"
@@ -254,7 +243,21 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      if (isCosponsor) {
+      // Absent check (skip from vote tallies)
+      const absentCol = `${column}_absent`;
+      const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+
+      if (isCosponsor && isVote) {
+        // Combined cosponsor+vote bill: group by vote outcome, skip non-voting delegates
+        if (isNonVotingDelegate(row) || wasAbsent) return;
+        const points = Number(val);
+        if (points > 0) {
+          support.push(row);
+        } else {
+          oppose.push(row);
+        }
+      } else if (isCosponsor) {
+        // Pure cosponsor bill: group by cosponsor status (delegates can cosponsor)
         const cosponsorCol = `${column}_cosponsor`;
         const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
         if (didCosponsor) {
@@ -263,6 +266,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
           oppose.push(row);
         }
       } else if (isVote) {
+        // Pure vote bill: skip non-voting delegates and absent members
+        if (isNonVotingDelegate(row) || wasAbsent) return;
         const points = Number(val);
         if (points === -1) {
           present.push(row);
@@ -288,7 +293,13 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     let sIsGood = !isSupport;
     const tIsGood = false;
 
-    if (isCosponsor) {
+    if (isCosponsor && isVote) {
+      // Combined cosponsor+vote bill: sections by vote outcome
+      fLabel = 'Voted in favor';
+      sLabel = 'Voted against';
+      fIsGood = isSupport;
+      sIsGood = !isSupport;
+    } else if (isCosponsor) {
       fLabel = 'Cosponsors';
       sLabel = 'Has not cosponsored';
       fIsGood = isSupport;
@@ -552,7 +563,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 const hasPairKey = !!meta.pair_key;
 
                 let scoringText: string;
-                if (isCosponsor) {
+                if (isCosponsor && isVote) {
+                  // Combined cosponsor+vote bill
+                  scoringText = `Cosponsor + Vote Yes = +${points} pts · Vote Yes = +5 pts · Vote No = 0 pts`;
+                } else if (isCosponsor) {
                   if (hasPairKey && !isPreferred) {
                     // Non-preferred bill in a pair - find preferred bill name from pair_key
                     const pairKeyParts = (meta.pair_key || '').split('|');
@@ -810,6 +824,10 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
                       {filteredFirstSection.map((member) => {
                         const isSponsor = sponsorMember && member.bioguide_id === sponsorMember.bioguide_id;
+                        const actionType = (meta as { action_types?: string })?.action_types || '';
+                        const isCombinedBill = actionType.includes('cosponsor') && actionType.includes('vote');
+                        const memberVal = Number((member as Record<string, unknown>)[column] ?? 0);
+                        const didCosponsor = isCombinedBill && (isSponsor || memberVal > 5);
                         return (
                           <div
                             key={member.bioguide_id}
@@ -842,9 +860,16 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             )}
                             {/* Info */}
                             <div className="flex flex-col min-w-0 flex-1">
-                              <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
-                                {formatNameFirstLast(member.full_name)}{isSponsor && '*'}
-                              </span>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                                  {formatNameFirstLast(member.full_name)}{isSponsor && !isCombinedBill && '*'}
+                                </span>
+                                {didCosponsor && (
+                                  <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#D1F0F2", color: "#0A6F7A" }}>
+                                    {isSponsor ? 'Sponsored' : 'Cosponsored'}
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                                 <span
                                   className="px-1 py-0.5 rounded-md text-[9px] font-semibold"

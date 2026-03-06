@@ -11,6 +11,8 @@ import {
   getPhotoUrl,
 } from "@/lib/utils";
 import { MemberModal } from "@/components/MemberModal";
+import { BillModal } from "@/components/BillModal";
+import { VoteIcon } from "@/components/GradeChip";
 
 type PositionStatus = "support" | "likely_support" | "likely_oppose" | "oppose";
 
@@ -24,6 +26,8 @@ function getOverallPosition(member: Row): PositionStatus {
 }
 
 // Generate legislative action text for card display
+// HConRes38: 10+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
+// SJRes104:   7+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
 function getLegislationText(member: Row): React.ReactNode {
   const nameParts = (member.full_name || "").split(",");
   const lastName = nameParts[0]?.trim() || "";
@@ -31,26 +35,30 @@ function getLegislationText(member: Row): React.ReactNode {
   const name = `${title} ${lastName}`;
 
   if (member.chamber === "HOUSE") {
-    const preferredCol = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
-    const val = member[preferredCol];
-    if (val != null && Number(val) > 0) {
-      return `${name} has cosponsored the Massie-Khanna Iran War Powers Resolution!`;
+    const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
+    if (val != null && val !== "") {
+      const n = Number(val);
+      if (n >= 10) return <>{name} cosponsored and voted <strong>in favor</strong> of the Massie-Khanna Iran War Powers Resolution.</>;
+      if (n === 5)  return <>{name} voted <strong>in favor</strong> of the Massie-Khanna Iran War Powers Resolution.</>;
+      if (n === 0)  return <>{name} voted <strong>against</strong> the Massie-Khanna Iran War Powers Resolution.</>;
     }
     return `${name} has not cosponsored the war powers resolution.`;
   } else {
-    const cosponsorCol = "S.J.Res.104 — Iran War Powers Resolution 2025";
-    const cosponsorVal = member[cosponsorCol];
-    if (cosponsorVal != null && Number(cosponsorVal) > 0) {
-      return `${name} has cosponsored the Iran War Powers Resolution!`;
+    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2026"];
+    if (cosponsorVal != null && cosponsorVal !== "") {
+      const n = Number(cosponsorVal);
+      if (n >= 7) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
+      if (n === 5) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
+      if (n === 0) return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
     }
-    const voteCol = IRAN_WAR_POWERS_CONFIG.senate.column;
-    const voteVal = member[voteCol];
+    // Fallback: older SJRes59 vote
+    const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
     if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
       const n = Number(voteVal);
-      if (n > 0) return <>{name} voted <strong>in favor</strong> of the previous Iran War Powers Resolution in 2025.</>;
-      if (n === 0) return <>{name} voted <strong>against</strong> the previous Iran War Powers Resolution in 2025.</>;
+      if (n > 0) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
+      if (n === 0) return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
     }
-    return `${name} has not yet taken a public position through legislation.`;
+    return `${name} has not voted on the Iran War Powers Resolution.`;
   }
 }
 
@@ -59,10 +67,18 @@ function getLegislationText(member: Row): React.ReactNode {
 function getLegislationStatus(member: Row): PositionStatus {
   if (member.chamber === "HOUSE") {
     const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
-    if (val != null && Number(val) > 0) return "support";
+    if (val != null && val !== "") {
+      const n = Number(val);
+      if (n > 0) return "support";
+      if (n === 0) return "oppose";
+    }
   } else {
-    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2025"];
-    if (cosponsorVal != null && Number(cosponsorVal) > 0) return "support";
+    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2026"];
+    if (cosponsorVal != null && cosponsorVal !== "") {
+      const n = Number(cosponsorVal);
+      if (n > 0) return "support";
+      if (n === 0) return "oppose";
+    }
     const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
     if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
       const n = Number(voteVal);
@@ -70,32 +86,7 @@ function getLegislationStatus(member: Row): PositionStatus {
       if (n === 0) return "oppose";
     }
   }
-  return "likely_oppose"; // no legislative action taken → orange dash regardless of party
-}
-
-function PositionIcon({ status, size = "large" }: { status: PositionStatus; size?: "large" | "small" }) {
-  const cfg = {
-    support:       { color: "#0A6F7A", bgColor: "#D1F0F2", path: "check" },
-    likely_support:{ color: "#6BBEC4", bgColor: "#E8F7F8", path: "check" },
-    likely_oppose: { color: "#f97316", bgColor: "#FFEDD5", path: "minus" },
-    oppose:        { color: "#ef4444", bgColor: "#FEE2E2", path: "x"     },
-  }[status];
-
-  const svgSize = size === "small" ? "w-4 h-4 flex-shrink-0" : "w-5 h-5";
-  const iconEl = (
-    <svg className={svgSize} style={{ color: cfg.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      {cfg.path === "check" && <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />}
-      {cfg.path === "minus" && <path strokeLinecap="round" strokeLinejoin="round" d="M6 12h12" />}
-      {cfg.path === "x"     && <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />}
-    </svg>
-  );
-
-  if (size === "small") return iconEl;
-  return (
-    <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: cfg.bgColor }}>
-      {iconEl}
-    </div>
-  );
+  return "likely_oppose";
 }
 
 // Format member name as "Title First Last"
@@ -188,27 +179,21 @@ function generateHemicycleSeats(
 }
 
 function HemicycleChart({
-  support,
-  likelySupport,
-  likelyOppose,
-  oppose,
+  members,
   label,
   numRows,
   innerRadius,
   rowSpacing,
   dotRadius,
 }: {
-  support: number;
-  likelySupport: number;
-  likelyOppose: number;
-  oppose: number;
+  members: { isSupport: boolean; party: string }[];
   label: string;
   numRows: number;
   innerRadius: number;
   rowSpacing: number;
   dotRadius: number;
 }) {
-  const total = support + likelySupport + likelyOppose + oppose;
+  const total = members.length;
   const W = 220, cx = 110, cy = 118;
   const H = cy + dotRadius + 2;
   const outerRadius = innerRadius + (numRows - 1) * rowSpacing;
@@ -219,18 +204,22 @@ function HemicycleChart({
     [total, numRows, innerRadius, rowSpacing]
   );
 
-  // Left → right: support (A-grade teal), likely_support (light teal), likely_oppose (light red), oppose (dark red)
-  const colorBySeatIdx = useMemo(() => {
+  // Sort seats left → right; assign support members to left seats, oppose to right
+  // Each dot: fill = green (support) or F-grade burgundy (oppose); stroke = party color
+  const dotsBySeatIdx = useMemo(() => {
     const order = seats.map((s, i) => ({ i, x: s.x })).sort((a, b) => a.x - b.x);
-    const colors = new Array(seats.length).fill("#ef4444");
-    let cursor = 0;
-    order.slice(cursor, cursor + support).forEach(({ i }) => { colors[i] = "#0A6F7A"; });
-    cursor += support;
-    order.slice(cursor, cursor + likelySupport).forEach(({ i }) => { colors[i] = "#6BBEC4"; });
-    cursor += likelySupport;
-    order.slice(cursor, cursor + likelyOppose).forEach(({ i }) => { colors[i] = "#fca5a5"; });
-    return colors;
-  }, [seats, support, likelySupport, likelyOppose]);
+    // members is already sorted: support first, then oppose
+    const dots = new Array(seats.length).fill(null).map(() => ({ fill: "#A96A63", stroke: "#94A3B8" }));
+    order.forEach(({ i }, idx) => {
+      const member = members[idx];
+      if (!member) return;
+      const fill = member.isSupport ? "#0A6F7A" : "#A96A63";
+      const party = (member.party || "").toLowerCase();
+      const stroke = party.startsWith("rep") ? "#DC2626" : party.startsWith("dem") ? "#2563EB" : "#94A3B8";
+      dots[i] = { fill, stroke };
+    });
+    return dots;
+  }, [seats, members]);
 
   if (total === 0) return null;
 
@@ -243,7 +232,15 @@ function HemicycleChart({
       )}
       <svg viewBox={`0 ${topClip} ${W} ${H - topClip}`} className="w-full block">
         {seats.map((seat, i) => (
-          <circle key={i} cx={seat.x} cy={seat.y} r={dotRadius} fill={colorBySeatIdx[i]} />
+          <circle
+            key={i}
+            cx={seat.x}
+            cy={seat.y}
+            r={dotRadius - 0.5}
+            fill={dotsBySeatIdx[i].fill}
+            stroke={dotsBySeatIdx[i].stroke}
+            strokeWidth={0.8}
+          />
         ))}
       </svg>
     </div>
@@ -340,6 +337,7 @@ export default function IranWarPowersPage() {
 
   // Modal state
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
+  const [selectedBillModal, setSelectedBillModal] = useState<{ meta: Meta; column: string } | null>(null);
 
   // Header hide/show on scroll
   const [headerVisible, setHeaderVisible] = useState(true);
@@ -456,6 +454,22 @@ export default function IranWarPowersPage() {
     });
 
     return stats;
+  }, [rows]);
+
+  // Sorted member lists for hemicycle dots (support left, oppose right)
+  const hemicycleMembers = useMemo(() => {
+    const toEntry = (m: Row) => ({
+      isSupport: ["support", "likely_support"].includes(getOverallPosition(m)),
+      party: String(m.party || ""),
+    });
+    const sort = (list: Row[]) => [
+      ...list.filter(m => ["support", "likely_support"].includes(getOverallPosition(m))),
+      ...list.filter(m => !["support", "likely_support"].includes(getOverallPosition(m))),
+    ].map(toEntry);
+    return {
+      SENATE: sort(rows.filter(r => r.chamber === "SENATE")),
+      HOUSE:  sort(rows.filter(r => r.chamber === "HOUSE")),
+    };
   }, [rows]);
 
   // Handle search
@@ -581,7 +595,7 @@ export default function IranWarPowersPage() {
             className="text-4xl md:text-5xl lg:text-6xl text-white mb-6 leading-tight"
             style={{ fontFamily: "'Caveat', cursive", fontWeight: 600 }}
           >
-            Where do <span className="text-yellow-300">YOUR</span> lawmakers stand on going to war with Iran?
+            Where do <span className="text-yellow-300">YOUR</span> lawmakers stand on <span className="uppercase">ending</span> the war on Iran?
           </h1>
 
           {/* Search Tabs */}
@@ -701,12 +715,13 @@ export default function IranWarPowersPage() {
           {/* Senate */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("SENATE")}>Senate</h3>
-            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("SENATE")}>
+            <div className="cursor-pointer w-full" onClick={() => {
+              const col = "S.J.Res.104 — Iran War Powers Resolution 2026";
+              const m = metaByCol.get(col);
+              if (m) setSelectedBillModal({ meta: m, column: col });
+            }}>
             <HemicycleChart
-              support={chamberStats.SENATE.support}
-              likelySupport={chamberStats.SENATE.likely_support}
-              likelyOppose={chamberStats.SENATE.likely_oppose}
-              oppose={chamberStats.SENATE.oppose}
+              members={hemicycleMembers.SENATE}
               label=""
               numRows={4}
               innerRadius={32}
@@ -718,24 +733,19 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={chamberStats.SENATE.support + chamberStats.SENATE.likely_support} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
               <ScoreFlap count={chamberStats.SENATE.likely_oppose + chamberStats.SENATE.oppose} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
-          </div>
-
-          {/* Title */}
-          <div className="flex justify-center flex-shrink-0 pt-1">
-            <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide text-center leading-tight">
-              <span className="whitespace-nowrap">Iran War Powers Resolution:</span><br/>Current Vote Estimate
-            </p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 4, 2026</p>
           </div>
 
           {/* House */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("HOUSE")}>House</h3>
-            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("HOUSE")}>
+            <div className="cursor-pointer w-full" onClick={() => {
+              const col = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
+              const m = metaByCol.get(col);
+              if (m) setSelectedBillModal({ meta: m, column: col });
+            }}>
             <HemicycleChart
-              support={chamberStats.HOUSE.support}
-              likelySupport={chamberStats.HOUSE.likely_support}
-              likelyOppose={chamberStats.HOUSE.likely_oppose}
-              oppose={chamberStats.HOUSE.oppose}
+              members={hemicycleMembers.HOUSE}
               label=""
               numRows={9}
               innerRadius={16}
@@ -747,6 +757,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={chamberStats.HOUSE.support + chamberStats.HOUSE.likely_support} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
               <ScoreFlap count={chamberStats.HOUSE.likely_oppose + chamberStats.HOUSE.oppose} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
             </div>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 5, 2026</p>
           </div>
 
         </div>
@@ -762,10 +773,7 @@ export default function IranWarPowersPage() {
           <div className="space-y-3">
             {filtered.map((member) => {
               const overallStatus = getOverallPosition(member);
-              const legStatus = getLegislationStatus(member);
               const legText = getLegislationText(member);
-              const quote = String(member.iran_war_powers_quote || "").trim();
-              const quoteLink = String(member.iran_war_powers_quote_link || "").trim();
 
               return (
                 <div
@@ -795,20 +803,9 @@ export default function IranWarPowersPage() {
                       )}
                     </div>
 
-                    {/* Position Icon + label */}
-                    <div className="flex-shrink-0 pt-1 flex flex-col items-center gap-0.5">
-                      <PositionIcon status={overallStatus} size="large" />
-                      <span className="text-[9px] font-semibold leading-tight text-center whitespace-nowrap" style={{ color:
-                        overallStatus === "support"        ? "#0A6F7A" :
-                        overallStatus === "likely_support" ? "#6BBEC4" :
-                        overallStatus === "likely_oppose"  ? "#f97316" :
-                                                             "#ef4444"
-                      }}>
-                        {overallStatus === "support"        ? "Support" :
-                         overallStatus === "likely_support" ? "Likely Support" :
-                         overallStatus === "likely_oppose"  ? "Likely Oppose" :
-                                                              "Oppose"}
-                      </span>
+                    {/* Vote Icon */}
+                    <div className="flex-shrink-0 pt-1">
+                      <VoteIcon ok={overallStatus === "support" || overallStatus === "likely_support"} size="medium-large" />
                     </div>
 
                     {/* Info */}
@@ -832,37 +829,10 @@ export default function IranWarPowersPage() {
                         </span>
                       </div>
 
-                      {/* Statement quote if available */}
-                      {quote && (
-                        <div className="mt-3 flex items-start gap-2">
-                          <PositionIcon status={overallStatus === "likely_oppose" ? "oppose" : overallStatus} size="small" />
-                          <div className="flex-1 min-w-0">
-                            {quoteLink ? (
-                              <a
-                                href={quoteLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-sm italic text-slate-700 dark:text-slate-200"
-                              >
-                                {quote}
-                              </a>
-                            ) : (
-                              <p className="text-sm italic text-slate-700 dark:text-slate-200">
-                                {quote}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Legislation */}
-                      <div className="mt-2 flex items-start gap-2">
-                        <PositionIcon status={legStatus} size="small" />
-                        <p className="text-sm text-slate-700 dark:text-slate-200">
-                          {legText}
-                        </p>
-                      </div>
+                      {/* How they voted */}
+                      <p className="mt-1.5 text-sm text-slate-700 dark:text-slate-200">
+                        {legText}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -958,6 +928,21 @@ export default function IranWarPowersPage() {
             )}
           </button>
         </div>
+      )}
+
+      {/* Bill Modal */}
+      {selectedBillModal && (
+        <BillModal
+          meta={selectedBillModal.meta}
+          column={selectedBillModal.column}
+          rows={rows}
+          manualScoringMeta={manualScoringMeta}
+          onClose={() => setSelectedBillModal(null)}
+          onMemberClick={(member) => {
+            setSelectedBillModal(null);
+            setSelectedMember(member);
+          }}
+        />
       )}
 
       {/* Member Modal */}

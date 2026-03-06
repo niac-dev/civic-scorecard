@@ -6,9 +6,10 @@ interface MemberCardProps {
   member: Row;
   onClick: () => void;
   showAipacBadges?: boolean;
+  badge?: string;
 }
 
-export function MemberCard({ member, onClick, showAipacBadges = false }: MemberCardProps) {
+export function MemberCard({ member, onClick, showAipacBadges = false, badge }: MemberCardProps) {
   // Determine which grade field to use (different pages use different field names)
   const grade = member.Grade || member["Grade: Overall"];
 
@@ -37,6 +38,11 @@ export function MemberCard({ member, onClick, showAipacBadges = false }: MemberC
       <div className="flex-1 min-w-0">
         <div className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 overflow-hidden">
           <span className="truncate">{member.full_name}</span>
+          {badge && (
+            <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "#D1F0F2", color: "#0A6F7A" }}>
+              {badge}
+            </span>
+          )}
           {grade && (() => {
             const gradeStr = String(grade);
             const letter = gradeStr.charAt(0);

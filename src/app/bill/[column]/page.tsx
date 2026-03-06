@@ -6,22 +6,24 @@ import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
-import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo } from "@/lib/utils";
+import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo, isNonVotingDelegate } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
+  return position === 'SUPPORT' ? 'Support' : 'Oppose';
+}
+
+function formatScoringDescription(meta: Meta | undefined): string | null {
   const actionType = (meta as { action_types?: string })?.action_types || '';
   const isCosponsor = actionType.includes('cosponsor');
   const isVote = actionType.includes('vote');
-  const isSupport = position === 'SUPPORT';
+  const maxPts = Number((meta as { points?: number })?.points || 0);
 
-  if (isCosponsor) {
-    return isSupport ? 'Support Cosponsorship' : 'Oppose Cosponsorship';
-  } else if (isVote) {
-    return isSupport ? 'Vote in Favor' : 'Vote Against';
-  } else {
-    return isSupport ? 'Support' : 'Oppose';
+  if (isCosponsor && isVote && maxPts > 0) {
+    // Combined cosponsor + vote bill: explain all tiers
+    return `Cosponsor + Vote Yes = +${maxPts} pts · Vote Yes = +5 pts · Vote No = 0 pts`;
   }
+  return null;
 }
 
 export default function BillPage() {
@@ -149,8 +151,17 @@ export default function BillPage() {
           return;
         }
 
-        // For cosponsor bills, use the _cosponsor column to determine grouping
-        if (isCosponsorAction) {
+        // For combined cosponsor+vote bills, group by vote outcome
+        if (isCosponsorAction && isVoteAction) {
+          // Skip non-voting delegates for floor vote tallies
+          if (isNonVotingDelegate(row)) return;
+          if (val > 0) {
+            support.push(row); // Voted in favor (with or without cosponsoring)
+          } else if (val === 0) {
+            oppose.push(row); // Voted against
+          }
+        } else if (isCosponsorAction) {
+          // Pure cosponsor bill: group by cosponsor status (delegates can cosponsor)
           const cosponsorCol = `${column}_cosponsor`;
           const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
 
@@ -160,7 +171,8 @@ export default function BillPage() {
             oppose.push(row); // Did not cosponsor
           }
         } else {
-          // For votes, use points-based grouping
+          // For votes, use points-based grouping; skip non-voting delegates
+          if (isVoteAction && isNonVotingDelegate(row)) return;
           // Check for "present" vote (partial points - not 0, not full)
           if (isVoteAction && val > 0 && val < fullPoints) {
             present.push(row);
@@ -377,8 +389,14 @@ export default function BillPage() {
         thirdIsGood = false;
       }
     }
+  } else if (isCosponsor && isVote) {
+    // Combined cosponsor+vote bill: sections are by vote outcome
+    firstLabel = 'Voted in favor';
+    secondLabel = 'Voted against';
+    firstIsGood = isSupport;
+    secondIsGood = !isSupport;
   } else if (isCosponsor) {
-    // For cosponsor bills, val in CSV is the raw action (1 = cosponsored, 0 = didn't)
+    // For cosponsor-only bills, val in CSV is the raw action (1 = cosponsored, 0 = didn't)
     // firstSection (val > 0) = cosponsors, secondSection (val = 0) = non-cosponsors
     // Labels always describe the action, only good/bad indicator changes with NIAC position
     firstLabel = 'Cosponsored';
@@ -454,6 +472,11 @@ export default function BillPage() {
                 <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
                   <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
                 </div>
+                {formatScoringDescription(meta) && (
+                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                    <span className="font-medium">Scoring:</span> {formatScoringDescription(meta)}
+                  </div>
+                )}
                 {(() => {
                   const voteInfo = extractVoteInfo(meta);
                   return (
@@ -727,9 +750,11 @@ export default function BillPage() {
                               House ({housemembers.length})
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {housemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
-                              ))}
+                              {housemembers.map((member) => {
+                                const memberVal = Number((member as Record<string, unknown>)[column] ?? 0);
+                                const didCosponsor = isCosponsor && isVote && memberVal > 5;
+                                return <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} badge={didCosponsor ? "Cosponsored" : undefined} />;
+                              })}
                             </div>
                           </div>
                         )}
@@ -742,9 +767,11 @@ export default function BillPage() {
                               Senate ({senatemembers.length})
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {senatemembers.map((member) => (
-                                <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
-                              ))}
+                              {senatemembers.map((member) => {
+                                const memberVal = Number((member as Record<string, unknown>)[column] ?? 0);
+                                const didCosponsor = isCosponsor && isVote && memberVal > 5;
+                                return <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} badge={didCosponsor ? "Cosponsored" : undefined} />;
+                              })}
                             </div>
                           </div>
                         )}
@@ -755,9 +782,11 @@ export default function BillPage() {
                   // Single chamber bill - show all members in one grid
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {firstSection.map((member) => (
-                        <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
-                      ))}
+                      {firstSection.map((member) => {
+                        const memberVal = Number((member as Record<string, unknown>)[column] ?? 0);
+                        const didCosponsor = isCosponsor && isVote && memberVal > 5;
+                        return <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} badge={didCosponsor ? "Cosponsored" : undefined} />;
+                      })}
                       {firstSection.length === 0 && (
                         <div className="col-span-full text-center py-8 text-sm text-slate-500 dark:text-slate-400">
                           None found

@@ -78,6 +78,21 @@ const NAME_TO_CODE: Record<string, string> = {
   "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY"
 };
 
+// Non-voting House delegates — they can cosponsor legislation but cannot vote on the floor
+const NON_VOTING_DELEGATE_STATES = new Set([
+  "Puerto Rico",
+  "Virgin Islands",
+  "American Samoa",
+  "Guam",
+  "Northern Mariana Islands",
+  "District of Columbia",
+]);
+
+export function isNonVotingDelegate(member: { chamber?: unknown; state?: unknown }): boolean {
+  if (String(member.chamber ?? "").toUpperCase() !== "HOUSE") return false;
+  return NON_VOTING_DELEGATE_STATES.has(String(member.state ?? ""));
+}
+
 export function stateCodeOf(s: string | undefined): string {
   const raw = (s ?? "").trim();
   if (!raw) return "";

@@ -2960,7 +2960,8 @@ export default function Page() {
                 }
 
                 const fullPoints = Number(meta?.points ?? 0);
-                const votedPresent = !wasAbsent && actionType.includes('vote') && val > 0 && val < fullPoints;
+                const isCombinedBill = actionType.includes('cosponsor') && actionType.includes('vote');
+                const votedPresent = !wasAbsent && !isCombinedBill && actionType.includes('vote') && val > 0 && val < fullPoints;
 
                 // Check if we need dash for preferred pair (member supported the preferred bill)
                 let showDashForPreferredPair = false;
@@ -2969,7 +2970,11 @@ export default function Page() {
                   if (preferredCol) {
                     const preferredVal = Number((r as Record<string, unknown>)[preferredCol] ?? 0);
                     const preferredCosponsor = Number((r as Record<string, unknown>)[`${preferredCol}_cosponsor`] ?? 0) === 1;
-                    showDashForPreferredPair = preferredVal > 0 || preferredCosponsor;
+                    const preferredMeta = metaByCol.get(preferredCol);
+                    const preferredActionType = (preferredMeta?.action_types || '').toLowerCase();
+                    const preferredIsCombined = preferredActionType.includes('cosponsor') && preferredActionType.includes('vote');
+                    // For combined bills, only cosponsorship counts (not a vote-only yes)
+                    showDashForPreferredPair = preferredIsCombined ? preferredCosponsor : (preferredVal > 0 || preferredCosponsor);
                   }
                 }
 
@@ -2991,7 +2996,13 @@ export default function Page() {
                   const position = (meta?.position_to_score || '').toUpperCase();
                   const isSupport = position === 'SUPPORT';
 
-                  if (isCosponsor) {
+                  if (isCombinedBill) {
+                    if (isSupport) {
+                      tooltipText = memberOk ? (didCosponsor ? "Cosponsored + Voted in favor" : "Voted in favor") : "Voted against";
+                    } else {
+                      tooltipText = memberOk ? (didCosponsor ? "Cosponsored + Voted against" : "Voted against") : "Voted in favor";
+                    }
+                  } else if (isCosponsor) {
                     tooltipText = didCosponsor ? "Cosponsored" : "Has not cosponsored";
                   } else if (isVote) {
                     if (isSupport) {
@@ -3024,7 +3035,7 @@ export default function Page() {
                     ) : showDashForPreferredPair ? (
                       <span className="text-lg leading-none text-slate-400">—</span>
                     ) : (
-                      <VoteIcon ok={memberOk} />
+                      <VoteIcon ok={memberOk} partialOk={isCombinedBill && memberOk && val === 5} />
                     )}
 
 
@@ -3160,20 +3171,27 @@ export default function Page() {
                                 </>
                               );
                             } else {
+                              const isVoteOnly = isCombinedBill && memberOk && val === 5;
                               return (
                                 <>
-                                  <VoteIcon ok={memberOk} />
+                                  <VoteIcon ok={memberOk} partialOk={isVoteOnly} />
                                   <span className="text-xs text-slate-700 dark:text-slate-200">
                                     {title} {capitalizedLastName} {
-                                      isCosponsor
-                                        ? (didCosponsor ? "cosponsored" : "has not cosponsored")
-                                        : isVote
-                                          ? (
-                                            isSupport
-                                              ? (memberOk ? "voted in favor" : "voted against")
-                                              : (memberOk ? "voted against" : "voted in favor")
-                                          )
-                                          : (memberOk ? "supported" : "opposed")
+                                      isCombinedBill
+                                        ? (
+                                          isSupport
+                                            ? (didCosponsor ? "cosponsored + voted in favor" : memberOk ? "voted in favor" : "voted against")
+                                            : (didCosponsor ? "cosponsored + voted against" : memberOk ? "voted against" : "voted in favor")
+                                        )
+                                        : isCosponsor
+                                          ? (didCosponsor ? "cosponsored" : "has not cosponsored")
+                                          : isVote
+                                            ? (
+                                              isSupport
+                                                ? (memberOk ? "voted in favor" : "voted against")
+                                                : (memberOk ? "voted against" : "voted in favor")
+                                            )
+                                            : (memberOk ? "supported" : "opposed")
                                     }
                                   </span>
                                 </>
