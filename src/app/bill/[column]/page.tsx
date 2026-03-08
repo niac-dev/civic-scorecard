@@ -129,8 +129,8 @@ export default function BillPage() {
           return;
         }
 
-        // Skip the sponsor only for cosponsor actions (not for votes)
-        if (isCosponsorAction && sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
+        // Skip the sponsor only for pure cosponsor bills (not for votes or combined bills)
+        if (isCosponsorAction && !isVoteAction && sponsorRow && row.bioguide_id === sponsorRow.bioguide_id) {
           return;
         }
 
@@ -144,10 +144,11 @@ export default function BillPage() {
 
         const val = Number(rawVal);
 
-        // Also check if they were absent - if so, skip them from the lists
+        // Also check if they were absent or not in office - if so, skip them from the lists
         const absentCol = `${column}_absent`;
         const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
-        if (wasAbsent) {
+        const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
+        if (wasAbsent || notInOffice) {
           return;
         }
 
@@ -230,10 +231,11 @@ export default function BillPage() {
             });
           }
 
-          // Skip absent members
+          // Skip absent or not-in-office members
           const absentCol = `${column}_absent`;
           const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
-          if (wasAbsent) {
+          const notInOffice2 = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
+          if (wasAbsent || notInOffice2) {
             return;
           }
 

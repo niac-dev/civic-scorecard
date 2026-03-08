@@ -1,4 +1,5 @@
 bioguide_id,full_name,first_name,last_name,chamber,state,district,party,govtrack_id,opensecrets_id,fec_ids,twitter,official_website,photo_url,aipac_supported,dmfi_supported
+G000551,"Grijalva, Raúl M.",Raúl,Grijalva,HOUSE,AZ,,Democratic,,,,,,,0,0
 T000278,"Tuberville, Tommy",,,SENATE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/t000278_200.jpg,1,0
 B001319,"Britt, Katie Boyd",,,SENATE,Alabama,,Republican,,,,,,https://www.congress.gov/img/member/b001319_200.jpg,0,0
 F000481,"Figures, Shomari",,,HOUSE,Alabama,,Democratic,,,,,,https://www.congress.gov/img/member/68013eaa4e51529406f18e42_200.jpg,1,1
@@ -104,6 +105,7 @@ C001088,"Coons, Christopher A.",,,SENATE,Delaware,,Democratic,,,,,,https://www.c
 B001303,"Blunt Rochester, Lisa",,,SENATE,Delaware,,Democratic,,,,,,https://www.congress.gov/img/member/b001303_200.jpg,0,0
 M001238,"McBride, Sarah",,,HOUSE,Delaware,,Democratic,,,,,,https://www.congress.gov/img/member/67744b460b34857ecc909143_200.jpg,1,1
 N000147,"Norton, Eleanor Holmes",,,HOUSE,District of Columbia,,Democratic,,,,,,https://www.congress.gov/img/member/116_dg_dc_norton_eleanor_200.jpg,0,0
+R000595,"Rubio, Marco",Marco,Rubio,SENATE,FL,,Republican,,,,,,,0,0
 S001217,"Scott, Rick",,,SENATE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/s001217_200.jpg,1,0
 M001244,"Moody, Ashley",,,SENATE,Florida,,Republican,,,,,,,1,0
 F000484,"Fine, Randy",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/67efda8c1b05a5a598f7fde0_200.jpg,1,0
@@ -287,6 +289,7 @@ S001232,"Sheehy, Tim",,,SENATE,Montana,,Republican,,,,,,https://www.congress.gov
 D000618,"Daines, Steve",,,SENATE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/d000618_200.jpg,1,0
 D000634,"Downing, Troy",,,HOUSE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/677424da0b34857ecc909077_200.jpg,1,0
 Z000018,"Zinke, Ryan K.",,,HOUSE,Montana,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_mt_1_zinke_ryan_200.jpg,1,0
+S001207,"Sherrill, Mikie",Mikie,Sherrill,HOUSE,NJ,,Democratic,,,,,,,0,0
 R000618,"Ricketts, Pete",,,SENATE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/r000618_200.jpg,1,0
 F000463,"Fischer, Deb",,,SENATE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/669ec7925d19788d1f2034a1_200.jpg,1,0
 F000474,"Flood, Mike",,,HOUSE,Nebraska,,Republican,,,,,,https://www.congress.gov/img/member/67b4de4a61bd80d04553b0a5_200.jpg,1,0
@@ -368,6 +371,7 @@ H001061,"Hoeven, John",,,SENATE,North Dakota,,Republican,,,,,,https://www.congre
 C001096,"Cramer, Kevin",,,SENATE,North Dakota,,Republican,,,,,,https://www.congress.gov/img/member/c001096_200.jpg,1,0
 F000482,"Fedorchak, Julie",,,HOUSE,North Dakota,,Republican,,,,,,https://www.congress.gov/img/member/677426c20b34857ecc90909b_200.jpg,1,0
 K000404,"King-Hinds, Kimberlyn",,,HOUSE,Northern Mariana Islands,,Republican,,,,,,https://www.congress.gov/img/member/67742f0a0b34857ecc9090fb_200.jpg,0,0
+V000137,"Vance, J. D.",J. D.,Vance,SENATE,OH,,Republican,,,,,,,0,0
 M001242,"Moreno, Bernie",,,SENATE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/67c8694e6159152e59828afb_200.jpg,0,0
 H001104,"Husted, Jon",,,SENATE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/67f0316b1b05a5a598f7fdf3_200.jpg,1,0
 T000490,"Taylor, David J.",,,HOUSE,Ohio,,Republican,,,,,,https://www.congress.gov/img/member/677460190b34857ecc9091a3_200.jpg,1,0
@@ -436,6 +440,8 @@ C000537,"Clyburn, James E.",,,HOUSE,South Carolina,,Democratic,,,,,,https://www.
 T000250,"Thune, John",,,SENATE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/t000250_200.jpg,0,0
 R000605,"Rounds, Mike",,,SENATE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/r000605_200.jpg,1,0
 J000301,"Johnson, Dusty",,,HOUSE,South Dakota,,Republican,,,,,,https://www.congress.gov/img/member/j000301_200.jpg,1,0
+G000590,"Green, Mark E.",Mark,Green,HOUSE,TN,,Republican,,,,,,,0,0
+T000489,"Turner, Sylvester",Sylvester,Turner,HOUSE,TX,,Democratic,,,,,,,0,0
 H000601,"Hagerty, Bill",,,SENATE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/h000601_200.jpg,1,0
 B001243,"Blackburn, Marsha",,,SENATE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/b001243_200.jpg,1,0
 O000175,"Ogles, Andrew",,,HOUSE,Tennessee,,Republican,,,,,,https://www.congress.gov/img/member/o000175_200.jpg,1,0
@@ -491,6 +497,7 @@ K000403,"Kennedy, Mike",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/i
 M001228,"Maloy, Celeste",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/m001228_200.jpg,1,0
 O000086,"Owens, Burgess",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/o000086_200.jpg,1,0
 M001213,"Moore, Blake D.",,,HOUSE,Utah,,Republican,,,,,,https://www.congress.gov/img/member/m001213_200.jpg,1,0
+C001078,"Connolly, Gerald E.",Gerald,Connolly,HOUSE,VA,,Democratic,,,,,,,0,0
 W000800,"Welch, Peter",,,SENATE,Vermont,,Democratic,,,,,,https://www.congress.gov/img/member/fd3cb364b8bf93c25834cff750637802_200.jpg,0,0
 S000033,"Sanders, Bernard",,,SENATE,Vermont,,Independent,,,,,,https://www.congress.gov/img/member/s000033_200.jpg,0,0
 B001318,"Balint, Becca",,,HOUSE,Vermont,,Democratic,,,,,,https://www.congress.gov/img/member/b001318_200.jpg,0,0

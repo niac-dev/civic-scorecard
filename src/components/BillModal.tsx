@@ -232,8 +232,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      // Skip sponsor for cosponsor bills
-      if (isCosponsor && sponsorBioguideId && row.bioguide_id === sponsorBioguideId) {
+      // Skip sponsor only for pure cosponsor bills (not for votes or combined bills)
+      if (isCosponsor && !isVote && sponsorBioguideId && row.bioguide_id === sponsorBioguideId) {
         return;
       }
 
@@ -243,13 +243,14 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      // Absent check (skip from vote tallies)
+      // Absent / not-in-office check (skip from vote tallies)
       const absentCol = `${column}_absent`;
       const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+      const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
 
       if (isCosponsor && isVote) {
         // Combined cosponsor+vote bill: group by vote outcome, skip non-voting delegates
-        if (isNonVotingDelegate(row) || wasAbsent) return;
+        if (isNonVotingDelegate(row) || wasAbsent || notInOffice) return;
         const points = Number(val);
         if (points > 0) {
           support.push(row);
@@ -267,7 +268,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         }
       } else if (isVote) {
         // Pure vote bill: skip non-voting delegates and absent members
-        if (isNonVotingDelegate(row) || wasAbsent) return;
+        if (isNonVotingDelegate(row) || wasAbsent || notInOffice) return;
         const points = Number(val);
         if (points === -1) {
           present.push(row);

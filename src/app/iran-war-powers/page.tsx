@@ -9,6 +9,7 @@ import {
   partyLabel,
   stateCodeOf,
   getPhotoUrl,
+  isNonVotingDelegate,
 } from "@/lib/utils";
 import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
@@ -185,6 +186,7 @@ function HemicycleChart({
   innerRadius,
   rowSpacing,
   dotRadius,
+  heightClassName = "h-[90px]",
 }: {
   members: { isSupport: boolean; party: string }[];
   label: string;
@@ -192,6 +194,7 @@ function HemicycleChart({
   innerRadius: number;
   rowSpacing: number;
   dotRadius: number;
+  heightClassName?: string;
 }) {
   const total = members.length;
   const W = 220, cx = 110, cy = 118;
@@ -230,19 +233,21 @@ function HemicycleChart({
           {label}
         </p>
       )}
-      <svg viewBox={`0 ${topClip} ${W} ${H - topClip}`} className="w-full block">
-        {seats.map((seat, i) => (
-          <circle
-            key={i}
-            cx={seat.x}
-            cy={seat.y}
-            r={dotRadius - 0.5}
-            fill={dotsBySeatIdx[i].fill}
-            stroke={dotsBySeatIdx[i].stroke}
-            strokeWidth={0.8}
-          />
-        ))}
-      </svg>
+      <div className={`w-full ${heightClassName}`}>
+        <svg viewBox={`0 ${topClip} ${W} ${H - topClip}`} className="w-full h-full block">
+          {seats.map((seat, i) => (
+            <circle
+              key={i}
+              cx={seat.x}
+              cy={seat.y}
+              r={dotRadius - 0.5}
+              fill={dotsBySeatIdx[i].fill}
+              stroke={dotsBySeatIdx[i].stroke}
+              strokeWidth={0.8}
+            />
+          ))}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -458,17 +463,28 @@ export default function IranWarPowersPage() {
 
   // Sorted member lists for hemicycle dots (support left, oppose right)
   const hemicycleMembers = useMemo(() => {
-    const toEntry = (m: Row) => ({
-      isSupport: ["support", "likely_support"].includes(getOverallPosition(m)),
-      party: String(m.party || ""),
-    });
-    const sort = (list: Row[]) => [
-      ...list.filter(m => ["support", "likely_support"].includes(getOverallPosition(m))),
-      ...list.filter(m => !["support", "likely_support"].includes(getOverallPosition(m))),
-    ].map(toEntry);
+    const houseCol = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
+    const senateCol = "S.J.Res.104 — Iran War Powers Resolution 2026";
+
+    const fromVote = (chamberRows: Row[], col: string) => {
+      const support: { isSupport: boolean; party: string }[] = [];
+      const oppose: { isSupport: boolean; party: string }[] = [];
+      chamberRows.forEach((m) => {
+        const val = (m as Record<string, unknown>)[col];
+        if (val === null || val === undefined || val === '') return;
+        if (Number((m as Record<string, unknown>)[`${col}_absent`] ?? 0) === 1) return;
+        if (Number((m as Record<string, unknown>)[`${col}_not_in_office`] ?? 0) === 1) return;
+        if (isNonVotingDelegate(m)) return;
+        const entry = { isSupport: Number(val) > 0, party: String(m.party || "") };
+        if (Number(val) > 0) support.push(entry);
+        else oppose.push(entry);
+      });
+      return [...support, ...oppose];
+    };
+
     return {
-      SENATE: sort(rows.filter(r => r.chamber === "SENATE")),
-      HOUSE:  sort(rows.filter(r => r.chamber === "HOUSE")),
+      SENATE: fromVote(rows.filter(r => r.chamber === "SENATE"), senateCol),
+      HOUSE:  fromVote(rows.filter(r => r.chamber === "HOUSE"), houseCol),
     };
   }, [rows]);
 
@@ -727,11 +743,12 @@ export default function IranWarPowersPage() {
               innerRadius={32}
               rowSpacing={16}
               dotRadius={3.5}
+              heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
             <div className="flex gap-1.5 justify-center">
-              <ScoreFlap count={chamberStats.SENATE.support + chamberStats.SENATE.likely_support} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
-              <ScoreFlap count={chamberStats.SENATE.likely_oppose + chamberStats.SENATE.oppose} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
+              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
+              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
             <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 4, 2026</p>
           </div>
@@ -751,11 +768,12 @@ export default function IranWarPowersPage() {
               innerRadius={16}
               rowSpacing={10}
               dotRadius={2}
+              heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
             <div className="flex gap-1.5 justify-center">
-              <ScoreFlap count={chamberStats.HOUSE.support + chamberStats.HOUSE.likely_support} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
-              <ScoreFlap count={chamberStats.HOUSE.likely_oppose + chamberStats.HOUSE.oppose} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
+              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
+              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
             </div>
             <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 5, 2026</p>
           </div>
