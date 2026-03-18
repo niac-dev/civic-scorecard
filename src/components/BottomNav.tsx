@@ -104,7 +104,7 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center px-3 sm:px-5 py-2 rounded-full transition-all duration-200",
+            "flex flex-col items-center justify-center w-14 sm:w-16 py-2 rounded-full transition-all duration-200",
             isMapActive
               ? "bg-slate-100 " + activeColor
               : inactiveColor + " hover:bg-slate-50"
@@ -124,7 +124,7 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center px-3 sm:px-5 py-2 rounded-full transition-all duration-200",
+            "flex flex-col items-center justify-center w-14 sm:w-16 py-2 rounded-full transition-all duration-200",
             isFindActive
               ? "bg-slate-100 " + activeColor
               : inactiveColor + " hover:bg-slate-50"
@@ -144,7 +144,7 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center px-2.5 sm:px-4 py-2 rounded-full transition-all duration-200",
+            "flex flex-col items-center justify-center w-14 sm:w-16 py-2 rounded-full transition-all duration-200",
             isScorecardActive
               ? "bg-slate-100 " + activeColor
               : inactiveColor + " hover:bg-slate-50"
@@ -164,7 +164,7 @@ export default function BottomNav() {
             }
           }}
           className={clsx(
-            "flex flex-col items-center justify-center px-2.5 sm:px-4 py-2 rounded-full transition-all duration-200",
+            "flex flex-col items-center justify-center w-14 sm:w-16 py-2 rounded-full transition-all duration-200",
             isTrackerActive
               ? "bg-slate-100 " + activeColor
               : inactiveColor + " hover:bg-slate-50"
@@ -180,7 +180,7 @@ export default function BottomNav() {
             window.location.href = "/iran-war-powers";
           }}
           className={clsx(
-            "flex flex-col items-center justify-center px-2 sm:px-3 py-2 rounded-full transition-all duration-200",
+            "flex flex-col items-center justify-center w-14 sm:w-16 py-2 rounded-full transition-all duration-200",
             isIranActive
               ? "bg-slate-100 " + activeColor
               : inactiveColor + " hover:bg-slate-50"

@@ -36,7 +36,11 @@ export async function loadData(): Promise<{
   const rows: Row[] = rowsRaw
     .filter((r) => {
       // Filter out rows without essential fields (full_name, party, state, or chamber)
-      return r.full_name && r.party && r.state && r.chamber;
+      if (!r.full_name || !r.party || !r.state || !r.chamber) return false;
+      // Filter out members no longer in office
+      const inOffice = (r as Record<string, unknown>)["in_office"];
+      if (inOffice !== undefined && String(inOffice) === "0") return false;
+      return true;
     })
     .map((r) => {
       const out: Record<string, unknown> = { ...r };

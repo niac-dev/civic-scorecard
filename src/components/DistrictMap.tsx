@@ -429,8 +429,8 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 
       // Calculate Senate stats
       Object.values(stateActions).forEach(actions => {
-        if (actions.democrat === 2) senateBothDemocrat++;
-        else if (actions.republican === 2) senateBothRepublican++;
+        if (actions.democrat > 0 && actions.republican === 0 && actions.other === 0) senateBothDemocrat++;
+        else if (actions.republican > 0 && actions.democrat === 0 && actions.other === 0) senateBothRepublican++;
         else senateSplit++; // Mixed or has independent/other
       });
 
@@ -1169,10 +1169,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 } else if (isPartisanView && 'republican' in actions) {
                   // Partisan view: republican/democrat/other
                   const partisanActions = actions as { republican: number; democrat: number; other: number };
-                  if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
-                    color = '#2563eb'; // Blue - Both Democrats
-                  } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
-                    color = '#dc2626'; // Red - Both Republicans
+                  if (partisanActions.democrat > 0 && partisanActions.republican === 0 && partisanActions.other === 0) {
+                    color = '#2563eb'; // Blue - All Democrats
+                  } else if (partisanActions.republican > 0 && partisanActions.democrat === 0 && partisanActions.other === 0) {
+                    color = '#dc2626'; // Red - All Republicans
                   } else {
                     color = '#9333ea'; // Purple - Split/Mixed
                   }
@@ -2406,10 +2406,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
                 if (isPartisanView && 'republican' in actions) {
                   // Partisan view: republican/democrat/other
                   const partisanActions = actions as { republican: number; democrat: number; other: number };
-                  if (partisanActions.democrat === 2 || (partisanActions.democrat === 1 && partisanActions.republican === 0 && partisanActions.other === 0)) {
-                    color = '#2563eb'; // Blue - Both Democrats
-                  } else if (partisanActions.republican === 2 || (partisanActions.republican === 1 && partisanActions.democrat === 0 && partisanActions.other === 0)) {
-                    color = '#dc2626'; // Red - Both Republicans
+                  if (partisanActions.democrat > 0 && partisanActions.republican === 0 && partisanActions.other === 0) {
+                    color = '#2563eb'; // Blue - All Democrats
+                  } else if (partisanActions.republican > 0 && partisanActions.democrat === 0 && partisanActions.other === 0) {
+                    color = '#dc2626'; // Red - All Republicans
                   } else {
                     color = '#9333ea'; // Purple - Split/Mixed
                   }
