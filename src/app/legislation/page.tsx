@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { loadData } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { chamberColor, inferChamber } from "@/lib/utils";
+import { GradeChip } from "@/components/GradeChip";
 import clsx from "clsx";
 
 export default function LegislationPage() {
@@ -328,9 +329,7 @@ export default function LegislationPage() {
                             ({bill.sponsor.party} - {bill.sponsor.state})
                           </span>
                           {bill.sponsor.Grade && (
-                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 font-semibold">
-                              Grade: {bill.sponsor.Grade}
-                            </span>
+                            <GradeChip grade={String(bill.sponsor.Grade)} scale={0.55} />
                           )}
                         </div>
                       </div>
