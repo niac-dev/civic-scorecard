@@ -638,40 +638,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             </div>
 
-            {/* Links */}
-            {(meta.congress_url || meta.learn_more_link) && (
-              <div className="flex flex-wrap gap-3">
-                {meta.congress_url && (
-                  <a
-                    href={meta.congress_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                  >
-                    Congress.gov
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                )}
-                {meta.learn_more_link && (
-                  <a
-                    href={meta.learn_more_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                  >
-                    Learn more
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Details Accordion - Category, Scoring, Description */}
-            {(meta.categories || meta.points || meta.analysis) && (
+            {/* Details Accordion - Description/Analysis, Category, Scoring, Links */}
+            {(meta.categories || meta.points || meta.analysis || meta.congress_url || meta.learn_more_link) && (
               <div>
                 <h2
                   className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
@@ -689,6 +657,14 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                 </h2>
                 {detailsExpanded && (
                   <div className="mt-3 space-y-2">
+                    {/* Description/Analysis */}
+                    {meta.analysis && (
+                      <div>
+                        <p className="text-sm text-slate-700 dark:text-slate-200">
+                          {meta.analysis}
+                        </p>
+                      </div>
+                    )}
                     {/* Category */}
                     {meta.categories && (
                       <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
@@ -756,12 +732,35 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         </div>
                       );
                     })()}
-                    {/* Description */}
-                    {meta.analysis && (
-                      <div className="mt-2">
-                        <p className="text-sm text-slate-700 dark:text-slate-200">
-                          {meta.analysis}
-                        </p>
+                    {/* Links */}
+                    {(meta.congress_url || meta.learn_more_link) && (
+                      <div className="flex flex-wrap gap-3">
+                        {meta.congress_url && (
+                          <a
+                            href={meta.congress_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                          >
+                            Congress.gov
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                        {meta.learn_more_link && (
+                          <a
+                            href={meta.learn_more_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                          >
+                            Learn more
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>

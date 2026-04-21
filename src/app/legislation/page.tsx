@@ -329,7 +329,9 @@ export default function LegislationPage() {
                             ({bill.sponsor.party} - {bill.sponsor.state})
                           </span>
                           {bill.sponsor.Grade && (
-                            <GradeChip grade={String(bill.sponsor.Grade)} scale={0.55} />
+                            <div className="ml-auto flex-shrink-0">
+                              <GradeChip grade={String(bill.sponsor.Grade)} scale={0.55} />
+                            </div>
                           )}
                         </div>
                       </div>
