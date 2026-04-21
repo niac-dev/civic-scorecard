@@ -6,6 +6,7 @@ import type { Row, Meta } from "@/lib/types";
 import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
+import { GradeChip } from "@/components/GradeChip";
 import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo, isNonVotingDelegate } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
@@ -534,20 +535,7 @@ export default function BillPage() {
                   <div className="text-base font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <span>{sponsorMember.full_name}</span>
                     {sponsorMember.Grade && (
-                      <span className="flex-shrink-0 inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-bold min-w-[2.75rem]" style={{
-                        backgroundColor: String(sponsorMember.Grade).startsWith("A") ? GRADE_COLORS.A
-                          : String(sponsorMember.Grade).startsWith("B") ? GRADE_COLORS.B
-                          : String(sponsorMember.Grade).startsWith("C") ? GRADE_COLORS.C
-                          : String(sponsorMember.Grade).startsWith("D") ? GRADE_COLORS.D
-                          : String(sponsorMember.Grade).startsWith("F") ? GRADE_COLORS.F
-                          : GRADE_COLORS.default,
-                        color: String(sponsorMember.Grade).startsWith("A") ? "#ffffff"
-                          : String(sponsorMember.Grade).startsWith("B") ? "#4b5563"
-                          : String(sponsorMember.Grade).startsWith("C") ? "#4b5563"
-                          : "#4b5563"
-                      }}>
-                        {sponsorMember.Grade}
-                      </span>
+                      <GradeChip grade={String(sponsorMember.Grade)} scale={0.55} />
                     )}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-2 mt-1">
