@@ -831,7 +831,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                         </div>
                         {/* Grade chip */}
-                        <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
+                        <div className="ml-auto flex-shrink-0">
+                          <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
+                        </div>
                       </div>
                     ) : (
                       <div className="text-sm text-slate-600 dark:text-slate-300">{meta.sponsor_name || meta.sponsor}</div>
@@ -937,7 +939,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               </div>
                             </div>
                             {/* Grade chip */}
-                            <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                            <div className="ml-auto flex-shrink-0">
+                              <div className="ml-auto flex-shrink-0">
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        </div>
+                            </div>
                           </div>
                         );
                       })}
@@ -1041,7 +1047,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             </div>
                           </div>
                           {/* Grade chip */}
+                          <div className="ml-auto flex-shrink-0">
                           <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        </div>
                         </div>
                       ))}
                       {filteredSecondSection.length === 0 && (
@@ -1139,7 +1147,11 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                               </div>
                             </div>
                             {/* Grade chip */}
-                            <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                            <div className="ml-auto flex-shrink-0">
+                              <div className="ml-auto flex-shrink-0">
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1228,7 +1240,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             </span>
                           </div>
                         </div>
-                        <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        <div className="ml-auto flex-shrink-0">
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1315,7 +1329,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             </span>
                           </div>
                         </div>
-                        <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        <div className="ml-auto flex-shrink-0">
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                        </div>
                       </div>
                     ))}
                   </div>
