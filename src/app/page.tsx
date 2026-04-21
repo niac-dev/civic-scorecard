@@ -3661,7 +3661,7 @@ export default function Page() {
 
                               {/* Bill Number */}
                               <div
-                                className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center md:self-start md:pt-[17px] min-w-0 overflow-hidden truncate text-center"
+                                className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center"
                               >
                                 {bill.meta.bill_number || bill.col}
                               </div>
@@ -3888,7 +3888,7 @@ export default function Page() {
 
                                 {/* Bill Number */}
                                 <div
-                                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center md:self-start md:pt-[17px] min-w-0 overflow-hidden truncate text-center"
+                                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center"
                                 >
                                   {bill.meta.bill_number || bill.col}
                                 </div>
