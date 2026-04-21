@@ -548,7 +548,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-3">
             {/* Sponsor - moved to top under title */}
             {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
               <div>
@@ -638,33 +638,18 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
               </div>
             </div>
 
-            {/* Details Accordion - Description/Analysis, Category, Scoring, Links */}
-            {(meta.categories || meta.points || meta.analysis || meta.congress_url || meta.learn_more_link) && (
-              <div>
-                <h2
-                  className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-                  onClick={() => setDetailsExpanded(!detailsExpanded)}
-                >
-                  Details
-                  <svg
-                    viewBox="0 0 20 20"
-                    className={clsx("h-4 w-4 ml-auto transition-transform", detailsExpanded && "rotate-180")}
-                    aria-hidden="true"
-                    role="img"
-                  >
-                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </h2>
+            {/* Description - always visible */}
+            {meta.analysis && (
+              <p className="text-sm text-slate-700 dark:text-slate-200">
+                {meta.analysis}
+              </p>
+            )}
+
+            {/* More - unfurls as continuation of metadata section */}
+            {(meta.categories || meta.points || meta.congress_url || meta.learn_more_link) && (
+              <>
                 {detailsExpanded && (
-                  <div className="mt-3 space-y-2">
-                    {/* Description/Analysis */}
-                    {meta.analysis && (
-                      <div>
-                        <p className="text-sm text-slate-700 dark:text-slate-200">
-                          {meta.analysis}
-                        </p>
-                      </div>
-                    )}
+                  <div className="space-y-2">
                     {/* Category */}
                     {meta.categories && (
                       <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
@@ -734,38 +719,54 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     })()}
                     {/* Links */}
                     {(meta.congress_url || meta.learn_more_link) && (
-                      <div className="flex flex-wrap gap-3">
-                        {meta.congress_url && (
-                          <a
-                            href={meta.congress_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                          >
-                            Congress.gov
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        )}
-                        {meta.learn_more_link && (
-                          <a
-                            href={meta.learn_more_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                          >
-                            Learn more
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                          </a>
-                        )}
+                      <div>
+                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Links</span>
+                        <div className="flex flex-wrap gap-3 mt-1">
+                          {meta.congress_url && (
+                            <a
+                              href={meta.congress_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                            >
+                              Congress.gov
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                          {meta.learn_more_link && (
+                            <a
+                              href={meta.learn_more_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                            >
+                              Learn more
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+                <button
+                  onClick={() => setDetailsExpanded(!detailsExpanded)}
+                  className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors mt-1"
+                >
+                  {detailsExpanded ? "Less" : "More"}
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-3 w-3 transition-transform", detailsExpanded && "rotate-180")}
+                    aria-hidden="true"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </>
             )}
 
             {/* Divider */}

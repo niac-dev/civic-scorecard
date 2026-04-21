@@ -618,18 +618,18 @@ export default function BillPage() {
             </div>
           </div>
 
+          {/* Description - always visible */}
+          {meta.description && (
+            <div className="mb-4">
+              <p className="text-sm text-slate-700 dark:text-slate-200">{meta.description}</p>
+            </div>
+          )}
+
           {/* More - unfurls as continuation */}
-          {(meta.categories || meta.points || meta.description || meta.analysis || meta.congress_url || meta.learn_more_link) && (
+          {(meta.categories || meta.points || meta.analysis || meta.congress_url || meta.learn_more_link) && (
             <div className="mb-6">
               {detailsExpanded && (
                 <div className="space-y-4">
-                  {/* Description */}
-                  {meta.description && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Description</h3>
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.description}</p>
-                    </div>
-                  )}
                   {/* Analysis */}
                   {meta.analysis && (
                     <div>
