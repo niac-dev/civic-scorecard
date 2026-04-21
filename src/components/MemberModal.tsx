@@ -1291,18 +1291,15 @@ export function MemberModal({
                                       }
                                     } else {
                                       // This is the non-preferred bill (H.Con.Res.40)
-                                      if (cosponsoredPreferred) {
-                                        // They cosponsored the preferred bill, so they get credit here too
-                                        // Use actual earned points (may include sponsor bonus)
-                                        const earnedPoints = it.val > 0 ? it.val : nonPreferredPoints;
-                                        pointsDisplay = ` (+${earnedPoints} pts)`;
-                                      } else if (cosponsoredNonPreferred) {
-                                        // Only cosponsored this bill, not the preferred one
-                                        // Use actual earned points (may include sponsor bonus)
-                                        const earnedPoints = it.val > 0 ? it.val : nonPreferredPoints;
+                                      if (it.val > 0) {
+                                        // Member earned points (voted yes, with or without cosponsoring)
+                                        pointsDisplay = ` (+${it.val} pts)`;
+                                      } else if (cosponsoredPreferred || cosponsoredNonPreferred) {
+                                        // Cosponsored but got 0 points (shouldn't normally happen)
+                                        const earnedPoints = nonPreferredPoints;
                                         pointsDisplay = ` (+${earnedPoints} pts)`;
                                       } else {
-                                        // Cosponsored neither
+                                        // Didn't vote yes and didn't cosponsor either
                                         pointsDisplay = ` (-${nonPreferredPoints} pts)`;
                                       }
                                     }
