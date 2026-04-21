@@ -56,6 +56,7 @@ export default function BillPage() {
   const [firstExpanded, setFirstExpanded] = useState<boolean>(false);
   const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
   const [thirdExpanded, setThirdExpanded] = useState<boolean>(false);
+  const [detailsExpanded, setDetailsExpanded] = useState<boolean>(false);
   const [presentExpanded, setPresentExpanded] = useState<boolean>(false);
   const [notVotingExpanded, setNotVotingExpanded] = useState<boolean>(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
@@ -514,14 +515,6 @@ export default function BillPage() {
                     {meta.display_name || meta.short_title || `${meta.bill_number || column}`}
                   </span>
                 </h1>
-                <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                  <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
-                </div>
-                {formatScoringDescription(meta) && (
-                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                    <span className="font-medium">Scoring:</span> {formatScoringDescription(meta)}
-                  </div>
-                )}
                 {(() => {
                   const voteInfo = extractVoteInfo(meta);
                   return (
@@ -542,7 +535,6 @@ export default function BillPage() {
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
                 onClick={() => {
-                  // Navigate back to where we came from, or default to scorecard homepage
                   if (fromPage === 'tracker') {
                     router.push('/?view=tracker');
                   } else {
@@ -617,37 +609,13 @@ export default function BillPage() {
             </div>
           )}
 
-          {/* Description */}
-          {meta.description && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Description
-              </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {meta.description}
-              </p>
+          {/* NIAC Position & Links */}
+          <div className="mb-6 space-y-2">
+            <div className="text-sm text-slate-600 dark:text-slate-300">
+              <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
             </div>
-          )}
-
-          {/* Analysis */}
-          {meta.analysis && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Analysis
-              </h2>
-              <p className="text-sm text-slate-700 dark:text-slate-200">
-                {meta.analysis}
-              </p>
-            </div>
-          )}
-
-          {/* Links */}
-          {(meta.congress_url || meta.learn_more_link) && (
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Links
-              </h2>
-              <div className="flex flex-col gap-2">
+            {(meta.congress_url || meta.learn_more_link) && (
+              <div className="flex flex-wrap gap-3">
                 {meta.congress_url && (
                   <a
                     href={meta.congress_url}
@@ -675,20 +643,61 @@ export default function BillPage() {
                   </a>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Categories */}
-          {meta.categories && (
+          {/* Details Accordion - Category, Scoring, Description, Analysis */}
+          {(meta.categories || meta.points || meta.description || meta.analysis) && (
             <div className="mb-6">
-              <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                Categories
+              <h2
+                className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                onClick={() => setDetailsExpanded(!detailsExpanded)}
+              >
+                Details
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", detailsExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
-                  <span key={c} className="chip-xs">{c}</span>
-                ))}
-              </div>
+              {detailsExpanded && (
+                <div className="mt-3 space-y-4">
+                  {/* Categories */}
+                  {meta.categories && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Categories</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
+                          <span key={c} className="chip-xs">{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Scoring */}
+                  {formatScoringDescription(meta) && (
+                    <div className="text-sm text-slate-600 dark:text-slate-300">
+                      <span className="font-medium">Scoring:</span> {formatScoringDescription(meta)}
+                    </div>
+                  )}
+                  {/* Description */}
+                  {meta.description && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Description</h3>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.description}</p>
+                    </div>
+                  )}
+                  {/* Analysis */}
+                  {meta.analysis && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Analysis</h3>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.analysis}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

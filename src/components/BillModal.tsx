@@ -106,6 +106,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const [firstExpanded, setFirstExpanded] = useState(false);
   const [secondExpanded, setSecondExpanded] = useState(false);
   const [thirdExpanded, setThirdExpanded] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [presentExpanded, setPresentExpanded] = useState(false);
   const [notVotingExpanded, setNotVotingExpanded] = useState(false);
   const [filterExpanded, setFilterExpanded] = useState(false);
@@ -548,6 +549,70 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
 
           {/* Content */}
           <div className="p-6 space-y-6">
+            {/* Sponsor - moved to top under title */}
+            {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
+              <div>
+                <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Sponsor</div>
+                {sponsorMember ? (
+                  <div
+                    className="text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                    onClick={() => {
+                      const firstCategory = meta.categories?.split(';')[0]?.trim();
+                      onMemberClick?.(sponsorMember, firstCategory);
+                    }}
+                  >
+                    {sponsorMember.bioguide_id ? (
+                      <img
+                        src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275') || String(sponsorMember.photo_url || '')}
+                        alt=""
+                        loading="lazy"
+                        className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.fallback && sponsorMember.photo_url) {
+                            target.dataset.fallback = '1';
+                            target.src = String(sponsorMember.photo_url);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                    )}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                        {formatNameFirstLast(sponsorMember.full_name)}
+                      </span>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                        <span
+                          className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                          style={{
+                            color: '#64748b',
+                            backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
+                          }}
+                        >
+                          {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
+                        </span>
+                        <span
+                          className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                          style={partyBadgeStyle(sponsorMember.party)}
+                        >
+                          {partyLabel(sponsorMember.party)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {formatStateDistrict(sponsorMember)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-auto flex-shrink-0">
+                      <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-600 dark:text-slate-300">{meta.sponsor_name || meta.sponsor}</div>
+                )}
+              </div>
+            )}
+
             {/* Bill metadata */}
             <div className="space-y-2">
               {/* Date Introduced / Status */}
@@ -567,133 +632,140 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                   </>
                 );
               })()}
-              {/* Category */}
-              {meta.categories && (
-                <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                  <span className="font-bold">Category:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
-                      <span key={c} className="chip-xs">{c}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
               {/* NIAC Action Position */}
               <div className="text-sm text-slate-600 dark:text-slate-300">
                 <span className="font-bold">NIAC Action Position:</span> {formatPositionLegislation(meta)}
               </div>
-              {/* Scoring */}
-              {(() => {
-                // Tracker-only bills are not scored
-                if (isTrackerOnly(meta)) {
-                  return (
-                    <div className="text-sm text-slate-600 dark:text-slate-300">
-                      <span className="font-bold">Scoring:</span> Not scored
-                    </div>
-                  );
-                }
-
-                if (!meta.points) return null;
-
-                const points = Number(meta.points);
-                const actionType = (meta as { action_types?: string })?.action_types || '';
-                const isCosponsor = actionType.includes('cosponsor');
-                const isVote = actionType.includes('vote');
-                const position = (meta.position_to_score || '').toUpperCase();
-                const isSupport = position === 'SUPPORT';
-                const noCosponsorBenefit = meta.no_cosponsor_benefit === true ||
-                                           meta.no_cosponsor_benefit === 1 ||
-                                           meta.no_cosponsor_benefit === '1';
-                const isPreferred = meta.preferred === true || meta.preferred === 1 || meta.preferred === '1' || meta.preferred === 'true';
-                const hasPairKey = !!meta.pair_key;
-
-                let scoringText: string;
-                if (isCosponsor && isVote) {
-                  // Combined cosponsor+vote bill
-                  scoringText = `Cosponsor + Vote Yes = +${points} pts · Vote Yes = +5 pts · Vote No = 0 pts`;
-                } else if (isCosponsor) {
-                  if (hasPairKey && !isPreferred) {
-                    // Non-preferred bill in a pair - find preferred bill name from pair_key
-                    const pairKeyParts = (meta.pair_key || '').split('|');
-                    const preferredBillNumber = pairKeyParts.find(p => p !== meta.bill_number) || '';
-                    // Extract just the bill number (e.g., "H.Con.Res.38" from "pair_1:H.Con.Res.38")
-                    const cleanPreferredBill = preferredBillNumber.replace(/^pair_\d+:/, '');
-                    scoringText = `Cosponsor: +${points} pts | Cosponsored preferred bill (${cleanPreferredBill}): +${points} pts | Not a cosponsor: −${points} pts`;
-                  } else if (noCosponsorBenefit) {
-                    // Bills we oppose - not cosponsoring gives small reward, cosponsoring is penalized
-                    scoringText = `Not a cosponsor: +1 pt | Cosponsor: −${points} pts`;
-                  } else if (isSupport) {
-                    // Bills we support - cosponsoring is rewarded
-                    scoringText = `Cosponsor: +${points} pts | Not a cosponsor: −${points} pts`;
-                  } else {
-                    // Bills we oppose without no_cosponsor_benefit flag
-                    scoringText = `Not a cosponsor: +${points} pts | Cosponsor: −${points} pts`;
-                  }
-                } else if (isVote) {
-                  if (isSupport) {
-                    scoringText = `Voted in favor: +${points} pts | Voted against: −${points} pts`;
-                  } else {
-                    scoringText = `Voted against: +${points} pts | Voted in favor: −${points} pts`;
-                  }
-                } else {
-                  // Generic/manual actions
-                  scoringText = `+${points}/−${points} pts`;
-                }
-
-                return (
-                  <div className="text-sm text-slate-600 dark:text-slate-300">
-                    <span className="font-bold">Scoring:</span> {scoringText}
-                  </div>
-                );
-              })()}
             </div>
-
-            {/* Description */}
-            {meta.analysis && (
-              <div>
-                <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                  Description
-                </h2>
-                <p className="text-sm text-slate-700 dark:text-slate-200">
-                  {meta.analysis}
-                </p>
-              </div>
-            )}
 
             {/* Links */}
             {(meta.congress_url || meta.learn_more_link) && (
+              <div className="flex flex-wrap gap-3">
+                {meta.congress_url && (
+                  <a
+                    href={meta.congress_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                  >
+                    Congress.gov
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+                {meta.learn_more_link && (
+                  <a
+                    href={meta.learn_more_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                  >
+                    Learn more
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Details Accordion - Category, Scoring, Description */}
+            {(meta.categories || meta.points || meta.analysis) && (
               <div>
-                <h2 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">
-                  Links
+                <h2
+                  className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                  onClick={() => setDetailsExpanded(!detailsExpanded)}
+                >
+                  Details
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 ml-auto transition-transform", detailsExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </h2>
-                <div className="flex flex-col gap-2">
-                  {meta.congress_url && (
-                    <a
-                      href={meta.congress_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                    >
-                      Congress.gov
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
-                  {meta.learn_more_link && (
-                    <a
-                      href={meta.learn_more_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                    >
-                      Learn more
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
-                </div>
+                {detailsExpanded && (
+                  <div className="mt-3 space-y-2">
+                    {/* Category */}
+                    {meta.categories && (
+                      <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                        <span className="font-bold">Category:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {meta.categories.split(";").map((c) => c.trim()).filter(Boolean).map((c) => (
+                            <span key={c} className="chip-xs">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Scoring */}
+                    {(() => {
+                      if (isTrackerOnly(meta)) {
+                        return (
+                          <div className="text-sm text-slate-600 dark:text-slate-300">
+                            <span className="font-bold">Scoring:</span> Not scored
+                          </div>
+                        );
+                      }
+
+                      if (!meta.points) return null;
+
+                      const points = Number(meta.points);
+                      const actionType = (meta as { action_types?: string })?.action_types || '';
+                      const isCosponsor = actionType.includes('cosponsor');
+                      const isVote = actionType.includes('vote');
+                      const position = (meta.position_to_score || '').toUpperCase();
+                      const isSupport = position === 'SUPPORT';
+                      const noCosponsorBenefit = meta.no_cosponsor_benefit === true ||
+                                                 meta.no_cosponsor_benefit === 1 ||
+                                                 meta.no_cosponsor_benefit === '1';
+                      const isPreferred = meta.preferred === true || meta.preferred === 1 || meta.preferred === '1' || meta.preferred === 'true';
+                      const hasPairKey = !!meta.pair_key;
+
+                      let scoringText: string;
+                      if (isCosponsor && isVote) {
+                        scoringText = `Cosponsor + Vote Yes = +${points} pts · Vote Yes = +5 pts · Vote No = 0 pts`;
+                      } else if (isCosponsor) {
+                        if (hasPairKey && !isPreferred) {
+                          const pairKeyParts = (meta.pair_key || '').split('|');
+                          const preferredBillNumber = pairKeyParts.find(p => p !== meta.bill_number) || '';
+                          const cleanPreferredBill = preferredBillNumber.replace(/^pair_\d+:/, '');
+                          scoringText = `Cosponsor: +${points} pts | Cosponsored preferred bill (${cleanPreferredBill}): +${points} pts | Not a cosponsor: −${points} pts`;
+                        } else if (noCosponsorBenefit) {
+                          scoringText = `Not a cosponsor: +1 pt | Cosponsor: −${points} pts`;
+                        } else if (isSupport) {
+                          scoringText = `Cosponsor: +${points} pts | Not a cosponsor: −${points} pts`;
+                        } else {
+                          scoringText = `Not a cosponsor: +${points} pts | Cosponsor: −${points} pts`;
+                        }
+                      } else if (isVote) {
+                        if (isSupport) {
+                          scoringText = `Voted in favor: +${points} pts | Voted against: −${points} pts`;
+                        } else {
+                          scoringText = `Voted against: +${points} pts | Voted in favor: −${points} pts`;
+                        }
+                      } else {
+                        scoringText = `+${points}/−${points} pts`;
+                      }
+
+                      return (
+                        <div className="text-sm text-slate-600 dark:text-slate-300">
+                          <span className="font-bold">Scoring:</span> {scoringText}
+                        </div>
+                      );
+                    })()}
+                    {/* Description */}
+                    {meta.analysis && (
+                      <div className="mt-2">
+                        <p className="text-sm text-slate-700 dark:text-slate-200">
+                          {meta.analysis}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -773,73 +845,6 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </div>
                   )}
                 </div>
-
-                {/* Sponsor */}
-                {(sponsorMember || meta.sponsor_name || meta.sponsor) && (
-                  <div className="mb-4">
-                    <div className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-200">Sponsor</div>
-                    {sponsorMember ? (
-                      <div
-                        className="text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                        onClick={() => {
-                          const firstCategory = meta.categories?.split(';')[0]?.trim();
-                          onMemberClick?.(sponsorMember, firstCategory);
-                        }}
-                      >
-                        {/* Photo */}
-                        {sponsorMember.bioguide_id ? (
-                          <img
-                            src={getPhotoUrl(String(sponsorMember.bioguide_id), '225x275') || String(sponsorMember.photo_url || '')}
-                            alt=""
-                            loading="lazy"
-                            className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              if (!target.dataset.fallback && sponsorMember.photo_url) {
-                                target.dataset.fallback = '1';
-                                target.src = String(sponsorMember.photo_url);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
-                        )}
-                        {/* Info */}
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
-                            {formatNameFirstLast(sponsorMember.full_name)}
-                          </span>
-                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                            <span
-                              className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
-                              style={{
-                                color: '#64748b',
-                                backgroundColor: `${chamberColor(sponsorMember.chamber)}20`,
-                              }}
-                            >
-                              {sponsorMember.chamber === "HOUSE" ? "House" : sponsorMember.chamber === "SENATE" ? "Senate" : (sponsorMember.chamber || "")}
-                            </span>
-                            <span
-                              className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
-                              style={partyBadgeStyle(sponsorMember.party)}
-                            >
-                              {partyLabel(sponsorMember.party)}
-                            </span>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                              {formatStateDistrict(sponsorMember)}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Grade chip */}
-                        <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-slate-600 dark:text-slate-300">{meta.sponsor_name || meta.sponsor}</div>
-                    )}
-                  </div>
-                )}
 
                 {/* First Section - Cosponsored / Voted in favor */}
                 <div ref={accordionSectionRef}>

@@ -460,6 +460,7 @@ export default function IranWarPowersPage() {
         if (val === null || val === undefined || val === '') return;
         if (Number((m as Record<string, unknown>)[`${col}_absent`] ?? 0) === 1) return;
         if (Number((m as Record<string, unknown>)[`${col}_not_in_office`] ?? 0) === 1) return;
+        if (Number((m as Record<string, unknown>)[`${col}_present`] ?? 0) === 1) return;
         if (isNonVotingDelegate(m)) return;
         const entry = { isSupport: Number(val) > 0, party: String(m.party || "") };
         if (Number(val) > 0) support.push(entry);
