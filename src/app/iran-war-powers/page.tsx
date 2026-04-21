@@ -27,8 +27,8 @@ function getOverallPosition(member: Row): PositionStatus {
 }
 
 // Generate legislative action text for card display
-// HConRes38: 10+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
-// SJRes104:   7+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
+// HConRes40: 9+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
+// SJRes123:  2 = voted yes, 0 = voted against (pure vote bill)
 function getLegislationText(member: Row): React.ReactNode {
   const nameParts = (member.full_name || "").split(",");
   const lastName = nameParts[0]?.trim() || "";
@@ -39,22 +39,14 @@ function getLegislationText(member: Row): React.ReactNode {
     const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
     if (val != null && val !== "") {
       const n = Number(val);
-      if (n >= 10) return <>{name} cosponsored and voted <strong>in favor</strong> of the Massie-Khanna Iran War Powers Resolution.</>;
-      if (n === 5)  return <>{name} voted <strong>in favor</strong> of the Massie-Khanna Iran War Powers Resolution.</>;
-      if (n === 0)  return <>{name} voted <strong>against</strong> the Massie-Khanna Iran War Powers Resolution.</>;
+      if (n > 5) return <>{name} cosponsored and voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
+      if (n === 5)  return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
+      if (n === 0)  return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
     }
-    return `${name} has not cosponsored the war powers resolution.`;
+    return `${name} has not voted on the Iran War Powers Resolution.`;
   } else {
-    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2026"];
-    if (cosponsorVal != null && cosponsorVal !== "") {
-      const n = Number(cosponsorVal);
-      if (n >= 7) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
-      if (n === 5) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
-      if (n === 0) return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
-    }
-    // Fallback: older SJRes59 vote
     const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
-    if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
+    if (voteVal != null && voteVal !== "") {
       const n = Number(voteVal);
       if (n > 0) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
       if (n === 0) return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
@@ -74,14 +66,8 @@ function getLegislationStatus(member: Row): PositionStatus {
       if (n === 0) return "oppose";
     }
   } else {
-    const cosponsorVal = member["S.J.Res.104 — Iran War Powers Resolution 2026"];
-    if (cosponsorVal != null && cosponsorVal !== "") {
-      const n = Number(cosponsorVal);
-      if (n > 0) return "support";
-      if (n === 0) return "oppose";
-    }
     const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
-    if (voteVal !== null && voteVal !== undefined && voteVal !== "") {
+    if (voteVal != null && voteVal !== "") {
       const n = Number(voteVal);
       if (n > 0) return "support";
       if (n === 0) return "oppose";
@@ -464,7 +450,7 @@ export default function IranWarPowersPage() {
   // Sorted member lists for hemicycle dots (support left, oppose right)
   const hemicycleMembers = useMemo(() => {
     const houseCol = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
-    const senateCol = "S.J.Res.104 — Iran War Powers Resolution 2026";
+    const senateCol = IRAN_WAR_POWERS_CONFIG.senate.column;
 
     const fromVote = (chamberRows: Row[], col: string) => {
       const support: { isSupport: boolean; party: string }[] = [];
@@ -732,7 +718,7 @@ export default function IranWarPowersPage() {
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("SENATE")}>Senate</h3>
             <div className="cursor-pointer w-full" onClick={() => {
-              const col = "S.J.Res.104 — Iran War Powers Resolution 2026";
+              const col = IRAN_WAR_POWERS_CONFIG.senate.column;
               const m = metaByCol.get(col);
               if (m) setSelectedBillModal({ meta: m, column: col });
             }}>
@@ -750,7 +736,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 4, 2026</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">April 15, 2026</p>
           </div>
 
           {/* House */}
@@ -775,7 +761,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
               <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
             </div>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">March 5, 2026</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">April 16, 2026</p>
           </div>
 
         </div>

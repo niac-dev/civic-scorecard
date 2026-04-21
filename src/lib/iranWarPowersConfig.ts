@@ -8,22 +8,22 @@ export const IRAN_WAR_POWERS_CONFIG = {
 
   house: {
     preferred: {
-      column: "H.Con.Res.38 — Iran War Powers Resolution (Preferred)",
-      billName: "Massie-Khanna Iran War Powers Resolution",
-      positive: "Rep. {name} has cosponsored the Massie-Khanna Iran War Powers Resolution!",
+      column: "H.Con.Res.40 — Iran War Powers Resolution",
+      billName: "Iran War Powers Resolution",
+      positive: "Rep. {name} has cosponsored and voted in favor of the Iran War Powers Resolution!",
     },
     alternative: {
-      column: "H.Con.Res.40 — Iran War Powers Resolution",
-      billName: "Smith-Meeks Iran War Powers Resolution",
-      positive: "Rep. {name} has cosponsored the Smith-Meeks Iran War Powers Resolution, which is positive but includes exceptions to allow U.S. military action in defense of Israel.",
+      column: "H.Con.Res.38 — Iran War Powers Resolution (Preferred)",
+      billName: "Massie-Khanna Iran War Powers Resolution",
+      positive: "Rep. {name} has cosponsored the Massie-Khanna Iran War Powers Resolution, which is the stronger version without exceptions.",
     },
-    negative: "Rep. {name} has not cosponsored either Iran War Powers Resolution.",
+    negative: "Rep. {name} has not supported either Iran War Powers Resolution.",
   },
 
   senate: {
-    column: "S.J.Res.59 — Iran War Powers Resolution",
+    column: "S.J.Res.123 — Iran War Powers Resolution",
     billName: "Iran War Powers Resolution",
-    positive: "Sen. {name} has supported the Iran War Powers Resolution!",
-    negative: "Sen. {name} has opposed the Iran War Powers Resolution.",
+    positive: "Sen. {name} has voted in favor of the Iran War Powers Resolution!",
+    negative: "Sen. {name} has voted against the Iran War Powers Resolution.",
   },
 };
