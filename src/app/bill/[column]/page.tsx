@@ -46,6 +46,7 @@ export default function BillPage() {
   const [supporters, setSupporters] = useState<Row[]>([]);
   const [middleGroup, setMiddleGroup] = useState<Row[]>([]);
   const [opposers, setOpposers] = useState<Row[]>([]);
+  const [notVoting, setNotVoting] = useState<Row[]>([]);
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
   const [sponsorMember, setSponsorMember] = useState<Row | null>(null);
   const [allColumns, setAllColumns] = useState<string[]>([]);
@@ -54,6 +55,7 @@ export default function BillPage() {
   const [firstExpanded, setFirstExpanded] = useState<boolean>(false);
   const [secondExpanded, setSecondExpanded] = useState<boolean>(false);
   const [thirdExpanded, setThirdExpanded] = useState<boolean>(false);
+  const [notVotingExpanded, setNotVotingExpanded] = useState<boolean>(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [chamberFilter, setChamberFilter] = useState<string>("");
   const [manualScoringMeta, setManualScoringMeta] = useState<Map<string, string>>(new Map());
@@ -117,6 +119,7 @@ export default function BillPage() {
       const support: Row[] = [];
       const oppose: Row[] = [];
       const present: Row[] = []; // For votes where member voted "present"
+      const notVotingList: Row[] = []; // For members who were absent
 
       // Check if this is a cosponsor action or vote
       const actionType = (billMeta as { action_types?: string })?.action_types || '';
@@ -145,11 +148,12 @@ export default function BillPage() {
 
         const val = Number(rawVal);
 
-        // Also check if they were absent or not in office - if so, skip them from the lists
+        // Also check if they were absent or not in office
         const absentCol = `${column}_absent`;
         const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
         const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
         if (wasAbsent || notInOffice) {
+          if (!isNonVotingDelegate(row)) notVotingList.push(row);
           return;
         }
 
@@ -232,11 +236,12 @@ export default function BillPage() {
             });
           }
 
-          // Skip absent or not-in-office members
+          // Collect absent or not-in-office members
           const absentCol = `${column}_absent`;
           const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
           const notInOffice2 = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
           if (wasAbsent || notInOffice2) {
+            if (!isNonVotingDelegate(row)) notVotingList.push(row);
             return;
           }
 
@@ -268,6 +273,7 @@ export default function BillPage() {
         setMiddleGroup(isVoteAction ? present.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))) : []);
         setOpposers(oppose.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
       }
+      setNotVoting(notVotingList.sort((a, b) => String(a.full_name).localeCompare(String(b.full_name))));
     })();
   }, [column]);
 
@@ -304,6 +310,17 @@ export default function BillPage() {
     }
     return filtered;
   }, [opposers, partyFilter, chamberFilter]);
+
+  const filteredNotVoting = useMemo(() => {
+    let filtered = notVoting;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [notVoting, partyFilter, chamberFilter]);
 
   if (!meta) {
     return <div className="p-8">Loading...</div>;
@@ -952,6 +969,80 @@ export default function BillPage() {
                             None found
                           </div>
                         )}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Not Voting Section */}
+          {isVote && filteredNotVoting.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-[#E7ECF2] dark:border-slate-800">
+              <h2
+                className="text-sm font-semibold mb-3 text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                onClick={() => setNotVotingExpanded(!notVotingExpanded)}
+              >
+                <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                  <circle cx="10" cy="10" r="7" fill="none" stroke="#94A3B8" strokeWidth="2" />
+                  <line x1="7" y1="10" x2="13" y2="10" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                Not Voting ({filteredNotVoting.length})
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-4 w-4 ml-auto transition-transform", notVotingExpanded && "rotate-180")}
+                  aria-hidden="true"
+                  role="img"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </h2>
+              {notVotingExpanded && (
+                <>
+                  {(() => {
+                    const billChamber = inferChamber(meta, column);
+                    const isMultiChamber = billChamber === "";
+
+                    if (isMultiChamber) {
+                      const housemembers = filteredNotVoting.filter(m => m.chamber === "HOUSE");
+                      const senatemembers = filteredNotVoting.filter(m => m.chamber === "SENATE");
+
+                      return (
+                        <div className="space-y-4">
+                          {housemembers.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                                House ({housemembers.length})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {housemembers.map((member) => (
+                                  <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {senatemembers.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2 px-2">
+                                Senate ({senatemembers.length})
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {senatemembers.map((member) => (
+                                  <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {filteredNotVoting.map((member) => (
+                          <MemberCard key={member.bioguide_id} member={member} onClick={() => setSelectedMember(member)} />
+                        ))}
                       </div>
                     );
                   })()}
