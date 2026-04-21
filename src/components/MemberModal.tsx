@@ -1170,7 +1170,7 @@ export function MemberModal({
                     {items.map((it) => (
                       <div
                         key={it.col}
-                        className="py-2 flex items-start gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
+                        className="py-2 flex items-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 -mx-2 px-2 rounded transition"
                         onClick={() => {
                           if (onBillClick && it.meta) {
                             onBillClick(it.meta, it.col);
