@@ -515,22 +515,6 @@ export default function BillPage() {
                     {meta.display_name || meta.short_title || `${meta.bill_number || column}`}
                   </span>
                 </h1>
-                {(() => {
-                  const voteInfo = extractVoteInfo(meta);
-                  return (
-                    <>
-                      {voteInfo.voteResult ? (
-                        <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                          <span className="font-medium">Status:</span> {voteInfo.voteResult}
-                        </div>
-                      ) : voteInfo.dateIntroduced ? (
-                        <div className="text-sm text-slate-600 dark:text-slate-300 mb-2">
-                          <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
-                        </div>
-                      ) : null}
-                    </>
-                  );
-                })()}
               </div>
               <button
                 className="chip-outline text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -609,62 +593,50 @@ export default function BillPage() {
             </div>
           )}
 
-          {/* NIAC Position & Links */}
+          {/* Status / Date Introduced */}
+          {(() => {
+            const voteInfo = extractVoteInfo(meta);
+            return (
+              <>
+                {voteInfo.voteResult ? (
+                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    <span className="font-medium">Status:</span> {voteInfo.voteResult}
+                  </div>
+                ) : voteInfo.dateIntroduced ? (
+                  <div className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    <span className="font-medium">Date Introduced:</span> {voteInfo.dateIntroduced}
+                  </div>
+                ) : null}
+              </>
+            );
+          })()}
+
+          {/* NIAC Position */}
           <div className="mb-6 space-y-2">
             <div className="text-sm text-slate-600 dark:text-slate-300">
               <span className="font-medium">NIAC Action Position:</span> {formatPositionLegislation(meta)}
             </div>
-            {(meta.congress_url || meta.learn_more_link) && (
-              <div className="flex flex-wrap gap-3">
-                {meta.congress_url && (
-                  <a
-                    href={meta.congress_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                  >
-                    Congress.gov
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                )}
-                {meta.learn_more_link && (
-                  <a
-                    href={meta.learn_more_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
-                  >
-                    Learn more
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                  </a>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Details Accordion - Category, Scoring, Description, Analysis */}
-          {(meta.categories || meta.points || meta.description || meta.analysis) && (
+          {/* More - unfurls as continuation */}
+          {(meta.categories || meta.points || meta.description || meta.analysis || meta.congress_url || meta.learn_more_link) && (
             <div className="mb-6">
-              <h2
-                className="text-sm font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-                onClick={() => setDetailsExpanded(!detailsExpanded)}
-              >
-                Details
-                <svg
-                  viewBox="0 0 20 20"
-                  className={clsx("h-4 w-4 ml-auto transition-transform", detailsExpanded && "rotate-180")}
-                  aria-hidden="true"
-                  role="img"
-                >
-                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </h2>
               {detailsExpanded && (
-                <div className="mt-3 space-y-4">
+                <div className="space-y-4">
+                  {/* Description */}
+                  {meta.description && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Description</h3>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.description}</p>
+                    </div>
+                  )}
+                  {/* Analysis */}
+                  {meta.analysis && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Analysis</h3>
+                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.analysis}</p>
+                    </div>
+                  )}
                   {/* Categories */}
                   {meta.categories && (
                     <div>
@@ -682,22 +654,55 @@ export default function BillPage() {
                       <span className="font-medium">Scoring:</span> {formatScoringDescription(meta)}
                     </div>
                   )}
-                  {/* Description */}
-                  {meta.description && (
+                  {/* Links */}
+                  {(meta.congress_url || meta.learn_more_link) && (
                     <div>
-                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Description</h3>
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.description}</p>
-                    </div>
-                  )}
-                  {/* Analysis */}
-                  {meta.analysis && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-1 text-slate-700 dark:text-slate-200">Analysis</h3>
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{meta.analysis}</p>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Links</span>
+                      <div className="flex flex-wrap gap-3 mt-1">
+                        {meta.congress_url && (
+                          <a
+                            href={meta.congress_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                          >
+                            Congress.gov
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                        {meta.learn_more_link && (
+                          <a
+                            href={meta.learn_more_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[#4B8CFB] hover:text-[#3a7de8] underline flex items-center gap-1"
+                          >
+                            Learn more
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
               )}
+              <button
+                onClick={() => setDetailsExpanded(!detailsExpanded)}
+                className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors mt-1"
+              >
+                {detailsExpanded ? "Less" : "More"}
+                <svg
+                  viewBox="0 0 20 20"
+                  className={clsx("h-3 w-3 transition-transform", detailsExpanded && "rotate-180")}
+                  aria-hidden="true"
+                >
+                  <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
           )}
 
