@@ -106,6 +106,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const [firstExpanded, setFirstExpanded] = useState(false);
   const [secondExpanded, setSecondExpanded] = useState(false);
   const [thirdExpanded, setThirdExpanded] = useState(false);
+  const [presentExpanded, setPresentExpanded] = useState(false);
+  const [notVotingExpanded, setNotVotingExpanded] = useState(false);
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [partyFilter, setPartyFilter] = useState<string>("");
   const [stateFilter, setStateFilter] = useState<string>(initialStateFilter || "");
@@ -151,10 +153,12 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   }, [meta, rows]);
 
   // Calculate member lists
-  const { firstSection, secondSection, thirdSection, firstLabel, secondLabel, thirdLabel, firstIsGood, secondIsGood, thirdIsGood } = useMemo<{
+  const { firstSection, secondSection, thirdSection, presentSection, notVotingSection, firstLabel, secondLabel, thirdLabel, firstIsGood, secondIsGood, thirdIsGood } = useMemo<{
     firstSection: Row[];
     secondSection: Row[];
     thirdSection: Row[];
+    presentSection: Row[];
+    notVotingSection: Row[];
     firstLabel: string;
     secondLabel: string;
     thirdLabel: string;
@@ -210,6 +214,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         firstSection: first.rows,
         secondSection: second.rows,
         thirdSection: third.rows,
+        presentSection: [],
+        notVotingSection: [],
         firstLabel: first.label,
         secondLabel: second.label,
         thirdLabel: third.label,
@@ -222,6 +228,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     const support: Row[] = [];
     const oppose: Row[] = [];
     const present: Row[] = [];
+    const notVotingList: Row[] = [];
 
     // Find sponsor to include at the top of the cosponsors list
     const sponsorBioguideId = sponsorMember?.bioguide_id || null;
@@ -243,14 +250,24 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      // Absent / not-in-office check (skip from vote tallies)
-      const absentCol = `${column}_absent`;
-      const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
+      // Absent / not-in-office check
+      const wasAbsent = Number((row as Record<string, unknown>)[`${column}_absent`] ?? 0) === 1;
       const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
+      if (wasAbsent || notInOffice) {
+        if (!isNonVotingDelegate(row)) notVotingList.push(row);
+        return;
+      }
+
+      // Check for "present" vote via _present flag
+      const votedPresent = Number((row as Record<string, unknown>)[`${column}_present`] ?? 0) === 1;
+      if (votedPresent) {
+        if (!isNonVotingDelegate(row)) present.push(row);
+        return;
+      }
 
       if (isCosponsor && isVote) {
         // Combined cosponsor+vote bill: group by vote outcome, skip non-voting delegates
-        if (isNonVotingDelegate(row) || wasAbsent || notInOffice) return;
+        if (isNonVotingDelegate(row)) return;
         const points = Number(val);
         if (points > 0) {
           support.push(row);
@@ -267,12 +284,9 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
           oppose.push(row);
         }
       } else if (isVote) {
-        // Pure vote bill: skip non-voting delegates and absent members
-        if (isNonVotingDelegate(row) || wasAbsent || notInOffice) return;
+        if (isNonVotingDelegate(row)) return;
         const points = Number(val);
-        if (points === -1) {
-          present.push(row);
-        } else if (points > 0) {
+        if (points > 0) {
           support.push(row);
         } else {
           oppose.push(row);
@@ -331,6 +345,8 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
       firstSection: support.sort(sortByName),
       secondSection: oppose.sort(sortByName),
       thirdSection: present.sort(sortByName),
+      presentSection: present.sort(sortByName),
+      notVotingSection: notVotingList.sort(sortByName),
       firstLabel: fLabel,
       secondLabel: sLabel,
       thirdLabel: tLabel,
@@ -398,6 +414,34 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
     }
     return filtered;
   }, [thirdSection, partyFilter, stateFilter, chamberFilter]);
+
+  const filteredPresentSection = useMemo(() => {
+    let filtered = presentSection;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (stateFilter) {
+      filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [presentSection, partyFilter, stateFilter, chamberFilter]);
+
+  const filteredNotVotingSection = useMemo(() => {
+    let filtered = notVotingSection;
+    if (partyFilter) {
+      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+    }
+    if (stateFilter) {
+      filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
+    }
+    if (chamberFilter) {
+      filtered = filtered.filter(m => m.chamber === chamberFilter);
+    }
+    return filtered;
+  }, [notVotingSection, partyFilter, stateFilter, chamberFilter]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -1100,6 +1144,180 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                         ))}
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Voted Present Section */}
+            {presentSection.length > 0 && (
+              <div>
+                <h2
+                  className="text-sm font-semibold mb-2 text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                  onClick={() => setPresentExpanded(!presentExpanded)}
+                >
+                  <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                    <circle cx="10" cy="10" r="7" fill="none" stroke="#F59E0B" strokeWidth="2" />
+                    <line x1="7" y1="10" x2="13" y2="10" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span className="flex items-center flex-wrap flex-1 min-w-0">
+                    <span className="whitespace-nowrap">Voted Present: {filteredPresentSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${presentSection.length}`}</span>
+                  </span>
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 transition-transform flex-shrink-0", presentExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </h2>
+                {presentExpanded && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
+                    {filteredPresentSection.map((member) => (
+                      <div
+                        key={member.bioguide_id}
+                        className={clsx(
+                          "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
+                          onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
+                        )}
+                        onClick={() => {
+                          const firstCategory = meta.categories?.split(';')[0]?.trim();
+                          onMemberClick?.(member, firstCategory);
+                        }}
+                      >
+                        {member.bioguide_id ? (
+                          <img
+                            src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
+                            alt=""
+                            loading="lazy"
+                            className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.fallback && member.photo_url) {
+                                target.dataset.fallback = '1';
+                                target.src = String(member.photo_url);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                        )}
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                            {formatNameFirstLast(member.full_name)}
+                          </span>
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                              style={{
+                                color: '#64748b',
+                                backgroundColor: `${chamberColor(member.chamber)}20`,
+                              }}
+                            >
+                              {member.chamber === "HOUSE" ? "House" : member.chamber === "SENATE" ? "Senate" : (member.chamber || "")}
+                            </span>
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                              style={partyBadgeStyle(member.party)}
+                            >
+                              {partyLabel(member.party)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              {formatStateDistrict(member)}
+                            </span>
+                          </div>
+                        </div>
+                        <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Not Voting Section */}
+            {notVotingSection.length > 0 && (
+              <div>
+                <h2
+                  className="text-sm font-semibold mb-2 text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                  onClick={() => setNotVotingExpanded(!notVotingExpanded)}
+                >
+                  <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0" aria-hidden="true" role="img">
+                    <circle cx="10" cy="10" r="7" fill="none" stroke="#94A3B8" strokeWidth="2" />
+                    <line x1="7" y1="10" x2="13" y2="10" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span className="flex items-center flex-wrap flex-1 min-w-0">
+                    <span className="whitespace-nowrap">Not Voting: {filteredNotVotingSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${notVotingSection.length}`}</span>
+                  </span>
+                  <svg
+                    viewBox="0 0 20 20"
+                    className={clsx("h-4 w-4 transition-transform flex-shrink-0", notVotingExpanded && "rotate-180")}
+                    aria-hidden="true"
+                    role="img"
+                  >
+                    <path d="M5.5 7.5 L10 12 L14.5 7.5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </h2>
+                {notVotingExpanded && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
+                    {filteredNotVotingSection.map((member) => (
+                      <div
+                        key={member.bioguide_id}
+                        className={clsx(
+                          "text-xs py-2 px-2 rounded bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2",
+                          onMemberClick && "cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900"
+                        )}
+                        onClick={() => {
+                          const firstCategory = meta.categories?.split(';')[0]?.trim();
+                          onMemberClick?.(member, firstCategory);
+                        }}
+                      >
+                        {member.bioguide_id ? (
+                          <img
+                            src={getPhotoUrl(String(member.bioguide_id), '225x275') || String(member.photo_url || '')}
+                            alt=""
+                            loading="lazy"
+                            className="h-10 w-10 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.fallback && member.photo_url) {
+                                target.dataset.fallback = '1';
+                                target.src = String(member.photo_url);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
+                        )}
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate text-[13px]">
+                            {formatNameFirstLast(member.full_name)}
+                          </span>
+                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-semibold"
+                              style={{
+                                color: '#64748b',
+                                backgroundColor: `${chamberColor(member.chamber)}20`,
+                              }}
+                            >
+                              {member.chamber === "HOUSE" ? "House" : member.chamber === "SENATE" ? "Senate" : (member.chamber || "")}
+                            </span>
+                            <span
+                              className="px-1 py-0.5 rounded-md text-[9px] font-medium border"
+                              style={partyBadgeStyle(member.party)}
+                            >
+                              {partyLabel(member.party)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              {formatStateDistrict(member)}
+                            </span>
+                          </div>
+                        </div>
+                        <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
