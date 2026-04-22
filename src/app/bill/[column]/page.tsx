@@ -151,11 +151,14 @@ export default function BillPage() {
 
         const val = Number(rawVal);
 
-        // Also check if they were absent or not in office
+        // Skip members not in office entirely (they weren't eligible to vote)
+        const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
+        if (notInOffice) return;
+
+        // Absent members go to Not Voting list
         const absentCol = `${column}_absent`;
         const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
-        const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
-        if (wasAbsent || notInOffice) {
+        if (wasAbsent) {
           if (!isNonVotingDelegate(row)) notVotingList.push(row);
           return;
         }
@@ -243,11 +246,14 @@ export default function BillPage() {
             });
           }
 
-          // Collect absent or not-in-office members
+          // Skip members not in office entirely
+          const notInOffice2 = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
+          if (notInOffice2) return;
+
+          // Absent members go to Not Voting list
           const absentCol = `${column}_absent`;
           const wasAbsent = Number((row as Record<string, unknown>)[absentCol] ?? 0) === 1;
-          const notInOffice2 = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
-          if (wasAbsent || notInOffice2) {
+          if (wasAbsent) {
             if (!isNonVotingDelegate(row)) notVotingList.push(row);
             return;
           }

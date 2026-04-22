@@ -254,10 +254,13 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
         return;
       }
 
-      // Absent / not-in-office check
-      const wasAbsent = Number((row as Record<string, unknown>)[`${column}_absent`] ?? 0) === 1;
+      // Skip members not in office entirely (they weren't eligible to vote)
       const notInOffice = Number((row as Record<string, unknown>)[`${column}_not_in_office`] ?? 0) === 1;
-      if (wasAbsent || notInOffice) {
+      if (notInOffice) return;
+
+      // Absent members go to Not Voting list
+      const wasAbsent = Number((row as Record<string, unknown>)[`${column}_absent`] ?? 0) === 1;
+      if (wasAbsent) {
         if (!isNonVotingDelegate(row)) notVotingList.push(row);
         return;
       }
