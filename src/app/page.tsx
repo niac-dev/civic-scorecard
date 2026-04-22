@@ -693,7 +693,8 @@ export default function Page() {
   }, [selectedCell]);
 
   const filtered = useMemo(() => {
-    let out = rows;
+    // Exclude members no longer in office from the scorecard display
+    let out = rows.filter(r => String((r as Record<string, unknown>).in_office ?? '1') !== '0');
     if (f.chamber) out = out.filter(r => r.chamber === f.chamber);
     if (f.party) {
       // When filtering for Democratic, include Independents

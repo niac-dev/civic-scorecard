@@ -37,9 +37,9 @@ export async function loadData(): Promise<{
     .filter((r) => {
       // Filter out rows without essential fields (full_name, party, state, or chamber)
       if (!r.full_name || !r.party || !r.state || !r.chamber) return false;
-      // Filter out members no longer in office
-      const inOffice = (r as Record<string, unknown>)["in_office"];
-      if (inOffice !== undefined && String(inOffice) === "0") return false;
+      // Keep all members (including those no longer in office) so their
+      // historical votes are preserved in tallies. Individual pages use
+      // the per-bill _not_in_office flag to exclude them where appropriate.
       return true;
     })
     .map((r) => {

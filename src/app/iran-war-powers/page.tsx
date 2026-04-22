@@ -373,7 +373,8 @@ export default function IranWarPowersPage() {
 
   // Filter members
   const filtered = useMemo(() => {
-    let result = rows;
+    // Exclude members no longer in office from display
+    let result = rows.filter(r => String((r as Record<string, unknown>).in_office ?? '1') !== '0');
 
     // Chamber filter
     if (chamberFilter) {
