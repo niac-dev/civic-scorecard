@@ -32,15 +32,19 @@ export const GRADE_COLOR_MAP: Record<string, string> = {
   'Inc': GRADE_COLORS.default
 };
 
-// Members with incomplete grades (recently entered office)
-// These members will show "Inc" instead of letter grades
-export const INCOMPLETE_GRADE_MEMBERS = new Set([
-  'G000606', // Adelita Grijalva
-  'W000831', // James Walkinshaw
-]);
+// Members with incomplete grades — automatically determined by sworn_in_date
+// Members sworn in within the last 3 months show "Inc" instead of letter grades
+const INCOMPLETE_THRESHOLD_MONTHS = 3;
 
-export function isGradeIncomplete(bioguideId: string | unknown): boolean {
-  return INCOMPLETE_GRADE_MEMBERS.has(String(bioguideId));
+export function isGradeIncomplete(_bioguideId: string | unknown, swornInDate?: string | unknown): boolean {
+  if (!swornInDate) return false;
+  const dateStr = String(swornInDate).trim();
+  if (!dateStr) return false;
+  const sworn = new Date(dateStr);
+  if (isNaN(sworn.getTime())) return false;
+  const threshold = new Date();
+  threshold.setMonth(threshold.getMonth() - INCOMPLETE_THRESHOLD_MONTHS);
+  return sworn > threshold;
 }
 
 // Photo URL helper - uses unitedstates.github.io for higher resolution images

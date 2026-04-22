@@ -2595,7 +2595,7 @@ export default function Page() {
                     </svg>
                     View Profile
                   </button>
-                  {!isGradeIncomplete(r.bioguide_id) && (
+                  {!isGradeIncomplete(r.bioguide_id, (r as Record<string, unknown>).sworn_in_date) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -2842,7 +2842,7 @@ export default function Page() {
                       }}
                       title={isOverall ? "Click to view member details" : `Click to view ${gradeCol.header} details`}
                     >
-                      <GradeChip grade={isGradeIncomplete(r.bioguide_id) ? "Inc" : String(r[gradeCol.field] || "N/A")} />
+                      <GradeChip grade={isGradeIncomplete(r.bioguide_id, (r as Record<string, unknown>).sworn_in_date) ? "Inc" : String(r[gradeCol.field] || "N/A")} />
                     </div>
                   </React.Fragment>
                 );

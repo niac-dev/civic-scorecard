@@ -332,7 +332,7 @@ export default function MemberPage() {
 
               <div className="flex flex-col items-center justify-center">
                 <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Grade</div>
-                <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} size="xl" />
+                <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row.Grade || "N/A")} size="xl" />
               </div>
 
               <div className="flex items-center gap-2 print:hidden ml-12">
@@ -455,7 +455,7 @@ export default function MemberPage() {
                   <div className="text-xs tabular text-slate-700">
                     {Number(row.Total || 0).toFixed(0)} / {Number(row.Max_Possible || 0).toFixed(0)}
                   </div>
-                  <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} size="sm" />
+                  <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row.Grade || "N/A")} size="sm" />
                 </div>
               </button>
 
@@ -482,7 +482,7 @@ export default function MemberPage() {
                       <div className="text-xs tabular text-slate-700">
                         {Number(row[totalField] || 0).toFixed(0)} / {Number(row[maxField] || 0).toFixed(0)}
                       </div>
-                      <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} size="sm" />
+                      <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row[gradeField] || "N/A")} size="sm" />
                     </div>
                   </button>
                 );
@@ -599,7 +599,7 @@ export default function MemberPage() {
                       const categoryItems = itemsByCategory.get(category) || [];
                       const fieldSuffix = category.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
                       const gradeField = `Grade_${fieldSuffix}` as keyof Row;
-                      const grade = isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A");
+                      const grade = isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row[gradeField] || "N/A");
 
                       return (
                         <div key={category} className="rounded-lg border border-[#E7ECF2] bg-slate-50 p-4">

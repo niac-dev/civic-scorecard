@@ -483,7 +483,7 @@ export function MemberModal({
             {/* Right side - Other buttons */}
             <div className="flex gap-2 pointer-events-auto">
               {/* Generate Image button - hidden for incomplete members */}
-              {!isGradeIncomplete(row.bioguide_id) && (
+              {!isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) && (
                 <button
                   className="p-2 rounded-lg border border-[#E7ECF2] dark:border-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 bg-white dark:bg-slate-800 shadow-sm"
                   onClick={handleDownloadImage}
@@ -538,7 +538,7 @@ export function MemberModal({
                       }}
                     />
                     {/* Hover overlay with Generate Image button */}
-                    {!isGradeIncomplete(row.bioguide_id) && (
+                    {!isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) && (
                       <button
                         onClick={handleDownloadImage}
                         className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 group-hover/photo:opacity-100 transition-opacity cursor-pointer"
@@ -692,7 +692,7 @@ export function MemberModal({
                 >
                   <div className="flex items-center justify-between gap-2 w-full">
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">All Issues</div>
-                    <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
+                    <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row.Grade || "N/A")} isOverall={true} />
                   </div>
                 </button>
 
@@ -721,7 +721,7 @@ export function MemberModal({
                     >
                       <div className="flex items-center justify-between gap-2 w-full">
                         <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{category}</div>
-                        <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(row[gradeField] || "N/A")} />
+                        <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(row[gradeField] || "N/A")} />
                       </div>
                     </button>
                   );
@@ -1111,7 +1111,7 @@ export function MemberModal({
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-slate-600 dark:text-slate-400">{total}/{maxPossible}</span>
-                              <GradeChip grade={isGradeIncomplete(row.bioguide_id) ? "Inc" : String(grade || "N/A")} scale={2} />
+                              <GradeChip grade={isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? "Inc" : String(grade || "N/A")} scale={2} />
                             </div>
                           </div>
                         </div>

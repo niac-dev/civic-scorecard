@@ -607,7 +607,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       </div>
                     </div>
                     <div className="ml-auto flex-shrink-0">
-                      <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
+                      <GradeChip grade={isGradeIncomplete(sponsorMember.bioguide_id, (sponsorMember as Record<string, unknown>).sworn_in_date) ? "Inc" : String(sponsorMember.Grade || "N/A")} scale={0.6} />
                     </div>
                   </div>
                 ) : (
@@ -949,7 +949,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             {/* Grade chip */}
                             <div className="ml-auto flex-shrink-0">
                               <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id, (member as Record<string, unknown>).sworn_in_date) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                             </div>
                           </div>
@@ -1056,7 +1056,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                           {/* Grade chip */}
                           <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id, (member as Record<string, unknown>).sworn_in_date) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                         </div>
                       ))}
@@ -1157,7 +1157,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                             {/* Grade chip */}
                             <div className="ml-auto flex-shrink-0">
                               <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id, (member as Record<string, unknown>).sworn_in_date) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                             </div>
                           </div>
@@ -1249,7 +1249,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                         </div>
                         <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id, (member as Record<string, unknown>).sworn_in_date) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                       </div>
                     ))}
@@ -1338,7 +1338,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                           </div>
                         </div>
                         <div className="ml-auto flex-shrink-0">
-                          <GradeChip grade={isGradeIncomplete(member.bioguide_id) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
+                          <GradeChip grade={isGradeIncomplete(member.bioguide_id, (member as Record<string, unknown>).sworn_in_date) ? "Inc" : String(member.Grade || "N/A")} scale={0.6} />
                         </div>
                       </div>
                     ))}
