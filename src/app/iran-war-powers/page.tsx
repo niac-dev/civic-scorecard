@@ -668,7 +668,7 @@ export default function IranWarPowersPage() {
                           >
                             <span className="text-slate-800 font-medium">{formatMemberName(member)}</span>
                             <span className="text-slate-500 text-sm">
-                              ({(() => { const c = partyCaucus(String(member.party || ''), String(member.bioguide_id || '')); return c === "Democrat" ? "D" : c === "Republican" ? "R" : "I"; })()}) {stateCodeOf(member.state)}{member.chamber === "HOUSE" ? `-${member.district}` : ""}
+                              ({member.party === "Democratic" ? "D" : member.party === "Republican" ? "R" : "I"}) {stateCodeOf(member.state)}{member.chamber === "HOUSE" ? `-${member.district}` : ""}
                             </span>
                           </button>
                         ))}
