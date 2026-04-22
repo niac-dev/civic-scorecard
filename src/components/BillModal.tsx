@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import type { Meta, Row } from "@/lib/types";
-import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, getPhotoUrl, isGradeIncomplete, isTrackerOnly, isNonVotingDelegate } from "@/lib/utils";
+import { extractVoteInfo, inferChamber, stateCodeOf, partyBadgeStyle, partyLabel, partyCaucus, getPhotoUrl, isGradeIncomplete, isTrackerOnly, isNonVotingDelegate } from "@/lib/utils";
 import clsx from "clsx";
 import { VoteIcon, GradeChip } from "@/components/GradeChip";
 
@@ -76,11 +76,14 @@ interface BillModalProps {
 
 // Helper function to calculate partisan breakdown
 function getPartisanBreakdown(members: Row[]): { rCount: number; dCount: number } {
-  const rCount = members.filter(m => String(m.party || '').toLowerCase().startsWith('rep')).length;
-  const dCount = members.filter(m => String(m.party || '').toLowerCase().startsWith('dem')).length;
-  const iCount = members.filter(m => String(m.party || '').toLowerCase().startsWith('ind')).length;
-  // Group independents with democrats
-  return { rCount, dCount: dCount + iCount };
+  let rCount = 0;
+  let dCount = 0;
+  members.forEach(m => {
+    const caucus = partyCaucus(String(m.party || ''), String(m.bioguide_id || ''));
+    if (caucus === 'Republican') rCount++;
+    else dCount++; // Democrats + Independents who caucus with Dems
+  });
+  return { rCount, dCount };
 }
 
 // Component to render partisan pills
@@ -377,7 +380,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const filteredFirstSection = useMemo(() => {
     let filtered = firstSection;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
@@ -391,7 +394,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const filteredSecondSection = useMemo(() => {
     let filtered = secondSection;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
@@ -405,7 +408,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const filteredThirdSection = useMemo(() => {
     let filtered = thirdSection;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
@@ -419,7 +422,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const filteredPresentSection = useMemo(() => {
     let filtered = presentSection;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);
@@ -433,7 +436,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
   const filteredNotVotingSection = useMemo(() => {
     let filtered = notVotingSection;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (stateFilter) {
       filtered = filtered.filter(m => stateCodeOf(m.state) === stateFilter);

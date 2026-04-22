@@ -7,6 +7,7 @@ import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
 import {
   partyBadgeStyle,
   partyLabel,
+  partyCaucus,
   stateCodeOf,
   getPhotoUrl,
   isNonVotingDelegate,
@@ -23,7 +24,8 @@ function getOverallPosition(member: Row): PositionStatus {
   if (pos === "support" || pos === "likely_support" || pos === "likely_oppose" || pos === "oppose") {
     return pos;
   }
-  return member.party === "Democratic" ? "likely_support" : "likely_oppose";
+  const caucus = partyCaucus(String(member.party || ''), String(member.bioguide_id || ''));
+  return caucus === "Republican" ? "likely_oppose" : "likely_support";
 }
 
 // Generate legislative action text for card display
@@ -380,7 +382,7 @@ export default function IranWarPowersPage() {
 
     // Party filter
     if (partyFilter) {
-      result = result.filter((r) => r.party === partyFilter);
+      result = result.filter((r) => partyCaucus(String(r.party || ''), String(r.bioguide_id || '')) === partyFilter);
     }
 
     // Name search (when tab is name and there's a query)
@@ -462,7 +464,7 @@ export default function IranWarPowersPage() {
         if (Number((m as Record<string, unknown>)[`${col}_not_in_office`] ?? 0) === 1) return;
         if (Number((m as Record<string, unknown>)[`${col}_present`] ?? 0) === 1) return;
         if (isNonVotingDelegate(m)) return;
-        const entry = { isSupport: Number(val) > 0, party: String(m.party || "") };
+        const entry = { isSupport: Number(val) > 0, party: partyCaucus(String(m.party || ''), String(m.bioguide_id || '')) };
         if (Number(val) > 0) support.push(entry);
         else oppose.push(entry);
       });
@@ -666,7 +668,7 @@ export default function IranWarPowersPage() {
                           >
                             <span className="text-slate-800 font-medium">{formatMemberName(member)}</span>
                             <span className="text-slate-500 text-sm">
-                              ({member.party === "Democratic" ? "D" : member.party === "Republican" ? "R" : "I"}) {stateCodeOf(member.state)}{member.chamber === "HOUSE" ? `-${member.district}` : ""}
+                              ({(() => { const c = partyCaucus(String(member.party || ''), String(member.bioguide_id || '')); return c === "Democrat" ? "D" : c === "Republican" ? "R" : "I"; })()}) {stateCodeOf(member.state)}{member.chamber === "HOUSE" ? `-${member.district}` : ""}
                             </span>
                           </button>
                         ))}

@@ -111,6 +111,20 @@ export function partyLabel(p?: string) {
     .join(" ");
 }
 
+// Maps independents to their caucus party for tallies and filtering
+// Kiley (K000401) caucuses with Republicans; Sanders (S000033) and King (K000383) caucus with Democrats
+const INDEPENDENT_CAUCUS: Record<string, string> = {
+  K000401: "Republican", // Kevin Kiley
+};
+
+export function partyCaucus(party?: string, bioguideId?: string): string {
+  const label = partyLabel(party);
+  if (label === "Independent" && bioguideId && INDEPENDENT_CAUCUS[bioguideId]) {
+    return INDEPENDENT_CAUCUS[bioguideId];
+  }
+  return label;
+}
+
 export function partyBadgeStyle(p?: string) {
   const label = partyLabel(p).toLowerCase();
 

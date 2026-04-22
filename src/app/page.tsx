@@ -10,7 +10,7 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import { useFilters } from "@/lib/store";
 import type { Row, Meta } from "@/lib/types";
 import { loadPacData, isAipacEndorsed, isDmfiEndorsed, type PacData } from "@/lib/pacData";
-import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, isGradeIncomplete, getPhotoUrl, gradeColor, isTrackerOnly } from "@/lib/utils";
+import { GRADE_COLORS, extractVoteInfo, inferChamber, partyBadgeStyle, partyLabel, partyCaucus, isGradeIncomplete, getPhotoUrl, gradeColor, isTrackerOnly } from "@/lib/utils";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import USMap from "@/components/USMap";
 import { MemberModal } from "@/components/MemberModal";
@@ -792,7 +792,7 @@ export default function Page() {
     // Apply party filter (OR logic within party - match any selected party)
     if (partyFilter.size > 0) {
       out = out.filter(member => {
-        const memberParty = partyLabel(member.party).toLowerCase();
+        const memberParty = partyCaucus(String(member.party || ''), String(member.bioguide_id || '')).toLowerCase();
         for (const party of partyFilter) {
           if (memberParty.startsWith(party.toLowerCase())) return true;
         }

@@ -7,7 +7,7 @@ import clsx from "clsx";
 import { MemberCard } from "@/components/MemberCard";
 import { MemberModal } from "@/components/MemberModal";
 import { GradeChip } from "@/components/GradeChip";
-import { partyBadgeStyle, partyLabel, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo, isNonVotingDelegate } from "@/lib/utils";
+import { partyBadgeStyle, partyLabel, partyCaucus, stateCodeOf, chamberColor, inferChamber, isTrue, GRADE_COLORS, extractVoteInfo, isNonVotingDelegate } from "@/lib/utils";
 
 function formatPositionLegislation(meta: Meta | undefined): string {
   const position = (meta?.position_to_score || '').toUpperCase();
@@ -296,7 +296,7 @@ export default function BillPage() {
   const filteredSupporters = useMemo(() => {
     let filtered = supporters;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (chamberFilter) {
       filtered = filtered.filter(m => m.chamber === chamberFilter);
@@ -307,7 +307,7 @@ export default function BillPage() {
   const filteredMiddleGroup = useMemo(() => {
     let filtered = middleGroup;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (chamberFilter) {
       filtered = filtered.filter(m => m.chamber === chamberFilter);
@@ -318,7 +318,7 @@ export default function BillPage() {
   const filteredOpposers = useMemo(() => {
     let filtered = opposers;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (chamberFilter) {
       filtered = filtered.filter(m => m.chamber === chamberFilter);
@@ -329,7 +329,7 @@ export default function BillPage() {
   const filteredPresentVoters = useMemo(() => {
     let filtered = presentVoters;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (chamberFilter) {
       filtered = filtered.filter(m => m.chamber === chamberFilter);
@@ -340,7 +340,7 @@ export default function BillPage() {
   const filteredNotVoting = useMemo(() => {
     let filtered = notVoting;
     if (partyFilter) {
-      filtered = filtered.filter(m => partyLabel(m.party) === partyFilter);
+      filtered = filtered.filter(m => partyCaucus(String(m.party), String(m.bioguide_id)) === partyFilter);
     }
     if (chamberFilter) {
       filtered = filtered.filter(m => m.chamber === chamberFilter);
