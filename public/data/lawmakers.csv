@@ -29,8 +29,8 @@ C001087,"Crawford, Eric A. ""Rick""",,,HOUSE,Arkansas,,Republican,,,,,,https://w
 W000821,"Westerman, Bruce",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/w000821_200.jpg,0,0
 H001072,"Hill, J. French",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/h001072_200.jpg,0,0
 W000809,"Womack, Steve",,,HOUSE,Arkansas,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_ar_3_womack_steve_200.jpg,0,0
-K000401,"Kiley, Kevin",,,HOUSE,California,,Independent,,,,,,https://www.congress.gov/img/member/k000401_200.jpg,0,0
 S001150,"Schiff, Adam B.",,,SENATE,California,,Democratic,,,,,,https://www.congress.gov/img/member/677d870dfdb6cf36bbb649b3_200.jpg,0,0
+K000401,"Kiley, Kevin",,,HOUSE,California,,Independent,,,,,,https://www.congress.gov/img/member/k000401_200.jpg,0,0
 P000145,"Padilla, Alex",,,SENATE,California,,Democratic,,,,,,https://www.congress.gov/img/member/p000145_200.jpg,0,0
 C001059,"Costa, Jim",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/6973c909ded7781a35cc1fd7_200.jpg,0,0
 W000187,"Waters, Maxine",,,HOUSE,California,,Democratic,,,,,,https://www.congress.gov/img/member/w000187_200.jpg,0,0
@@ -131,7 +131,7 @@ W000808,"Wilson, Frederica S.",,,HOUSE,Florida,,Democratic,,,,,,https://www.cong
 B001260,"Buchanan, Vern",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/b001260_200.jpg,0,0
 C001066,"Castor, Kathy",,,HOUSE,Florida,,Democratic,,,,,,https://www.congress.gov/img/member/c001066_200.jpg,0,0
 B001257,"Bilirakis, Gus M.",,,HOUSE,Florida,,Republican,,,,,,https://www.congress.gov/img/member/117_rp_fl_12_bilirakis_gus_200.jpg,0,0
-F000485,"Fuller, Clay",,,HOUSE,Georgia,,Republican,,,,,,,0,0
+F000485,"Fuller, Clay",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/69eb95e5277642362f6112c5_200.jpg,0,0
 W000790,"Warnock, Raphael G.",,,SENATE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/w000790_200.jpg,0,0
 O000174,"Ossoff, Jon",,,SENATE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/o000174_200.jpg,0,0
 M001218,"McCormick, Richard",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/m001218_200.jpg,0,0
@@ -144,7 +144,6 @@ A000372,"Allen, Rick W.",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.g
 L000583,"Loudermilk, Barry",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/115_rp_ga_11_loudermilk_barry_200.jpg,0,0
 C001103,"Carter, Earl L. ""Buddy""",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/c001103_200.jpg,0,0
 S001189,"Scott, Austin",,,HOUSE,Georgia,,Republican,,,,,,https://www.congress.gov/img/member/s001189_200.jpg,0,0
-S001157,"Scott, David",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/116_rp_ga_13_scott_david_200.jpg,0,0
 J000288,"Johnson, Henry C. ""Hank""",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/j000288_200.jpg,0,0
 B000490,"Bishop, Sanford D.",,,HOUSE,Georgia,,Democratic,,,,,,https://www.congress.gov/img/member/b000490_200.jpg,0,0
 M001219,"Moylan, James C.",,,HOUSE,Guam,,Republican,,,,,,https://www.congress.gov/img/member/m001219_200.jpg,0,0
@@ -299,9 +298,9 @@ S001181,"Shaheen, Jeanne",,,SENATE,New Hampshire,,Democratic,,,,,,https://www.co
 H001076,"Hassan, Margaret Wood",,,SENATE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/h001076_200.jpg,0,0
 G000604,"Goodlander, Maggie",,,HOUSE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/678ff62d66bf616cf1a7ce13_200.jpg,0,0
 P000614,"Pappas, Chris",,,HOUSE,New Hampshire,,Democratic,,,,,,https://www.congress.gov/img/member/p000614_200.jpg,0,0
-M001246,"Mejia, Analilia",,,HOUSE,New Jersey,,Democratic,,,,,,,0,0
-K000394,"Kim, Andy",,,SENATE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/677d84cbfdb6cf36bbb649a1_200.jpg,0,0
 B001288,"Booker, Cory A.",,,SENATE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/b001288_200.jpg,0,0
+M001246,"Mejia, Analilia",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/69eb9743277642362f6112ce_200.jpg,0,0
+K000394,"Kim, Andy",,,SENATE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/677d84cbfdb6cf36bbb649a1_200.jpg,0,0
 P000621,"Pou, Nellie",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/67745d3b0b34857ecc909167_200.jpg,0,0
 C001136,"Conaway, Herbert C.",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/6774243a0b34857ecc90906b_200.jpg,0,0
 M001229,"McIver, LaMonica",,,HOUSE,New Jersey,,Democratic,,,,,,https://www.congress.gov/img/member/681dfed94fc893ce843e24b8_200.jpg,0,0
