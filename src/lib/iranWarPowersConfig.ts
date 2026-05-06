@@ -21,7 +21,7 @@ export const IRAN_WAR_POWERS_CONFIG = {
   },
 
   senate: {
-    column: "S.J.Res.123 — Iran War Powers Resolution",
+    column: "S.J.Res.184 — Iran War Powers Resolution",
     billName: "Iran War Powers Resolution",
     positive: "Sen. {name} has voted in favor of the Iran War Powers Resolution!",
     negative: "Sen. {name} has voted against the Iran War Powers Resolution.",

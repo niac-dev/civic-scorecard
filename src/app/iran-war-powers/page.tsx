@@ -740,7 +740,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">April 15, 2026</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">April 30, 2026</p>
           </div>
 
           {/* House */}
