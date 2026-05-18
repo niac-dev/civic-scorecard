@@ -2570,6 +2570,7 @@ export default function Page() {
           {visibleRows.map((r, i) => (
             <div
               key={i}
+              data-row-index={i}
               className={clsx(
                 "grid min-w-max transition group items-center",
                 "hover:bg-slate-50 dark:hover:bg-slate-800",
@@ -3312,6 +3313,15 @@ export default function Page() {
           )}
           </div>
         </div>
+
+          {/* Alphabet fast-scroll strip */}
+          {sortCol === "__member" && sortDir === "GOOD_FIRST" && sorted.length > 20 && (
+            <AlphabetStrip
+              sorted={sorted}
+              tableScrollRef={tableScrollRef}
+              setVisibleRowCount={setVisibleRowCount}
+            />
+          )}
         </div>
 
         {/* Tracker View */}
@@ -4066,6 +4076,121 @@ export default function Page() {
       </div>
       </div>
     </div>
+  );
+}
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+function AlphabetStrip({
+  sorted,
+  tableScrollRef,
+  setVisibleRowCount,
+}: {
+  sorted: Row[];
+  tableScrollRef: React.RefObject<HTMLDivElement | null>;
+  setVisibleRowCount: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Build letter -> row index map
+  const letterIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    sorted.forEach((r, i) => {
+      const l = lastName(r.full_name).charAt(0).toUpperCase();
+      if (l && !map.has(l)) map.set(l, i);
+    });
+    return map;
+  }, [sorted]);
+
+  const scrollToLetter = useCallback((letter: string) => {
+    const idx = letterIndex.get(letter);
+    if (idx === undefined) return;
+
+    // Ensure all rows are loaded so we can scroll to them
+    setVisibleRowCount(sorted.length);
+
+    setActiveLetter(letter);
+    if (hideTimeout.current) clearTimeout(hideTimeout.current);
+    hideTimeout.current = setTimeout(() => setActiveLetter(null), 800);
+
+    // Wait a tick for rows to render after setVisibleRowCount
+    requestAnimationFrame(() => {
+      const container = tableScrollRef.current;
+      if (!container) return;
+      // Each row is roughly the same height; find actual row elements
+      const rows = container.querySelectorAll('[data-row-index]');
+      const target = container.querySelector(`[data-row-index="${idx}"]`);
+      if (target) {
+        target.scrollIntoView({ block: 'start' });
+      } else {
+        // Fallback: estimate position (header ~48px, row ~56px)
+        const headerHeight = 48;
+        const rowHeight = 56;
+        container.scrollTop = headerHeight + idx * rowHeight;
+      }
+    });
+  }, [letterIndex, sorted.length, tableScrollRef, setVisibleRowCount]);
+
+  const getLetterFromTouch = useCallback((clientY: number) => {
+    const strip = stripRef.current;
+    if (!strip) return null;
+    const rect = strip.getBoundingClientRect();
+    const y = clientY - rect.top;
+    const idx = Math.floor((y / rect.height) * ALPHABET.length);
+    if (idx >= 0 && idx < ALPHABET.length) return ALPHABET[idx];
+    return null;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const letter = getLetterFromTouch(e.touches[0].clientY);
+    if (letter) scrollToLetter(letter);
+  }, [getLetterFromTouch, scrollToLetter]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const letter = getLetterFromTouch(e.touches[0].clientY);
+    if (letter) scrollToLetter(letter);
+  }, [getLetterFromTouch, scrollToLetter]);
+
+  return (
+    <>
+      {/* Floating letter bubble */}
+      {activeLetter && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none">
+          <div className="w-16 h-16 rounded-2xl bg-[#30558C] text-white flex items-center justify-center text-3xl font-bold shadow-lg">
+            {activeLetter}
+          </div>
+        </div>
+      )}
+      {/* Alphabet strip */}
+      <div
+        ref={stripRef}
+        className="absolute right-0 top-12 bottom-4 z-40 flex flex-col justify-between items-center w-5 select-none touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
+        {ALPHABET.map((letter) => {
+          const hasMembers = letterIndex.has(letter);
+          return (
+            <button
+              key={letter}
+              className={clsx(
+                "text-[9px] leading-none font-semibold w-full text-center py-[1px] transition-colors",
+                hasMembers
+                  ? "text-[#30558C] dark:text-slate-400 hover:text-[#1a3a6a] dark:hover:text-slate-200"
+                  : "text-slate-300 dark:text-slate-700"
+              )}
+              onClick={() => hasMembers && scrollToLetter(letter)}
+              disabled={!hasMembers}
+            >
+              {letter}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
