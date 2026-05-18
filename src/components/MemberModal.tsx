@@ -326,6 +326,9 @@ export function MemberModal({
         const notInOfficeCol = `${c}_not_in_office`;
         const wasNotInOffice = Number((row as Record<string, unknown>)[notInOfficeCol] ?? 0) === 1;
 
+        // Check if member voted present
+        const wasPresent = Number((row as Record<string, unknown>)[`${c}_present`] ?? 0) === 1;
+
         // Check if member cosponsored (for cosponsor bills)
         const cosponsorCol = `${c}_cosponsor`;
         const didCosponsor = Number((row as Record<string, unknown>)[cosponsorCol] ?? 0) === 1;
@@ -378,6 +381,7 @@ export function MemberModal({
           notApplicable,
           waiver,
           wasAbsent,
+          wasPresent,
           wasNotInOffice,
           didCosponsor,
           ok,
@@ -1195,6 +1199,8 @@ export function MemberModal({
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.wasAbsent ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
+                                ) : it.wasPresent ? (
+                                  <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.wasNotInOffice ? (
                                   <span className="text-lg leading-none text-slate-400 dark:text-slate-500">—</span>
                                 ) : it.waiver ? (
@@ -1213,7 +1219,15 @@ export function MemberModal({
                                     return "Not in office";
                                   }
                                   if (it.wasAbsent) {
-                                    return "Did not vote/voted present";
+                                    return "Did not vote";
+                                  }
+                                  if (it.wasPresent) {
+                                    const maxPts = Number(it.meta?.points || 0);
+                                    const actionType2 = (it.meta as { action_types?: string })?.action_types || '';
+                                    const isCos = actionType2.includes('cosponsor');
+                                    const prefix = isCos && !it.didCosponsor ? 'Did not cosponsor, voted present' : 'Voted present';
+                                    const lost = maxPts - it.val;
+                                    return `${prefix} (-${lost.toFixed(1).replace(/\.0$/, '')} pts)`;
                                   }
 
                                   const actionType = (it.meta as { action_types?: string })?.action_types || '';

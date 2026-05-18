@@ -609,9 +609,10 @@ export default function MemberPage() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 print:grid-cols-3 gap-3">
                             {categoryItems.map(({ col, meta, ok, waiver, label, stance, val }) => {
-                              // Check if member was absent on this vote
+                              // Check if member was absent or voted present
                               const absentCol = `${col}_absent`;
                               const wasAbsent = Boolean((row as Record<string, unknown>)[absentCol]);
+                              const wasPresent = Number((row as Record<string, unknown>)[`${col}_present`] ?? 0) === 1;
 
                               return (
                                 <div key={col} className="rounded-lg border border-[#E7ECF2] bg-white p-3 cursor-pointer hover:border-[#4B8CFB] transition" onClick={() => meta && setSelectedBill({ meta, column: col })}>
@@ -651,7 +652,9 @@ export default function MemberPage() {
                                     <div className="text-[11px] text-slate-600 flex items-center gap-1.5 mb-1">
                                       <div className="mt-0.5">
                                         {wasAbsent ? (
-                                          <span className="text-lg leading-none text-slate-400" title="Did not vote/voted present">—</span>
+                                          <span className="text-lg leading-none text-slate-400" title="Did not vote">—</span>
+                                        ) : wasPresent ? (
+                                          <span className="text-lg leading-none text-slate-400" title="Voted present">—</span>
                                         ) : waiver ? (
                                           <span className="text-lg leading-none text-slate-400">—</span>
                                         ) : (
@@ -668,7 +671,14 @@ export default function MemberPage() {
                                           const gotPoints = val > 0;
 
                                           if (wasAbsent && isVote) {
-                                            return <span title="Did not vote/voted present">Did Not Vote/Voted Present</span>;
+                                            return <span title="Did not vote">Did Not Vote</span>;
+                                          }
+                                          if (wasPresent && isVote) {
+                                            const maxPts = Number(meta?.points || 0);
+                                            const didCos = Number((row as Record<string, unknown>)[`${col}_cosponsor`] ?? 0) === 1;
+                                            const prefix = isCosponsor && !didCos ? 'Did not cosponsor, voted present' : 'Voted present';
+                                            const lost = maxPts - Number(val);
+                                            return `${prefix} (-${lost.toFixed(1).replace(/\.0$/, '')} pts)`;
                                           }
 
                                           if (isCosponsor) {
