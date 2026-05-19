@@ -4149,8 +4149,9 @@ function AlphabetStrip({
     const idx = letterIndex.get(letter);
     if (idx === undefined) return;
 
-    // Ensure all rows are loaded so we can scroll to them
-    setVisibleRowCount(sorted.length);
+    // Load just enough rows to reach the target (+ buffer)
+    const needed = idx + 50;
+    setVisibleRowCount((prev) => Math.max(prev, needed));
 
     setActiveLetter(letter);
     if (hideTimeout.current) clearTimeout(hideTimeout.current);
@@ -4160,8 +4161,6 @@ function AlphabetStrip({
     requestAnimationFrame(() => {
       const container = tableScrollRef.current;
       if (!container) return;
-      // Each row is roughly the same height; find actual row elements
-      const rows = container.querySelectorAll('[data-row-index]');
       const target = container.querySelector(`[data-row-index="${idx}"]`);
       if (target) {
         target.scrollIntoView({ block: 'start' });
@@ -4172,7 +4171,7 @@ function AlphabetStrip({
         container.scrollTop = headerHeight + idx * rowHeight;
       }
     });
-  }, [letterIndex, sorted.length, tableScrollRef, setVisibleRowCount]);
+  }, [letterIndex, tableScrollRef, setVisibleRowCount]);
 
   const getLetterFromTouch = useCallback((clientY: number) => {
     const strip = stripRef.current;
