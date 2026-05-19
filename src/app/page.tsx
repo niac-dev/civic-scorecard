@@ -1559,7 +1559,7 @@ export default function Page() {
   }, [selectedCell, visibleRows, metaByCol, billCols, cols, maxPointsByCol]);
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden pt-20 md:pt-24">
+    <div className="flex flex-col h-[100svh] overflow-hidden pt-20 md:pt-24">
       {/* Header Band - fixed to viewport for full width */}
       <div className={`fixed top-0 left-0 right-0 bg-[#002b49] dark:bg-slate-900 py-2 px-0 md:px-4 border-b border-[#001a2e] dark:border-slate-900 z-50 transition-transform duration-300 ${headerVisible ? "translate-y-0" : "-translate-y-full"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
@@ -2223,7 +2223,7 @@ export default function Page() {
             (f.viewMode === "map" || f.viewMode === "tracker" || f.viewMode === "find") && "hidden"
           )}
         >
-          <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
+          <div ref={tableScrollRef} className={clsx("overflow-y-auto min-h-[300px] max-h-[calc(100svh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl scrollbar-hide", hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden")} onScroll={handleScroll} style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', touchAction: hasHorizontalOverflow ? 'pan-x pan-y' : 'pan-y' }}>
             {/* Header wrapper - extends full width for shadow */}
             <div className="sticky top-0 z-30 min-w-max w-full bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm">
             {/* Header */}
@@ -3346,7 +3346,7 @@ export default function Page() {
               </button>
             </div>
           )}
-          <div ref={trackerScrollRef} className="overflow-x-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
+          <div ref={trackerScrollRef} className="overflow-x-hidden overflow-y-auto min-h-[300px] max-h-[calc(100svh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
             e.currentTarget.scrollLeft = 0;
             const currentScrollY = e.currentTarget.scrollTop;
             const scrollingDown = currentScrollY > lastContainerScrollY.current;
