@@ -3347,7 +3347,6 @@ export default function Page() {
           )}
           <div ref={trackerScrollRef} className="overflow-x-hidden overflow-y-auto min-h-[300px] max-h-[calc(100dvh-11rem)] pb-20 md:pb-4 rounded-lg md:rounded-2xl w-full relative" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} onScroll={(e) => {
             e.currentTarget.scrollLeft = 0;
-            // Update nav visibility based on scroll direction
             const currentScrollY = e.currentTarget.scrollTop;
             const scrollingDown = currentScrollY > lastContainerScrollY.current;
             const scrolledPastThreshold = currentScrollY > 100;

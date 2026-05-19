@@ -44,28 +44,9 @@ const IranIcon = ({ active }: { active: boolean }) => (
 export default function BottomNav() {
   const pathname = usePathname();
   const f = useFilters();
-  const visible = f.navVisible;
-  const lastScrollY = useRef(0);
-
-  // Listen for window scroll (for pages like iran-war-powers)
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollingDown = currentScrollY > lastScrollY.current;
-      const scrolledPastThreshold = currentScrollY > 100;
-
-      if (scrollingDown && scrolledPastThreshold) {
-        f.setNavVisible(false);
-      } else {
-        f.setNavVisible(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [f]);
+  // On "find" view, nav is always visible; elsewhere, respect scroll-hide
+  const isFindView = pathname === "/" && f.viewMode === "find";
+  const visible = isFindView || f.navVisible;
 
   // Don't show on member detail pages or bill pages
   const hiddenPaths = ["/member/", "/bill/"];
