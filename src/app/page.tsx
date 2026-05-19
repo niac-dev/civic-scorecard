@@ -4090,8 +4090,23 @@ function AlphabetStrip({
   setVisibleRowCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const [stripVisible, setStripVisible] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stripHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Show strip when scrolling, hide after idle
+  useEffect(() => {
+    const container = tableScrollRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      setStripVisible(true);
+      if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current);
+      stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500);
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [tableScrollRef]);
 
   // Build letter -> row index map
   const letterIndex = useMemo(() => {
@@ -4166,9 +4181,13 @@ function AlphabetStrip({
       {/* Alphabet strip */}
       <div
         ref={stripRef}
-        className="absolute right-0 top-12 bottom-4 z-40 flex flex-col justify-between items-center w-5 select-none touch-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
+        className={clsx(
+          "absolute right-0 top-12 bottom-4 z-40 flex flex-col justify-between items-center w-5 select-none touch-none transition-opacity duration-300",
+          (stripVisible || activeLetter) ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+        onTouchStart={(e) => { setStripVisible(true); if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current); handleTouchStart(e); }}
+        onTouchMove={(e) => { setStripVisible(true); if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current); handleTouchMove(e); }}
+        onTouchEnd={() => { stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500); }}
       >
         {ALPHABET.map((letter) => {
           const hasMembers = letterIndex.has(letter);
