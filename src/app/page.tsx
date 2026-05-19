@@ -4090,12 +4090,13 @@ function AlphabetStrip({
   setVisibleRowCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
+  const [currentLetter, setCurrentLetter] = useState<string | null>(null);
   const [stripVisible, setStripVisible] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stripHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Show strip when scrolling, hide after idle
+  // Show strip when scrolling, hide after idle, track current letter
   useEffect(() => {
     const container = tableScrollRef.current;
     if (!container) return;
@@ -4103,10 +4104,25 @@ function AlphabetStrip({
       setStripVisible(true);
       if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current);
       stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500);
+
+      // Determine which letter is at the top of the viewport
+      const headerHeight = 48;
+      const scrollTop = container.scrollTop + headerHeight + 10;
+      const rows = container.querySelectorAll('[data-row-index]');
+      let topIdx = 0;
+      for (const row of rows) {
+        const rect = (row as HTMLElement).offsetTop;
+        if (rect <= scrollTop) topIdx = Number((row as HTMLElement).dataset.rowIndex || 0);
+        else break;
+      }
+      if (topIdx < sorted.length) {
+        const l = lastName(sorted[topIdx].full_name).charAt(0).toUpperCase();
+        setCurrentLetter(l || null);
+      }
     };
     container.addEventListener('scroll', onScroll, { passive: true });
     return () => container.removeEventListener('scroll', onScroll);
-  }, [tableScrollRef]);
+  }, [tableScrollRef, sorted]);
 
   // Build letter -> row index map
   const letterIndex = useMemo(() => {
@@ -4195,10 +4211,12 @@ function AlphabetStrip({
             <button
               key={letter}
               className={clsx(
-                "text-[9px] leading-none font-semibold w-full text-center py-[1px] transition-colors",
-                hasMembers
-                  ? "text-[#30558C] dark:text-slate-400 hover:text-[#1a3a6a] dark:hover:text-slate-200"
-                  : "text-slate-300 dark:text-slate-700"
+                "text-[9px] leading-none font-semibold w-full text-center py-[1px] transition-all rounded-full",
+                (activeLetter || currentLetter) === letter
+                  ? "bg-[#30558C] text-white scale-125"
+                  : hasMembers
+                    ? "text-[#30558C] dark:text-slate-400 hover:text-[#1a3a6a] dark:hover:text-slate-200"
+                    : "text-slate-300 dark:text-slate-700"
               )}
               onClick={() => hasMembers && scrollToLetter(letter)}
               disabled={!hasMembers}
