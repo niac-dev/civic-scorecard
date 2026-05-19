@@ -4095,6 +4095,7 @@ function AlphabetStrip({
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [currentLetter, setCurrentLetter] = useState<string | null>(null);
   const [stripVisible, setStripVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stripHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -4209,8 +4210,10 @@ function AlphabetStrip({
         ref={stripRef}
         className={clsx(
           "absolute right-0 top-12 bottom-4 z-40 flex flex-col justify-between items-center w-5 select-none touch-none transition-opacity duration-300",
-          (stripVisible || activeLetter) ? "opacity-100" : "opacity-0 pointer-events-none"
+          (stripVisible || activeLetter || isHovered) ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
+        onMouseEnter={() => { setIsHovered(true); if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current); }}
+        onMouseLeave={() => { setIsHovered(false); stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500); }}
         onTouchStart={(e) => { setStripVisible(true); if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current); handleTouchStart(e); }}
         onTouchMove={(e) => { setStripVisible(true); if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current); handleTouchMove(e); }}
         onTouchEnd={() => { stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500); }}
