@@ -3320,6 +3320,7 @@ export default function Page() {
               sorted={sorted}
               tableScrollRef={tableScrollRef}
               setVisibleRowCount={setVisibleRowCount}
+              isScrolling={isScrolling}
             />
           )}
         </div>
@@ -4084,10 +4085,12 @@ function AlphabetStrip({
   sorted,
   tableScrollRef,
   setVisibleRowCount,
+  isScrolling,
 }: {
   sorted: Row[];
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
   setVisibleRowCount: React.Dispatch<React.SetStateAction<number>>;
+  isScrolling: boolean;
 }) {
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [currentLetter, setCurrentLetter] = useState<string | null>(null);
@@ -4096,23 +4099,30 @@ function AlphabetStrip({
   const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stripHideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Show strip when scrolling, hide after idle, track current letter
+  // Show strip when parent reports scrolling, hide after idle
+  useEffect(() => {
+    if (isScrolling) {
+      setStripVisible(true);
+      if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current);
+    } else {
+      // Hide after delay when scrolling stops
+      if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current);
+      stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500);
+    }
+  }, [isScrolling]);
+
+  // Track current letter based on scroll position
   useEffect(() => {
     const container = tableScrollRef.current;
     if (!container) return;
     const onScroll = () => {
-      setStripVisible(true);
-      if (stripHideTimeout.current) clearTimeout(stripHideTimeout.current);
-      stripHideTimeout.current = setTimeout(() => setStripVisible(false), 1500);
-
-      // Determine which letter is at the top of the viewport
       const headerHeight = 48;
       const scrollTop = container.scrollTop + headerHeight + 10;
-      const rows = container.querySelectorAll('[data-row-index]');
+      const rowEls = container.querySelectorAll('[data-row-index]');
       let topIdx = 0;
-      for (const row of rows) {
-        const rect = (row as HTMLElement).offsetTop;
-        if (rect <= scrollTop) topIdx = Number((row as HTMLElement).dataset.rowIndex || 0);
+      for (const row of rowEls) {
+        const el = row as HTMLElement;
+        if (el.offsetTop <= scrollTop) topIdx = Number(el.dataset.rowIndex || 0);
         else break;
       }
       if (topIdx < sorted.length) {
