@@ -705,6 +705,7 @@ export default function Page() {
       }
     }
     if (f.state) out = out.filter(r => stateCodeOf(r.state) === f.state);
+    if (f.election2026) out = out.filter(r => String(r.next_election) === "2026");
     if (f.search) {
       const q = f.search.toLowerCase().trim();
       out = out.filter(r => {
@@ -4773,6 +4774,22 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
               </option>
             ))}
           </select>
+        </div>
+
+        {/* 2026 Election toggle */}
+        <div className="flex flex-col gap-0.5 flex-shrink-0">
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1 whitespace-nowrap">2026 Election</span>
+          <button
+            className={clsx(
+              "h-8 px-3 rounded-md text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap",
+              f.election2026
+                ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-[#4B8CFB]"
+            )}
+            onClick={() => f.set({ election2026: !f.election2026 })}
+          >
+            Up in 2026
+          </button>
         </div>
 
         {/* Search button - pushed to far right */}

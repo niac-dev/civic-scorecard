@@ -6,6 +6,7 @@ type FiltersState = {
   chamber: Chamber;        // "" = Both
   party: string;           // e.g. "Democrat", "Republican", "Independent"
   state: string;           // e.g. "WA"
+  election2026: boolean;   // filter to members up for election in 2026
   search: string;          // free-text member search
   categories: Set<string>; // selected category names
   viewMode: "summary" | "all" | "category" | "map" | "tracker" | "find"; // "summary" = category grades only, "all" = all bills, "category" = filtered by category, "map" = map view, "tracker" = legislation tracker, "find" = find lawmaker view
@@ -35,6 +36,7 @@ export const useFilters = create<FiltersState>((set) => ({
   chamber: "",
   party: "",
   state: "",
+  election2026: false,
   search: "",
   categories: new Set<string>(),
   viewMode: getInitialViewMode(),
