@@ -630,8 +630,8 @@ export function MemberModal({
                   </button>
                 </div>
 
-                {/* Birth year, age, and years in office */}
-                {(row.birth_year || row.age || row.years_in_office !== undefined) && (
+                {/* Birth year, age, years in office, and next election */}
+                {(row.birth_year || row.age || row.years_in_office !== undefined || row.next_election || row.not_seeking_reelection) && (
                   <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
                     {(row.birth_year || row.age) && (
                       <>
@@ -644,6 +644,13 @@ export function MemberModal({
                       <>
                         {(row.birth_year || row.age) && <span> • </span>}
                         <span className="font-medium">Years in office:</span> {Number(row.years_in_office) === 0 ? 'Freshman' : row.years_in_office}
+                      </>
+                    )}
+                    {(row.next_election || row.not_seeking_reelection) && (
+                      <>
+                        {(row.birth_year || row.age || row.years_in_office !== undefined) && <span> • </span>}
+                        <span className="font-medium">Next election:</span>{" "}
+                        {row.not_seeking_reelection ? row.not_seeking_reelection : row.next_election}
                       </>
                     )}
                   </div>

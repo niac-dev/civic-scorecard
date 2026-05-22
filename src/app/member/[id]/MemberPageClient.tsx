@@ -309,8 +309,8 @@ export default function MemberPage() {
                   <span>{stateCodeOf(row.state)}{row.district ? `-${row.district}` : ""}</span>
                 </div>
 
-                {/* Birth year, age, and years in office */}
-                {(row.birth_year || row.age || row.years_in_office !== undefined) && (
+                {/* Birth year, age, years in office, and next election */}
+                {(row.birth_year || row.age || row.years_in_office !== undefined || row.next_election || row.not_seeking_reelection) && (
                   <div className="text-xs text-slate-600 mb-3">
                     {(row.birth_year || row.age) && (
                       <>
@@ -323,6 +323,13 @@ export default function MemberPage() {
                       <>
                         {(row.birth_year || row.age) && <span> • </span>}
                         <span className="font-medium">Years in office:</span> {Number(row.years_in_office) === 0 ? 'Freshman' : row.years_in_office}
+                      </>
+                    )}
+                    {(row.next_election || row.not_seeking_reelection) && (
+                      <>
+                        {(row.birth_year || row.age || row.years_in_office !== undefined) && <span> • </span>}
+                        <span className="font-medium">Next election:</span>{" "}
+                        {row.not_seeking_reelection ? row.not_seeking_reelection : row.next_election}
                       </>
                     )}
                   </div>

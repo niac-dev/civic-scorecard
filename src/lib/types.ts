@@ -51,6 +51,8 @@ export type Row = {
   sworn_in_date?: string;
   age?: string | number;
   years_in_office?: string | number;
+  next_election?: string | number;
+  not_seeking_reelection?: string; // "Retiring", "Running for Senate", "Running for Governor", etc.
   aipac_supported?: string | number | boolean;
   dmfi_supported?: string | number | boolean;
   reject_aipac_commitment?: string;
