@@ -705,7 +705,8 @@ export default function Page() {
       }
     }
     if (f.state) out = out.filter(r => stateCodeOf(r.state) === f.state);
-    if (f.election2026) out = out.filter(r => String(r.next_election) === "2026");
+    if (f.electionCycle === "in") out = out.filter(r => String(r.next_election) === "2026");
+    if (f.electionCycle === "out") out = out.filter(r => String(r.next_election) !== "2026");
     if (f.search) {
       const q = f.search.toLowerCase().trim();
       out = out.filter(r => {
@@ -922,6 +923,21 @@ export default function Page() {
         }
 
         // Tie-break by name alphabetically
+        return String(a.full_name || "").localeCompare(String(b.full_name || ""));
+      });
+    }
+    // Sort by next election year
+    if (sortCol === "__next_election") {
+      const asc = sortDir === "GOOD_FIRST";
+      return [...filtered].sort((a, b) => {
+        const yearA = Number(a.next_election) || 9999;
+        const yearB = Number(b.next_election) || 9999;
+        if (yearA !== yearB) return asc ? yearA - yearB : yearB - yearA;
+        // Tie-break: retiring before non-retiring
+        const nsrA = String((a as Record<string, unknown>).not_seeking_reelection || "");
+        const nsrB = String((b as Record<string, unknown>).not_seeking_reelection || "");
+        if (nsrA && !nsrB) return -1;
+        if (!nsrA && nsrB) return 1;
         return String(a.full_name || "").localeCompare(String(b.full_name || ""));
       });
     }
@@ -1389,10 +1405,12 @@ export default function Page() {
     const memberCol = isMobile ? "minmax(90px, min(40vw, 120px))" : (isLargeScreen ? "400px" : "300px");
     // Endorsements column: fixed on mobile/desktop, grows on large screens
     const endorsementsCol = isLargeScreen ? "minmax(9.6rem, 1fr)" : "9.6rem";
+    // Next Election column
+    const nextElectionCol = isMobile ? "minmax(100px, 100px)" : "minmax(140px, 140px)";
 
-    // In summary mode: member col + grade cols + endorsements col
+    // In summary mode: member col + next election + grade cols + endorsements col
     if (f.viewMode === "summary") {
-      return `${memberCol} ${gradesPart} ${endorsementsCol}`;
+      return `${memberCol} ${nextElectionCol} ${gradesPart} ${endorsementsCol}`;
     }
     // AIPAC mode: member col + overall grade + endorsements col + other grade cols + dynamic bill cols
     if (f.categories.has("AIPAC")) {
@@ -1400,14 +1418,14 @@ export default function Page() {
       const restGradesPart = gradeColumns.slice(1).map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
       return `${memberCol} ${isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")} ${endorsementsCol} ${restGradesPart} ${billsPart}`;
     }
-    // Civil Rights & Immigration mode: member col + grade cols + dynamic bill cols
+    // Civil Rights & Immigration mode: member col + next election + grade cols + dynamic bill cols
     // Wider grade columns on mobile to fit "Rights & Immigration" text
     if (f.categories.has("Civil Rights & Immigration")) {
       const civilRightsGradesPart = gradeColumns.map(() => isMobile ? "minmax(135px, 135px)" : (isLargeScreen ? "minmax(180px, 180px)" : "minmax(160px, 160px)")).join(" ");
-      return `${memberCol} ${civilRightsGradesPart} ${billsPart}`;
+      return `${memberCol} ${nextElectionCol} ${civilRightsGradesPart} ${billsPart}`;
     }
-    // member col + grade cols + dynamic bill cols + endorsements col
-    return `${memberCol} ${gradesPart} ${billsPart} ${endorsementsCol}`;
+    // member col + next election + grade cols + dynamic bill cols + endorsements col
+    return `${memberCol} ${nextElectionCol} ${gradesPart} ${billsPart} ${endorsementsCol}`;
   }, [billCols, gradeColumns, f.viewMode, f.categories, isMobile, isLargeScreen]);
 
   // Calculate average grades per state for map coloring
@@ -2323,6 +2341,55 @@ export default function Page() {
               </div>
             )}
 
+            {/* Next Election column header */}
+            {!f.categories.has("AIPAC") && (
+              <div
+                className={clsx(
+                  "th group flex flex-col",
+                  f.viewMode === "summary" ? "text-center !py-2" : "text-left"
+                )}
+              >
+                <div
+                  className={clsx(
+                    "flex items-center cursor-pointer",
+                    f.viewMode === "summary" ? "justify-center" : "justify-start flex-1"
+                  )}
+                  title="Click to sort by next election year"
+                  onClick={() => {
+                    if (sortCol === "__next_election") {
+                      setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                    } else {
+                      setSortCol("__next_election");
+                      setSortDir("GOOD_FIRST");
+                    }
+                  }}
+                >
+                  <div className="uppercase leading-tight">Next Election</div>
+                </div>
+                {f.viewMode !== "summary" && (
+                  <div
+                    className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center justify-center gap-0.5 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (sortCol === "__next_election") {
+                        setSortDir((d) => (d === "GOOD_FIRST" ? "BAD_FIRST" : "GOOD_FIRST"));
+                      } else {
+                        setSortCol("__next_election");
+                        setSortDir("GOOD_FIRST");
+                      }
+                    }}
+                  >
+                    <span className={clsx(
+                      "text-[10px]",
+                      sortCol === "__next_election" ? "text-slate-500 dark:text-slate-400" : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100"
+                    )}>
+                      Sort {sortCol === "__next_election" ? (sortDir === "GOOD_FIRST" ? "▲" : "▼") : "▼"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {!f.categories.has("AIPAC") && gradeColumns.map((gradeCol, idx) => {
               const isOverallGrade = gradeCol.header === "Overall Grade";
               const isSummaryMode = f.viewMode === "summary";
@@ -2817,6 +2884,22 @@ export default function Page() {
                   })()}
                 </div>
               )}
+
+              {/* Next Election data cell */}
+              {!f.categories.has("AIPAC") && (() => {
+                const year = r.next_election ? String(Math.trunc(Number(r.next_election))) : "";
+                const nsr = String((r as Record<string, unknown>).not_seeking_reelection || "");
+                return (
+                  <div className="td flex flex-col items-center justify-center text-center leading-tight">
+                    <span className="text-xs text-slate-700 dark:text-slate-300 tabular">{year}</span>
+                    {nsr && (
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                        {nsr}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
 
               {!f.categories.has("AIPAC") && gradeColumns.map((gradeCol, idx) => {
                 const isOverall = idx === 0;
@@ -4776,20 +4859,33 @@ function Filters({ filteredCount, metaByCol, selectedMapBill, setSelectedMapBill
           </select>
         </div>
 
-        {/* 2026 Election toggle */}
+        {/* 2026 Election cycle filter */}
         <div className="flex flex-col gap-0.5 flex-shrink-0">
           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-1 whitespace-nowrap">2026 Election</span>
-          <button
-            className={clsx(
-              "h-8 px-3 rounded-md text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap",
-              f.election2026
-                ? "bg-[#4B8CFB] text-white border-[#4B8CFB]"
-                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-[#4B8CFB]"
-            )}
-            onClick={() => f.set({ election2026: !f.election2026 })}
-          >
-            Up in 2026
-          </button>
+          <div className="flex h-8 rounded-md border border-slate-300 dark:border-slate-600 overflow-hidden">
+            <button
+              className={clsx(
+                "px-2.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap border-r border-slate-300 dark:border-slate-600",
+                f.electionCycle === "all" || f.electionCycle === "in"
+                  ? "bg-[#4B8CFB] text-white"
+                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+              )}
+              onClick={() => f.set({ electionCycle: f.electionCycle === "in" ? "all" : f.electionCycle === "all" ? "out" : "all" })}
+            >
+              In Cycle
+            </button>
+            <button
+              className={clsx(
+                "px-2.5 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap",
+                f.electionCycle === "all" || f.electionCycle === "out"
+                  ? "bg-[#4B8CFB] text-white"
+                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+              )}
+              onClick={() => f.set({ electionCycle: f.electionCycle === "out" ? "all" : f.electionCycle === "all" ? "in" : "all" })}
+            >
+              Out of Cycle
+            </button>
+          </div>
         </div>
 
         {/* Search button - pushed to far right */}
