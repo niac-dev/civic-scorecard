@@ -669,6 +669,28 @@ export function MemberModal({
                   </a>
                 )}
 
+                {/* Committee Assignments */}
+                {(() => {
+                  const filteredCommittees = row.committees
+                    ? String(row.committees).split(";")
+                        .map(c => c.trim())
+                        .filter(c => c.startsWith("House") || c.startsWith("Senate") || c.startsWith("Joint"))
+                    : [];
+
+                  return filteredCommittees.length > 0 ? (
+                    <div className="mt-3 text-center min-[900px]:text-left">
+                      <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">
+                        Committee Assignments
+                      </div>
+                      <div className="text-xs text-slate-700 dark:text-slate-200 space-y-0.5">
+                        {filteredCommittees.map((committee, idx) => (
+                          <div key={idx}>{committee}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
               </div>
 
               {/* Column 3: Map (only on wide screens) */}

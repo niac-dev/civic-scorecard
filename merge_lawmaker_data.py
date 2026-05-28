@@ -18,6 +18,7 @@ def main():
                 'office_phone': row.get('office_phone', ''),
                 'office_address': row.get('office_address', ''),
                 'district_offices': row.get('district_offices', ''),
+                'committees': row.get('committees', ''),
                 'aipac_supported': row.get('aipac_supported', ''),
                 'dmfi_supported': row.get('dmfi_supported', ''),
             }
@@ -30,7 +31,7 @@ def main():
         fieldnames = list(reader.fieldnames)
 
         # Add new fields at the end if they don't exist
-        new_fields = ['district', 'office_phone', 'office_address', 'district_offices', 'aipac_supported', 'dmfi_supported']
+        new_fields = ['district', 'office_phone', 'office_address', 'district_offices', 'committees', 'aipac_supported', 'dmfi_supported']
         for field in new_fields:
             if field not in fieldnames:
                 fieldnames.append(field)
