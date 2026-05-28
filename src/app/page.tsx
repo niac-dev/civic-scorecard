@@ -323,6 +323,21 @@ export default function Page() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Lock document scroll on the home page so stray scrollIntoView /
+  // focus calls can't shift the viewport. Inner scroll containers still work.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
+  }, []);
+
   // Modal history stack for back navigation
   type ModalHistoryItem =
     | { type: 'member'; data: Row }
@@ -4245,9 +4260,11 @@ function AlphabetStrip({
     requestAnimationFrame(() => {
       const container = tableScrollRef.current;
       if (!container) return;
-      const target = container.querySelector(`[data-row-index="${idx}"]`);
+      const target = container.querySelector(`[data-row-index="${idx}"]`) as HTMLElement | null;
       if (target) {
-        target.scrollIntoView({ block: 'start' });
+        // Use direct scrollTop instead of scrollIntoView so the browser doesn't
+        // also scroll ancestor elements (including the document) into view.
+        container.scrollTop = target.offsetTop - container.offsetTop;
       } else {
         // Fallback: estimate position (header ~48px, row ~56px)
         const headerHeight = 48;
