@@ -39,11 +39,17 @@ def main():
         for row in reader:
             bioguide_id = row.get('bioguide_id', '')
 
-            # Merge lawmaker data if available
+            # Merge lawmaker data if available.
+            # Only overwrite when the incoming value is non-empty, so a blank
+            # field in lawmakers.csv never clobbers good data already present in
+            # scores_wide.csv (e.g. district, which export_wide.py populates).
             if bioguide_id in lawmakers:
                 lawmaker_data = lawmakers[bioguide_id]
                 for key, value in lawmaker_data.items():
-                    row[key] = value
+                    if value not in (None, ''):
+                        row[key] = value
+                    elif key not in row:
+                        row[key] = ''
             else:
                 # Fill with empty values
                 for field in new_fields:
