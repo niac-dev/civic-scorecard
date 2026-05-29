@@ -2962,10 +2962,15 @@ export default function Page() {
                   // Election column
                   if (c === "__election") {
                     const nsr = String((r as Record<string, unknown>).not_seeking_reelection || "");
+                    // Only show the not_seeking_reelection annotation when the
+                    // dropdown is on the cycle that annotation actually refers
+                    // to (i.e. the member's next election).
+                    const nextElectionYear = r.next_election ? String(Math.trunc(Number(r.next_election))) : "";
+                    const showNsr = nsr && nextElectionYear === electionYear;
                     return (
                       <div key={c} className="td !px-0 py-0 md:py-3 flex flex-col items-center justify-center text-center leading-tight">
                         <span className="text-sm tabular">{getElectionLabel(electionYear)}</span>
-                        {nsr && (
+                        {showNsr && (
                           <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
                             {nsr}
                           </span>
