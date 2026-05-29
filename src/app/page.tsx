@@ -2961,9 +2961,15 @@ export default function Page() {
 
                   // Election column
                   if (c === "__election") {
+                    const nsr = String((r as Record<string, unknown>).not_seeking_reelection || "");
                     return (
-                      <div key={c} className="td !px-0 py-0 md:py-3 flex items-center justify-center text-sm tabular">
-                        {getElectionLabel(electionYear)}
+                      <div key={c} className="td !px-0 py-0 md:py-3 flex flex-col items-center justify-center text-center leading-tight">
+                        <span className="text-sm tabular">{getElectionLabel(electionYear)}</span>
+                        {nsr && (
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                            {nsr}
+                          </span>
+                        )}
                       </div>
                     );
                   }
