@@ -32,6 +32,14 @@ export async function loadData(): Promise<{
     fetchCSV<Meta>("/data/scores_columns_meta.csv"),
   ]);
 
+  // Manual overrides for fields the sheet sync gets wrong. Keyed by bioguide_id.
+  // Remove an entry once the upstream sheet has been corrected.
+  const MEMBER_OVERRIDES: Record<string, Partial<Row>> = {
+    H001104: { next_election: "2026" }, // Jon Husted (OH) — appointed, special election 2026
+    M001244: { next_election: "2026" }, // Ashley Moody (FL) — appointed, special election 2026
+    A000383: { not_seeking_reelection: "Retiring" }, // Alan Armstrong (OK)
+  };
+
   // Coerce numerics on a copy and filter out malformed entries
   const rows: Row[] = rowsRaw
     .filter((r) => {
@@ -60,6 +68,8 @@ export async function loadData(): Promise<{
           }
         }
       }
+      const override = MEMBER_OVERRIDES[String(out.bioguide_id || "").toUpperCase()];
+      if (override) Object.assign(out, override);
       return out as Row;
     });
 
