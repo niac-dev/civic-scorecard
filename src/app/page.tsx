@@ -3669,15 +3669,16 @@ export default function Page() {
               return (
                 <>
                   {/* Header */}
+                  {!isMobile && (
                   <div
                     className="grid sticky top-0 z-30 bg-white/70 dark:bg-slate-900/85 backdrop-blur-xl border-b border-[#E7ECF2] dark:border-slate-900 shadow-sm w-full"
                     style={{
-                      gridTemplateColumns: isMobile ? "36px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
+                      gridTemplateColumns: "40px 80px 140px calc(100% - 580px) 240px 80px",
                     }}
                   >
-                    <div className="th px-2 hidden md:block"></div>
+                    <div className="th px-2"></div>
                     <button
-                      className="th text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors hidden md:flex items-center justify-center gap-1"
+                      className="th text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1"
                       onClick={() => setTrackerSort(prev => ({ col: 'position', dir: prev.col === 'position' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
                     >
                       Position
@@ -3686,7 +3687,7 @@ export default function Page() {
                       )}
                     </button>
                     <button
-                      className="th cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors hidden md:flex items-center justify-center gap-1"
+                      className="th cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-1"
                       onClick={() => setTrackerSort(prev => ({ col: 'bill', dir: prev.col === 'bill' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
                     >
                       Bill
@@ -3694,10 +3695,8 @@ export default function Page() {
                         <span className="text-[10px]">{trackerSort.dir === 'asc' ? '▲' : '▼'}</span>
                       )}
                     </button>
-                    {/* Mobile: single column header for position icon + bill/title */}
-                    <div className="th pl-2 md:hidden text-[10px]">Bill</div>
                     <button
-                      className="th pl-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors hidden md:flex items-center gap-1"
+                      className="th pl-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center gap-1"
                       onClick={() => setTrackerSort(prev => ({ col: 'title', dir: prev.col === 'title' && prev.dir === 'asc' ? 'desc' : 'asc' }))}
                     >
                       Title
@@ -3706,8 +3705,9 @@ export default function Page() {
                       )}
                     </button>
                     <div className="th text-center">Sponsor</div>
-                    <div className="th text-center hidden md:block">Status</div>
+                    <div className="th text-center">Status</div>
                   </div>
+                  )}
 
                   {/* Bill Rows */}
                   <div className="w-full max-w-full pb-8 md:pb-4">
@@ -3724,7 +3724,7 @@ export default function Page() {
                             <div
                               className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                               style={{
-                                gridTemplateColumns: isMobile ? "70px 120px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
+                                gridTemplateColumns: isMobile ? "24px 1fr 56px 48px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
                                 alignItems: "center",
                               }}
                               onClick={() => {
@@ -3739,175 +3739,101 @@ export default function Page() {
                                 });
                               }}
                             >
-                              {/* Expand/Collapse Button */}
-                              <div
-                                className="px-2 py-3 items-center justify-center hidden md:flex"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedBills(prev => {
-                                    const next = new Set(prev);
-                                    if (next.has(bill.col)) {
-                                      next.delete(bill.col);
-                                    } else {
-                                      next.add(bill.col);
-                                    }
-                                    return next;
-                                  });
-                                }}
-                              >
-                                <svg
-                                  className={clsx(
-                                    "w-3 h-3 transition-transform text-slate-500 dark:text-slate-400",
-                                    isExpanded && "rotate-90"
-                                  )}
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </div>
-
-                              {/* NIAC Position - Desktop pill */}
-                              <div
-                                className="py-3 text-sm text-slate-800 dark:text-white hidden md:flex flex-col items-center justify-center gap-1"
-                              >
-                                <span
-                                  className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
-                                  style={{
-                                    backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63"
-                                  }}
-                                >
-                                  {bill.position === "SUPPORT" ? "Support" : "Oppose"}
-                                </span>
-                              </div>
-
-                              {/* Bill Number - Desktop only */}
-                              <div
-                                className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center hidden md:block"
-                              >
-                                {bill.meta.bill_number || bill.col}
-                              </div>
-
-                              {/* Mobile: Position icon + Bill number + Title combined */}
-                              <div className="py-2 pl-1 pr-2 min-w-0 flex items-start gap-1.5 md:hidden">
-                                <div className="flex-shrink-0 mt-0.5">
+                              {isMobile ? (<>
+                                {/* Position icon */}
+                                <div className="py-2 flex items-center justify-center">
                                   <VoteIcon ok={bill.position === "SUPPORT"} size="small" />
                                 </div>
-                                <div className="min-w-0">
-                                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                                    {bill.meta.bill_number || bill.col}
-                                  </div>
-                                  <button
-                                    className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] text-left transition-colors leading-tight"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedBill({ meta: bill.meta, column: bill.col });
-                                    }}
-                                  >
+                                {/* Bill number + Title */}
+                                <div className="py-2 pl-1 pr-1 min-w-0">
+                                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">{bill.meta.bill_number || bill.col}</div>
+                                  <button className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] text-left transition-colors leading-tight" onClick={(e) => { e.stopPropagation(); setSelectedBill({ meta: bill.meta, column: bill.col }); }}>
                                     {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
                                   </button>
                                 </div>
-                              </div>
-
-                              {/* Desktop: Bill Title + Description */}
-                              <div
-                                className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0 hidden md:block"
-                              >
-                                <button
-                                  className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedBill({ meta: bill.meta, column: bill.col });
-                                  }}
-                                >
-                                  {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
-                                </button>
-                                {bill.meta.description && (
-                                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                                    {bill.meta.description}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Sponsor */}
-                              <div
-                                className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0 overflow-hidden"
-                              >
-                                {bill.sponsor ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelected(bill.sponsor);
-                                    }}
-                                    className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden"
-                                  >
-                                    {bill.sponsor.photo_url ? (
-                                      <img
-                                        src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
-                                        alt=""
-                                        loading="lazy"
-                                        className="h-8 w-8 md:h-11 md:w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
-                                      />
-                                    ) : (
-                                      <div className="h-8 w-8 md:h-11 md:w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
-                                    )}
-                                    <div className="flex-1 min-w-0 hidden md:block">
-                                      <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
-                                        {formatNameFirstLast(bill.sponsor.full_name)}
-                                      </div>
-                                      <div className="flex items-center gap-1 text-xs mt-0.5">
-                                        <span
-                                          className="px-1 py-0.5 rounded text-[10px] font-medium"
-                                          style={partyBadgeStyle(bill.sponsor.party)}
-                                        >
-                                          {partyLabel(bill.sponsor.party)}
-                                        </span>
-                                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">
-                                          {stateCodeOf(bill.sponsor.state)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0 md:hidden overflow-hidden">
-                                      <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight truncate">
-                                        {formatNameFirstLast(bill.sponsor.full_name)}
-                                      </div>
-                                      <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
-                                        {stateCodeOf(bill.sponsor.state)}
-                                      </div>
-                                    </div>
-                                  </button>
-                                ) : (
-                                  <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
-                                )}
-                              </div>
-
-                              {/* Status */}
-                              <div
-                                className="py-3 text-[10px] text-slate-600 dark:text-slate-400 items-center justify-center text-center px-1 hidden md:flex"
-                              >
-                                {(() => {
-                                  const voteTallies = bill.meta.vote_tallies || '';
-                                  const isCosponsor = bill.actionType.includes('cosponsor');
-                                  const isVote = bill.actionType.includes('vote');
-
-                                  if (voteTallies) {
-                                    const parts = voteTallies.split('|').map((s: string) => s.trim());
-                                    const lastPart = parts[parts.length - 1];
-                                    if (lastPart.toLowerCase().includes('passed')) {
-                                      return "Passed";
-                                    } else if (lastPart.toLowerCase().includes('failed')) {
-                                      return "Failed";
+                                {/* Sponsor */}
+                                <div className="py-2 flex items-center justify-center min-w-0">
+                                  {bill.sponsor ? (
+                                    <button onClick={(e) => { e.stopPropagation(); setSelected(bill.sponsor); }} className="cursor-pointer">
+                                      {bill.sponsor.photo_url ? (
+                                        <img src={getProxiedImageUrl(String(bill.sponsor.photo_url))} alt="" loading="lazy" className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10" />
+                                      ) : (
+                                        <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
+                                      )}
+                                    </button>
+                                  ) : <div className="text-xs text-slate-500">—</div>}
+                                </div>
+                                {/* Status */}
+                                <div className="py-2 text-[9px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-0.5">
+                                  {(() => {
+                                    const voteTallies = bill.meta.vote_tallies || '';
+                                    if (voteTallies) {
+                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                      const lastPart = parts[parts.length - 1];
+                                      if (lastPart.toLowerCase().includes('passed')) return "Passed";
+                                      if (lastPart.toLowerCase().includes('failed')) return "Failed";
+                                      if (lastPart.toLowerCase().includes('tied')) return "Tied";
+                                      return lastPart.split('(')[0].trim();
                                     }
-                                    return lastPart.split('(')[0].trim();
-                                  } else if (isCosponsor) {
-                                    return "Active";
-                                  } else if (isVote) {
-                                    return "Pending";
-                                  }
-                                  return "—";
-                                })()}
-                              </div>
+                                    if (bill.actionType.includes('cosponsor')) return "Active";
+                                    if (bill.actionType.includes('vote')) return "Pending";
+                                    return "—";
+                                  })()}
+                                </div>
+                              </>) : (<>
+                                {/* Expand/Collapse Button */}
+                                <div className="px-2 py-3 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); setExpandedBills(prev => { const next = new Set(prev); if (next.has(bill.col)) next.delete(bill.col); else next.add(bill.col); return next; }); }}>
+                                  <svg className={clsx("w-3 h-3 transition-transform text-slate-500 dark:text-slate-400", isExpanded && "rotate-90")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+                                {/* Position pill */}
+                                <div className="py-3 text-sm text-slate-800 dark:text-white flex flex-col items-center justify-center gap-1">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white" style={{ backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63" }}>
+                                    {bill.position === "SUPPORT" ? "Support" : "Oppose"}
+                                  </span>
+                                </div>
+                                {/* Bill Number */}
+                                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center">{bill.meta.bill_number || bill.col}</div>
+                                {/* Title + Description */}
+                                <div className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0">
+                                  <button className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedBill({ meta: bill.meta, column: bill.col }); }}>
+                                    {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
+                                  </button>
+                                  {bill.meta.description && <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{bill.meta.description}</div>}
+                                </div>
+                                {/* Sponsor */}
+                                <div className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 min-w-0 overflow-hidden">
+                                  {bill.sponsor ? (
+                                    <button onClick={(e) => { e.stopPropagation(); setSelected(bill.sponsor); }} className="flex items-center gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden">
+                                      {bill.sponsor.photo_url ? <img src={getProxiedImageUrl(String(bill.sponsor.photo_url))} alt="" loading="lazy" className="h-11 w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0" /> : <div className="h-11 w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">{formatNameFirstLast(bill.sponsor.full_name)}</div>
+                                        <div className="flex items-center gap-1 text-xs mt-0.5">
+                                          <span className="px-1 py-0.5 rounded text-[10px] font-medium" style={partyBadgeStyle(bill.sponsor.party)}>{partyLabel(bill.sponsor.party)}</span>
+                                          <span className="text-slate-500 dark:text-slate-400 text-[10px]">{stateCodeOf(bill.sponsor.state)}</span>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ) : <div className="text-xs text-slate-500 dark:text-slate-400">—</div>}
+                                </div>
+                                {/* Status */}
+                                <div className="py-3 text-[10px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-1">
+                                  {(() => {
+                                    const voteTallies = bill.meta.vote_tallies || '';
+                                    if (voteTallies) {
+                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                      const lastPart = parts[parts.length - 1];
+                                      if (lastPart.toLowerCase().includes('passed')) return "Passed";
+                                      if (lastPart.toLowerCase().includes('failed')) return "Failed";
+                                      return lastPart.split('(')[0].trim();
+                                    }
+                                    if (bill.actionType.includes('cosponsor')) return "Active";
+                                    if (bill.actionType.includes('vote')) return "Pending";
+                                    return "—";
+                                  })()}
+                                </div>
+                              </>)}
                             </div>
 
                             {/* Expanded view */}
@@ -3972,7 +3898,7 @@ export default function Page() {
                               <div
                                 className="grid hover:bg-slate-50 dark:hover:bg-white/5 transition cursor-pointer w-full"
                                 style={{
-                                  gridTemplateColumns: isMobile ? "70px 120px 1fr 70px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
+                                  gridTemplateColumns: isMobile ? "24px 1fr 56px 48px" : "40px 80px 140px calc(100% - 580px) 240px 80px",
                                   alignItems: "center",
                                 }}
                                 onClick={() => {
@@ -3987,175 +3913,101 @@ export default function Page() {
                                   });
                                 }}
                               >
-                                {/* Expand/Collapse Button */}
-                                <div
-                                  className="px-2 py-3 items-center justify-center hidden md:flex"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setExpandedBills(prev => {
-                                      const next = new Set(prev);
-                                      if (next.has(bill.col)) {
-                                        next.delete(bill.col);
-                                      } else {
-                                        next.add(bill.col);
-                                      }
-                                      return next;
-                                    });
-                                  }}
-                                >
-                                  <svg
-                                    className={clsx(
-                                      "w-3 h-3 transition-transform text-slate-500 dark:text-slate-400",
-                                      isExpanded && "rotate-90"
-                                    )}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </div>
-
-                                {/* NIAC Position - Desktop pill */}
-                                <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white hidden md:flex flex-col items-center justify-center gap-1"
-                                >
-                                  <span
-                                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white"
-                                    style={{
-                                      backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63"
-                                    }}
-                                  >
-                                    {bill.position === "SUPPORT" ? "Support" : "Oppose"}
-                                  </span>
-                                </div>
-
-                                {/* Bill Number - Desktop only */}
-                                <div
-                                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center hidden md:block"
-                                >
-                                  {bill.meta.bill_number || bill.col}
-                                </div>
-
-                                {/* Mobile: Position icon + Bill number + Title combined */}
-                                <div className="py-2 pl-1 pr-2 min-w-0 flex items-start gap-1.5 md:hidden">
-                                  <div className="flex-shrink-0 mt-0.5">
+                                {isMobile ? (<>
+                                  {/* Position icon */}
+                                  <div className="py-2 flex items-center justify-center">
                                     <VoteIcon ok={bill.position === "SUPPORT"} size="small" />
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-                                      {bill.meta.bill_number || bill.col}
-                                    </div>
-                                    <button
-                                      className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] text-left transition-colors leading-tight"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedBill({ meta: bill.meta, column: bill.col });
-                                      }}
-                                    >
+                                  {/* Bill number + Title */}
+                                  <div className="py-2 pl-1 pr-1 min-w-0">
+                                    <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">{bill.meta.bill_number || bill.col}</div>
+                                    <button className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] text-left transition-colors leading-tight" onClick={(e) => { e.stopPropagation(); setSelectedBill({ meta: bill.meta, column: bill.col }); }}>
                                       {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
                                     </button>
                                   </div>
-                                </div>
-
-                                {/* Desktop: Bill Title + Description */}
-                                <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0 hidden md:block"
-                                >
-                                  <button
-                                    className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedBill({ meta: bill.meta, column: bill.col });
-                                    }}
-                                  >
-                                    {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
-                                  </button>
-                                  {bill.meta.description && (
-                                    <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                                      {bill.meta.description}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Sponsor */}
-                                <div
-                                  className="py-3 text-sm text-slate-800 dark:text-white px-2 md:pl-4 md:pr-3 min-w-0 overflow-hidden"
-                                >
-                                  {bill.sponsor ? (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelected(bill.sponsor);
-                                      }}
-                                      className="flex items-center gap-1 md:gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden"
-                                    >
-                                      {bill.sponsor.photo_url ? (
-                                        <img
-                                          src={getProxiedImageUrl(String(bill.sponsor.photo_url))}
-                                          alt=""
-                                          loading="lazy"
-                                          className="h-8 w-8 md:h-11 md:w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0"
-                                        />
-                                      ) : (
-                                        <div className="h-8 w-8 md:h-11 md:w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />
-                                      )}
-                                      <div className="flex-1 min-w-0 hidden md:block">
-                                        <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">
-                                          {formatNameFirstLast(bill.sponsor.full_name)}
-                                        </div>
-                                        <div className="flex items-center gap-1 text-xs mt-0.5">
-                                          <span
-                                            className="px-1 py-0.5 rounded text-[10px] font-medium"
-                                            style={partyBadgeStyle(bill.sponsor.party)}
-                                          >
-                                            {partyLabel(bill.sponsor.party)}
-                                          </span>
-                                          <span className="text-slate-500 dark:text-slate-400 text-[10px]">
-                                            {stateCodeOf(bill.sponsor.state)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <div className="flex-1 min-w-0 md:hidden overflow-hidden">
-                                        <div className="text-[10px] font-medium text-slate-900 dark:text-slate-100 leading-tight truncate">
-                                          {formatNameFirstLast(bill.sponsor.full_name)}
-                                        </div>
-                                        <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
-                                          {stateCodeOf(bill.sponsor.state)}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  ) : (
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">—</div>
-                                  )}
-                                </div>
-
-                                {/* Status */}
-                                <div
-                                  className="py-3 text-[10px] text-slate-600 dark:text-slate-400 items-center justify-center text-center px-1 hidden md:flex"
-                                >
-                                  {(() => {
-                                    const voteTallies = bill.meta.vote_tallies || '';
-                                    const isCosponsor = bill.actionType.includes('cosponsor');
-                                    const isVote = bill.actionType.includes('vote');
-
-                                    if (voteTallies) {
-                                      const parts = voteTallies.split('|').map((s: string) => s.trim());
-                                      const lastPart = parts[parts.length - 1];
-                                      if (lastPart.toLowerCase().includes('passed')) {
-                                        return "Passed";
-                                      } else if (lastPart.toLowerCase().includes('failed')) {
-                                        return "Failed";
+                                  {/* Sponsor */}
+                                  <div className="py-2 flex items-center justify-center min-w-0">
+                                    {bill.sponsor ? (
+                                      <button onClick={(e) => { e.stopPropagation(); setSelected(bill.sponsor); }} className="cursor-pointer">
+                                        {bill.sponsor.photo_url ? (
+                                          <img src={getProxiedImageUrl(String(bill.sponsor.photo_url))} alt="" loading="lazy" className="h-8 w-8 rounded-full object-cover bg-slate-200 dark:bg-white/10" />
+                                        ) : (
+                                          <div className="h-8 w-8 rounded-full bg-slate-300 dark:bg-white/10" />
+                                        )}
+                                      </button>
+                                    ) : <div className="text-xs text-slate-500">—</div>}
+                                  </div>
+                                  {/* Status */}
+                                  <div className="py-2 text-[9px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-0.5">
+                                    {(() => {
+                                      const voteTallies = bill.meta.vote_tallies || '';
+                                      if (voteTallies) {
+                                        const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                        const lastPart = parts[parts.length - 1];
+                                        if (lastPart.toLowerCase().includes('passed')) return "Passed";
+                                        if (lastPart.toLowerCase().includes('failed')) return "Failed";
+                                        if (lastPart.toLowerCase().includes('tied')) return "Tied";
+                                        return lastPart.split('(')[0].trim();
                                       }
-                                      return lastPart.split('(')[0].trim();
-                                    } else if (isCosponsor) {
-                                      return "Active";
-                                    } else if (isVote) {
-                                      return "Pending";
-                                    }
-                                    return "—";
-                                  })()}
-                                </div>
+                                      if (bill.actionType.includes('cosponsor')) return "Active";
+                                      if (bill.actionType.includes('vote')) return "Pending";
+                                      return "—";
+                                    })()}
+                                  </div>
+                                </>) : (<>
+                                  {/* Expand/Collapse Button */}
+                                  <div className="px-2 py-3 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); setExpandedBills(prev => { const next = new Set(prev); if (next.has(bill.col)) next.delete(bill.col); else next.add(bill.col); return next; }); }}>
+                                    <svg className={clsx("w-3 h-3 transition-transform text-slate-500 dark:text-slate-400", isExpanded && "rotate-90")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </div>
+                                  {/* Position pill */}
+                                  <div className="py-3 text-sm text-slate-800 dark:text-white flex flex-col items-center justify-center gap-1">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white" style={{ backgroundColor: bill.position === "SUPPORT" ? "#0A6F7A" : "#A96A63" }}>
+                                      {bill.position === "SUPPORT" ? "Support" : "Oppose"}
+                                    </span>
+                                  </div>
+                                  {/* Bill Number */}
+                                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 px-2 self-center min-w-0 overflow-hidden truncate text-center">{bill.meta.bill_number || bill.col}</div>
+                                  {/* Title + Description */}
+                                  <div className="py-3 text-sm text-slate-800 dark:text-white pl-2 pr-3 min-w-0">
+                                    <button className="text-sm font-bold text-slate-700 dark:text-slate-200 hover:text-[#4B8CFB] dark:hover:text-[#4B8CFB] text-left transition-colors" onClick={(e) => { e.stopPropagation(); setSelectedBill({ meta: bill.meta, column: bill.col }); }}>
+                                      {bill.meta.short_title || bill.meta.display_name?.replace(/\s*\([^)]*\)\s*$/, '') || bill.col}
+                                    </button>
+                                    {bill.meta.description && <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{bill.meta.description}</div>}
+                                  </div>
+                                  {/* Sponsor */}
+                                  <div className="py-3 text-sm text-slate-800 dark:text-white pl-4 pr-3 min-w-0 overflow-hidden">
+                                    {bill.sponsor ? (
+                                      <button onClick={(e) => { e.stopPropagation(); setSelected(bill.sponsor); }} className="flex items-center gap-2 max-w-full hover:bg-slate-100 dark:hover:bg-white/10 rounded px-1 -mx-1 transition-colors cursor-pointer text-left w-full overflow-hidden">
+                                        {bill.sponsor.photo_url ? <img src={getProxiedImageUrl(String(bill.sponsor.photo_url))} alt="" loading="lazy" className="h-11 w-11 rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0" /> : <div className="h-11 w-11 rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0" />}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-xs font-medium text-slate-900 dark:text-slate-100 break-words leading-tight">{formatNameFirstLast(bill.sponsor.full_name)}</div>
+                                          <div className="flex items-center gap-1 text-xs mt-0.5">
+                                            <span className="px-1 py-0.5 rounded text-[10px] font-medium" style={partyBadgeStyle(bill.sponsor.party)}>{partyLabel(bill.sponsor.party)}</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-[10px]">{stateCodeOf(bill.sponsor.state)}</span>
+                                          </div>
+                                        </div>
+                                      </button>
+                                    ) : <div className="text-xs text-slate-500 dark:text-slate-400">—</div>}
+                                  </div>
+                                  {/* Status */}
+                                  <div className="py-3 text-[10px] text-slate-600 dark:text-slate-400 flex items-center justify-center text-center px-1">
+                                    {(() => {
+                                      const voteTallies = bill.meta.vote_tallies || '';
+                                      if (voteTallies) {
+                                        const parts = voteTallies.split('|').map((s: string) => s.trim());
+                                        const lastPart = parts[parts.length - 1];
+                                        if (lastPart.toLowerCase().includes('passed')) return "Passed";
+                                        if (lastPart.toLowerCase().includes('failed')) return "Failed";
+                                        return lastPart.split('(')[0].trim();
+                                      }
+                                      if (bill.actionType.includes('cosponsor')) return "Active";
+                                      if (bill.actionType.includes('vote')) return "Pending";
+                                      return "—";
+                                    })()}
+                                  </div>
+                                </>)}
                               </div>
 
                               {/* Expanded view - Status and Analysis */}
