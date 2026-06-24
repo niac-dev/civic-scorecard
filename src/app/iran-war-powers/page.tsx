@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
-import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
 import {
   consolidatedWarPowersVotes,
   warPowersVoteState,
@@ -689,11 +688,7 @@ export default function IranWarPowersPage() {
           {/* Senate */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("SENATE")}>Senate</h3>
-            <div className="cursor-pointer w-full" onClick={() => {
-              const col = IRAN_WAR_POWERS_CONFIG.senate.column;
-              const m = metaByCol.get(col);
-              if (m) setSelectedBillModal({ meta: m, column: col });
-            }}>
+            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("SENATE")}>
             <HemicycleChart
               members={hemicycleMembers.SENATE}
               label=""
@@ -714,11 +709,7 @@ export default function IranWarPowersPage() {
           {/* House */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("HOUSE")}>House</h3>
-            <div className="cursor-pointer w-full" onClick={() => {
-              const col = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
-              const m = metaByCol.get(col);
-              if (m) setSelectedBillModal({ meta: m, column: col });
-            }}>
+            <div className="cursor-pointer w-full" onClick={() => handleChamberClick("HOUSE")}>
             <HemicycleChart
               members={hemicycleMembers.HOUSE}
               label=""
@@ -824,12 +815,22 @@ export default function IranWarPowersPage() {
                               st === "yes" ? " — voted yes" : st === "no" ? " — voted no" : " — did not vote"
                             }`;
                             return (
-                              <div key={v.col} className="flex flex-col items-center" title={tip}>
+                              <button
+                                key={v.col}
+                                type="button"
+                                title={tip}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const m = metaByCol.get(v.col);
+                                  if (m) setSelectedBillModal({ meta: m, column: v.col });
+                                }}
+                                className="flex flex-col items-center cursor-pointer hover:opacity-70 transition-opacity"
+                              >
                                 <span className="text-[9px] leading-none text-slate-400 dark:text-slate-500 mb-1 tabular-nums">
                                   {v.shortDate || "—"}
                                 </span>
                                 {st === "none" ? <DashIcon /> : <VoteIcon ok={st === "yes"} size="tiny" />}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
