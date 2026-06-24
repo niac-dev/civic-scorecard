@@ -32,6 +32,7 @@ export type Meta = {
   vote_date?: string; // e.g., "Senate: April 3, 2025,  03:24 PM" or "House: 9-Jan-2025 | Senate: 9-Jan-2025"
   cosponsors?: string | number; // number of cosponsors
   tracker_only?: boolean | number | string; // 1 = only show in Tracker, not in Scorecard/Map/Modal
+  war_powers_consolidated?: boolean | number | string; // 1 = include in the consolidated Iran War Powers tally
 };
 
 /** One member row from scores_wide.csv */

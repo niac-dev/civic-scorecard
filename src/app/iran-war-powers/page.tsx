@@ -5,6 +5,12 @@ import { loadData, loadManualScoringMeta } from "@/lib/loadCsv";
 import type { Row, Meta } from "@/lib/types";
 import { IRAN_WAR_POWERS_CONFIG } from "@/lib/iranWarPowersConfig";
 import {
+  consolidatedWarPowersVotes,
+  warPowersVoteState,
+  warPowersSummary,
+  type WarPowersVote,
+} from "@/lib/warPowers";
+import {
   partyBadgeStyle,
   partyLabel,
   partyCaucus,
@@ -16,66 +22,37 @@ import { MemberModal } from "@/components/MemberModal";
 import { BillModal } from "@/components/BillModal";
 import { VoteIcon } from "@/components/GradeChip";
 
-type PositionStatus = "support" | "likely_support" | "likely_oppose" | "oppose";
-
-// Read position directly from the CSV column computed by backend
-function getOverallPosition(member: Row): PositionStatus {
-  const pos = String(member.iran_war_powers_position || "").trim();
-  if (pos === "support" || pos === "likely_support" || pos === "likely_oppose" || pos === "oppose") {
-    return pos;
-  }
-  const caucus = partyCaucus(String(member.party || ''), String(member.bioguide_id || ''));
-  return caucus === "Republican" ? "likely_oppose" : "likely_support";
-}
-
-// Generate legislative action text for card display
-// HConRes40: 9+ = cosponsored+voted yes, 5 = voted yes only, 0 = voted against
-// SJRes123:  2 = voted yes, 0 = voted against (pure vote bill)
-function getLegislationText(member: Row): React.ReactNode {
+// Consolidated headline for a member's card. A single yes vote on any of the
+// consolidated war-powers resolutions counts as supporting an end to the war.
+// Members who never had a votable opportunity (non-voting delegates, or members
+// not yet in office for any of these votes) get a neutral line rather than being
+// labeled as having voted against.
+function getWarPowersHeadline(member: Row, votedYes: boolean, hasData: boolean): React.ReactNode {
   const nameParts = (member.full_name || "").split(",");
   const lastName = nameParts[0]?.trim() || "";
   const title = member.chamber === "SENATE" ? "Sen." : "Rep.";
   const name = `${title} ${lastName}`;
 
-  if (member.chamber === "HOUSE") {
-    const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
-    if (val != null && val !== "") {
-      const n = Number(val);
-      if (n > 5) return <>{name} cosponsored and voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
-      if (n === 5)  return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
-      if (n === 0)  return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
-    }
-    return `${name} has not voted on the Iran War Powers Resolution.`;
-  } else {
-    const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
-    if (voteVal != null && voteVal !== "") {
-      const n = Number(voteVal);
-      if (n > 0) return <>{name} voted <strong>in favor</strong> of the Iran War Powers Resolution.</>;
-      if (n === 0) return <>{name} voted <strong>against</strong> the Iran War Powers Resolution.</>;
-    }
-    return `${name} has not voted on the Iran War Powers Resolution.`;
+  if (!hasData) {
+    return <>{name} has not cast a vote on ending the war on Iran.</>;
   }
+
+  return votedYes ? (
+    <>{name} voted <strong>to end</strong> the war on Iran.</>
+  ) : (
+    <>{name} voted <strong>against</strong> ending the war on Iran.</>
+  );
 }
 
-// Determine the icon status for the legislation line (based on legislative action only)
-// Party default is NOT used here — "no action" always shows the orange dash
-function getLegislationStatus(member: Row): PositionStatus {
-  if (member.chamber === "HOUSE") {
-    const val = member[IRAN_WAR_POWERS_CONFIG.house.preferred.column];
-    if (val != null && val !== "") {
-      const n = Number(val);
-      if (n > 0) return "support";
-      if (n === 0) return "oppose";
-    }
-  } else {
-    const voteVal = member[IRAN_WAR_POWERS_CONFIG.senate.column];
-    if (voteVal != null && voteVal !== "") {
-      const n = Number(voteVal);
-      if (n > 0) return "support";
-      if (n === 0) return "oppose";
-    }
-  }
-  return "likely_oppose";
+// Small circular dash icon (member did not / could not cast a yes/no vote),
+// styled to match the check/X circles from VoteIcon.
+function DashIcon({ className = "h-4 w-4 flex-shrink-0" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true" role="img">
+      <circle cx="10" cy="10" r="8" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2.5" />
+      <rect x="5.5" y="8.75" width="9" height="2.5" rx="1.25" fill="#CBD5E1" />
+    </svg>
+  );
 }
 
 // Format member name as "Title First Last"
@@ -371,6 +348,20 @@ export default function IranWarPowersPage() {
     })();
   }, []);
 
+  // Consolidated war-powers votes per chamber (driven by the war_powers_consolidated
+  // meta flag), sorted chronologically. The card icon, headline, per-vote row,
+  // hemicycle dots and whip counts all derive from this so they stay consistent.
+  const wpVotes = useMemo(
+    () => ({
+      HOUSE: consolidatedWarPowersVotes(metaByCol, "HOUSE"),
+      SENATE: consolidatedWarPowersVotes(metaByCol, "SENATE"),
+    }),
+    [metaByCol]
+  );
+
+  const votesForMember = (m: Row): WarPowersVote[] =>
+    m.chamber === "SENATE" ? wpVotes.SENATE : wpVotes.HOUSE;
+
   // Filter members
   const filtered = useMemo(() => {
     // Exclude members no longer in office from display
@@ -410,16 +401,12 @@ export default function IranWarPowersPage() {
       });
     }
 
-    // Status filter (from whip count flap clicks) — "support" group includes likely_support
-    if (statusFilter === "support") {
+    // Status filter (from whip count flap clicks): supporters voted yes on at
+    // least one consolidated resolution; everyone else is grouped as oppose.
+    if (statusFilter === "support" || statusFilter === "oppose") {
       result = result.filter((r) => {
-        const p = getOverallPosition(r);
-        return p === "support" || p === "likely_support";
-      });
-    } else if (statusFilter === "oppose") {
-      result = result.filter((r) => {
-        const p = getOverallPosition(r);
-        return p === "likely_oppose" || p === "oppose";
+        const { votedYes } = warPowersSummary(r, r.chamber === "SENATE" ? wpVotes.SENATE : wpVotes.HOUSE);
+        return statusFilter === "support" ? votedYes : !votedYes;
       });
     }
 
@@ -430,53 +417,34 @@ export default function IranWarPowersPage() {
       }
       return (a.full_name || "").localeCompare(b.full_name || "");
     });
-  }, [rows, chamberFilter, partyFilter, searchTab, searchQuery, myLawmakers, statusFilter]);
+  }, [rows, chamberFilter, partyFilter, searchTab, searchQuery, myLawmakers, statusFilter, wpVotes]);
 
-  // Compute position stats for hemicycle / flap display
-  const chamberStats = useMemo(() => {
-    const stats = {
-      SENATE: { support: 0, likely_support: 0, likely_oppose: 0, oppose: 0, total: 0 },
-      HOUSE:  { support: 0, likely_support: 0, likely_oppose: 0, oppose: 0, total: 0 },
-    };
-
-    rows.forEach((member) => {
-      const chamber = member.chamber as "SENATE" | "HOUSE";
-      if (!stats[chamber]) return;
-      const pos = getOverallPosition(member);
-      stats[chamber][pos]++;
-      stats[chamber].total++;
-    });
-
-    return stats;
-  }, [rows]);
-
-  // Sorted member lists for hemicycle dots (support left, oppose right)
+  // Sorted member lists for hemicycle dots (support left, oppose right).
+  // A member is plotted if they cast at least one yes/no across the consolidated
+  // resolutions; support = voted yes on any of them.
   const hemicycleMembers = useMemo(() => {
-    const houseCol = IRAN_WAR_POWERS_CONFIG.house.preferred.column;
-    const senateCol = IRAN_WAR_POWERS_CONFIG.senate.column;
-
-    const fromVote = (chamberRows: Row[], col: string) => {
+    const fromVotes = (chamberRows: Row[], votes: WarPowersVote[]) => {
       const support: { isSupport: boolean; party: string }[] = [];
       const oppose: { isSupport: boolean; party: string }[] = [];
       chamberRows.forEach((m) => {
-        const val = (m as Record<string, unknown>)[col];
-        if (val === null || val === undefined || val === '') return;
-        if (Number((m as Record<string, unknown>)[`${col}_absent`] ?? 0) === 1) return;
-        if (Number((m as Record<string, unknown>)[`${col}_not_in_office`] ?? 0) === 1) return;
-        if (Number((m as Record<string, unknown>)[`${col}_present`] ?? 0) === 1) return;
         if (isNonVotingDelegate(m)) return;
-        const entry = { isSupport: Number(val) > 0, party: partyCaucus(String(m.party || ''), String(m.bioguide_id || '')) };
-        if (Number(val) > 0) support.push(entry);
+        const { votedYes, hasData } = warPowersSummary(m, votes);
+        if (!hasData) return; // never in office to cast any of these votes
+        const entry = { isSupport: votedYes, party: partyCaucus(String(m.party || ''), String(m.bioguide_id || '')) };
+        if (votedYes) support.push(entry);
         else oppose.push(entry);
       });
       return [...support, ...oppose];
     };
 
+    // Only plot members currently in office, so a member who voted and then left
+    // (e.g. a resigned/replaced senator) isn't counted alongside their successor.
+    const inOffice = rows.filter(r => String((r as Record<string, unknown>).in_office ?? '1') !== '0');
     return {
-      SENATE: fromVote(rows.filter(r => r.chamber === "SENATE"), senateCol),
-      HOUSE:  fromVote(rows.filter(r => r.chamber === "HOUSE"), houseCol),
+      SENATE: fromVotes(inOffice.filter(r => r.chamber === "SENATE"), wpVotes.SENATE),
+      HOUSE:  fromVotes(inOffice.filter(r => r.chamber === "HOUSE"), wpVotes.HOUSE),
     };
-  }, [rows]);
+  }, [rows, wpVotes]);
 
   // Handle search
   const handleSearch = async () => {
@@ -740,7 +708,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">May 19, 2026</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">Across {wpVotes.SENATE.length} war powers votes</p>
           </div>
 
           {/* House */}
@@ -765,7 +733,7 @@ export default function IranWarPowersPage() {
               <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
               <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
             </div>
-            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">June 3, 2026</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">Across {wpVotes.HOUSE.length} war powers votes</p>
           </div>
 
         </div>
@@ -780,8 +748,9 @@ export default function IranWarPowersPage() {
         {hasResults && (
           <div className="space-y-3">
             {filtered.map((member) => {
-              const overallStatus = getOverallPosition(member);
-              const legText = getLegislationText(member);
+              const votes = votesForMember(member);
+              const { votedYes, hasData } = warPowersSummary(member, votes);
+              const legText = getWarPowersHeadline(member, votedYes, hasData);
 
               return (
                 <div
@@ -813,7 +782,11 @@ export default function IranWarPowersPage() {
 
                     {/* Vote Icon */}
                     <div className="flex-shrink-0 pt-1">
-                      <VoteIcon ok={overallStatus === "support" || overallStatus === "likely_support"} size="medium-large" />
+                      {hasData ? (
+                        <VoteIcon ok={votedYes} size="medium-large" />
+                      ) : (
+                        <DashIcon className="h-12 w-12 flex-shrink-0" />
+                      )}
                     </div>
 
                     {/* Info */}
@@ -841,6 +814,26 @@ export default function IranWarPowersPage() {
                       <p className="mt-1.5 text-sm text-slate-700 dark:text-slate-200">
                         {legText}
                       </p>
+
+                      {/* Per-resolution vote row: date + check / X / dash */}
+                      {votes.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1.5">
+                          {votes.map((v) => {
+                            const st = warPowersVoteState(member, v.col);
+                            const tip = `${v.fullDate || v.col}${
+                              st === "yes" ? " — voted yes" : st === "no" ? " — voted no" : " — did not vote"
+                            }`;
+                            return (
+                              <div key={v.col} className="flex flex-col items-center" title={tip}>
+                                <span className="text-[9px] leading-none text-slate-400 dark:text-slate-500 mb-1 tabular-nums">
+                                  {v.shortDate || "—"}
+                                </span>
+                                {st === "none" ? <DashIcon /> : <VoteIcon ok={st === "yes"} size="tiny" />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
