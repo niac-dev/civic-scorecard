@@ -503,7 +503,7 @@ export default function IranWarPowersPage() {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setStatusFilter(null);
-    setChamberFilter("");
+    setChamberFilter([]);
 
     if (searchTab === "location") {
       setSearchLoading(true);
@@ -705,7 +705,7 @@ export default function IranWarPowersPage() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); setStatusFilter(null); setChamberFilter(""); }}
+                  onChange={(e) => { setSearchQuery(e.target.value); setShowDropdown(true); setStatusFilter(null); setChamberFilter([]); }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Enter lawmaker's name..."
                   className="w-full px-4 py-3.5 rounded-lg border-0 bg-white/95 backdrop-blur-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg text-base"
@@ -729,7 +729,7 @@ export default function IranWarPowersPage() {
                               setSearchQuery(String(member.full_name || ""));
                               setShowDropdown(false);
                               setStatusFilter(null);
-                              setChamberFilter("");
+                              setChamberFilter([]);
                               // Scroll to results
                               setTimeout(() => {
                                 resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
