@@ -210,7 +210,7 @@ function HemicycleChart({
               );
             }
             return (
-              <circle key={i} cx={seat.x} cy={seat.y} r={r} fill="none" stroke={dot.color} strokeWidth={r * 0.5} />
+              <circle key={i} cx={seat.x} cy={seat.y} r={r} fill={dot.color} />
             );
           })}
         </svg>
