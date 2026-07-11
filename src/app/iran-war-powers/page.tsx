@@ -171,19 +171,17 @@ function HemicycleChart({
     [total, numRows, innerRadius, rowSpacing]
   );
 
-  // Sort seats left → right; assign support members to left seats, oppose to right
-  // Each dot: fill = green (support) or F-grade burgundy (oppose); stroke = party color
+  // Sort seats left → right; assign members in order (support first, then oppose).
+  // Shape encodes vote (circle = support, X = oppose); color encodes party.
   const dotsBySeatIdx = useMemo(() => {
     const order = seats.map((s, i) => ({ i, x: s.x })).sort((a, b) => a.x - b.x);
-    // members is already sorted: support first, then oppose
-    const dots = new Array(seats.length).fill(null).map(() => ({ fill: "#A96A63", stroke: "#94A3B8" }));
+    const dots = new Array(seats.length).fill(null).map(() => ({ shape: "x" as "circle" | "x", color: "#94A3B8" }));
     order.forEach(({ i }, idx) => {
       const member = members[idx];
       if (!member) return;
-      const fill = member.isSupport ? "#0A6F7A" : "#A96A63";
       const party = (member.party || "").toLowerCase();
-      const stroke = party.startsWith("rep") ? "#DC2626" : party.startsWith("dem") ? "#2563EB" : "#94A3B8";
-      dots[i] = { fill, stroke };
+      const color = party.startsWith("rep") ? "#DC2626" : party.startsWith("dem") ? "#2563EB" : "#94A3B8";
+      dots[i] = { shape: member.isSupport ? "circle" : "x", color };
     });
     return dots;
   }, [seats, members]);
@@ -199,17 +197,22 @@ function HemicycleChart({
       )}
       <div className={`w-full ${heightClassName}`}>
         <svg viewBox={`0 ${topClip} ${W} ${H - topClip}`} className="w-full h-full block">
-          {seats.map((seat, i) => (
-            <circle
-              key={i}
-              cx={seat.x}
-              cy={seat.y}
-              r={dotRadius - 0.5}
-              fill={dotsBySeatIdx[i].fill}
-              stroke={dotsBySeatIdx[i].stroke}
-              strokeWidth={0.8}
-            />
-          ))}
+          {seats.map((seat, i) => {
+            const dot = dotsBySeatIdx[i];
+            const r = dotRadius - 0.5;
+            if (dot.shape === "x") {
+              const d = r * 0.65;
+              return (
+                <g key={i}>
+                  <line x1={seat.x - d} y1={seat.y - d} x2={seat.x + d} y2={seat.y + d} stroke={dot.color} strokeWidth={r * 0.6} strokeLinecap="round" />
+                  <line x1={seat.x + d} y1={seat.y - d} x2={seat.x - d} y2={seat.y + d} stroke={dot.color} strokeWidth={r * 0.6} strokeLinecap="round" />
+                </g>
+              );
+            }
+            return (
+              <circle key={i} cx={seat.x} cy={seat.y} r={r} fill="none" stroke={dot.color} strokeWidth={r * 0.5} />
+            );
+          })}
         </svg>
       </div>
     </div>
@@ -293,9 +296,9 @@ export default function IranWarPowersPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [myLawmakers, setMyLawmakers] = useState<string[]>([]);
-  const [chamberFilter, setChamberFilter] = useState<"" | "HOUSE" | "SENATE">("");
-  const [partyFilter, setPartyFilter] = useState<"" | "Democratic" | "Republican" | "Independent">("");
-  const [statusFilter, setStatusFilter] = useState<"support" | "oppose" | null>(null);
+  const [chamberFilter, setChamberFilter] = useState<("HOUSE" | "SENATE")[]>([]);
+  const [partyFilter, setPartyFilter] = useState<("Democrat" | "Republican")[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"support" | "oppose" | "flips" | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Ref for scrolling to results
@@ -303,6 +306,7 @@ export default function IranWarPowersPage() {
 
   // Filter expand state
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterBarOpen, setFilterBarOpen] = useState(false);
 
   // Modal state
   const [selectedMember, setSelectedMember] = useState<Row | null>(null);
@@ -367,13 +371,13 @@ export default function IranWarPowersPage() {
     let result = rows.filter(r => String((r as Record<string, unknown>).in_office ?? '1') !== '0');
 
     // Chamber filter
-    if (chamberFilter) {
-      result = result.filter((r) => r.chamber === chamberFilter);
+    if (chamberFilter.length > 0) {
+      result = result.filter((r) => chamberFilter.includes(r.chamber as "HOUSE" | "SENATE"));
     }
 
     // Party filter
-    if (partyFilter) {
-      result = result.filter((r) => partyCaucus(String(r.party || ''), String(r.bioguide_id || '')) === partyFilter);
+    if (partyFilter.length > 0) {
+      result = result.filter((r) => partyFilter.includes(partyCaucus(String(r.party || ''), String(r.bioguide_id || '')) as "Democrat" | "Republican"));
     }
 
     // Name search (when tab is name and there's a query)
@@ -400,12 +404,27 @@ export default function IranWarPowersPage() {
       });
     }
 
-    // Status filter (from whip count flap clicks): supporters voted yes on at
-    // least one consolidated resolution; everyone else is grouped as oppose.
+    // Status filter: only include members who actually cast a vote on at least
+    // one consolidated resolution (hasData). Excludes non-voting delegates and
+    // members who weren't in office for any of these votes.
     if (statusFilter === "support" || statusFilter === "oppose") {
       result = result.filter((r) => {
-        const { votedYes } = warPowersSummary(r, r.chamber === "SENATE" ? wpVotes.SENATE : wpVotes.HOUSE);
+        const { votedYes, hasData } = warPowersSummary(r, r.chamber === "SENATE" ? wpVotes.SENATE : wpVotes.HOUSE);
+        if (!hasData) return false;
         return statusFilter === "support" ? votedYes : !votedYes;
+      });
+    }
+
+    if (statusFilter === "flips") {
+      result = result.filter((r) => {
+        const votes = r.chamber === "SENATE" ? wpVotes.SENATE : wpVotes.HOUSE;
+        let hasYes = false, hasNo = false;
+        for (const v of votes) {
+          const st = warPowersVoteState(r, v.col);
+          if (st === "yes") hasYes = true;
+          if (st === "no") hasNo = true;
+        }
+        return hasYes && hasNo;
       });
     }
 
@@ -418,22 +437,36 @@ export default function IranWarPowersPage() {
     });
   }, [rows, chamberFilter, partyFilter, searchTab, searchQuery, myLawmakers, statusFilter, wpVotes]);
 
-  // Sorted member lists for hemicycle dots (support left, oppose right).
+  // Sorted member lists for hemicycle dots, left → right.
   // A member is plotted if they cast at least one yes/no across the consolidated
-  // resolutions; support = voted yes on any of them.
+  // resolutions; support = voted yes on any of them. Dots are ordered so the
+  // party-consistent members sit at the ends (Democrats who voted to end the war
+  // on the left, Republicans who voted against on the right) and the party
+  // crossovers are clustered in the center: Democrats who voted against and
+  // Republicans who voted for. Independents are grouped with the party they
+  // caucus with (so e.g. Sanders/King count as Democrats / blue).
   const hemicycleMembers = useMemo(() => {
     const fromVotes = (chamberRows: Row[], votes: WarPowersVote[]) => {
-      const support: { isSupport: boolean; party: string }[] = [];
-      const oppose: { isSupport: boolean; party: string }[] = [];
+      const demMatch: { isSupport: boolean; party: string }[] = []; // Dem, voted yes
+      const demCross: { isSupport: boolean; party: string }[] = []; // Dem, voted no (crossover)
+      const repCross: { isSupport: boolean; party: string }[] = []; // Rep, voted yes (crossover)
+      const repMatch: { isSupport: boolean; party: string }[] = []; // Rep, voted no
       chamberRows.forEach((m) => {
         if (isNonVotingDelegate(m)) return;
         const { votedYes, hasData } = warPowersSummary(m, votes);
         if (!hasData) return; // never in office to cast any of these votes
-        const entry = { isSupport: votedYes, party: partyCaucus(String(m.party || ''), String(m.bioguide_id || '')) };
-        if (votedYes) support.push(entry);
-        else oppose.push(entry);
+        const isRepublican = partyCaucus(String(m.party || ''), String(m.bioguide_id || ''))
+          .toLowerCase()
+          .startsWith('rep');
+        const party = isRepublican ? "Republican" : "Democratic";
+        const entry = { isSupport: votedYes, party };
+        if (!isRepublican && votedYes) demMatch.push(entry);
+        else if (!isRepublican && !votedYes) demCross.push(entry);
+        else if (isRepublican && votedYes) repCross.push(entry);
+        else repMatch.push(entry);
       });
-      return [...support, ...oppose];
+      // Ends = party-consistent; center = crossovers (demCross + repCross).
+      return [...demMatch, ...demCross, ...repCross, ...repMatch];
     };
 
     // Only plot members currently in office, so a member who voted and then left
@@ -444,6 +477,27 @@ export default function IranWarPowersPage() {
       HOUSE:  fromVotes(inOffice.filter(r => r.chamber === "HOUSE"), wpVotes.HOUSE),
     };
   }, [rows, wpVotes]);
+
+  // Partisan headcount per chamber (independents grouped by the party they caucus
+  // with). Counts all currently-seated voting members, independent of whether they
+  // have a recorded war-powers vote yet — this is the chamber's party breakdown,
+  // not the support/oppose tally.
+  const chamberPartyCounts = useMemo(() => {
+    const count = (chamber: "SENATE" | "HOUSE") => {
+      let dem = 0, rep = 0;
+      rows.forEach((m) => {
+        if (m.chamber !== chamber) return;
+        if (String((m as Record<string, unknown>).in_office ?? '1') === '0') return;
+        if (isNonVotingDelegate(m)) return;
+        const isRepublican = partyCaucus(String(m.party || ''), String(m.bioguide_id || ''))
+          .toLowerCase()
+          .startsWith('rep');
+        if (isRepublican) rep++; else dem++;
+      });
+      return { dem, rep };
+    };
+    return { SENATE: count("SENATE"), HOUSE: count("HOUSE") };
+  }, [rows]);
 
   // Handle search
   const handleSearch = async () => {
@@ -489,10 +543,43 @@ export default function IranWarPowersPage() {
   const hasResults =
     (searchTab === "name" ? searchQuery.trim().length > 0 : myLawmakers.length > 0) ||
     statusFilter !== null ||
-    chamberFilter !== "";
+    chamberFilter.length > 0 ||
+    partyFilter.length > 0;
+
+  const resultsTitle = useMemo(() => {
+    if (!hasResults) return null;
+    const count = filtered.length;
+    const partyPart =
+      partyFilter.length === 1
+        ? partyFilter[0] === "Democrat"
+          ? "Democratic "
+          : "Republican "
+        : "";
+    const memberType =
+      chamberFilter.length === 1
+        ? chamberFilter[0] === "SENATE"
+          ? count === 1 ? "Senator" : "Senators"
+          : count === 1 ? "Representative" : "Representatives"
+        : count === 1 ? "Lawmaker" : "Lawmakers";
+    const positionPart =
+      statusFilter === "support"
+        ? " in favor of ending the war on Iran"
+        : statusFilter === "oppose"
+        ? " opposed to ending the war on Iran"
+        : statusFilter === "flips"
+        ? " who flipped their vote on war powers"
+        : "";
+    return `${count} ${partyPart}${memberType}${positionPart}`;
+  }, [hasResults, filtered, partyFilter, chamberFilter, statusFilter]);
+
+  const toggleChamber = (c: "SENATE" | "HOUSE") =>
+    setChamberFilter(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
+  const toggleParty = (p: "Democrat" | "Republican") =>
+    setPartyFilter(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
 
   const handleChamberClick = (chamber: "SENATE" | "HOUSE") => {
-    setChamberFilter(chamber);
+    setChamberFilter([chamber]);
     setStatusFilter(null);
     setSearchQuery("");
     setMyLawmakers([]);
@@ -503,15 +590,31 @@ export default function IranWarPowersPage() {
     }, 50);
   };
 
-  const handleFlapClick = (chamber: "SENATE" | "HOUSE", status: "support" | "oppose") => {
-    if (chamberFilter === chamber && statusFilter === status) {
-      // Toggle off
+  const handleQuickFilter = (party: "Democrat" | "Republican", status: "support" | "oppose") => {
+    if (partyFilter.includes(party) && partyFilter.length === 1 && statusFilter === status) {
+      setPartyFilter([]);
       setStatusFilter(null);
-      setChamberFilter("");
     } else {
-      setChamberFilter(chamber);
+      setPartyFilter([party]);
       setStatusFilter(status);
-      // Clear any active search
+      setChamberFilter([]);
+      setSearchQuery("");
+      setMyLawmakers([]);
+      localStorage.removeItem("niac-address");
+      localStorage.removeItem("niac-lawmakers");
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  };
+
+  const handleFlapClick = (chamber: "SENATE" | "HOUSE", status: "support" | "oppose") => {
+    if (chamberFilter.includes(chamber) && chamberFilter.length === 1 && statusFilter === status) {
+      setStatusFilter(null);
+      setChamberFilter([]);
+    } else {
+      setChamberFilter([chamber]);
+      setStatusFilter(status);
       setSearchQuery("");
       setMyLawmakers([]);
       localStorage.removeItem("niac-address");
@@ -678,6 +781,7 @@ export default function IranWarPowersPage() {
               </button>
             </div>
           )}
+
         </div>
       </div>
 
@@ -699,9 +803,13 @@ export default function IranWarPowersPage() {
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
+            <div className="flex justify-between w-full px-1 -mt-1 text-[10px] font-semibold">
+              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.SENATE.dem}</span>
+              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.SENATE.rep}</span>
+            </div>
             <div className="flex gap-1.5 justify-center">
-              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "SENATE" && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
-              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "SENATE" && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
+              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter.includes("SENATE") && chamberFilter.length === 1 && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
+              <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter.includes("SENATE") && chamberFilter.length === 1 && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
             </div>
             <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">Across {wpVotes.SENATE.length} war powers votes</p>
           </div>
@@ -720,14 +828,166 @@ export default function IranWarPowersPage() {
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
+            <div className="flex justify-between w-full px-1 -mt-1 text-[10px] font-semibold">
+              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.HOUSE.dem}</span>
+              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.HOUSE.rep}</span>
+            </div>
             <div className="flex gap-1.5 justify-center">
-              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter === "HOUSE" && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
-              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter === "HOUSE" && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
+              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter.includes("HOUSE") && chamberFilter.length === 1 && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
+              <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter.includes("HOUSE") && chamberFilter.length === 1 && statusFilter === "oppose"} onClick={() => handleFlapClick("HOUSE", "oppose")} />
             </div>
             <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center mt-0.5">Across {wpVotes.HOUSE.length} war powers votes</p>
           </div>
 
         </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        {/* Toggle row — always visible */}
+        <button
+          onClick={() => setFilterBarOpen((o) => !o)}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
+          </svg>
+          Filters
+          {(chamberFilter.length > 0 || partyFilter.length > 0 || statusFilter !== null) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#30558C]" />
+          )}
+          <svg className={`w-3 h-3 transition-transform ${filterBarOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Expandable content */}
+        {filterBarOpen && (
+          <div className="px-4 pb-3 max-w-2xl mx-auto flex flex-col gap-2">
+            {/* Row 1: Chamber / Party / Position (wide) + mobile Filters button */}
+            <div className="flex items-center gap-4 justify-center flex-wrap">
+              <div className="hidden md:flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Chamber</span>
+                {(["SENATE", "HOUSE"] as const).map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => toggleChamber(c)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      chamberFilter.includes(c)
+                        ? "bg-[#30558C] text-white"
+                        : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                    }`}
+                  >
+                    {c === "SENATE" ? "Senate" : "House"}
+                  </button>
+                ))}
+                {chamberFilter.length > 0 && (
+                  <button onClick={() => setChamberFilter([])} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
+                )}
+              </div>
+              <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+
+              <div className="hidden md:flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Party</span>
+                {([["Democrat", "D"], ["Republican", "R"]] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => toggleParty(val)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      partyFilter.includes(val)
+                        ? "bg-[#30558C] text-white"
+                        : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {partyFilter.length > 0 && (
+                  <button onClick={() => setPartyFilter([])} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
+                )}
+              </div>
+              <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+
+              <div className="hidden md:flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Position</span>
+                {([["support", "Support"], ["oppose", "Oppose"]] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setStatusFilter(statusFilter === val ? null : val)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                      statusFilter === val
+                        ? "bg-[#30558C] text-white"
+                        : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+                {(statusFilter === "support" || statusFilter === "oppose") && (
+                  <button onClick={() => setStatusFilter(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setFiltersOpen((o) => !o)}
+                className={`md:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  filtersOpen || chamberFilter.length > 0 || partyFilter.length > 0
+                    ? "bg-[#30558C] text-white"
+                    : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                }`}
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
+                </svg>
+                Filters
+              </button>
+            </div>
+
+            {/* Row 2: Quick Filters */}
+            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Quick Filters</span>
+              {([
+                { party: "Democrat" as const,   status: "oppose" as const,  label: "Dem Opponents" },
+                { party: "Republican" as const, status: "support" as const, label: "Rep Supporters" },
+              ]).map(({ party, status, label }) => (
+                <button
+                  key={label}
+                  onClick={() => handleQuickFilter(party, status)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    partyFilter.includes(party) && partyFilter.length === 1 && statusFilter === status
+                      ? "bg-[#30558C] text-white"
+                      : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  if (statusFilter === "flips") {
+                    setStatusFilter(null);
+                  } else {
+                    setStatusFilter("flips");
+                    setPartyFilter([]);
+                    setChamberFilter([]);
+                    setSearchQuery("");
+                    setMyLawmakers([]);
+                    localStorage.removeItem("niac-address");
+                    localStorage.removeItem("niac-lawmakers");
+                    setTimeout(() => { resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50);
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  statusFilter === "flips"
+                    ? "bg-[#30558C] text-white"
+                    : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                }`}
+              >
+                Flips
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results Section */}
@@ -738,6 +998,11 @@ export default function IranWarPowersPage() {
         {/* Results Grid */}
         {hasResults && (
           <div className="space-y-3">
+            {resultsTitle && (
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400 px-1">
+                {resultsTitle}
+              </p>
+            )}
             {filtered.map((member) => {
               const votes = votesForMember(member);
               const { votedYes, hasData } = warPowersSummary(member, votes);
@@ -873,62 +1138,66 @@ export default function IranWarPowersPage() {
         </div>
       </div>
 
-      {/* Fixed left-side filter button + popup */}
-      {hasResults && (
-        <div className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex items-start">
-          {/* Popup panel */}
-          {filtersOpen && (
-            <>
-              <div className="fixed inset-0 z-30" onClick={() => setFiltersOpen(false)} />
-              <div className="relative z-40 ml-0 bg-white dark:bg-slate-800 shadow-xl rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-700 p-4 w-48 space-y-4">
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Chamber</p>
-                <div className="flex flex-col gap-1.5">
-                  {(["", "SENATE", "HOUSE"] as const).map((c) => (
-                    <button
-                      key={c || "all"}
-                      onClick={() => setChamberFilter(c)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
-                        chamberFilter === c
-                          ? "bg-[#30558C] text-white"
-                          : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                      }`}
-                    >
-                      {c === "" ? "All" : c === "SENATE" ? "Senate" : "House"}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Party</p>
-                <div className="flex flex-col gap-1.5">
-                  {(["", "Democratic", "Republican", "Independent"] as const).map((p) => (
-                    <button
-                      key={p || "all"}
-                      onClick={() => setPartyFilter(p)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
-                        partyFilter === p
-                          ? "bg-[#30558C] text-white"
-                          : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                      }`}
-                    >
-                      {p === "" ? "All" : p === "Democratic" ? "Democrat" : p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-          {/* Toggle tab */}
-          <button
-            onClick={() => setFiltersOpen((o) => !o)}
-            className="relative z-40 flex flex-col items-center justify-center gap-1 bg-white dark:bg-slate-800 border border-l-0 border-slate-200 dark:border-slate-700 shadow-md rounded-r-lg px-1.5 py-3 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
-            </svg>
-            <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>Filter</span>
-            {(chamberFilter || partyFilter) && (
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[#30558C]" />
-            )}
-          </button>
+      {/* Filter panel — mobile only, opened via "More Filters" chip */}
+      {filtersOpen && (
+        <div className="md:hidden">
+          <div className="fixed inset-0 z-30" onClick={() => setFiltersOpen(false)} />
+          <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-slate-800 shadow-xl rounded-xl border border-slate-200 dark:border-slate-700 p-4 w-48 space-y-4">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Chamber</p>
+            <div className="flex flex-col gap-1.5">
+              {(["SENATE", "HOUSE"] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => toggleChamber(c)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
+                    chamberFilter.includes(c)
+                      ? "bg-[#30558C] text-white"
+                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                  }`}
+                >
+                  {c === "SENATE" ? "Senate" : "House"}
+                </button>
+              ))}
+              {chamberFilter.length > 0 && (
+                <button onClick={() => setChamberFilter([])} className="px-3 py-1.5 rounded-lg text-sm font-medium text-left bg-slate-100 dark:bg-white/10 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">Clear</button>
+              )}
+            </div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Party</p>
+            <div className="flex flex-col gap-1.5">
+              {(["Democrat", "Republican"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => toggleParty(p)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
+                    partyFilter.includes(p)
+                      ? "bg-[#30558C] text-white"
+                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              {partyFilter.length > 0 && (
+                <button onClick={() => setPartyFilter([])} className="px-3 py-1.5 rounded-lg text-sm font-medium text-left bg-slate-100 dark:bg-white/10 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">Clear</button>
+              )}
+            </div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Position</p>
+            <div className="flex flex-col gap-1.5">
+              {([["", "All"], ["support", "Support"], ["oppose", "Oppose"]] as const).map(([val, label]) => (
+                <button
+                  key={val || "all"}
+                  onClick={() => setStatusFilter(val === "" ? null : val)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
+                    (val === "" ? statusFilter === null : statusFilter === val)
+                      ? "bg-[#30558C] text-white"
+                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

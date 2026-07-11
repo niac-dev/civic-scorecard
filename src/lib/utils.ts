@@ -56,11 +56,17 @@ const PHOTO_SKIP_LIST = new Set([
   'M001226', // Robert Menendez Jr. - unitedstates.github.io shows his father instead
 ]);
 
+// Local photo overrides — stored in /public, take precedence over unitedstates.github.io
+const LOCAL_PHOTO_OVERRIDES: Record<string, string> = {
+  A000383: '/Sen_Armstrong.jpg',
+};
+
 export function getPhotoUrl(
   bioguideId: string | undefined,
   size: PhotoSize = '225x275'
 ): string {
   if (!bioguideId) return '';
+  if (LOCAL_PHOTO_OVERRIDES[bioguideId]) return LOCAL_PHOTO_OVERRIDES[bioguideId];
   // Skip unitedstates.github.io for members with known incorrect photos
   if (PHOTO_SKIP_LIST.has(bioguideId)) return '';
   return `https://unitedstates.github.io/images/congress/${size}/${bioguideId}.jpg`;
@@ -119,6 +125,8 @@ export function partyLabel(p?: string) {
 // Kiley (K000401) caucuses with Republicans; Sanders (S000033) and King (K000383) caucus with Democrats
 const INDEPENDENT_CAUCUS: Record<string, string> = {
   K000401: "Republican", // Kevin Kiley
+  S000033: "Democrat",   // Bernie Sanders
+  K000383: "Democrat",   // Angus King
 };
 
 export function partyCaucus(party?: string, bioguideId?: string): string {

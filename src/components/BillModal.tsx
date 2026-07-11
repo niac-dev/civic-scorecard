@@ -87,18 +87,26 @@ function getPartisanBreakdown(members: Row[]): { rCount: number; dCount: number 
 }
 
 // Component to render partisan pills
-function PartisanPills({ members }: { members: Row[] }) {
+function PartisanPills({ members, partyFilter, onPartyClick }: { members: Row[]; partyFilter: string; onPartyClick: (party: string) => void }) {
   const { rCount, dCount } = getPartisanBreakdown(members);
 
   return (
     <span className="inline-flex items-center gap-1.5 ml-2">
       <span className="text-slate-400 dark:text-slate-500">|</span>
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#C5312E] text-white">
+      <button
+        onClick={(e) => { e.stopPropagation(); onPartyClick("Republican"); }}
+        className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-opacity ${partyFilter === "Republican" ? "opacity-100 ring-1 ring-white/60" : "opacity-90 hover:opacity-100"}`}
+        style={{ backgroundColor: "#C5312E", color: "#fff" }}
+      >
         R: {rCount}
-      </span>
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#315CA8] text-white">
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onPartyClick("Democrat"); }}
+        className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-opacity ${partyFilter === "Democrat" ? "opacity-100 ring-1 ring-white/60" : "opacity-90 hover:opacity-100"}`}
+        style={{ backgroundColor: "#315CA8", color: "#fff" }}
+      >
         D: {dCount}
-      </span>
+      </button>
     </span>
   );
 }
@@ -867,7 +875,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
                       <span className="whitespace-nowrap">{firstLabel}: {filteredFirstSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${firstSection.length}`}</span>
-                      <PartisanPills members={filteredFirstSection} />
+                      <PartisanPills members={filteredFirstSection} partyFilter={partyFilter} onPartyClick={(p) => setPartyFilter(prev => prev === p ? "" : p)} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
@@ -988,7 +996,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                     </svg>
                     <span className="flex items-center flex-wrap flex-1 min-w-0">
                       <span className="whitespace-nowrap">{secondLabel}: {filteredSecondSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${secondSection.length}`}</span>
-                      <PartisanPills members={filteredSecondSection} />
+                      <PartisanPills members={filteredSecondSection} partyFilter={partyFilter} onPartyClick={(p) => setPartyFilter(prev => prev === p ? "" : p)} />
                     </span>
                     <svg
                       viewBox="0 0 20 20"
@@ -1088,7 +1096,7 @@ export function BillModal({ meta, column, rows, manualScoringMeta, onClose, onBa
                       </svg>
                       <span className="flex items-center flex-wrap flex-1 min-w-0">
                         <span className="whitespace-nowrap">{thirdLabel}: {filteredThirdSection.length}{(partyFilter || stateFilter || chamberFilter) && ` of ${thirdSection.length}`}</span>
-                        <PartisanPills members={filteredThirdSection} />
+                        <PartisanPills members={filteredThirdSection} partyFilter={partyFilter} onPartyClick={(p) => setPartyFilter(prev => prev === p ? "" : p)} />
                       </span>
                       <svg
                         viewBox="0 0 20 20"
