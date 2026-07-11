@@ -235,7 +235,7 @@ function ScoreFlap({
   onClick?: () => void;
 }) {
   const textColor =
-    color === "green" ? "#6BBEC4" : color === "amber" ? "#fbbf24" : color === "orange" ? "#fb923c" : "#f87171";
+    color === "green" ? "#C9A84C" : color === "amber" ? "#fbbf24" : color === "orange" ? "#fb923c" : "#94A3B8";
   const ringColor =
     color === "green" ? "#0A6F7A" : color === "amber" ? "#f59e0b" : color === "orange" ? "#f97316" : "#ef4444";
   const w = small ? 40 : 44;
@@ -803,10 +803,11 @@ export default function IranWarPowersPage() {
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
-            <div className="flex justify-between w-full px-1 -mt-1 text-[10px] font-semibold">
+            <div className="flex justify-between w-full -mt-1 text-[10px] font-semibold" style={{ paddingLeft: "18%", paddingRight: "18%" }}>
               <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.SENATE.dem}</span>
               <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.SENATE.rep}</span>
             </div>
+
             <div className="flex gap-1.5 justify-center">
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter.includes("SENATE") && chamberFilter.length === 1 && statusFilter === "support"} onClick={() => handleFlapClick("SENATE", "support")} />
               <ScoreFlap count={hemicycleMembers.SENATE.filter(m => !m.isSupport).length} color="red" label="Oppose" small active={chamberFilter.includes("SENATE") && chamberFilter.length === 1 && statusFilter === "oppose"} onClick={() => handleFlapClick("SENATE", "oppose")} />
@@ -828,7 +829,7 @@ export default function IranWarPowersPage() {
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
             </div>
-            <div className="flex justify-between w-full px-1 -mt-1 text-[10px] font-semibold">
+            <div className="flex justify-between w-full -mt-1 text-[10px] font-semibold" style={{ paddingLeft: "20%", paddingRight: "20%" }}>
               <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.HOUSE.dem}</span>
               <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.HOUSE.rep}</span>
             </div>
