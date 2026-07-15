@@ -2666,43 +2666,14 @@ export default function Page() {
                 className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch relative group/member"
                 onClick={() => setSelected(r)}
               >
-                {/* Hover overlay with action buttons - desktop only */}
-                <div className="hidden md:flex absolute inset-0 bg-slate-900/80 dark:bg-slate-900/90 opacity-0 group-hover/member:opacity-100 transition-opacity duration-200 items-center justify-center gap-2 xl:gap-3 z-30 rounded-lg flex-col xl:flex-row">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelected(r);
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-800 rounded-lg font-medium text-sm transition-colors shadow-lg"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    View Profile
-                  </button>
-                  {!isGradeIncomplete(r.bioguide_id, (r as Record<string, unknown>).sworn_in_date) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openSharePage(r);
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-[#30558C] hover:bg-[#254470] text-white rounded-lg font-medium text-sm transition-colors shadow-lg"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Summarize
-                    </button>
-                  )}
-                </div>
                 {/* Photo - shown second on mobile, first on desktop */}
                 {(r.bioguide_id || r.photo_url) ? (
                   <img
                     src={getPhotoUrl(String(r.bioguide_id || ''), '225x275') || getProxiedImageUrl(String(r.photo_url)) || ''}
                     alt=""
                     loading="lazy"
-                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
-                    style={{ height: 'auto' }}
+                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full object-cover bg-slate-200 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0 border-[7px] border-solid brightness-100 group-hover/member:brightness-110 transition-[filter]"
+                    style={{ height: 'auto', ...(r.Grade ? { borderColor: gradeColor(String(r.Grade)) } : {}) }}
                     onError={(e) => {
                       // Try fallback to photo_url if bioguide CDN fails
                       const target = e.currentTarget;
@@ -2714,8 +2685,8 @@ export default function Page() {
                   />
                 ) : (
                   <div
-                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0"
-                    style={{ height: 'auto' }}
+                    className="w-[80%] md:w-[105px] xl:w-[140px] aspect-square rounded-full bg-slate-300 dark:bg-white/10 flex-shrink-0 order-2 md:order-1 mx-auto md:mx-0 border-[7px] border-solid"
+                    style={{ height: 'auto', ...(r.Grade ? { borderColor: gradeColor(String(r.Grade)) } : {}) }}
                   />
                 )}
 
