@@ -530,7 +530,11 @@ export function MemberModal({
                     src={getPhotoUrl(String(row.bioguide_id), '450x550') || String(row.photo_url || '')}
                     alt=""
                     loading="lazy"
-                    className="h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10 border-[7px] border-solid brightness-100 hover:brightness-110 transition-[filter]"
+                    onClick={!isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) ? handleDownloadImage : undefined}
+                    className={clsx(
+                      "h-32 w-32 flex-shrink-0 rounded-full object-cover bg-slate-200 dark:bg-white/10 border-[7px] border-solid brightness-100 hover:brightness-110 transition-[filter]",
+                      !isGradeIncomplete(row.bioguide_id, (row as Record<string, unknown>).sworn_in_date) && "cursor-pointer"
+                    )}
                     style={row.Grade ? { borderColor: gradeColor(String(row.Grade)) } : undefined}
                     onError={(e) => {
                       const target = e.currentTarget;

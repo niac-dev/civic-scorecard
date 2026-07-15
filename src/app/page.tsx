@@ -2656,14 +2656,14 @@ export default function Page() {
               data-row-index={i}
               className={clsx(
                 "grid min-w-max transition group items-center",
-                "hover:bg-slate-50 dark:hover:bg-slate-800",
+                "hover:bg-slate-100 dark:hover:bg-slate-700",
                 "border-b border-[#E7ECF2] dark:border-slate-900"
               )}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {/* member + photo */}
               <div
-                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch relative group/member"
+                className="td pl-0 md:pl-4 py-0 md:py-3 flex flex-col md:flex-row items-center md:items-start justify-start gap-0 md:gap-3 cursor-pointer sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-slate-700 transition border-r border-[#E7ECF2] dark:border-slate-900 self-stretch relative group/member"
                 onClick={() => setSelected(r)}
               >
                 {/* Photo - shown second on mobile, first on desktop */}
@@ -2898,7 +2898,7 @@ export default function Page() {
                   <React.Fragment key={gradeCol.field}>
                     <div
                       className={clsx(
-                        "td flex items-center justify-center !py-0 h-full cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10",
+                        "td flex items-center justify-center !py-0 h-full cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600",
                         shouldHaveBorder && "border-r border-[#E7ECF2] dark:border-slate-900"
                       )}
                       onClick={() => {
@@ -3102,7 +3102,7 @@ export default function Page() {
                 return (
                   <div
                     key={c}
-                    className="group/cell relative td !px-0 !py-0 h-full flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    className="group/cell relative td !px-0 !py-0 h-full flex items-center justify-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                     {...(!isMobile && { title: tooltipText })}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -3309,7 +3309,7 @@ export default function Page() {
               {/* Endorsements column - shown after bills in non-AIPAC views */}
               {!f.categories.has("AIPAC") && !f.categories.has("Civil Rights & Immigration") && (
                 <div
-                  className="td px-2 flex items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 self-stretch"
+                  className="td px-2 flex items-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 self-stretch"
                   onClick={() => f.set({ viewMode: "category", categories: new Set(["AIPAC"]) })}
                   title="Click to view AIPAC details"
                 >
