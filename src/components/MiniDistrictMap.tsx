@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { STREET_BASEMAP_TILES, BASEMAP_ATTRIBUTION } from '@/lib/basemap';
 import type { Row } from '@/lib/types';
 import { stateCodeOf } from '@/lib/utils';
 
@@ -121,9 +122,9 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
         sources: {
           'carto': {
             type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+            tiles: STREET_BASEMAP_TILES,
             tileSize: 256,
-            attribution: ''
+            attribution: BASEMAP_ATTRIBUTION
           }
         },
         layers: [
@@ -578,9 +579,9 @@ function FullscreenMap({ member }: { member: Row }) {
         sources: {
           'carto': {
             type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+            tiles: STREET_BASEMAP_TILES,
             tileSize: 256,
-            attribution: ''
+            attribution: BASEMAP_ATTRIBUTION
           }
         },
         layers: [{ id: 'carto', type: 'raster', source: 'carto' }]

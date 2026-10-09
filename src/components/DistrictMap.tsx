@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { LIGHT_BASEMAP_TILES, BASEMAP_ATTRIBUTION } from '@/lib/basemap';
 import type { Row, Meta } from '@/lib/types';
 import type { PacData } from '@/lib/pacData';
 import { GRADE_COLORS, GRADE_COLOR_MAP, extractVoteInfo, inferChamber, stateCodeOf } from '@/lib/utils';
@@ -740,9 +741,9 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
         sources: {
           'carto': {
             type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
+            tiles: LIGHT_BASEMAP_TILES,
             tileSize: 256,
-            attribution: '© CARTO © OpenStreetMap contributors'
+            attribution: BASEMAP_ATTRIBUTION
           }
         },
         layers: [

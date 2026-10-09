@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { LIGHT_BASEMAP_TILES, BASEMAP_ATTRIBUTION } from '@/lib/basemap';
 import type { Row, Meta } from '@/lib/types';
 import { stateCodeOf, inferChamber, GRADE_COLORS } from '@/lib/utils';
 
@@ -161,9 +162,9 @@ export function BillMiniMap({ meta, column, rows, firstSection, secondSection, f
         sources: {
           'carto': {
             type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}.png'],
+            tiles: LIGHT_BASEMAP_TILES,
             tileSize: 256,
-            attribution: ''
+            attribution: BASEMAP_ATTRIBUTION
           }
         },
         layers: [
