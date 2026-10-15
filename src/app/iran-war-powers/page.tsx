@@ -305,7 +305,6 @@ export default function IranWarPowersPage() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Filter expand state
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterBarOpen, setFilterBarOpen] = useState(false);
 
   // Modal state
@@ -792,6 +791,11 @@ export default function IranWarPowersPage() {
           {/* Senate */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("SENATE")}>Senate</h3>
+            <div className="text-[10px] font-semibold flex gap-1">
+              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.SENATE.dem}</span>
+              <span className="text-slate-400">|</span>
+              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.SENATE.rep}</span>
+            </div>
             <div className="cursor-pointer w-full" onClick={() => handleChamberClick("SENATE")}>
             <HemicycleChart
               members={hemicycleMembers.SENATE}
@@ -802,10 +806,6 @@ export default function IranWarPowersPage() {
               dotRadius={3.5}
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
-            </div>
-            <div className="flex justify-between w-full -mt-1 text-[10px] font-semibold" style={{ paddingLeft: "18%", paddingRight: "18%" }}>
-              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.SENATE.dem}</span>
-              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.SENATE.rep}</span>
             </div>
 
             <div className="flex gap-1.5 justify-center">
@@ -818,6 +818,11 @@ export default function IranWarPowersPage() {
           {/* House */}
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
             <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer hover:text-[#30558C] transition-colors" onClick={() => handleChamberClick("HOUSE")}>House</h3>
+            <div className="text-[10px] font-semibold flex gap-1">
+              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.HOUSE.dem}</span>
+              <span className="text-slate-400">|</span>
+              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.HOUSE.rep}</span>
+            </div>
             <div className="cursor-pointer w-full" onClick={() => handleChamberClick("HOUSE")}>
             <HemicycleChart
               members={hemicycleMembers.HOUSE}
@@ -828,10 +833,6 @@ export default function IranWarPowersPage() {
               dotRadius={2}
               heightClassName="h-[90px] md:h-[130px] lg:h-[160px]"
             />
-            </div>
-            <div className="flex justify-between w-full -mt-1 text-[10px] font-semibold" style={{ paddingLeft: "20%", paddingRight: "20%" }}>
-              <span style={{ color: "#2563EB" }}>Democrats: {chamberPartyCounts.HOUSE.dem}</span>
-              <span style={{ color: "#DC2626" }}>Republicans: {chamberPartyCounts.HOUSE.rep}</span>
             </div>
             <div className="flex gap-1.5 justify-center">
               <ScoreFlap count={hemicycleMembers.HOUSE.filter(m => m.isSupport).length} color="green" label="Support" small active={chamberFilter.includes("HOUSE") && chamberFilter.length === 1 && statusFilter === "support"} onClick={() => handleFlapClick("HOUSE", "support")} />
@@ -865,9 +866,9 @@ export default function IranWarPowersPage() {
         {/* Expandable content */}
         {filterBarOpen && (
           <div className="px-4 pb-3 max-w-2xl mx-auto flex flex-col gap-2">
-            {/* Row 1: Chamber / Party / Position (wide) + mobile Filters button */}
-            <div className="flex items-center gap-4 justify-center flex-wrap">
-              <div className="hidden md:flex items-center gap-1.5">
+            {/* Row 1: Chamber / Party / Position */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 justify-center flex-wrap">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Chamber</span>
                 {(["SENATE", "HOUSE"] as const).map((c) => (
                   <button
@@ -886,9 +887,9 @@ export default function IranWarPowersPage() {
                   <button onClick={() => setChamberFilter([])} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
                 )}
               </div>
-              <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+              <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
 
-              <div className="hidden md:flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Party</span>
                 {([["Democrat", "D"], ["Republican", "R"]] as const).map(([val, label]) => (
                   <button
@@ -907,9 +908,9 @@ export default function IranWarPowersPage() {
                   <button onClick={() => setPartyFilter([])} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
                 )}
               </div>
-              <div className="hidden md:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
+              <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-slate-700 flex-shrink-0" />
 
-              <div className="hidden md:flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Position</span>
                 {([["support", "Support"], ["oppose", "Oppose"]] as const).map(([val, label]) => (
                   <button
@@ -928,20 +929,6 @@ export default function IranWarPowersPage() {
                   <button onClick={() => setStatusFilter(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors text-sm leading-none">✕</button>
                 )}
               </div>
-
-              <button
-                onClick={() => setFiltersOpen((o) => !o)}
-                className={`md:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  filtersOpen || chamberFilter.length > 0 || partyFilter.length > 0
-                    ? "bg-[#30558C] text-white"
-                    : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                }`}
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
-                </svg>
-                Filters
-              </button>
             </div>
 
             {/* Row 2: Quick Filters */}
@@ -1018,7 +1005,7 @@ export default function IranWarPowersPage() {
                   <div className="flex items-start gap-4">
                     {/* Photo */}
                     <div className="flex-shrink-0">
-                      {member.bioguide_id ? (
+                      {member.bioguide_id && getPhotoUrl(String(member.bioguide_id), "225x275") ? (
                         <img
                           src={getPhotoUrl(String(member.bioguide_id), "225x275")}
                           alt=""
@@ -1138,69 +1125,6 @@ export default function IranWarPowersPage() {
           </div>
         </div>
       </div>
-
-      {/* Filter panel — mobile only, opened via "More Filters" chip */}
-      {filtersOpen && (
-        <div className="md:hidden">
-          <div className="fixed inset-0 z-30" onClick={() => setFiltersOpen(false)} />
-          <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 bg-white dark:bg-slate-800 shadow-xl rounded-xl border border-slate-200 dark:border-slate-700 p-4 w-48 space-y-4">
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Chamber</p>
-            <div className="flex flex-col gap-1.5">
-              {(["SENATE", "HOUSE"] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => toggleChamber(c)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
-                    chamberFilter.includes(c)
-                      ? "bg-[#30558C] text-white"
-                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                  }`}
-                >
-                  {c === "SENATE" ? "Senate" : "House"}
-                </button>
-              ))}
-              {chamberFilter.length > 0 && (
-                <button onClick={() => setChamberFilter([])} className="px-3 py-1.5 rounded-lg text-sm font-medium text-left bg-slate-100 dark:bg-white/10 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">Clear</button>
-              )}
-            </div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Party</p>
-            <div className="flex flex-col gap-1.5">
-              {(["Democrat", "Republican"] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => toggleParty(p)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
-                    partyFilter.includes(p)
-                      ? "bg-[#30558C] text-white"
-                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-              {partyFilter.length > 0 && (
-                <button onClick={() => setPartyFilter([])} className="px-3 py-1.5 rounded-lg text-sm font-medium text-left bg-slate-100 dark:bg-white/10 text-slate-400 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">Clear</button>
-              )}
-            </div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Position</p>
-            <div className="flex flex-col gap-1.5">
-              {([["", "All"], ["support", "Support"], ["oppose", "Oppose"]] as const).map(([val, label]) => (
-                <button
-                  key={val || "all"}
-                  onClick={() => setStatusFilter(val === "" ? null : val)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium text-left transition-colors ${
-                    (val === "" ? statusFilter === null : statusFilter === val)
-                      ? "bg-[#30558C] text-white"
-                      : "bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/20"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Bill Modal */}
       {selectedBillModal && (

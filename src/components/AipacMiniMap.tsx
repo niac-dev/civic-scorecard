@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { LIGHT_BASEMAP_TILES, BASEMAP_ATTRIBUTION } from '@/lib/basemap';
 import type { Row } from '@/lib/types';
 import { stateCodeOf, GRADE_COLORS } from '@/lib/utils';
 import { isWebGLSupported } from '@/lib/webgl';
@@ -120,9 +121,9 @@ function AipacMiniMapInner({ supported, notSupported }: AipacMiniMapProps) {
           sources: {
             'carto': {
               type: 'raster',
-              tiles: ['https://a.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}.png'],
+              tiles: LIGHT_BASEMAP_TILES,
               tileSize: 256,
-              attribution: ''
+              attribution: BASEMAP_ATTRIBUTION
             }
           },
           layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
