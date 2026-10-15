@@ -5,6 +5,8 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row } from '@/lib/types';
 import { stateCodeOf, GRADE_COLORS } from '@/lib/utils';
+import { isWebGLSupported } from '@/lib/webgl';
+import { MapErrorBoundary, MapUnavailableNotice } from '@/components/MapErrorBoundary';
 
 interface AipacMiniMapProps {
   supported: Row[];
@@ -41,7 +43,7 @@ const stateNameMapping: Record<string, string> = {
   'DC': 'District of Columbia'
 };
 
-export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
+function AipacMiniMapInner({ supported, notSupported }: AipacMiniMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,26 +105,40 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
       map.current = null;
     }
 
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-        sources: {
-          'carto': {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: ''
-          }
+    if (!isWebGLSupported()) {
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      map.current = new maplibregl.Map({
+        container: mapContainer.current,
+        style: {
+          version: 8,
+          glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+          sources: {
+            'carto': {
+              type: 'raster',
+              tiles: ['https://a.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: ''
+            }
+          },
+          layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
         },
-        layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
-      },
-      center: [-98.5795, 39.8283],
-      zoom: 2.5,
-      interactive: false,
-      attributionControl: false
-    });
+        center: [-98.5795, 39.8283],
+        zoom: 2.5,
+        interactive: false,
+        attributionControl: false
+      });
+    } catch (err) {
+      console.error('Failed to initialize AIPAC map (likely missing WebGL support):', err);
+      map.current = null;
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
 
     map.current.on('load', async () => {
       if (!map.current) return;
@@ -221,11 +237,7 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
   }, [actionData]);
 
   if (error) {
-    return (
-      <div className="w-full h-[200px] rounded-lg overflow-hidden border border-[#E7ECF2] dark:border-slate-700 bg-slate-50 dark:bg-white/5 flex items-center justify-center">
-        <div className="text-xs text-slate-400 text-center px-2">Map unavailable</div>
-      </div>
-    );
+    return <MapUnavailableNotice className="w-full h-[200px]" />;
   }
 
   return (
@@ -270,5 +282,15 @@ export function AipacMiniMap({ supported, notSupported }: AipacMiniMapProps) {
         </div>
       </div>
     </>
+  );
+}
+
+// Belt-and-suspenders: even with the WebGL pre-check above, contain any other
+// map initialization error here so it can never crash the whole page.
+export function AipacMiniMap(props: AipacMiniMapProps) {
+  return (
+    <MapErrorBoundary fallback={<MapUnavailableNotice className="w-full h-[200px]" />}>
+      <AipacMiniMapInner {...props} />
+    </MapErrorBoundary>
   );
 }

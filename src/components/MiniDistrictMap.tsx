@@ -5,6 +5,8 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row } from '@/lib/types';
 import { stateCodeOf } from '@/lib/utils';
+import { isWebGLSupported } from '@/lib/webgl';
+import { MapErrorBoundary, MapUnavailableNotice } from '@/components/MapErrorBoundary';
 
 interface MiniDistrictMapProps {
   member: Row;
@@ -50,7 +52,7 @@ const stateToFips: Record<string, string> = {
   'VI': '78'
 };
 
-export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onClose }: MiniDistrictMapProps) {
+function MiniDistrictMapInner({ member, onExpand, initialExpanded = false, onClose }: MiniDistrictMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,33 +114,47 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
     const initialCenter: [number, number] = [stateCenter[0], stateCenter[1]];
     const initialZoom = stateCenter[2];
 
+    if (!isWebGLSupported()) {
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
+
     // Initialize map with detailed basemap (includes labels, roads, landmarks)
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-        sources: {
-          'carto': {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: ''
-          }
+    try {
+      map.current = new maplibregl.Map({
+        container: mapContainer.current,
+        style: {
+          version: 8,
+          glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+          sources: {
+            'carto': {
+              type: 'raster',
+              tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: ''
+            }
+          },
+          layers: [
+            {
+              id: 'carto',
+              type: 'raster',
+              source: 'carto'
+            }
+          ]
         },
-        layers: [
-          {
-            id: 'carto',
-            type: 'raster',
-            source: 'carto'
-          }
-        ]
-      },
-      center: initialCenter,
-      zoom: initialZoom,
-      interactive: true, // Enable interaction - zoom and pan
-      attributionControl: false
-    });
+        center: initialCenter,
+        zoom: initialZoom,
+        interactive: true, // Enable interaction - zoom and pan
+        attributionControl: false
+      });
+    } catch (err) {
+      console.error('Failed to initialize mini district map (likely missing WebGL support):', err);
+      map.current = null;
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
 
     // Load boundaries
     map.current.on('load', async () => {
@@ -449,11 +465,7 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
   }, []);
 
   if (error) {
-    return (
-      <div className="w-[200px] h-[150px] rounded overflow-hidden border border-[#E7ECF2] dark:border-slate-700 bg-slate-50 dark:bg-white/5 flex items-center justify-center">
-        <div className="text-[10px] text-slate-400 text-center px-2">Map unavailable</div>
-      </div>
-    );
+    return <MapUnavailableNotice className="w-[200px] h-[150px]" />;
   }
 
   // Format the district/state label
@@ -523,11 +535,23 @@ export function MiniDistrictMap({ member, onExpand, initialExpanded = false, onC
             </div>
 
             {/* Map fills the container - creates a new map instance */}
-            <FullscreenMap member={member} />
+            <MapErrorBoundary fallback={<MapUnavailableNotice className="w-full h-full" />}>
+              <FullscreenMap member={member} />
+            </MapErrorBoundary>
           </div>
         </div>
       )}
     </>
+  );
+}
+
+// Belt-and-suspenders: even with the WebGL pre-check above, contain any other
+// map initialization error here so it can never crash the whole page.
+export function MiniDistrictMap(props: MiniDistrictMapProps) {
+  return (
+    <MapErrorBoundary fallback={<MapUnavailableNotice className="w-[200px] h-[150px]" />}>
+      <MiniDistrictMapInner {...props} />
+    </MapErrorBoundary>
   );
 }
 
@@ -536,6 +560,7 @@ function FullscreenMap({ member }: { member: Row }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -570,26 +595,40 @@ function FullscreenMap({ member }: { member: Row }) {
     // Create fullscreen map with different zoom for House vs Senate
     const fullscreenZoom = isSenate ? stateCenter[2] + 1.0 : stateCenter[2] + 4.0; // House districts more zoomed in
 
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-        sources: {
-          'carto': {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: ''
-          }
+    if (!isWebGLSupported()) {
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      map.current = new maplibregl.Map({
+        container: mapContainer.current,
+        style: {
+          version: 8,
+          glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+          sources: {
+            'carto': {
+              type: 'raster',
+              tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: ''
+            }
+          },
+          layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
         },
-        layers: [{ id: 'carto', type: 'raster', source: 'carto' }]
-      },
-      center: [stateCenter[0], stateCenter[1]],
-      zoom: fullscreenZoom,
-      interactive: true,
-      attributionControl: false
-    });
+        center: [stateCenter[0], stateCenter[1]],
+        zoom: fullscreenZoom,
+        interactive: true,
+        attributionControl: false
+      });
+    } catch (err) {
+      console.error('Failed to initialize fullscreen map (likely missing WebGL support):', err);
+      map.current = null;
+      setError('WebGL unavailable');
+      setLoading(false);
+      return;
+    }
 
     // Load boundaries and colors (same as mini map)
     map.current.on('load', async () => {
@@ -850,6 +889,10 @@ function FullscreenMap({ member }: { member: Row }) {
       }
     };
   }, [member]);
+
+  if (error) {
+    return <MapUnavailableNotice className="w-full h-full" />;
+  }
 
   return (
     <div className="w-full h-full relative">

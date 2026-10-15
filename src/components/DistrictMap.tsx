@@ -6,6 +6,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Row, Meta } from '@/lib/types';
 import type { PacData } from '@/lib/pacData';
 import { GRADE_COLORS, GRADE_COLOR_MAP, extractVoteInfo, inferChamber, stateCodeOf } from '@/lib/utils';
+import { isWebGLSupported } from '@/lib/webgl';
+import { MapErrorBoundary, MapUnavailableNotice } from '@/components/MapErrorBoundary';
 
 // State FIPS mapping
 const stateToFips: Record<string, string> = {
@@ -161,6 +163,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
   const hoveredFeatureId = useRef<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mapUnavailable, setMapUnavailable] = useState(false);
   const lastEffectiveChamber = useRef<'HOUSE' | 'SENATE' | null>(null);
   const districtMembersRef = useRef<Record<string, Row | Row[]>>({});
   const districtGradesRef = useRef<Record<string, string>>({});
@@ -715,6 +718,7 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
     // Reset loading state
     setLoading(true);
     setError(null);
+    setMapUnavailable(false);
 
     // Clean up existing map when chamber changes
     if (map.current) {
@@ -727,37 +731,55 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
       popup.current = null;
     }
 
+    // Bail out before touching maplibre at all if the browser can't create a
+    // WebGL context (hardware acceleration disabled, locked-down profile, etc).
+    // Attempting to create the map in that case throws an uncaught error that
+    // would otherwise crash the whole page.
+    if (!isWebGLSupported()) {
+      setMapUnavailable(true);
+      setLoading(false);
+      return;
+    }
+
     // Calculate zoom based on screen width - more zoomed out on smaller screens
     const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
     const initialZoom = screenWidth < 768 ? 2.3 : screenWidth < 1024 ? 2.8 : 3.5;
 
     // Initialize map
-    map.current = new maplibregl.Map({
-      container: mapContainer.current,
-      style: {
-        version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-        sources: {
-          'carto': {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© CARTO © OpenStreetMap contributors'
-          }
+    try {
+      map.current = new maplibregl.Map({
+        container: mapContainer.current,
+        style: {
+          version: 8,
+          glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+          sources: {
+            'carto': {
+              type: 'raster',
+              tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '© CARTO © OpenStreetMap contributors'
+            }
+          },
+          layers: [
+            {
+              id: 'carto',
+              type: 'raster',
+              source: 'carto'
+            }
+          ]
         },
-        layers: [
-          {
-            id: 'carto',
-            type: 'raster',
-            source: 'carto'
-          }
-        ]
-      },
-      center: [-98.5795, 39.8283], // Center of US
-      zoom: initialZoom,
-      maxZoom: 10,
-      minZoom: 2
-    });
+        center: [-98.5795, 39.8283], // Center of US
+        zoom: initialZoom,
+        maxZoom: 10,
+        minZoom: 2
+      });
+    } catch (err) {
+      console.error('Failed to initialize map (likely missing WebGL support):', err);
+      map.current = null;
+      setMapUnavailable(true);
+      setLoading(false);
+      return;
+    }
 
     // Load congressional district or state boundaries based on chamber
     map.current.on('load', async () => {
@@ -2592,7 +2614,10 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
           <div className="text-sm text-slate-500 dark:text-slate-400">Loading {chamber === 'SENATE' ? 'state map' : chamber === 'HOUSE' ? 'congressional districts' : 'state map'}...</div>
         </div>
       )}
-      {error && (
+      {mapUnavailable && (
+        <MapUnavailableNotice className="absolute inset-0 z-10" />
+      )}
+      {error && !mapUnavailable && (
         <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-[#0B1220] z-10">
           <div className="text-center p-4">
             <div className="text-sm text-red-600 dark:text-red-400 mb-2">Error loading district map</div>
@@ -2757,4 +2782,20 @@ function DistrictMap({ members, onMemberClick, onStateClick, chamber, selectedBi
 }
 
 // Memoize the component to prevent unnecessary re-renders when props haven't changed
-export default memo(DistrictMap);
+const MemoizedDistrictMap = memo(DistrictMap);
+
+// Belt-and-suspenders: even with the WebGL pre-check above, contain any other
+// map initialization error here so it can never crash the whole page.
+function DistrictMapWithBoundary(props: DistrictMapProps) {
+  return (
+    <MapErrorBoundary
+      fallback={
+        <MapUnavailableNotice className="w-full h-[calc(100dvh-13rem)] md:h-[600px]" />
+      }
+    >
+      <MemoizedDistrictMap {...props} />
+    </MapErrorBoundary>
+  );
+}
+
+export default DistrictMapWithBoundary;
