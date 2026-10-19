@@ -169,7 +169,11 @@ async function handleFindLawmakers(address: string | null, requestUrl: string) {
     }
 
     // Step 2: Use Census Bureau TIGERweb API to get exact congressional district
-    // Layer 54 = 119th Congressional Districts (current)
+    // Layer 54 = current Congressional Districts. The district-number field is
+    // named after the current Congress (e.g. CD119, CD120, ...) and Census
+    // rolls that field name forward periodically on their "Current" layer, so
+    // we request all fields and pick out whichever one matches /^CD\d+$/
+    // rather than hardcoding a Congress number that will go stale again.
     const tigerwebResponse = await fetch(
       `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/54/query?` +
       new URLSearchParams({
@@ -179,7 +183,7 @@ async function handleFindLawmakers(address: string | null, requestUrl: string) {
         spatialRel: 'esriSpatialRelWithin',
         returnGeometry: 'false',
         f: 'json',
-        outFields: 'STATE,CD119,NAME,GEOID'
+        outFields: '*'
       })
     );
 
@@ -192,6 +196,14 @@ async function handleFindLawmakers(address: string | null, requestUrl: string) {
 
     console.log('TIGERweb API response:', JSON.stringify(tigerwebData, null, 2));
 
+    // ArcGIS returns query errors as a 200 with an `error` body instead of a
+    // non-2xx HTTP status, so a bad request (e.g. a stale field name) would
+    // otherwise silently fall through to "no district found" below.
+    if (tigerwebData?.error) {
+      console.error('TIGERweb query error:', tigerwebData.error);
+      return NextResponse.json({ error: 'Failed to determine congressional district' }, { status: 500 });
+    }
+
     if (!tigerwebData || !tigerwebData.features || tigerwebData.features.length === 0) {
       return NextResponse.json({
         error: 'No congressional district found for this location. This may be a territory or non-voting district.'
@@ -200,7 +212,8 @@ async function handleFindLawmakers(address: string | null, requestUrl: string) {
 
     const districtFeature = tigerwebData.features[0];
     const stateFips = districtFeature.attributes?.STATE;
-    const districtNumber = districtFeature.attributes?.CD119;
+    const cdFieldName = Object.keys(districtFeature.attributes || {}).find((key) => /^CD\d+$/.test(key));
+    const districtNumber = cdFieldName ? districtFeature.attributes[cdFieldName] : undefined;
 
     if (!stateFips || districtNumber === undefined || districtNumber === null) {
       return NextResponse.json({
