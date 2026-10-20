@@ -137,16 +137,16 @@ export async function loadData(): Promise<{
   // Map column -> metadata
   const metaByCol = new Map<string, Meta>(meta.map((m) => [m.column, m]));
 
-  // Build pair info: pair_key → { preferredPts, cols[] }
-  const pairInfo = new Map<string, { preferredPts: number; cols: string[] }>();
+  // Build pair info: pair_key → { totalPts (sum of all bills in pair), cols[] }
+  // The sheet adds each paired bill's points independently to Max_Possible,
+  // so we deduct the total sum when all bills in the pair are not_in_office.
+  const pairInfo = new Map<string, { totalPts: number; cols: string[] }>();
   for (const [col, m] of metaByCol) {
     if (!m.pair_key) continue;
     const pts = Number(m.points ?? 0);
-    const entry = pairInfo.get(m.pair_key) ?? { preferredPts: 0, cols: [] };
+    const entry = pairInfo.get(m.pair_key) ?? { totalPts: 0, cols: [] };
     entry.cols.push(col);
-    if (m.preferred == 1 || m.preferred === true || m.preferred === "true") {
-      entry.preferredPts = pts;
-    }
+    entry.totalPts += pts;
     pairInfo.set(m.pair_key, entry);
   }
 
@@ -184,7 +184,7 @@ export async function loadData(): Promise<{
         // Only deduct if ALL bills in the pair are not_in_office (otherwise the member
         // could still participate in the other bill in the pair)
         if (!pair.cols.every((c) => notInOffice.has(c))) continue;
-        deduction = pair.preferredPts;
+        deduction = pair.totalPts;
       } else {
         deduction = Number(m.points ?? 0);
       }
@@ -201,24 +201,35 @@ export async function loadData(): Promise<{
     const r: Record<string, unknown> = { ...row };
 
     const curMax = Number(row.Max_Possible ?? 0);
-    const newMax = curMax - totalDeduction;
+    const total = Number(row.Total ?? 0);
+    const newMax = Math.max(0, curMax - totalDeduction);
     if (newMax > 0) {
-      const pct = Number(row.Total ?? 0) / newMax;
+      const pct = Math.min(1, total / newMax);
       r.Max_Possible = newMax;
       r.Percent = pct;
       r.Grade = percentToGrade(pct);
+    } else if (total > 0) {
+      // All scoreable bills were not_in_office but member still earned bonus points → A+
+      r.Max_Possible = total;
+      r.Percent = 1;
+      r.Grade = "A+";
     }
 
     for (const [cat, ded] of catDeductions) {
       const suf = catFieldSuffix(cat);
       const catMax = Number(r[`Max_Possible_${suf}`] ?? 0);
       const catTotal = Number(r[`Total_${suf}`] ?? 0);
-      const newCatMax = catMax - ded;
+      const newCatMax = Math.max(0, catMax - ded);
       if (newCatMax > 0) {
-        const pct = catTotal / newCatMax;
+        // Cap at 1.0 in case bonus points (from OPPOSE bills) push total above max
+        const pct = Math.min(1, catTotal / newCatMax);
         r[`Max_Possible_${suf}`] = newCatMax;
         r[`Percent_${suf}`] = pct;
         r[`Grade_${suf}`] = percentToGrade(pct);
+      } else if (catTotal > 0) {
+        r[`Max_Possible_${suf}`] = catTotal;
+        r[`Percent_${suf}`] = 1;
+        r[`Grade_${suf}`] = "A+";
       }
     }
 
