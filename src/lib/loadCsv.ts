@@ -4,6 +4,29 @@ import type { Row, Meta } from "./types";
 import { cacheScorecard, loadCachedScorecard } from "./offlineStorage";
 import type { PacData } from "./pacData";
 
+function percentToGrade(pct: number): string {
+  if (pct >= 1.0) return "A+";
+  if (pct >= 0.85) return "A";
+  if (pct >= 0.80) return "A-";
+  if (pct >= 0.75) return "B+";
+  if (pct >= 0.65) return "B";
+  if (pct >= 0.58) return "B-";
+  if (pct >= 0.55) return "C+";
+  if (pct >= 0.45) return "C";
+  if (pct >= 0.39) return "C-";
+  if (pct >= 0.19) return "D";
+  return "F";
+}
+
+function inferBillChamber(col: string, metaChamber?: string): "HOUSE" | "SENATE" {
+  if (metaChamber === "HOUSE" || metaChamber === "SENATE") return metaChamber;
+  return /^S\./.test(col) ? "SENATE" : "HOUSE";
+}
+
+function catFieldSuffix(cat: string): string {
+  return cat.replace(/\s+&\s+/g, "_").replace(/[\/-]/g, "_").replace(/\s+/g, "_");
+}
+
 async function fetchCSV<T = Record<string, unknown>>(path: string): Promise<T[]> {
   // Cache busting: use build time in production, current time in development
   const version = process.env.NEXT_PUBLIC_BUILD_TIME || Date.now().toString();
@@ -114,6 +137,94 @@ export async function loadData(): Promise<{
   // Map column -> metadata
   const metaByCol = new Map<string, Meta>(meta.map((m) => [m.column, m]));
 
+  // Build pair info: pair_key → { preferredPts, cols[] }
+  const pairInfo = new Map<string, { preferredPts: number; cols: string[] }>();
+  for (const [col, m] of metaByCol) {
+    if (!m.pair_key) continue;
+    const pts = Number(m.points ?? 0);
+    const entry = pairInfo.get(m.pair_key) ?? { preferredPts: 0, cols: [] };
+    entry.cols.push(col);
+    if (m.preferred == 1 || m.preferred === true || m.preferred === "true") {
+      entry.preferredPts = pts;
+    }
+    pairInfo.set(m.pair_key, entry);
+  }
+
+  // Adjust Max_Possible/Percent/Grade for members not in office during certain votes.
+  // When _not_in_office = 1, the bill should be excluded from the denominator too,
+  // otherwise a member is penalized for a vote they couldn't participate in.
+  const adjustedRows = rows.map((row) => {
+    const notInOffice = new Set<string>();
+    for (const key of Object.keys(row)) {
+      if (key.endsWith("_not_in_office") && row[key] === 1) {
+        notInOffice.add(key.slice(0, -"_not_in_office".length));
+      }
+    }
+    if (notInOffice.size === 0) return row;
+
+    let totalDeduction = 0;
+    const catDeductions = new Map<string, number>();
+    const seenPairs = new Set<string>();
+
+    for (const col of notInOffice) {
+      const m = metaByCol.get(col);
+      if (!m) continue;
+      if (Number(m.tracker_only) === 1) continue;
+      // Skip bills that don't apply to this member's chamber
+      if (row.chamber && inferBillChamber(col, m.chamber as string) !== row.chamber) continue;
+
+      const cats = (m.categories ?? "").split(";").map((s) => s.trim()).filter(Boolean);
+      let deduction = 0;
+
+      if (m.pair_key) {
+        if (seenPairs.has(m.pair_key)) continue;
+        seenPairs.add(m.pair_key);
+        const pair = pairInfo.get(m.pair_key);
+        if (!pair) continue;
+        // Only deduct if ALL bills in the pair are not_in_office (otherwise the member
+        // could still participate in the other bill in the pair)
+        if (!pair.cols.every((c) => notInOffice.has(c))) continue;
+        deduction = pair.preferredPts;
+      } else {
+        deduction = Number(m.points ?? 0);
+      }
+
+      if (deduction === 0) continue;
+      totalDeduction += deduction;
+      for (const cat of cats) {
+        catDeductions.set(cat, (catDeductions.get(cat) ?? 0) + deduction);
+      }
+    }
+
+    if (totalDeduction === 0 && catDeductions.size === 0) return row;
+
+    const r: Record<string, unknown> = { ...row };
+
+    const curMax = Number(row.Max_Possible ?? 0);
+    const newMax = curMax - totalDeduction;
+    if (newMax > 0) {
+      const pct = Number(row.Total ?? 0) / newMax;
+      r.Max_Possible = newMax;
+      r.Percent = pct;
+      r.Grade = percentToGrade(pct);
+    }
+
+    for (const [cat, ded] of catDeductions) {
+      const suf = catFieldSuffix(cat);
+      const catMax = Number(r[`Max_Possible_${suf}`] ?? 0);
+      const catTotal = Number(r[`Total_${suf}`] ?? 0);
+      const newCatMax = catMax - ded;
+      if (newCatMax > 0) {
+        const pct = catTotal / newCatMax;
+        r[`Max_Possible_${suf}`] = newCatMax;
+        r[`Percent_${suf}`] = pct;
+        r[`Grade_${suf}`] = percentToGrade(pct);
+      }
+    }
+
+    return r as Row;
+  });
+
   // Categories list
   const catSet = new Set<string>();
   meta.forEach((m) => {
@@ -127,7 +238,7 @@ export async function loadData(): Promise<{
   catSet.add("AIPAC");
   const categories = Array.from(catSet).sort();
 
-  return { rows, columns, metaByCol, categories };
+  return { rows: adjustedRows, columns, metaByCol, categories };
 }
 
 /**
